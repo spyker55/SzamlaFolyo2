@@ -96,6 +96,18 @@ export async function feltolt(fajl: File, cegId: string): Promise<FeltoltesEredm
     return { allapot: 'hiba', hiba: dokumentumHiba?.message ?? 'Ismeretlen hiba.' };
   }
 
+  // Az élő utat a feltöltés utáni közvetlen hívás hajtja; az elakadt és a
+  // félbemaradt futásokat a pg_cron szedi fel. **Nem várjuk meg**: a kiolvasás
+  // másodpercekig tart, a felhasználónak viszont azonnal látnia kell a sorban a
+  // bizonylatot. A Beérkező úgyis frissít, amíg van feldolgozandó.
+  //
+  // A hibát elnyeljük, és ez szándékos: ha az indítás nem megy át, a
+  // dokumentum `feltoltve` állapotban marad, és a cron felveszi. A feltöltés
+  // maga sikeres volt — nem szabad hibának látszania.
+  void supabase.functions
+    .invoke('kiolvas', { body: { dokumentum_id: dokumentum.id } })
+    .catch(() => undefined);
+
   return { allapot: 'kesz', dokumentumId: dokumentum.id };
 }
 
