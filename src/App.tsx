@@ -10,6 +10,8 @@ import { CegLetrehozas } from './kepernyok/CegLetrehozas.tsx';
 import { Beerkezo } from './kepernyok/Beerkezo.tsx';
 import { Ellenorzes } from './kepernyok/Ellenorzes.tsx';
 import { Tetelek } from './kepernyok/Tetelek.tsx';
+import { Export } from './kepernyok/Export.tsx';
+import { Archivum } from './kepernyok/Archivum.tsx';
 
 /**
  * Az útvonaltábla.
@@ -116,7 +118,7 @@ export function App() {
             path="/export"
             element={
               <Ceggel>
-                <VazlatAlkalmazasban nev="Export" />
+                <Export />
               </Ceggel>
             }
           />
@@ -124,7 +126,7 @@ export function App() {
             path="/archivum"
             element={
               <Ceggel>
-                <VazlatAlkalmazasban nev="Archívum" />
+                <Archivum />
               </Ceggel>
             }
           />

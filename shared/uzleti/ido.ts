@@ -39,6 +39,19 @@ export function ma(): string {
 }
 
 /**
+ * Egy időbélyeg **napja** Budapesten, `YYYY-MM-DD` alakban.
+ *
+ * Az export ezt írja a „Beérkezés" oszlopba: gépi feldolgozásra az ISO alak
+ * kell, nem a magyar kiírás — de a nap akkor is a budapesti nap, mert a
+ * felhasználó a saját naptárában keresi vissza. Egy 23:30-kor feltöltött
+ * bizonylat UTC szerint már másnapi lenne.
+ */
+export function nap(ido: Date | string | null | undefined): string | null {
+  const d = datumma(ido);
+  return d === null ? null : budapestiNap(d);
+}
+
+/**
  * A modell `YYYY-MM-DD`-t ad vissza, de a papíron `2026.03.14.` áll —
  * ellenőrzéskor ember is beleírhat. Ez mindkettőt elfogadja, és **csak valóban
  * létező napot** enged át: a `2026-02-31` némán március 3-ává válna.

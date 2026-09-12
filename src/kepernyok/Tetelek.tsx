@@ -76,6 +76,11 @@ export function Tetelek() {
           Jóváhagyott bizonylatok, exportra várva. Innen még vissza lehet küldeni javításra —
           az export után már nem.
         </p>
+        {tetelek.length > 0 && szerkeszthet && (
+          <Link to="/export" className="mt-2 inline-block text-sm text-blue-700 hover:underline">
+            Export készítése →
+          </Link>
+        )}
       </div>
 
       {automatikus > 0 && (
