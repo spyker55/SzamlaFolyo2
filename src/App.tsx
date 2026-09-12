@@ -8,6 +8,8 @@ import { Regisztracio } from './kepernyok/auth/Regisztracio.tsx';
 import { ElfelejtettJelszo, JelszoBeallitas } from './kepernyok/auth/Jelszo.tsx';
 import { CegLetrehozas } from './kepernyok/CegLetrehozas.tsx';
 import { Beerkezo } from './kepernyok/Beerkezo.tsx';
+import { Ellenorzes } from './kepernyok/Ellenorzes.tsx';
+import { Tetelek } from './kepernyok/Tetelek.tsx';
 
 /**
  * Az útvonaltábla.
@@ -98,7 +100,7 @@ export function App() {
             path="/ellenorzes/:id"
             element={
               <Ceggel>
-                <VazlatAlkalmazasban nev="Ellenőrzés" />
+                <Ellenorzes />
               </Ceggel>
             }
           />
@@ -106,7 +108,7 @@ export function App() {
             path="/tetelek"
             element={
               <Ceggel>
-                <VazlatAlkalmazasban nev="Tételek" />
+                <Tetelek />
               </Ceggel>
             }
           />
