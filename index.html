@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Két formátum, mert a kettő mást tud. Az SVG minden méretben éles, ezt
+      használja minden mai böngésző; az ICO a tartalék, és 16, 32 és 48 pixeles
+      változatot is tartalmaz.
+
+      A `?v=` nem babona: épp a favicont gyorsítótárazza a böngésző a
+      legmakacsabbul. Ha egyszer változik az ikon, ezt a számot kell növelni.
+    -->
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+
+    <title>SzámlaFolyó</title>
+    <meta
+      name="description"
+      content="A legrövidebb út a bizonylattól a könyvelésig. Töltsd fel a számlát, a SzámlaFolyó kiolvassa, te csak azt ellenőrzöd, amiben nem biztos."
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

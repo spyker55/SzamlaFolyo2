@@ -1,0 +1,286 @@
+@import 'tailwindcss';
+
+/*
+  A betűk **helyben** vannak, nem a Google szerveréről töltődnek. A Google
+  Fonts minden oldalletöltéskor elküldi a látogató IP-címét a Google-nek —
+  még azét is, aki be sem lépett —, és ezt egy magyar számlafeldolgozónak
+  nincs miért vállalnia. A csomagok a `package.json`-ban vannak rögzítve, a
+  woff2 fájlokat a Vite adja ki ujjlenyomatos névvel.
+
+  A DM Sansból a változó, optikai méretes vágat jön (`opsz`), két
+  részhalmazzal: latin és latin-ext. A latin-ext nem elhagyható — az `ő` és
+  az `ű` abban van.
+*/
+@import '@fontsource-variable/dm-sans/opsz.css';
+
+/*
+  Az Archivo **csak a szóvédjegyé**, és a „SzámlaFolyó" minden betűje elfér a
+  latin tartományban (az `á` és az `ó` is). Ezért egyetlen fájl jön belőle,
+  latin-ext nélkül — és a `unicode-range` gondoskodik róla, hogy ha valaha
+  mégis kerül ide `ő`, az tisztán a tartalék betűre essen vissza, ne egy
+  hiányzó glifre. A fontsource saját CSS-e helyett kézzel írva, mert az woff
+  tartalékot is behúzna: 20 kB, amit 2013 óta egyetlen böngésző sem kér le.
+*/
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('@fontsource/archivo/files/archivo-latin-800-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+  Az osztálynevek forrásai. A `shared/` azért van benne, mert a sávok és a
+  mezőállapotok osztálynevei (`mezo-gyanus`, `badge-hiba`) az üzleti logikából
+  származnak, nem a JSX-ből — enélkül a Tailwind kiszemetelné őket.
+*/
+@source '../src/**/*.{ts,tsx}';
+@source '../shared/**/*.ts';
+@source '../index.html';
+
+/*
+  A dizájnrendszer. Minden ismétlődő elem itt van definiálva egyszer — új
+  képernyő ne írjon saját `rounded-lg border bg-white` kombinációt.
+
+  Komponensrétegben állnak, nem @utility-ként: így az elemre írt utility
+  felülírja őket (a .control teljes szélességű, de egy w-48 mellette szűkít).
+*/
+
+@theme {
+  --font-sans: 'DM Sans Variable', 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+
+  /* A szóvédjegy betűje. Csak a logóé — a felület szövege marad DM Sans,
+     ezért egyetlen vastagságot töltünk be belőle. */
+  --font-logo: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+
+  /*
+    A márka színei, a designcsomagból (`design/logo/`) — a szóvédjegyé és a
+    hozzá tartozó egyetlen interakcióé. A jel a saját krémjét és terrakottáját
+    az SVG-jében hozza: önmagában megálló asset, nem függ attól, hogy a CSS
+    megérkezett-e.
+
+    Külön nevük van, és **nem** olvadnak bele a lenti `slate`/`blue` skálákba.
+    Azok a felület jelentéshordozó színei („semleges", „kiemelt"), és száz
+    helyen hivatkozik rájuk a kód; ez a három viszont az arculat, ahol a hexa
+    maga a specifikáció. A kettő ma közel áll egymáshoz, de nem ugyanaz — és ha
+    a felület hangolása egyszer elmozdul, a logó nem mozdulhat vele.
+  */
+  --color-marka: #be6846;
+  --color-marka-melyebb: #a34b2b;
+  --color-marka-tinta: #3a3634;
+
+  /*
+    A paletta.
+
+    A képernyők száz helyen hivatkoznak `slate-` és `blue-` osztályokra. Ezért
+    nem azokat írjuk át egyesével — az a fajta változtatás mindig hagy maga
+    után egy elfelejtett kék gombot valahol —, hanem **magát a két skálát**
+    definiáljuk újra. Egy hely, és a felület minden pontja követi.
+
+    A `slate` innentől meleg szürke (a papír és a tinta színe), a `blue` pedig
+    terrakotta. A nevük szándékosan marad: a jelentésük „semleges" és
+    „kiemelt", nem az, hogy szürke és kék.
+  */
+  --color-slate-50: #fbf8f4;
+  --color-slate-100: #f6ede4;
+  --color-slate-200: #e9ded1;
+  --color-slate-300: #d5c7b7;
+  --color-slate-400: #9c9186;
+  --color-slate-500: #787066;
+  --color-slate-600: #635c53;
+  --color-slate-700: #4d473f;
+  --color-slate-800: #3b3b36;
+  --color-slate-900: #2a2a26;
+
+  --color-blue-50: #fbf0ea;
+  --color-blue-100: #f5dcd0;
+  --color-blue-200: #ebc3b0;
+  --color-blue-300: #dea184;
+  --color-blue-400: #d4855f;
+  --color-blue-500: #c66c47;
+  --color-blue-600: #b25d3a;
+  --color-blue-700: #9e5537;
+  --color-blue-800: #85462d;
+  --color-blue-900: #6b3824;
+
+  --color-vaszon: #f6ede4;
+  --color-jelzo: #c66c47;
+
+  /* A nyilvános oldal két kísérőszíne. A felületen nem visznek jelentést,
+     ezért nincs `slate`/`blue` nevük — dísz, nem jelzés. */
+  --color-zsalya: #8c9c86;
+  --color-mustar: #dfb671;
+  --color-tinta: #2a2a26;
+  --color-tinta-lagy: #42423d;
+
+  /* A konfidencia három sávja. Ez a termék egyetlen valódi színkódja,
+     ezért nem szórjuk szét a komponensekbe — és ezért **nem** követi a
+     fenti hangolást sem: a figyelmeztetés akkor ér valamit, ha kilóg a
+     környezetéből. */
+  --color-biztos: #15803d;
+  --color-bizonytalan: #a16207;
+  --color-gyanus: #b91c1c;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-vaszon);
+    color: var(--color-slate-800);
+  }
+
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+  .card-pad {
+    @apply p-5;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm
+           font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-blue-700 text-white hover:bg-blue-800;
+  }
+  .btn-secondary {
+    @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+  }
+  .btn-ghost {
+    @apply text-slate-600 hover:bg-slate-100;
+  }
+  .btn-danger {
+    @apply bg-red-700 text-white hover:bg-red-800;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+
+  .control {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
+           text-slate-900 placeholder-slate-400
+           focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none;
+  }
+  .flabel {
+    @apply mb-1 block text-xs font-medium text-slate-600;
+  }
+  .fhiba {
+    @apply mt-1 text-xs text-red-700;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .badge-semleges {
+    @apply bg-slate-100 text-slate-700;
+  }
+  .badge-varakozo {
+    @apply bg-amber-100 text-amber-800;
+  }
+  .badge-kesz {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+  .badge-hiba {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .tbl {
+    @apply w-full border-collapse text-sm;
+  }
+  .th {
+    @apply border-b border-slate-200 px-3 py-2 text-left text-xs font-semibold
+           tracking-wide text-slate-500 uppercase;
+  }
+  .td {
+    @apply border-b border-slate-100 px-3 py-2 align-top text-slate-800;
+  }
+  .trow {
+    @apply hover:bg-slate-50;
+  }
+
+  .alert {
+    @apply rounded-lg border px-4 py-3 text-sm;
+  }
+  .alert-hiba {
+    @apply border-red-200 bg-red-50 text-red-800;
+  }
+  .alert-info {
+    @apply border-blue-200 bg-blue-50 text-blue-800;
+  }
+  .alert-figyelem {
+    @apply border-amber-200 bg-amber-50 text-amber-900;
+  }
+  .alert-siker {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+  }
+
+  .empty {
+    @apply rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center text-sm text-slate-500;
+  }
+
+  /*
+    A logó. A jel a saját SVG-jében hozza a színeit; itt a szóvédjegy áll, és
+    az az egy interakció, amit a designcsomag megenged.
+  */
+  .logo-sor {
+    @apply inline-flex items-center gap-2.5;
+  }
+  .logo-szoveg {
+    @apply font-logo font-extrabold tracking-[-0.035em] text-marka-tinta;
+    line-height: 1;
+  }
+  .logo-folyo {
+    @apply text-marka;
+    transition: color 120ms ease;
+  }
+  /* Linkben állva a `Folyó` rész mélyül el — a jel soha nem változik. */
+  a:hover .logo-folyo {
+    color: var(--color-marka-melyebb);
+  }
+  .logo-link:focus-visible {
+    outline: 2px solid var(--color-marka);
+    outline-offset: 2px;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+           text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+  .nav-item-aktiv {
+    @apply bg-blue-50 text-blue-800 hover:bg-blue-50 hover:text-blue-800;
+  }
+  .nav-szekcio {
+    @apply px-3 pt-5 pb-1 text-xs font-semibold tracking-wider text-slate-400 uppercase;
+  }
+
+  /*
+    A kiolvasott mező négy állapota. A kiemelés a bajt jelöli, nem a rendben
+    lévőt — ezért a „biztos" szándékosan a szokásos szürke keret: egy képernyő,
+    ahol minden ki van emelve, semmit nem emel ki.
+
+    A keret színe és a bal szegély együtt jelez: színvakság mellett is látszik a
+    különbség, mert a bajos mező vastagabb bal szegélyt kap és külön szöveges
+    indoklást.
+
+    A „nincs adat" szaggatott: nem megnyugtató állapot, csak néma — a modell nem
+    nyilatkozott a mezőről. Ez nem ugyanaz, mint amiért jótállt.
+  */
+  .mezo-biztos {
+    @apply border-slate-300;
+  }
+  .mezo-nincs-adat {
+    @apply border-dashed border-slate-400;
+  }
+  .mezo-bizonytalan {
+    @apply border-amber-400 border-l-4 bg-amber-50/40;
+  }
+  .mezo-gyanus {
+    @apply border-red-500 border-l-4 bg-red-50/40;
+  }
+}

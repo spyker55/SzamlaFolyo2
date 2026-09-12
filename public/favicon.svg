@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 56 56">
+  <title>SzámlaFolyó</title>
+  <!--
+    A jel egyszerűsített kiadása kis méretre: a dokumentum közelebb ér a
+    kerethez, és egy hullám marad, vastagabb vonallal. A fejlécben álló,
+    kétvonalas változat 16-20 pixelen összemosódna.
+    A geometria a designcsomagból való (design/logo/favicon-3a.svg).
+  -->
+  <rect width="56" height="56" fill="#be6846"/>
+  <path d="M12 9 H34 L44 19 V47 H12 Z" fill="#f5ece2"/>
+  <path d="M17 31 C22 25, 27 37, 32 31 S39 25, 39 31" stroke="#be6846" stroke-width="6" fill="none"/>
+</svg>
