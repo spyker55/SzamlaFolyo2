@@ -39,7 +39,10 @@ export function ertelmez(nyers: string | number | null | undefined): OsszegEredm
   // Minden szóközfajta csoportosító jel: a sima szóköz, a nem törhető szóköz
   // (U+00A0) és a keskeny nem törhető szóköz (U+202F) is — az Intl formázók
   // maguk is ez utóbbiakat írják ki.
-  let s = nyers.trim().replace(/[\s  ]+/gu, '');
+  // A nem törhető szóközök **escape-elve**, nem beleírva: egy láthatatlan
+  // karakter a regexben némán tűnik el egy másolásnál, és utána a `1 612 900`
+  // értelmezhetetlen lesz — anélkül, hogy bármi látszana a diffen.
+  let s = nyers.trim().replace(/[\s\u00A0\u202F]+/gu, '');
 
   if (s === '') {
     return { ok: true, ertek: null };

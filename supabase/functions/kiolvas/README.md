@@ -22,13 +22,40 @@ feldolgozását, és a költséget is más cég keretére terhelné.
 
 ## Telepítés
 
+Két út van, és **ugyanaz a kód megy fel mindkettőn**.
+
+### CLI-vel, ha van
+
 ```bash
 npx supabase functions deploy kiolvas --project-ref mwveyzyxupgccqdnbpwe
 ```
 
-A `deno.json` az import-térkép: ugyanaz a bare specifier (`fast-xml-parser`,
-`unpdf`, `@supabase/supabase-js`) működik Deno alatt és a Vitest-tesztekben is,
-így a `shared/uzleti/` egyetlen példányban létezik.
+Ez a huszonnégy forrásfájlt küldi fel úgy, ahogy van. A `deno.json` az
+import-térkép: ugyanaz a bare specifier (`fast-xml-parser`, `unpdf`,
+`@supabase/supabase-js`) működik Deno alatt és a Vitest-tesztekben is, így a
+`shared/uzleti/` egyetlen példányban létezik.
+
+### Csomaggal, ha a CLI nem érhető el
+
+A `kiolvas.bundle.js` **generált** artefakt — a `csomagol.mjs` állítja elő:
+
+```bash
+npm run kiolvas:csomag
+```
+
+Ez akkor kell, ha a telepítés olyan úton megy, ahol a fájlok a hívásba
+ágyazva utaznak (például a Supabase MCP `deploy_edge_function` eszközével):
+huszonnégy fájl nem fér el egy hívásban, egy csomag igen. A belépési pont
+ilyenkor `supabase/functions/kiolvas/kiolvas.bundle.js`, az import-térkép
+változatlanul `supabase/functions/deno.json`.
+
+**A csomagot soha ne szerkeszd kézzel.** Ami benne változik, az a forrásban
+változzon, és futtasd újra a scriptet — a `csomagol.mjs` fejlécében ott az
+összes indok, a minifikálástól az ASCII-tisztaságig.
+
+> A `verify_jwt` **maradjon bekapcsolva**. Mindkét valódi hívó érvényes JWT-t
+> küld (a böngésző a felhasználóét, a cron a `service_role` kulcsot), a függvény
+> pedig ezen **túl** is ellenőriz — lásd a két hívási módot fent.
 
 ### Titkok
 
@@ -52,6 +79,15 @@ olvasható:
 select vault.create_secret('https://mwveyzyxupgccqdnbpwe.supabase.co', 'projekt_url');
 select vault.create_secret('<service_role kulcs>', 'service_role_kulcs');
 ```
+
+A `projekt_url` **nem titok** — az a nyilvános végpont; azért van mégis a
+Vaultban, mert a `sort_hajt()` egy helyről olvassa mindkettőt, és a `cron.job`
+táblában így semmi nem áll. A `service_role` kulcs viszont megkerüli az RLS-t:
+azt **az SQL-editorban** érdemes beírni, ne egy chatablakon vagy egy
+eszköznaplón át.
+
+Jelenleg a `projekt_url` megvan, a `service_role_kulcs` **nincs** — vagyis a
+cron él, de nem csinál semmit.
 
 Amíg ezek nincsenek meg, a `belso.sort_hajt()` **némán nem csinál semmit** —
 egy hiányzó beállítás nem tölti meg percenként a naplót. Hogy megvannak-e:
