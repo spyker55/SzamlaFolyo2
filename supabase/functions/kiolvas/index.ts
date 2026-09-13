@@ -5,6 +5,7 @@ import { bizonylatOldalszama, feldolgoz as lancotFuttat } from '../../../shared/
 import { kiolvas, KiolvasasHiba } from '../../../shared/uzleti/openrouter.ts';
 import { ertelmez as xmlErtelmez } from '../../../shared/uzleti/xml/xmlKiolvaso.ts';
 import { xmltFelolvas, XmlHiba } from '../../../shared/uzleti/xml/parser.ts';
+import { szolgaltatasSzerep } from '../../../shared/uzleti/token.ts';
 
 import { felderit, igenyelModellt, naplo } from './felderites.ts';
 import { elozmenyt } from './elozmeny.ts';
@@ -102,10 +103,32 @@ async function lathatja(url: string, fejlec: string, dokumentumId: string): Prom
   return data !== null;
 }
 
-/** A `service_role` kulccsal érkezett-e a hívás. */
+/**
+ * Szolgáltatás-jogosultsággal érkezett-e a hívás.
+ *
+ * Két úton is igent mondhat, és ennek oka van. Az első a sztring-egyezés a
+ * függvény saját `SUPABASE_SERVICE_ROLE_KEY`-ével — ez a legszigorúbb, és
+ * amikor teljesül, nincs mit mérlegelni.
+ *
+ * ⚠️ **De önmagában elbukott élesben.** A projekt új formátumú API-kulcsokat is
+ * használ, és a függvénybe injektált érték nem ugyanaz a betűsor, mint a
+ * dashboardon álló, örökölt `service_role` JWT — pedig a kettő ugyanazt a
+ * jogosultságot jelenti. A cron percenként 403-at kapott, holott a helyes
+ * kulccsal hívott.
+ *
+ * A második út ezért a token **`role` állítása**. Ez nem enged be senkit, akit
+ * a platform nem hitelesített: a függvény `verify_jwt: true`-val fut, és ezt
+ * méréssel ellenőriztük — egy `service_role` szerepű, de hamis aláírású token
+ * 401-et kap, és el sem jut idáig.
+ */
 function szolgaltatasKulcs(fejlec: string): boolean {
   const kulcs = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  return kulcs !== '' && fejlec === `Bearer ${kulcs}`;
+
+  if (kulcs !== '' && fejlec === `Bearer ${kulcs}`) {
+    return true;
+  }
+
+  return szolgaltatasSzerep(fejlec);
 }
 
 /** A sorban álló és az elakadt dokumentumok azonosítói. */
