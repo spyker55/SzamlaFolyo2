@@ -11,7 +11,7 @@ import { Ellenorzes } from './kepernyok/Ellenorzes.tsx';
 import { Tetelek } from './kepernyok/Tetelek.tsx';
 import { Export } from './kepernyok/Export.tsx';
 import { Archivum } from './kepernyok/Archivum.tsx';
-import { Nyitolap } from './kepernyok/Nyitolap.tsx';
+import { Nyitolap } from './oldalak/Nyitolap.tsx';
 import { Beallitasok } from './kepernyok/Beallitasok.tsx';
 import { Aszf } from './oldalak/jogi/Aszf.tsx';
 import { Adatkezeles } from './oldalak/jogi/Adatkezeles.tsx';
