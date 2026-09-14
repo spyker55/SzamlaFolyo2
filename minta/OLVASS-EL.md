@@ -60,15 +60,34 @@ A magyar számlázóprogramok **kétféle** XML-t adnak ki, és a kettő nem
 ugyanaz. Ezt nem feltételezzük, hanem megmértük: az első valódi importunk
 (Billingo-számla) a régebbi, APEH-alakú volt.
 
-| Alak | Gyökér | Névtér | Értelmező |
-|---|---|---|---|
-| APEH 2005 „számla adatexport" | `szamla` | `http://www.apeh.hu/2005/szamla` | `xml/apeh` |
-| NAV Online Számla 3.0 | `InvoiceData` / `Invoices` | `http://schemas.nav.gov.hu/OSA/3.0/data` | `xml/nav` |
+| Alak | Gyökér | Névtér | Értelmező | Mérve |
+|---|---|---|---|---|
+| APEH 2005 „számla adatexport" | `szamla` | `http://www.apeh.hu/2005/szamla` | `xml/apeh` | **valódi fájlon** |
+| NAV Online Számla 3.0 | `InvoiceData` / `Invoices` | `http://schemas.nav.gov.hu/OSA/3.0/data` | `xml/nav` | csak sémán |
 
 > Az Online Számla **portáljáról** bizonylatonkénti XML nem tölthető le: a
 > „Lista export" csak `.xlsx`-et és `.csv`-t kínál, és az nem bizonylat, hanem
 > egy adattábla sok bizonylatról. A NAV-sémájú XML a *számlázóprogramoktól*
 > jön, az adatszolgáltatás alakjaként.
+
+### ⚠️ A két értelmező nem egyformán megalapozott
+
+Ezt a különbséget nem hallgatjuk el, mert a kettő **nem ugyanannyira
+bizonyított**:
+
+- Az **`xml/apeh`** valódi fájlon mérve áll: egy Billingo-számla, ami
+  ténylegesen átment a rendszeren, és korábban 0,005605 USD-be került. Az
+  értelmező mind a tizenöt mezőt ugyanúgy olvassa ki, mint a modell, nulla
+  bukott validátorral és nulla forintból.
+- Az **`xml/nav`** a NAV saját XSD-iből és publikált példafájljaiból épült, és
+  a saját fixtúráin meg a minifikált csomagon átment — de **valódi, gyártótól
+  származó NAV-sémájú fájlt még nem láttunk**. Sem az Online Számla portál,
+  sem a mért számlázóprogram nem ad ilyet: ott egyetlen XML-letöltés van, és
+  az az APEH-alak.
+
+Vagyis az egyik **mérés**, a másik **felkészülés**. Ha egyszer valódi
+NAV-sémájú fájl kerül a kezünkbe, azt ugyanezen a láncon végig kell mérni,
+mielőtt bízunk benne.
 
 ## Az APEH 2005 alak
 
