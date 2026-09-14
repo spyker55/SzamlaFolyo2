@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Szabályos UBL 2.1 bejövő számla, két ÁFA-kulccsal.
+
+  Ez az alapeset: a rendszernek modellhívás NÉLKÜL kell végigvinnie
+  (`forras_jelleg: strukturalt_xml`), tehát nulla forintból.
+
+  Az összegek szándékosan konzisztensek:
+    27%:  120 000 nettó +  32 400 ÁFA
+     5%:   40 000 nettó +   2 000 ÁFA
+    ---------------------------------
+          160 000 nettó +  34 400 ÁFA = 194 400 bruttó
+-->
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <CustomizationID>urn:cen.eu:en16931:2017</CustomizationID>
+  <ID>SZ-2026/0917</ID>
+  <IssueDate>2026-09-08</IssueDate>
+  <DueDate>2026-09-22</DueDate>
+  <InvoiceTypeCode>380</InvoiceTypeCode>
+  <DocumentCurrencyCode>HUF</DocumentCurrencyCode>
+
+  <AccountingSupplierParty>
+    <Party>
+      <PartyName>
+        <Name>Bencze és Társa Kft.</Name>
+      </PartyName>
+      <PostalAddress>
+        <StreetName>Szegfű utca 14.</StreetName>
+        <CityName>Debrecen</CityName>
+        <PostalZone>4026</PostalZone>
+        <Country><IdentificationCode>HU</IdentificationCode></Country>
+      </PostalAddress>
+      <PartyTaxScheme>
+        <CompanyID>24125004-2-13</CompanyID>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </PartyTaxScheme>
+      <PartyLegalEntity>
+        <RegistrationName>Bencze és Társa Kereskedelmi Korlátolt Felelősségű Társaság</RegistrationName>
+      </PartyLegalEntity>
+    </Party>
+  </AccountingSupplierParty>
+
+  <AccountingCustomerParty>
+    <Party>
+      <PartyTaxScheme>
+        <CompanyID>18990212-2-41</CompanyID>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </PartyTaxScheme>
+      <PartyLegalEntity>
+        <RegistrationName>Próba Ügyfél Korlátolt Felelősségű Társaság</RegistrationName>
+      </PartyLegalEntity>
+    </Party>
+  </AccountingCustomerParty>
+
+  <Delivery>
+    <ActualDeliveryDate>2026-08-31</ActualDeliveryDate>
+  </Delivery>
+
+  <PaymentMeans>
+    <PaymentMeansCode>30</PaymentMeansCode>
+  </PaymentMeans>
+
+  <PaymentTerms>
+    <ID>FIZ-14NAP</ID>
+    <Note>Fizetési határidő 14 nap</Note>
+  </PaymentTerms>
+
+  <TaxTotal>
+    <TaxAmount currencyID="HUF">34400.00</TaxAmount>
+    <TaxSubtotal>
+      <TaxableAmount currencyID="HUF">120000.00</TaxableAmount>
+      <TaxAmount currencyID="HUF">32400.00</TaxAmount>
+      <TaxCategory>
+        <ID>S</ID>
+        <Percent>27</Percent>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </TaxCategory>
+    </TaxSubtotal>
+    <TaxSubtotal>
+      <TaxableAmount currencyID="HUF">40000.00</TaxableAmount>
+      <TaxAmount currencyID="HUF">2000.00</TaxAmount>
+      <TaxCategory>
+        <ID>S</ID>
+        <Percent>5</Percent>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </TaxCategory>
+    </TaxSubtotal>
+  </TaxTotal>
+
+  <LegalMonetaryTotal>
+    <LineExtensionAmount currencyID="HUF">160000.00</LineExtensionAmount>
+    <TaxExclusiveAmount currencyID="HUF">160000.00</TaxExclusiveAmount>
+    <TaxInclusiveAmount currencyID="HUF">194400.00</TaxInclusiveAmount>
+    <PayableAmount currencyID="HUF">194400.00</PayableAmount>
+  </LegalMonetaryTotal>
+
+  <InvoiceLine>
+    <ID>1</ID>
+    <InvoicedQuantity unitCode="HUR">12</InvoicedQuantity>
+    <LineExtensionAmount currencyID="HUF">120000.00</LineExtensionAmount>
+    <Item>
+      <Name>Könyvelési szolgáltatás, 2026. augusztus</Name>
+      <ClassifiedTaxCategory>
+        <ID>S</ID>
+        <Percent>27</Percent>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </ClassifiedTaxCategory>
+    </Item>
+    <Price><PriceAmount currencyID="HUF">10000.00</PriceAmount></Price>
+  </InvoiceLine>
+
+  <InvoiceLine>
+    <ID>2</ID>
+    <InvoicedQuantity unitCode="H87">40</InvoicedQuantity>
+    <LineExtensionAmount currencyID="HUF">40000.00</LineExtensionAmount>
+    <Item>
+      <Name>Nyomtatott bizonylattömb</Name>
+      <ClassifiedTaxCategory>
+        <ID>S</ID>
+        <Percent>5</Percent>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </ClassifiedTaxCategory>
+    </Item>
+    <Price><PriceAmount currencyID="HUF">1000.00</PriceAmount></Price>
+  </InvoiceLine>
+</Invoice>

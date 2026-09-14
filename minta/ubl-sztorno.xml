@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sztornó (jóváíró) számla: az `ubl-szabalyos.xml` (SZ-2026/0917) visszavonása.
+
+  Két dolgot mér egyszerre:
+
+  1. **A gyökérnév dönt, nem a típuskód.** Ez a fájl `CreditNote`, és
+     szándékosan NINCS benne típuskód — a `shared/uzleti/xml/ubl.ts` ettől
+     függetlenül sztornóként ismeri fel. Egy sztornó, amit sima számlának
+     könyvelünk le, kétszer viszi el ugyanazt az összeget.
+
+  2. **A mínuszjel túléli-e az exportot.** A CSV-író képlet-injekció elleni
+     védelme szándékosan nem nyúl a számokhoz (`shared/uzleti/export/csv.ts`):
+     ha a `-` elé aposztróf kerülne, a sztornó előjele eltűnne, és a főkönyv
+     nem egyezne. Ez pontosan az a hely, ahol ez csendben visszafejlődhet,
+     ezért kell rá minta.
+
+  Az összegek az eredeti ellentettjei:
+      -160 000 nettó + -34 400 ÁFA = -194 400 bruttó
+-->
+<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2">
+  <ID>SZ-2026/0917-S</ID>
+  <IssueDate>2026-09-11</IssueDate>
+  <DocumentCurrencyCode>HUF</DocumentCurrencyCode>
+
+  <BillingReference>
+    <InvoiceDocumentReference>
+      <ID>SZ-2026/0917</ID>
+      <IssueDate>2026-09-08</IssueDate>
+    </InvoiceDocumentReference>
+  </BillingReference>
+
+  <AccountingSupplierParty>
+    <Party>
+      <PartyName>
+        <Name>Bencze és Társa Kft.</Name>
+      </PartyName>
+      <PartyLegalEntity>
+        <RegistrationName>Bencze és Társa Kereskedelmi Korlátolt Felelősségű Társaság</RegistrationName>
+      </PartyLegalEntity>
+      <PartyTaxScheme>
+        <CompanyID>24125004-2-13</CompanyID>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </PartyTaxScheme>
+    </Party>
+  </AccountingSupplierParty>
+
+  <AccountingCustomerParty>
+    <Party>
+      <PartyLegalEntity>
+        <RegistrationName>Próba Ügyfél Korlátolt Felelősségű Társaság</RegistrationName>
+      </PartyLegalEntity>
+      <PartyTaxScheme>
+        <CompanyID>18990212-2-41</CompanyID>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </PartyTaxScheme>
+    </Party>
+  </AccountingCustomerParty>
+
+  <Delivery>
+    <ActualDeliveryDate>2026-08-31</ActualDeliveryDate>
+  </Delivery>
+
+  <PaymentMeans>
+    <PaymentMeansCode>30</PaymentMeansCode>
+  </PaymentMeans>
+
+  <TaxTotal>
+    <TaxAmount currencyID="HUF">-34400.00</TaxAmount>
+    <TaxSubtotal>
+      <TaxableAmount currencyID="HUF">-120000.00</TaxableAmount>
+      <TaxAmount currencyID="HUF">-32400.00</TaxAmount>
+      <TaxCategory>
+        <ID>S</ID>
+        <Percent>27</Percent>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </TaxCategory>
+    </TaxSubtotal>
+    <TaxSubtotal>
+      <TaxableAmount currencyID="HUF">-40000.00</TaxableAmount>
+      <TaxAmount currencyID="HUF">-2000.00</TaxAmount>
+      <TaxCategory>
+        <ID>S</ID>
+        <Percent>5</Percent>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </TaxCategory>
+    </TaxSubtotal>
+  </TaxTotal>
+
+  <LegalMonetaryTotal>
+    <TaxExclusiveAmount currencyID="HUF">-160000.00</TaxExclusiveAmount>
+    <TaxInclusiveAmount currencyID="HUF">-194400.00</TaxInclusiveAmount>
+    <PayableAmount currencyID="HUF">-194400.00</PayableAmount>
+  </LegalMonetaryTotal>
+</CreditNote>

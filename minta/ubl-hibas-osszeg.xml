@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SZÁNDÉKOSAN ELRONTOTT minta. Ne javítsd ki: pontosan attól hasznos.
+
+  A hiba egyetlen helyen van, és mérhető:
+
+      nettó   100 000
+      ÁFA      27 000
+      -----------------
+      összeg  127 000   <- ennyinek KELLENE lennie
+      bruttó  130 000   <- ez áll a fájlban
+
+  Az eltérés 3 000 Ft, a `shared/uzleti/validatorok.ts` tűrése ±1 egység
+  (a kerekítés miatt van, nem ekkora hibákra). Ezért az Ellenőrzés képernyőn
+  meg KELL jelennie a bukott validátornak a három összeg-mezőn.
+
+  Miért kell ilyen minta: egy rendszerről, amit csak a jó eseten próbáltunk ki,
+  annyit tudunk, hogy a jó eset jó. Azt nem, hogy a rosszat elkapja-e.
+
+  Minden más mező szabályos — így ami pirosan világít, az biztosan ez.
+-->
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <ID>SZ-2026/1042</ID>
+  <IssueDate>2026-09-10</IssueDate>
+  <DueDate>2026-09-24</DueDate>
+  <InvoiceTypeCode>380</InvoiceTypeCode>
+  <DocumentCurrencyCode>HUF</DocumentCurrencyCode>
+
+  <AccountingSupplierParty>
+    <Party>
+      <PartyLegalEntity>
+        <RegistrationName>Elrontott Összeg Kft.</RegistrationName>
+      </PartyLegalEntity>
+      <PartyTaxScheme>
+        <CompanyID>10773381-2-44</CompanyID>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </PartyTaxScheme>
+    </Party>
+  </AccountingSupplierParty>
+
+  <AccountingCustomerParty>
+    <Party>
+      <PartyLegalEntity>
+        <RegistrationName>Próba Ügyfél Kft.</RegistrationName>
+      </PartyLegalEntity>
+      <PartyTaxScheme>
+        <CompanyID>18990212-2-41</CompanyID>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </PartyTaxScheme>
+    </Party>
+  </AccountingCustomerParty>
+
+  <Delivery>
+    <ActualDeliveryDate>2026-09-10</ActualDeliveryDate>
+  </Delivery>
+
+  <PaymentMeans>
+    <PaymentMeansCode>30</PaymentMeansCode>
+  </PaymentMeans>
+
+  <TaxTotal>
+    <TaxAmount currencyID="HUF">27000.00</TaxAmount>
+    <TaxSubtotal>
+      <TaxableAmount currencyID="HUF">100000.00</TaxableAmount>
+      <TaxAmount currencyID="HUF">27000.00</TaxAmount>
+      <TaxCategory>
+        <ID>S</ID>
+        <Percent>27</Percent>
+        <TaxScheme><ID>VAT</ID></TaxScheme>
+      </TaxCategory>
+    </TaxSubtotal>
+  </TaxTotal>
+
+  <LegalMonetaryTotal>
+    <TaxExclusiveAmount currencyID="HUF">100000.00</TaxExclusiveAmount>
+    <!-- Itt a hiba: 100 000 + 27 000 = 127 000, nem 130 000. -->
+    <TaxInclusiveAmount currencyID="HUF">130000.00</TaxInclusiveAmount>
+    <PayableAmount currencyID="HUF">130000.00</PayableAmount>
+  </LegalMonetaryTotal>
+</Invoice>
