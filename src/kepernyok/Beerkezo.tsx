@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase.ts';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
 import { feltolt } from '../lib/feltoltes.ts';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
+import { keret as keretetKer, type Keret } from '../lib/keret.ts';
+import { keretMondat } from '@uzleti/keret.ts';
 import { allapotCimke, tipusCimke, type DokumentumAllapot } from '@uzleti/enumok.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { datumIdo } from '@uzleti/ido.ts';
@@ -45,6 +47,7 @@ export function Beerkezo() {
   const [hibak, setHibak] = useState<string[]>([]);
   const [feltoltFolyik, setFeltoltFolyik] = useState(false);
   const [huzas, setHuzas] = useState(false);
+  const [keret, setKeret] = useState<Keret | null>(null);
   const bemenetRef = useRef<HTMLInputElement>(null);
 
   const betoltes = useCallback(async () => {
@@ -74,6 +77,11 @@ export function Beerkezo() {
   useEffect(() => {
     void betoltes();
   }, [betoltes]);
+
+  // A keret a sorral együtt frissül: ami most futott le, az már fogyasztott.
+  useEffect(() => {
+    void keretetKer().then(setKeret);
+  }, [sorok.length]);
 
   // Amíg van feldolgozandó, frissítünk. A sort már nem a böngésző hajtja — azt
   // az Edge Function és a pg_cron intézi —, de a felhasználónak látnia kell,
@@ -119,6 +127,25 @@ export function Beerkezo() {
           Húzd ide a bizonylatokat, vagy válaszd ki őket a gombbal.
         </p>
       </div>
+
+      {/*
+        A keret állapota **a feltöltő fölött** áll, nem a Beállítások mélyén:
+        itt dől el, hogy érdemes-e nekikezdeni. Amit itt írunk ki, az
+        udvariasság — a valódi fék a `kiolvas`-ban van, mert a költség ott
+        keletkezik, és ezt a képernyőt meg lehet kerülni egy API-hívással.
+      */}
+      {keret !== null && !keret.mehet && (
+        <div className="alert alert-figyelem mb-4">
+          <strong>{keretMondat(keret)}</strong>{' '}
+          <Link to="/beallitasok" className="font-medium underline">
+            Beállítások
+          </Link>
+        </div>
+      )}
+
+      {keret !== null && keret.mehet && keret.maradek <= 10 && (
+        <div className="alert alert-figyelem mb-4">{keretMondat(keret)}</div>
+      )}
 
       {/*
         Megtekintőnek nincs itt dolga: a szerver úgyis visszautasítaná (az RLS

@@ -13,6 +13,7 @@ import { Tetelek } from './kepernyok/Tetelek.tsx';
 import { Export } from './kepernyok/Export.tsx';
 import { Archivum } from './kepernyok/Archivum.tsx';
 import { Nyitolap } from './kepernyok/Nyitolap.tsx';
+import { Beallitasok } from './kepernyok/Beallitasok.tsx';
 
 /**
  * Az útvonaltábla.
@@ -135,7 +136,7 @@ export function App() {
             path="/beallitasok"
             element={
               <Ceggel>
-                <VazlatAlkalmazasban nev="Beállítások" />
+                <Beallitasok />
               </Ceggel>
             }
           />

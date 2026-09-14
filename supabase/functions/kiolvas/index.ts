@@ -6,6 +6,7 @@ import { kiolvas, KiolvasasHiba } from '../../../shared/uzleti/openrouter.ts';
 import { ertelmez as xmlErtelmez } from '../../../shared/uzleti/xml/xmlKiolvaso.ts';
 import { xmltFelolvas, XmlHiba } from '../../../shared/uzleti/xml/parser.ts';
 import { szolgaltatasSzerep } from '../../../shared/uzleti/token.ts';
+import { keretAllapot, type CegAllapot } from '../../../shared/uzleti/keret.ts';
 
 import { felderit, igenyelModellt, naplo } from './felderites.ts';
 import { elozmenyt } from './elozmeny.ts';
@@ -149,6 +150,18 @@ async function felvehetok(db: SupabaseClient, limit: number): Promise<string[]> 
 }
 
 async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string, string>> {
+  // A keretet a claim **elott** nezzuk meg, es ennek oka van: a claim megnoveli
+  // az `attempts` szamlalot, harom probalkozas utan pedig a bizonylat `hiba`
+  // allapotba kerul. Egy elfogyott keret viszont nem hiba, es nem is a
+  // bizonylattal van baj — ha itt fogyasztana probalkozast, a cron harom perc
+  // alatt vegleg elrontana minden varakozo iratot, mielott a felhasznalo
+  // csomagot valaszthatna.
+  const keret = await keretEllenoriz(db, id);
+
+  if (keret !== null) {
+    return { id, allapot: 'keret_elfogyott', hiba: keret };
+  }
+
   const dokumentum = await claim(db, id);
 
   if (dokumentum === null) {
@@ -186,6 +199,54 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
 
     return { id, allapot: ujra ? 'ujraprobalhato' : 'hiba', hiba: uzenet };
   }
+}
+
+/**
+ * Van-e meg keret ehhez a bizonylathoz.
+ *
+ * `null`, ha mehet; egyebkent a felhasznalonak szolo indok.
+ *
+ * # Miert itt all a fek, es nem a feltoltesnel
+ *
+ * Mert **itt keletkezik a koltseg**. Egy beszuras a `documents`-be nem kerul
+ * penzbe; a modellhivas igen. Ha a feltoltest tiltanank, egy kozvetlen
+ * API-hivassal meg lehetne kerulni — ezt a pontot viszont nem: minden
+ * kiolvasas ezen a fuggvenyen megy at, a bongeszobol es a cronbol egyarant.
+ *
+ * # Miert ugyanaz a modul dont, mint a bongeszoben
+ *
+ * A `keretAllapot` a `shared/uzleti/keret.ts`-bol jon, es a nyersanyagot a
+ * `keret_adatok()` SQL-fuggveny adja — ugyanaz a ketto, amit a Beallitasok
+ * kepernyo hasznal. Ha a szerver es a kliens kulon szamolna, elobb-utobb ket
+ * kulonbozo valaszt adnanak, es a megengedobb mindig AI-koltseget jelent.
+ */
+async function keretEllenoriz(db: SupabaseClient, dokumentumId: string): Promise<string | null> {
+  const { data: sor } = await db
+    .from('documents')
+    .select('company_id')
+    .eq('id', dokumentumId)
+    .maybeSingle();
+
+  const cegId = sor?.company_id as string | undefined;
+
+  if (cegId === undefined) {
+    // Nincs ilyen sor, vagy nincs cege. A claim ugyis kihagyja majd.
+    return null;
+  }
+
+  const { data } = await db.rpc('keret_adatok', { ceg_id: cegId });
+
+  if (data === null || data === undefined) {
+    // Nem tudjuk megmondani. Ilyenkor **atengedjuk**: egy meghiusult
+    // keretlekerdezes miatt ne alljon meg a feldolgozas. A kar korlatos (egy
+    // bizonylat), a forditott iranyu tevedes viszont az egesz sort megallitana.
+    return null;
+  }
+
+  const nyers = data as unknown as CegAllapot & { felhasznalt: number };
+  const allapot = keretAllapot(nyers, nyers.felhasznalt);
+
+  return allapot.mehet ? null : (allapot.indok ?? 'Elfogyott a kereted.');
 }
 
 /**
