@@ -20,6 +20,7 @@ import { szabaly } from '@uzleti/kredit.ts';
 import { keretMondat } from '@uzleti/keret.ts';
 import { SZEREPEK, szerepCimke, type Szerep } from '@uzleti/enumok.ts';
 import { datum } from '@uzleti/ido.ts';
+import { formaz } from '@uzleti/osszeg.ts';
 
 /**
  * Beállítások.
@@ -255,7 +256,7 @@ export function Beallitasok() {
               void ment(
                 () => tulhasznalatotMent(ceg.id, be, ceg.overage_limit_ft),
                 be
-                  ? `Túlhasználat engedélyezve, ${(ceg.overage_limit_ft ?? szamlafolyo.tulhasznalat.alapPlafonFt).toLocaleString('hu-HU')} Ft-os plafonnal.`
+                  ? `Túlhasználat engedélyezve, ${formaz(ceg.overage_limit_ft ?? szamlafolyo.tulhasznalat.alapPlafonFt, 'Ft')}-os plafonnal.`
                   : 'Túlhasználat kikapcsolva. A keret ezentúl megállít.',
               )
             }

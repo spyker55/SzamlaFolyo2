@@ -1,7 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth.tsx';
 import { Belepve, Ceggel, Vendeg } from './komponensek/Vedett.tsx';
-import { LogoSor } from './komponensek/Logo.tsx';
 import { AppElrendezes } from './komponensek/Elrendezes.tsx';
 import { Bejelentkezes } from './kepernyok/auth/Bejelentkezes.tsx';
 import { Regisztracio } from './kepernyok/auth/Regisztracio.tsx';
@@ -14,6 +13,9 @@ import { Export } from './kepernyok/Export.tsx';
 import { Archivum } from './kepernyok/Archivum.tsx';
 import { Nyitolap } from './kepernyok/Nyitolap.tsx';
 import { Beallitasok } from './kepernyok/Beallitasok.tsx';
+import { Aszf } from './oldalak/jogi/Aszf.tsx';
+import { Adatkezeles } from './oldalak/jogi/Adatkezeles.tsx';
+import { Impresszum } from './oldalak/jogi/Impresszum.tsx';
 
 /**
  * Az útvonaltábla.
@@ -41,9 +43,9 @@ export function App() {
         <Routes>
           {/* Nyilvános */}
           <Route path="/" element={<Kezdolap />} />
-          <Route path="/aszf" element={<Vazlat nev="ÁSZF" />} />
-          <Route path="/adatkezeles" element={<Vazlat nev="Adatkezelési tájékoztató" />} />
-          <Route path="/impresszum" element={<Vazlat nev="Impresszum" />} />
+          <Route path="/aszf" element={<Aszf />} />
+          <Route path="/adatkezeles" element={<Adatkezeles />} />
+          <Route path="/impresszum" element={<Impresszum />} />
 
           {/* Csak kilépve */}
           <Route
@@ -170,19 +172,6 @@ function Kezdolap() {
  * logó ugyanúgy **visszavisz a főoldalra**, mint az `AuthElrendezes`-ben. Egy
  * félkész oldalról is legyen kiút.
  */
-function Vazlat({ nev }: { nev: string }) {
-  return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 px-6 py-12">
-      <Link to="/" className="logo-link self-start">
-        <LogoSor jel="h-9 w-9" szoveg="text-2xl" />
-      </Link>
-      <div className="card card-pad">
-        <h1 className="text-lg font-semibold text-slate-900">{nev}</h1>
-        <p className="mt-2 text-sm text-slate-600">Ez az oldal még nem készült el.</p>
-      </div>
-    </div>
-  );
-}
 
 /** Ugyanez, de a belépett felület elrendezésében. */
 function VazlatAlkalmazasban({ nev }: { nev: string }) {
