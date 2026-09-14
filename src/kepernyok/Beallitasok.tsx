@@ -25,10 +25,15 @@ import { datum } from '@uzleti/ido.ts';
  * Beállítások.
  *
  * Négy dolog van itt, és mind a négy **következménnyel jár** — ezért mindegyik
- * mellett ott áll, hogy mi történik, ha átbillented. Egy kapcsoló, aminek a
- * hatását el kell képzelni, rosszabb, mint ha nem is lenne ott.
+ * mellett ott áll, hogy mi történik. Egy beállítás, aminek a hatását el kell
+ * képzelni, rosszabb, mint ha nem is lenne ott.
  *
- * A mentés **azonnali**, nincs „Mentés" gomb. Ez négy független kapcsolónál a
+ * Ezért lett a két kétállású beállításból **választás két gombbal**, nem
+ * jelölőnégyzet: egy kérdésre („Mi történjen, ha elfogy a kereted?") a válasz
+ * ne egyetlen négyzet legyen, amiből a másik ágat ki kell találni. Az
+ * indoklás a `Valasztas`-nál áll.
+ *
+ * A mentés **azonnali**, nincs „Mentés" gomb. Ez négy független beállításnál a
  * helyes minta: egy gomb azt ígérné, hogy a négy változtatás összetartozik.
  *
  * Aki nem tulajdonos, az mindent **lát**, de nem állít. Azért lát, mert a
@@ -145,10 +150,19 @@ export function Beallitasok() {
           cim="Automatikus jóváhagyás"
           leiras="Ha egy bizonylat minden ellenőrzésen átmegy, ne várjon rád fölöslegesen."
         >
-          <Kapcsolo
+          <Valasztas
+            nev="auto-jovahagyas"
             be={ceg.auto_jovahagyas_be}
             tiltva={!admin}
-            cimke={ceg.auto_jovahagyas_be ? 'Bekapcsolva' : 'Kikapcsolva'}
+            ki_opcio={{
+              cimke: 'Minden bizonylatot én nézek át',
+              leiras: 'Semmi nem megy át magától, akkor sem, ha hibátlan.',
+            }}
+            be_opcio={{
+              cimke: 'Csak azt kapjam kézhez, amivel dolgom van',
+              leiras:
+                'Ami minden ellenőrzésen átment, magától jóváhagyásra kerül — jelvénnyel és indokkal.',
+            }}
             onValt={(be) =>
               void ment(
                 () => autoJovahagyastMent(ceg.id, be),
@@ -223,14 +237,20 @@ export function Beallitasok() {
           cim="Túlhasználat"
           leiras="Mi történjen, ha egy hónapban elfogy a kereted."
         >
-          <Kapcsolo
+          <Valasztas
+            nev="tulhasznalat"
             be={ceg.overage_enabled}
             tiltva={!admin}
-            cimke={
-              ceg.overage_enabled
-                ? 'Engedélyezve — a keret fölött is feldolgozunk'
-                : 'Kikapcsolva — a keret megállít'
-            }
+            ki_opcio={{
+              cimke: 'A keret állítson meg',
+              leiras:
+                'A hónap hátralévő részében nem dolgozunk fel több bizonylatot. A számlán nem ér meglepetés.',
+            }}
+            be_opcio={{
+              cimke: 'Menjen tovább, a plafonig',
+              leiras:
+                'A keret fölött is feldolgozunk, a lent megadott forintösszegig. Afölött megállunk.',
+            }}
             onValt={(be) =>
               void ment(
                 () => tulhasznalatotMent(ceg.id, be, ceg.overage_limit_ft),
@@ -430,28 +450,76 @@ function Kartya({
   );
 }
 
-function Kapcsolo({
+type Opcio = { cimke: string; leiras: string };
+
+/**
+ * Kétállású beállítás két választógombbal.
+ *
+ * # Miért nem jelölőnégyzet
+ *
+ * Mert az itt **önellentmondó** volt. A négyzet felirata az állapotot mondta
+ * („Kikapcsolva — a keret megállít"), tehát a bekapcsoláshoz egy „Kikapcsolva"
+ * feliratú dologra kellett kattintani. A kártyák fejléce ráadásul kérdést tesz
+ * fel („Mi történjen, ha elfogy a kereted?"), amire egy négyzet egyszerre csak
+ * az egyik választ mutatja — a másikat ki kellett találni.
+ *
+ * Két gombbal **mindkét kimenet látszik, a következményével együtt**, és a
+ * kiválasztott mindig megmondja, hol tartasz. Pénzt érintő döntésnél ez nem
+ * kozmetika.
+ *
+ * # A sorrend szabálya
+ *
+ * Elöl mindig az **óvatosabb** válasz áll (a rendszer kevesebbet tesz magától),
+ * mindkét kártyán ugyanúgy. Nem azért, mert az a jó válasz — hanem mert egy
+ * képernyőn belül a sorrendnek nem szabad kártyánként fordulnia.
+ *
+ * Új CSS nincs: az `app.css` `@layer components` blokkja szó szerint a régi
+ * rendszerből jött, és nem bővítjük egy űrlapelemért.
+ */
+function Valasztas({
+  nev,
   be,
-  cimke,
   tiltva,
+  ki_opcio,
+  be_opcio,
   onValt,
 }: {
+  /** A rádiócsoport neve — csoportonként egyedi, különben összeragadnak. */
+  nev: string;
   be: boolean;
-  cimke: string;
   tiltva: boolean;
+  ki_opcio: Opcio;
+  be_opcio: Opcio;
   onValt: (be: boolean) => void;
 }) {
+  const valaszok = [
+    { ertek: false, ...ki_opcio },
+    { ertek: true, ...be_opcio },
+  ];
+
+  // A `fieldset disabled` az összes belső mezőt letiltja — nem kell minden
+  // gombra külön kiírni.
   return (
-    <label className="flex cursor-pointer items-center gap-3">
-      <input
-        type="checkbox"
-        className="h-4 w-4 accent-slate-700"
-        checked={be}
-        disabled={tiltva}
-        onChange={(e) => onValt(e.target.checked)}
-      />
-      <span className="text-sm font-medium text-slate-800">{cimke}</span>
-    </label>
+    <fieldset className="space-y-3" disabled={tiltva}>
+      {valaszok.map((valasz) => (
+        <label
+          key={valasz.cimke}
+          className={`flex items-start gap-3 ${tiltva ? 'cursor-default' : 'cursor-pointer'}`}
+        >
+          <input
+            type="radio"
+            name={nev}
+            className="mt-1 h-4 w-4 accent-slate-700"
+            checked={be === valasz.ertek}
+            onChange={() => onValt(valasz.ertek)}
+          />
+          <span>
+            <span className="block text-sm font-medium text-slate-800">{valasz.cimke}</span>
+            <span className="block text-sm text-slate-500">{valasz.leiras}</span>
+          </span>
+        </label>
+      ))}
+    </fieldset>
   );
 }
 
