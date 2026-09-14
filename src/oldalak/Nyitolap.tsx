@@ -6,6 +6,7 @@ import { kapcsolatEmail, regisztracioNyitva } from '../lib/kornyezet.ts';
 import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
+import { tetejereUszik } from '../lib/gorgetes.ts';
 import { allapotCimke, tipusCimke } from '@uzleti/enumok.ts';
 
 /**
@@ -100,7 +101,25 @@ function Fejlec() {
   return (
     <header className="sticky top-0 z-50 border-b border-zsalya/20 bg-vaszon/90 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="logo-link">
+        {/*
+          A logó **link marad**, nem gomb: így a középső gombbal új lapon
+          nyitható, és a böngésző is helyesen mutatja, hova mutat. A kattintás
+          viszont külön kezelést kér, mert már a nyitólapon állunk — a
+          `<Link to="/">` ilyenkor nem vált útvonalat, tehát magától nem
+          történne semmi, a látogató pedig a lap alján maradna.
+        */}
+        <Link
+          to="/"
+          className="logo-link"
+          onClick={(e) => {
+            // Ctrl/Cmd/Shift/Alt + kattintás az új lapé — azt nem nyeljük el.
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+              return;
+            }
+            e.preventDefault();
+            tetejereUszik();
+          }}
+        >
           <LogoSor jel="h-10 w-10" szoveg="text-2xl" />
         </Link>
 

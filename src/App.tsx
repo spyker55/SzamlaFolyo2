@@ -1,5 +1,14 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigationType,
+} from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth.tsx';
+import { horgonyraUgrik, tetejereUgrik } from './lib/gorgetes.ts';
 import { Belepve, Ceggel, Vendeg } from './komponensek/Vedett.tsx';
 import { AppElrendezes } from './komponensek/Elrendezes.tsx';
 import { Bejelentkezes } from './kepernyok/auth/Bejelentkezes.tsx';
@@ -40,6 +49,7 @@ export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <GorgetesVisszaall />
         <Routes>
           {/* Nyilvános */}
           <Route path="/" element={<Kezdolap />} />
@@ -148,6 +158,60 @@ export function App() {
       </BrowserRouter>
     </AuthProvider>
   );
+}
+
+/**
+ * Útvonalváltáskor a lap tetejére.
+ *
+ * A React Router nem görget: a DOM cserélődik, a görgetés marad. Mérve ez azt
+ * jelentette, hogy a nyitólap aljáról az ÁSZF-re kattintva **4130 pixelnél**
+ * kötöttél ki, a szerződés közepén, és az ÁSZF-ből visszafelé ugyanígy.
+ *
+ * Két esetben viszont nem a lap teteje a helyes válasz:
+ *
+ * - **vissza/előre gomb** (`POP`): a böngésző oda állítja vissza a lapot, ahol
+ *   a látogató hagyta. Ezt felülírni nem javítás, hanem kártétel.
+ * - **horgonyos cím** (`/valami#szakasz`): ott a cél nem a lap teteje. A
+ *   böngészőre viszont ezt sem lehet bízni — a horgony elemét a React rajzolja
+ *   ki, mire a böngésző már feladta a keresést —, ezért a `horgonyraUgrik()`
+ *   végzi el.
+ */
+function GorgetesVisszaall() {
+  const { pathname, hash } = useLocation();
+  const navigacio = useNavigationType();
+  const elozoUtvonal = useRef<string | null>(null);
+
+  useEffect(() => {
+    const eloszor = elozoUtvonal.current === null;
+    const lapotValtottunk = elozoUtvonal.current !== pathname;
+    elozoUtvonal.current = pathname;
+
+    // ⚠️ **Csak lapváltáskor szólunk bele.** Ha ugyanazon a lapon csak a
+    // horgony változott — mert a látogató a fejléc „Árak" linkjére kattintott
+    // —, azt a böngésző már elvégezte, méghozzá finoman. Mérve: e nélkül a
+    // feltétel nélkül az effekt azonnali ugrásra írta felül a sima gördülést.
+    if (!eloszor && !lapotValtottunk) {
+      return;
+    }
+
+    // ⚠️ A horgony **a POP-vizsgálat előtt** áll, szintén mérésből: a legelső
+    // rendernél a navigáció típusa `POP` (a lap betöltése maga is az), tehát
+    // fordított sorrendben egy megosztott `/#arak` cím soha nem ugrott volna
+    // a helyére.
+    if (hash !== '') {
+      return horgonyraUgrik(hash);
+    }
+
+    // A vissza/előre gombnál a böngésző maga állítja vissza a pozíciót, oda,
+    // ahol a látogató az adott lapot hagyta. Azt felülírni kártétel.
+    if (navigacio === 'POP') {
+      return;
+    }
+
+    tetejereUgrik();
+  }, [pathname, hash, navigacio]);
+
+  return null;
 }
 
 /** A főoldal: belépve a Beérkező, egyébként a nyitólap. */

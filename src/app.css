@@ -132,6 +132,27 @@
     color: var(--color-slate-800);
   }
 
+  /*
+    Finom gördülés a horgonyokra.
+
+    Szándékosan CSS, nem JavaScript: a horgonyra ugrást így továbbra is a
+    böngésző intézi, vagyis megmarad a hash az URL-ben (a szakasz linkelhető),
+    működik a vissza gomb, és a billentyűzetes fókusz is oda kerül, ahová
+    görgettünk. Egy `preventDefault()`-os JS-megoldás mindhármat elveszítené,
+    cserébe semmit nem adna.
+
+    ⚠️ A `prefers-reduced-motion` mögött áll, és ez nem udvariassági gesztus:
+    vestibularis panasznál egy hosszú, sima görgetés valódi rosszullétet okoz.
+    Aki csökkentett mozgást kér, annál a lap ugrik — ugyanúgy, mint eddig.
+
+    A `scroll-margin-top` nem ide tartozik: azt a horgonyos szakaszok viselik
+    (`scroll-mt-20`), különben a ragadós fejléc alá érkeznének.
+  */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
 }
 
 @layer components {
