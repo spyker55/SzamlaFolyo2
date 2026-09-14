@@ -1,6 +1,7 @@
 import { supabase } from './supabase.ts';
 import { szamlafolyo } from '@config/szamlafolyo.ts';
 import type { Szerep } from '@uzleti/enumok.ts';
+import { naploz } from './naplo.ts';
 
 /**
  * A Beállítások adatműveletei.
@@ -50,6 +51,20 @@ async function cegetMent(
   if (error !== null) {
     return { ok: false, hiba: error.message };
   }
+
+  // Minden beállításváltás naplót ír. A megőrzési idő miatt kezdtük — az
+  // **adatvédelmi ígéret**, és egy ígéret változásának nyoma kell legyen —, de
+  // nincs okunk a többit kihagyni: mind a négy kapcsoló olyasmit állít, aminek
+  // később következménye lesz (automatikus jóváhagyás, túlhasználati plafon).
+  //
+  // A mezőket kiírjuk, mert egyik sem érzékeny: cégnév, napok száma,
+  // kapcsolóállás, forintplafon.
+  await naploz('beallitas.modosult', {
+    subject_type: 'company',
+    subject_id: cegId,
+    summary: Object.keys(mezok).join(', '),
+    context: mezok,
+  });
 
   return { ok: true };
 }

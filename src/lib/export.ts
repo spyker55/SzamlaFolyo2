@@ -7,6 +7,7 @@ import { egyediNev, zip, type ZipBejegyzes } from '@uzleti/export/zip.ts';
 import { bizonylatFajlnev, exportFajlnev } from '@uzleti/export/nevek.ts';
 import { ugyfele, ugyfelek, type UgyfelOpcio } from '@uzleti/export/ugyfel.ts';
 import { nap } from '@uzleti/ido.ts';
+import { naploz } from './naplo.ts';
 
 /**
  * Az export adatrétege.
@@ -189,7 +190,11 @@ export async function keszit(
   tetelek: readonly Tetel[],
   formatum: Formatum,
   szurok: Szurok,
-  ceg: { id: string; name: string; file_retention_days: number },
+  // A `file_retention_days` **szándékosan nincs itt**: a megőrzési időt a
+  // szerver mérlegeli (`belso.selejtezheto`), és ha ez a függvény kérné, azzal
+  // azt sugallná, hogy a döntés itt születik. Egyszer már itt született, és
+  // pont ez volt a baj.
+  ceg: { id: string; name: string },
 ): Promise<ExportEredmeny> {
   if (tetelek.length === 0) {
     return { ok: false, hiba: 'Ebben az időszakban nincs exportálható tétel.' };
@@ -238,7 +243,14 @@ export async function keszit(
   const eredmeny = data as { export_id: string; darab: number; torolheto: TorolhetoFajl[] };
 
   // 3. lépés: az eredeti fájlok.
-  const torolt = await eredetiketTorol(eredmeny.torolheto, ceg.file_retention_days);
+  //
+  // A türelmi időt **nem itt** mérlegeljük: a `torolheto` lista már csak azt
+  // tartalmazza, ami tényleg esedékes (`belso.selejtezheto`). Korábban itt állt
+  // egy `if (megorzesiNapok > 0) return 0`, és az volt a hiba forrása — a
+  // böngésző csak akkor fut, ha valaki épp nézi, tehát türelmi idő mellett a
+  // fájl **soha** nem törlődött. Most a szerver dönt, és a napi selejtező viszi
+  // el azt, ami később válik esedékessé.
+  const torolt = await eredetiketTorol(eredmeny.torolheto);
 
   return {
     ok: true,
@@ -282,18 +294,8 @@ export type TorolhetoFajl = { id: string; storage_path: string };
  * kép nem hívható vissza. Fordított sorrendben a mutató veszne el a bájtok
  * előtt, és a fájl kitakaríthatatlanul ott maradna.
  */
-async function eredetiketTorol(
-  torolheto: readonly TorolhetoFajl[],
-  megorzesiNapok: number,
-): Promise<number> {
+async function eredetiketTorol(torolheto: readonly TorolhetoFajl[]): Promise<number> {
   if (torolheto.length === 0) {
-    return 0;
-  }
-
-  // ⚠️ A türelmi idővel dolgozó cégeknél a fájl marad. Az időzített selejtezés
-  // (pg_cron → Edge Function) még nem él; jelenleg ide nem is juthat senki, mert
-  // az alapérték 0 nap, és a Beállítások képernyő még nem létezik.
-  if (megorzesiNapok > 0) {
     return 0;
   }
 
@@ -477,7 +479,25 @@ export async function visszahiv(dokumentumId: string): Promise<{ ok: boolean; hi
     .eq('id', dokumentumId)
     .eq('status', 'exportalva');
 
-  return error === null ? { ok: true } : { ok: false, hiba: error.message };
+  if (error !== null) {
+    return { ok: false, hiba: error.message };
+  }
+
+  // ⚠️ Enélkül a művelet **nyomtalan** volt, és ez bosszantóan félrevezetett:
+  // egy visszahívott tétel után az export `item_count`-ja nem egyezik a
+  // rámutató bizonylatok számával, ami adatromlásnak látszik. Nem az — de
+  // eddig semmi nem mondta meg, hogy mi történt.
+  //
+  // Ez egyben a selejtezésnek is számít: a türelmi idő a **legkésőbbi**
+  // exporttól ketyeg, tehát a visszahívás és az újraexportálás újraindítja az
+  // órát az eredeti fájlon.
+  await naploz('export.visszahivas', {
+    subject_type: 'document',
+    subject_id: dokumentumId,
+    summary: 'Tétel visszahívva a Tételek közé.',
+  });
+
+  return { ok: true };
 }
 
 /** Letöltés a böngészőben. Az `URL.revokeObjectURL` nélkül a blob a lapon ragad. */

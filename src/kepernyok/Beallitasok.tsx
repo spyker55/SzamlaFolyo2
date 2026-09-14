@@ -211,6 +211,12 @@ export function Beallitasok() {
             akkor indokolt, ha időnként vissza kell nézned az eredetibe — a kiolvasott adat és
             az export ettől függetlenül megmarad.
           </p>
+
+          <p className="mt-2 text-sm text-slate-500">
+            „Azonnal" esetén a törlés az exporttal egy lépésben történik. Türelmi idő mellett a
+            napi selejtezés viszi el. Ha egy tételt visszahívsz az Archívumból és újra
+            exportálsz, a türelmi idő <strong>az újabb exporttól</strong> ketyeg.
+          </p>
         </Kartya>
 
         <Kartya
