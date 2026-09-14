@@ -251,7 +251,7 @@ describe('xlsx', () => {
     const lap = new TextDecoder().decode(reszek.get('xl/worksheets/sheet1.xml'));
 
     // A „Bruttó" a 12. oszlop (L), az adatsor a 2.
-    expect(lap).toContain('<c r="L2"><v>127000</v></c>');
+    expect(lap).toContain('<c r="L2" s="2"><v>127000</v></c>');
     expect(lap).toContain('<is><t xml:space="preserve">Példa Kft.</t></is>');
     // A fejléc félkövér stílust kap.
     expect(lap).toContain('<c r="A1" s="1" t="inlineStr">');
@@ -279,6 +279,48 @@ describe('xlsx', () => {
     const reszek = kicsomagol(await xlsxFajl(sorok({ brutto: -1270.5 })));
     const lap = new TextDecoder().decode(reszek.get('xl/worksheets/sheet1.xml'));
 
-    expect(lap).toContain('<c r="L2"><v>-1270.50</v></c>');
+    expect(lap).toContain('<c r="L2" s="2"><v>-1270.50</v></c>');
+  });
+
+  /**
+   * A pénzoszlopok formátuma a **beépített** 4-es (`#,##0.00`): az Excel ezt a
+   * saját nyelvi beállítása szerint jeleníti meg, tehát magyarul magától
+   * tizedesvessző lesz belőle.
+   */
+  test('a pénzcellák számformátumot kapnak', async () => {
+    const reszek = kicsomagol(await xlsxFajl(sorok()));
+    const stilus = new TextDecoder().decode(reszek.get('xl/styles.xml'));
+
+    expect(stilus).toContain('<cellXfs count="3">');
+    expect(stilus).toContain('<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>');
+  });
+
+  /**
+   * ⚠️ A szélesség nem kozmetika: formázatlanul a `280000` elfért az
+   * alapértelmezett oszlopban, `280 000,00`-ként már nem, és ott az Excel
+   * `#######`-et mutat. A számformátum enélkül rontana a helyzeten.
+   */
+  test('a pénzoszlopok szélesebbek, a többi érintetlen', async () => {
+    const reszek = kicsomagol(await xlsxFajl(sorok()));
+    const lap = new TextDecoder().decode(reszek.get('xl/worksheets/sheet1.xml'));
+
+    // A „Bruttó" a 12. oszlop, a „Szállító" a 2. — az utóbbi nem kap szélességet.
+    expect(lap).toContain('<col min="12" max="12" width="14" customWidth="1"/>');
+    expect(lap).not.toContain('min="2" max="2"');
+    // A séma sorrendje kötött: a <cols> a <sheetData> elé kerül.
+    expect(lap.indexOf('<cols>')).toBeLessThan(lap.indexOf('<sheetData>'));
+  });
+
+  /**
+   * A dátum **szándékosan szöveg**, ISO alakban: így rendeződik helyesen
+   * szövegként is, és így olvassák be a könyvelőprogramok. Ez döntés volt, nem
+   * feledékenység — ezért áll rá teszt.
+   */
+  test('a dátum ISO alakú szöveg marad', async () => {
+    const reszek = kicsomagol(await xlsxFajl(sorok()));
+    const lap = new TextDecoder().decode(reszek.get('xl/worksheets/sheet1.xml'));
+
+    // A „Kelt" a 7. oszlop (G).
+    expect(lap).toContain('<c r="G2" t="inlineStr"><is><t xml:space="preserve">2026-03-14</t></is></c>');
   });
 });

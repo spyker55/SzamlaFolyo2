@@ -12,9 +12,32 @@ import { zip } from './zip.ts';
  * könyvelő nem tud velük számolni, és ez az egész export értelme. Ezért van a
  * szám cellán `<v>`, a szövegesen pedig `t="inlineStr"`.
  *
+ * A **dátumok viszont szándékosan szövegek** maradnak, ISO alakban
+ * (`2026-09-03`). Szövegként is helyes sorrendben rendeződnek, és a
+ * könyvelőprogramok importja így olvassa be őket; az Excel-sorszámra váltás
+ * cserébe elvenné ezt. Ez tehát nem hiányosság, hanem választás.
+ *
  * Beágyazott sztringtábla (`sharedStrings.xml`) nincs: egy exportban alig van
  * ismétlődő szöveg, a tábla viszont egy újabb fájl és egy újabb hibalehetőség.
  */
+
+/**
+ * A stíluslap sorai. Névvel, mert a cellákon indexként hivatkozunk rájuk, és
+ * egy elcsúszott szám némán rossz formátumot adna.
+ */
+const STILUS_ALAP = 0;
+const STILUS_FEJLEC = 1;
+const STILUS_PENZ = 2;
+
+/**
+ * A pénzoszlopok szélessége karakterben.
+ *
+ * **Ez a szám a számformátum ára.** Formázatlanul a `280000` elfért az
+ * alapértelmezett ~8,4 karakteres oszlopban; `280 000,00`-ként már nem, és az
+ * Excel `#######`-et ír a helyére. A 14 elfér a leghosszabb pénzfejléccel
+ * („Nettó egyéb", félkövéren) és egy hétjegyű negatív összeggel is.
+ */
+const PENZ_SZELESSEG = 14;
 
 const MUNKALAP = 'Bizonylatok';
 
@@ -53,12 +76,13 @@ function munkalap(sorok: readonly Record<string, unknown>[]): string {
     '<sheetViews><sheetView workbookViewId="0">',
     '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>',
     '</sheetView></sheetViews>',
+    penzOszlopok(),
     '<sheetData>',
     '<row r="1">',
   ];
 
   KULCSOK.forEach((kulcs, i) => {
-    xml.push(szovegCella(oszlopBetu(i) + '1', FEJLECEK[kulcs], 1));
+    xml.push(szovegCella(oszlopBetu(i) + '1', FEJLECEK[kulcs], STILUS_FEJLEC));
   });
 
   xml.push('</row>');
@@ -79,12 +103,12 @@ function munkalap(sorok: readonly Record<string, unknown>[]): string {
         const n = typeof ertek === 'number' ? ertek : Number(ertek);
 
         if (Number.isFinite(n)) {
-          xml.push(`<c r="${hivatkozas}"><v>${szamKiiras(n)}</v></c>`);
+          xml.push(`<c r="${hivatkozas}" s="${STILUS_PENZ}"><v>${szamKiiras(n)}</v></c>`);
           return;
         }
       }
 
-      xml.push(szovegCella(hivatkozas, String(ertek), 0));
+      xml.push(szovegCella(hivatkozas, String(ertek), STILUS_ALAP));
     });
 
     xml.push('</row>');
@@ -95,8 +119,29 @@ function munkalap(sorok: readonly Record<string, unknown>[]): string {
   return xml.join('');
 }
 
+/**
+ * A pénzoszlopok szélessége.
+ *
+ * Csak azokra adunk szélességet, amelyeket a számformátum szélesített — a
+ * szövegoszlopok maradnak úgy, ahogy eddig voltak. A `<cols>` a séma szerint a
+ * `<sheetViews>` után és a `<sheetData>` előtt áll; máshol az Excel a fájlt
+ * sérültnek mondja.
+ *
+ * Az indexeket a `SZAM_OSZLOPOK`-ból számoljuk, nem kézzel írjuk be: ha az
+ * oszlopsorrend egyszer változik, ez magától követi.
+ */
+function penzOszlopok(): string {
+  const cols = KULCSOK.map((kulcs, i) =>
+    SZAM_OSZLOPOK.includes(kulcs)
+      ? `<col min="${i + 1}" max="${i + 1}" width="${PENZ_SZELESSEG}" customWidth="1"/>`
+      : '',
+  ).join('');
+
+  return cols === '' ? '' : `<cols>${cols}</cols>`;
+}
+
 function szovegCella(hivatkozas: string, ertek: string, stilus: number): string {
-  const s = stilus === 0 ? '' : ` s="${stilus}"`;
+  const s = stilus === STILUS_ALAP ? '' : ` s="${stilus}"`;
   // `xml:space="preserve"`: a kezdő és záró szóköz különben elveszne — egy
   // bizonylatszám előtti szóköz apróság, de nem a mi dolgunk eltüntetni.
   return `<c r="${hivatkozas}"${s} t="inlineStr"><is><t xml:space="preserve">${szoveg(ertek)}</t></is></c>`;
@@ -203,9 +248,22 @@ function stilusok(): string {
     '</fills>' +
     '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
     '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
-    '<cellXfs count="2">' +
+    '<cellXfs count="3">' +
     '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
     '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    // A pénzcellák formátuma: ezres csoportosítás, két tizedes.
+    //
+    // A `4`-es a szabvány **beépített** formátuma (`#,##0.00`), ezért nincs
+    // szükség saját `<numFmts>` blokkra — és ami még fontosabb: az Excel a
+    // beépített kódot a **saját nyelvi beállítása szerint** jeleníti meg, tehát
+    // a magyar Excelben magától tizedesvessző lesz belőle. Egy kézzel írt
+    // formátumkód ezt nem tudná.
+    //
+    // Pénznemjel (` Ft`) szándékosan nincs benne: az export **vegyes pénznemű**
+    // lehet, van külön `Pénznem` oszlop, és egy euróra ráírt „Ft" hazugság
+    // volna. A negatív összeg így mínuszjellel jelenik meg — a sztornó pont
+    // ettől marad kivonható.
+    '<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
     '</cellXfs>' +
     // A „Normal" stílus hiányát az Excel elnézi, más olvasók viszont
     // figyelmeztetnek rá. Egy sor, és nincs miről magyarázkodni.
