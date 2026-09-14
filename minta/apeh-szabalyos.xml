@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Szabályos APEH 2005 „számla adatexport" — a magyar számlázóprogramok
+  e-számla csatolmánya.
+
+  Ez NEM a NAV Online Számla sémája: régebbi, csupa magyar elemnévvel, és a
+  könyvelőhöz eljutó fájlok jó része ilyen. Az Online Számla portál ugyanis
+  bizonylatonkénti XML-t nem ad, csak xlsx/csv LISTÁT.
+
+  Az összegek szándékosan konzisztensek:
+     27%:  100 000 nettó +  27 000 ÁFA
+      5%:   20 000 nettó +   1 000 ÁFA
+    ------------------------------------
+           120 000 nettó +  28 000 ÁFA = 148 000 bruttó
+
+  ⚠️ A fájl a formátum legélesebb csapdáját is hordozza: a `tetelek/tetel`
+  gyerekei SZÓ SZERINT ugyanúgy hívódnak, mint az `osszesites/afarovat`
+  gyerekei (`afakulcs`, `nettoar`, `afaertek`, `bruttoar`). Egy
+  leszármazott-keresés tehát nem hasonló nevet találna el, hanem pontosan
+  ugyanazt — a tételsorok értékeit írná a bizonylat ÁFA-bontásába. Ezért állnak
+  itt a tételsorok az ÁFA-rovatoktól eltérő bontásban: három tétel, két rovat.
+
+  A dátum pontos magyar alakú (`2026.09.08`), nem ISO.
+
+  Ha azt szeretnéd, hogy a vevő a saját céged legyen — mert az export
+  ügyfélszűrője adószám-TÖRZSSZÁMRA szűr —, írd át a `vevo/adoszam` értékét.
+-->
+<szamla xmlns="http://www.apeh.hu/2005/szamla"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <fejlec>
+    <elado>
+      <nev>Derűs Iroda Kereskedelmi és Szolgáltató Kft.</nev>
+      <adoszam>12345676-2-41</adoszam>
+      <cim>
+        <orszag>Magyarország</orszag>
+        <telepules>Budapest</telepules>
+        <irszam>1114</irszam>
+        <kozternev>Bartók Béla út 76.</kozternev>
+      </cim>
+    </elado>
+    <vevo>
+      <nev>Könyvelő Partner Zrt.</nev>
+      <adoszam>24680132-2-02</adoszam>
+      <cim>
+        <orszag>Magyarország</orszag>
+        <telepules>Pécs</telepules>
+        <irszam>7600</irszam>
+        <kozternev>Széchenyi tér 4.</kozternev>
+      </cim>
+    </vevo>
+    <szamlainfo>
+      <sorszam>APEH-2026/0311</sorszam>
+      <kialldatum>2026.09.08</kialldatum>
+      <teljdatum>2026.09.05</teljdatum>
+      <fizhatarido>2026.09.22</fizhatarido>
+      <fizmod>Átutalás</fizmod>
+      <szamlatipusa>Számla</szamlatipusa>
+      <penznem>HUF</penznem>
+      <hivatkozottszamla></hivatkozottszamla>
+      <egyebadat></egyebadat>
+    </szamlainfo>
+  </fejlec>
+
+  <tetelek>
+    <tetel id="1">
+      <termeknev>Könyvelési szolgáltatás, 2026. augusztus</termeknev>
+      <nettoar>80000</nettoar>
+      <afakulcs>27</afakulcs>
+      <afaertek>21600</afaertek>
+      <bruttoar>101600</bruttoar>
+      <mennyisegegyseg>hó</mennyisegegyseg>
+      <mennyiseg>1</mennyiseg>
+    </tetel>
+    <tetel id="2">
+      <termeknev>Bérszámfejtés, 2026. augusztus</termeknev>
+      <nettoar>20000</nettoar>
+      <afakulcs>27</afakulcs>
+      <afaertek>5400</afaertek>
+      <bruttoar>25400</bruttoar>
+      <mennyisegegyseg>hó</mennyisegegyseg>
+      <mennyiseg>1</mennyiseg>
+    </tetel>
+    <tetel id="3">
+      <termeknev>Szakkönyv</termeknev>
+      <nettoar>20000</nettoar>
+      <afakulcs>5</afakulcs>
+      <afaertek>1000</afaertek>
+      <bruttoar>21000</bruttoar>
+      <mennyisegegyseg>db</mennyisegegyseg>
+      <mennyiseg>2</mennyiseg>
+    </tetel>
+  </tetelek>
+
+  <osszesites>
+    <afarovat id="1">
+      <afakulcs>27</afakulcs>
+      <nettoar>100000</nettoar>
+      <afaertek>27000</afaertek>
+      <bruttoar>127000</bruttoar>
+    </afarovat>
+    <afarovat id="2">
+      <afakulcs>5</afakulcs>
+      <nettoar>20000</nettoar>
+      <afaertek>1000</afaertek>
+      <bruttoar>21000</bruttoar>
+    </afarovat>
+    <vegosszeg>
+      <nettoarossz>120000</nettoarossz>
+      <afaertekossz>28000</afaertekossz>
+      <bruttoarossz>148000</bruttoarossz>
+    </vegosszeg>
+  </osszesites>
+</szamla>

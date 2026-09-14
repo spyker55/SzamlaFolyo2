@@ -168,10 +168,18 @@ export function utSzam(csomopont: Csomopont | null, ...nevek: string[]): number 
 }
 
 /**
- * Dátum a CII és az UBL alakjából egyaránt.
+ * Dátum a három XML-alakból egyaránt.
  *
- * A CII a `102`-es UNCL2379 formátumot használja (`20260314`), az UBL viszont
- * ISO-t (`2026-03-14`, néha időbélyeggel).
+ * A CII a `102`-es UNCL2379 formátumot használja (`20260314`), az UBL ISO-t
+ * (`2026-03-14`, néha időbélyeggel), az APEH 2005-ös magyar alak pedig
+ * pontosat (`2026.07.17`).
+ *
+ * Miért itt, és miért nem a hívóban: a `ido.ts` `datumErtelmez()`-e a pontos
+ * alakot már ma is érti, tehát az APEH-dátum enélkül is átjutna a
+ * normalizáláson. De akkor az értelmező a **nyers** értéket adná tovább, amire
+ * a `konfidencia()` így is 1.0-t írna — és ha az érték mégis értelmezhetetlen,
+ * maradna egy magabiztossági pont egy üres mező mellett. Egy helyen fordítunk,
+ * mindhárom alakot.
  */
 export function datummaAlakit(nyers: string | null): string | null {
   if (nyers === null) return null;
@@ -180,6 +188,14 @@ export function datummaAlakit(nyers: string | null): string | null {
 
   if (/^\d{8}$/.test(s)) {
     return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  }
+
+  // `2026.07.17` és `2026.07.17.` — a záró pont a magyar írásmód része.
+  const pontos = /^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?$/.exec(s);
+  if (pontos !== null) {
+    const ho = pontos[2]!.padStart(2, '0');
+    const nap = pontos[3]!.padStart(2, '0');
+    return `${pontos[1]}-${ho}-${nap}`;
   }
 
   const iso = /^(\d{4}-\d{2}-\d{2})/.exec(s);

@@ -256,6 +256,70 @@ const NAV_PREFIXES = `<?xml version="1.0" encoding="UTF-8"?>
   </ns2:invoiceMain>
 </ns2:InvoiceData>`;
 
+/**
+ * APEH 2005 „számla adatexport" — a valódi Billingo-fájl alakja, magyar
+ * mezőnevekkel.
+ *
+ * ⚠️ A csapda a **névütközés**: a `tetelek/tetel` gyerekei szó szerint
+ * ugyanúgy hívódnak, mint az `osszesites/afarovat` gyerekei (`afakulcs`,
+ * `nettoar`, `afaertek`, `bruttoar`). A fixtúra ezért **szándékosan eltérő
+ * értékeket** tesz a kettőbe: két tételsor 27%-kal és 5%-kal, az összesítő
+ * viszont egyetlen 27%-os rovattal. Ha leszármazott-keresésre váltanánk, a
+ * bontás a tételsorokból jönne, és a teszt bukna.
+ */
+const APEH = `<?xml version="1.0" encoding="UTF-8"?>
+<szamla xmlns="http://www.apeh.hu/2005/szamla">
+  <fejlec>
+    <elado>
+      <nev>Derűs Iroda Kft.</nev>
+      <adoszam>12345676-2-41</adoszam>
+    </elado>
+    <vevo>
+      <nev>Könyvelő Partner Zrt.</nev>
+      <adoszam>24680132-2-02</adoszam>
+    </vevo>
+    <szamlainfo>
+      <sorszam>ZSG-2026-1</sorszam>
+      <kialldatum>2026.07.17</kialldatum>
+      <teljdatum>2026.07.15</teljdatum>
+      <fizhatarido>2026.07.31</fizhatarido>
+      <fizmod>Bankkártya</fizmod>
+      <szamlatipusa>Számla</szamlatipusa>
+      <penznem>HUF</penznem>
+      <hivatkozottszamla></hivatkozottszamla>
+    </szamlainfo>
+  </fejlec>
+  <tetelek>
+    <tetel id="1">
+      <termeknev>Előfizetés</termeknev>
+      <nettoar>90000</nettoar>
+      <afakulcs>27</afakulcs>
+      <afaertek>24300</afaertek>
+      <bruttoar>114300</bruttoar>
+    </tetel>
+    <tetel id="2">
+      <termeknev>Szakkönyv</termeknev>
+      <nettoar>10000</nettoar>
+      <afakulcs>5</afakulcs>
+      <afaertek>500</afaertek>
+      <bruttoar>10500</bruttoar>
+    </tetel>
+  </tetelek>
+  <osszesites>
+    <afarovat id="1">
+      <afakulcs>27</afakulcs>
+      <nettoar>100000</nettoar>
+      <afaertek>27000</afaertek>
+      <bruttoar>127000</bruttoar>
+    </afarovat>
+    <vegosszeg>
+      <nettoarossz>100000</nettoarossz>
+      <afaertekossz>27000</afaertekossz>
+      <bruttoarossz>127000</bruttoarossz>
+    </vegosszeg>
+  </osszesites>
+</szamla>`;
+
 describe('UBL', () => {
   test('a mezők a helyükre kerülnek', () => {
     const e = olvas(UBL);
@@ -627,6 +691,145 @@ describe('NAV Online Számla', () => {
       '<InvoiceData xmlns="http://schemas.nav.gov.hu/OSA/3.0/data" xmlns:base="http://schemas.nav.gov.hu/OSA/3.0/base">',
       '<InvoiceData>',
     );
+
+    // Nem hiba: megy a modellhez, ahogy minden fel nem ismert alak.
+    expect(olvas(nevterNelkul)).toBeNull();
+  });
+});
+
+describe('APEH 2005', () => {
+  test('a mezők a helyükre kerülnek', () => {
+    const e = olvas(APEH);
+
+    expect(e?.nev).toBe('xml/apeh');
+    expect(e?.nyers).toMatchObject({
+      doc_type: 'szamla',
+      supplier_name: 'Derűs Iroda Kft.',
+      supplier_tax_number: '12345676-2-41',
+      customer_name: 'Könyvelő Partner Zrt.',
+      customer_tax_number: '24680132-2-02',
+      doc_number: 'ZSG-2026-1',
+      issue_date: '2026-07-17',
+      fulfillment_date: '2026-07-15',
+      due_date: '2026-07-31',
+      // Szabad szöveg a bizonylaton, nem kódlista — úgy megy, ahogy jött.
+      payment_method: 'Bankkártya',
+      currency: 'HUF',
+      net_amount: 100000,
+      vat_amount: 27000,
+      gross_amount: 127000,
+      fizetendo: null,
+    });
+  });
+
+  /**
+   * ⚠️ Ez a formátum legélesebb csapdája: a tételsorok gyerekei **szó szerint
+   * ugyanúgy hívódnak**, mint az ÁFA-rovatéi. Egy leszármazott-keresés nem
+   * hasonló nevet találna el, hanem pontosan ugyanazt — az első tételsor
+   * 90 000-ét írná a bizonylat ÁFA-bontásába, és semmi nem jelezné.
+   */
+  test('az ÁFA-bontás az összesítőből jön, nem a tételsorokból', () => {
+    const bontas = olvas(APEH)!.nyers['afa_bontas'] as Record<string, unknown>[];
+
+    expect(bontas).toHaveLength(1);
+    expect(bontas[0]).toEqual({ kulcs: 27, kategoria: null, netto: 100000, afa: 27000 });
+  });
+
+  /**
+   * ⚠️ A magyar pontos dátumot a `datummaAlakit()` korábban `null`-ra
+   * fordította: csak a nyolcjegyű (CII) és az ISO (UBL) alakot ismerte.
+   */
+  test('a pontos magyar dátumot érti', () => {
+    expect(olvas(APEH)?.nyers['issue_date']).toBe('2026-07-17');
+
+    // A záró pont a magyar írásmód része, egyjegyű hónappal együtt is.
+    const zaropont = APEH.replace('<kialldatum>2026.07.17</kialldatum>', '<kialldatum>2026.7.5.</kialldatum>');
+    expect(olvas(zaropont)?.nyers['issue_date']).toBe('2026-07-05');
+  });
+
+  /**
+   * A magánszemély vevőnek nincs adószáma, de az elem ott áll üresen. Üres
+   * mező más állapot, mint a kiolvasott — magabiztossági pontot sem kap.
+   */
+  test('az üres adószám null, nem üres sztring', () => {
+    const maganszemely = APEH.replace(
+      '<adoszam>24680132-2-02</adoszam>',
+      '<adoszam></adoszam>',
+    );
+    const e = olvas(maganszemely);
+
+    expect(e?.nyers['customer_tax_number']).toBeNull();
+    expect(e?.nyers['confidence']).not.toHaveProperty('customer_tax_number');
+  });
+
+  /**
+   * A `szamlatipusa` szabad szöveg, nem kódlista: a gyártó azt írja bele, ami
+   * a bizonylatra kerül. Amit nem ismerünk fel, arra nem tippelünk.
+   */
+  test('a bizonylattípust a szabad szövegből ismeri fel', () => {
+    const esetek: [string, string | null][] = [
+      ['Számla', 'szamla'],
+      ['Sztornó számla', 'sztorno_szamla'],
+      ['Helyesbítő számla', 'helyesbito_szamla'],
+      ['Előlegszámla', 'elolegszamla'],
+      ['Díjbekérő', 'dijbekero'],
+      ['Valami egészen más', null],
+    ];
+
+    for (const [szoveg, vart] of esetek) {
+      const xml = APEH.replace('<szamlatipusa>Számla</szamlatipusa>', `<szamlatipusa>${szoveg}</szamlatipusa>`);
+      expect(olvas(xml)?.nyers['doc_type']).toBe(vart);
+    }
+  });
+
+  /**
+   * Ha a típus szövege ismeretlen, de van hivatkozott bizonylat, akkor ez
+   * **valamilyen** helyesbítő okirat. A gyűjtőfogalmat adjuk, nem szűkítünk
+   * sztornóra: egy helyesbítést sztornónak minősíteni egy egész számlát
+   * érvénytelenítene.
+   */
+  test('a hivatkozott számla helyesbítővé teszi az ismeretlen típust', () => {
+    const hivatkozo = APEH.replace(
+      '<szamlatipusa>Számla</szamlatipusa>',
+      '<szamlatipusa>Ismeretlen okirat</szamlatipusa>',
+    ).replace('<hivatkozottszamla></hivatkozottszamla>', '<hivatkozottszamla>ZSG-2025-9</hivatkozottszamla>');
+
+    expect(olvas(hivatkozo)?.nyers['doc_type']).toBe('helyesbito_szamla');
+  });
+
+  /**
+   * ⚠️ Kulcs nélkül a `tisztitBontas()` **az egész sort eldobja**, tehát egy
+   * százalékjel némán elvinné a bizonylat ÁFA-bontását.
+   */
+  test('a százalékjeles kulcs sem viszi el a bontássort', () => {
+    const szazalekjel = APEH.replace(
+      '<afakulcs>27</afakulcs>\n      <nettoar>100000</nettoar>',
+      '<afakulcs>27%</afakulcs>\n      <nettoar>100000</nettoar>',
+    );
+
+    const bontas = olvas(szazalekjel)!.nyers['afa_bontas'] as Record<string, unknown>[];
+    expect(tisztitBontas(bontas)).toHaveLength(1);
+  });
+
+  test('több ÁFA-rovat mindegyike megvan', () => {
+    const ketKulcs = APEH.replace(
+      '<vegosszeg>',
+      `<afarovat id="2">
+         <afakulcs>5</afakulcs>
+         <nettoar>10000</nettoar>
+         <afaertek>500</afaertek>
+         <bruttoar>10500</bruttoar>
+       </afarovat>
+       <vegosszeg>`,
+    );
+
+    const bontas = olvas(ketKulcs)!.nyers['afa_bontas'] as Record<string, unknown>[];
+    expect(bontas).toHaveLength(2);
+    expect(bontas[1]).toEqual({ kulcs: 5, kategoria: null, netto: 10000, afa: 500 });
+  });
+
+  test('névtér nélkül nem APEH', () => {
+    const nevterNelkul = APEH.replace('<szamla xmlns="http://www.apeh.hu/2005/szamla">', '<szamla>');
 
     // Nem hiba: megy a modellhez, ahogy minden fel nem ismert alak.
     expect(olvas(nevterNelkul)).toBeNull();

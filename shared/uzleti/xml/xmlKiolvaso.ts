@@ -1,3 +1,4 @@
+import { apeh } from './apeh.ts';
 import { cii } from './cii.ts';
 import { nav } from './nav.ts';
 import { ubl } from './ubl.ts';
@@ -38,11 +39,11 @@ import type { Dokumentum } from './fa.ts';
 export const MAX_BAJT = 4 * 1024 * 1024;
 
 /**
- * Az értelmezők, sorrendben. Az **első találat nyer** — de a három
- * `tamogatja()` nem fedi egymást: eltérő gyökérnevekre szűrnek, az UBL és a
- * NAV ezen felül névtérre is.
+ * Az értelmezők, sorrendben. Az **első találat nyer** — de a négy
+ * `tamogatja()` nem fedi egymást: eltérő gyökérnevekre szűrnek, és az UBL, a
+ * NAV meg az APEH ezen felül névtérre is.
  */
-const ERTELMEZOK: readonly Ertelmezo[] = [cii, ubl, nav];
+const ERTELMEZOK: readonly Ertelmezo[] = [cii, ubl, nav, apeh];
 
 export type XmlEredmeny = {
   nev: string;

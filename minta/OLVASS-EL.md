@@ -4,7 +4,7 @@ Ezek a fájlok a **végponttól végpontig** próba korpusza: feltöltés → ki
 ellenőrzés → tételek → export. Nem eldobható segédanyag, ezért vannak a repóban:
 minden további körben (kvóta, Beállítások, Stripe) újra kellenek.
 
-Mind az öt fájlt a repó **saját** értelmezőjén és validátorán engedtük át, nem
+Mind a hat fájlt a repó **saját** értelmezőjén és validátorán engedtük át, nem
 csak ránézésre jó — az alábbi táblázat mért eredmény.
 
 ## Mi van bennük
@@ -16,6 +16,7 @@ csak ránézésre jó — az alábbi táblázat mért eredmény.
 | `ubl-hibas-osszeg.xml` | `xml/ubl` | számla | 100 000 + 27 000 ≠ **130 000** | **Szándékosan elrontva.** A validátor mindhárom összeg-mezőn jelez |
 | `ubl-sztorno.xml` | `xml/ubl` | **sztornó** | −160 000 + −34 400 = **−194 400** | A `CreditNote` gyökér típuskód nélkül is sztornó; és hogy a mínuszjel túléli-e az exportot |
 | `nav-szabalyos.xml` | `xml/nav` | számla | 300 000 + 48 200 = **348 200** | **A magyar alapeset.** Három ÁFA-sor: 27%, 5% és tárgyi mentes (TAM) |
+| `apeh-szabalyos.xml` | `xml/apeh` | számla | 120 000 + 28 000 = **148 000** | **A másik magyar alak.** Három tételsor, két ÁFA-rovat — a névütközés csapdája |
 
 Az `ubl-hibas-osszeg.xml`-t **ne javítsd ki**: pontosan attól hasznos. Egy
 rendszerről, amit csak a jó eseten próbáltunk ki, annyit tudunk, hogy a jó eset
@@ -52,6 +53,40 @@ Ha ezeknél élethűbb kell:
 
 > A linkeket nem tudom innen ellenőrizni (ez a környezet nem éri el a
 > nyílt internetet), ezért forrásokat nevezek meg, nem URL-eket.
+
+## Két magyar XML-alak, nem egy
+
+A magyar számlázóprogramok **kétféle** XML-t adnak ki, és a kettő nem
+ugyanaz. Ezt nem feltételezzük, hanem megmértük: az első valódi importunk
+(Billingo-számla) a régebbi, APEH-alakú volt.
+
+| Alak | Gyökér | Névtér | Értelmező |
+|---|---|---|---|
+| APEH 2005 „számla adatexport" | `szamla` | `http://www.apeh.hu/2005/szamla` | `xml/apeh` |
+| NAV Online Számla 3.0 | `InvoiceData` / `Invoices` | `http://schemas.nav.gov.hu/OSA/3.0/data` | `xml/nav` |
+
+> Az Online Számla **portáljáról** bizonylatonkénti XML nem tölthető le: a
+> „Lista export" csak `.xlsx`-et és `.csv`-t kínál, és az nem bizonylat, hanem
+> egy adattábla sok bizonylatról. A NAV-sémájú XML a *számlázóprogramoktól*
+> jön, az adatszolgáltatás alakjaként.
+
+## Az APEH 2005 alak
+
+Csupa magyar elemnév: `fejlec` (`elado`, `vevo`, `szamlainfo`), `tetelek`,
+`osszesites`. Két dolog, amit tudni kell róla:
+
+1. ⚠️ **A tételsorok és az ÁFA-rovatok elemnevei szó szerint azonosak** —
+   `afakulcs`, `nettoar`, `afaertek`, `bruttoar` mindkettő alatt. Egy
+   leszármazott-keresés nem hasonló nevet találna el, hanem pontosan ugyanazt,
+   és a tételsorok értékeit írná a bizonylat ÁFA-bontásába. Az
+   `apeh-szabalyos.xml` ezért **három tételsort és két ÁFA-rovatot** tartalmaz:
+   ha a keresés elcsúszik, a szám azonnal más lesz.
+2. **A dátum pontos magyar alakú** (`2026.09.08`), nem ISO.
+
+Amit a formátum **nem** tartalmaz: ÁFA-kategóriát (`S`, `E`, `AE`…). Ezt nem
+következtetjük ki — a bontássorok `kategoria`-ja `null` marad. A
+`szamlatipusa` pedig szabad szöveg, nem kódlista: amit nem ismerünk fel, arra
+nem tippelünk, az ember választ.
 
 ## A NAV Online Számla XML — felismerve
 

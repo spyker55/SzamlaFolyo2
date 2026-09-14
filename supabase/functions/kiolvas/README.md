@@ -1,7 +1,14 @@
 # A `kiolvas` Edge Function
 
-A lánc: **claim → felderítés → XML-ág vagy modellhívás → tisztítás →
-normalizálás → validátorok → konfidencia → kapuk → állapot + kredit.**
+A lánc: **keretellenőrzés → claim → felderítés → XML-ág vagy modellhívás →
+tisztítás → normalizálás → validátorok → konfidencia → kapuk → állapot +
+kredit.**
+
+A keret a **claim előtt** áll, és ennek oka van: a claim megnöveli az
+`attempts` számlálót, három próbálkozás után pedig a bizonylat `hiba` állapotba
+kerül. Egy elfogyott keret viszont nem hiba, és nem is a bizonylattal van baj —
+ha itt fogyasztana próbálkozást, a cron három perc alatt véglegesen elrontana
+minden várakozó iratot, mielőtt a felhasználó csomagot választhatna.
 
 A tényleges üzleti logika nem itt van, hanem a `shared/uzleti/` alatt — ez a
 mappa csak az adatbázis- és tárolóhuzalozás. A lánc tiszta magja
@@ -106,6 +113,3 @@ select * from belso.sor_allapot();
   modell által adott oldalhatárok szerinti bizonylatonkénti újrafuttatás a
   következő lépés; az adatmodell (`oldal_tol`, `oldal_ig`) és a
   kreditszámítás (`bizonylatOldalszama`) már készen áll rá.
-- **Keretellenőrzés.** A kvóta ma nem áll meg a kereten: a `document_extractions`
-  már gyűjti a krediteket, de a feldolgozás előtti ellenőrzés a számlázási
-  körrel jön.
