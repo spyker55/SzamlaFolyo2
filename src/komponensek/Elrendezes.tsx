@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { LogoSor } from './Logo.tsx';
 import { useAuth } from '../lib/auth.tsx';
+import { FejlesztesAlattSav } from './FejlesztesAlatt.tsx';
 
 /**
  * A menüpontok. **Egyetlen alak van belőlük**: ugyanaz a lista ül a nagy
@@ -114,6 +115,16 @@ export function AuthElrendezes({ children }: { children: ReactNode }) {
       <Link to="/" className="logo-link mb-6">
         <LogoSor jel="h-9 w-9" szoveg="text-2xl" />
       </Link>
+
+      {/*
+        A fejlesztői figyelmeztetés **itt** ül, és nem az egyes képernyőkön: ez
+        a burkoló pontosan a belépés előtti képernyőket fogja össze
+        (bejelentkezés, regisztráció, elfelejtett jelszó), tehát egy helyen
+        kimondva mindre érvényes. Négy hívási helyen négyszer lehetne elrontani.
+      */}
+      <div className="w-full max-w-sm">
+        <FejlesztesAlattSav />
+      </div>
 
       <div className="card card-pad w-full max-w-sm">{children}</div>
 
