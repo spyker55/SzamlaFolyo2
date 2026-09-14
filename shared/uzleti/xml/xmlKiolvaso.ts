@@ -1,4 +1,5 @@
 import { cii } from './cii.ts';
+import { nav } from './nav.ts';
 import { ubl } from './ubl.ts';
 import type { Ertelmezo, NyersValasz } from './ertelmezo.ts';
 import type { Dokumentum } from './fa.ts';
@@ -36,7 +37,12 @@ import type { Dokumentum } from './fa.ts';
  */
 export const MAX_BAJT = 4 * 1024 * 1024;
 
-const ERTELMEZOK: readonly Ertelmezo[] = [cii, ubl];
+/**
+ * Az értelmezők, sorrendben. Az **első találat nyer** — de a három
+ * `tamogatja()` nem fedi egymást: eltérő gyökérnevekre szűrnek, az UBL és a
+ * NAV ezen felül névtérre is.
+ */
+const ERTELMEZOK: readonly Ertelmezo[] = [cii, ubl, nav];
 
 export type XmlEredmeny = {
   nev: string;

@@ -6,6 +6,7 @@ import {
   keresOsszes,
   keresSzam,
   keresSzoveg,
+  nevterTartalmaz,
   utSzam,
   utSzoveg,
   type Csomopont,
@@ -28,8 +29,9 @@ export const ubl: Ertelmezo = {
 
     // A puszta „Invoice" gyökérnév túl gyakori ahhoz, hogy elég legyen: egy
     // tetszőleges házi XML is hívhatja így a gyökerét. A névtér az, ami
-    // valóban UBL-nek minősíti.
-    return (doc.nevter ?? '').includes('oasis:names:specification:ubl');
+    // valóban UBL-nek minősíti — és **bármelyik** deklaráció megteszi, mert a
+    // gyökér lehet prefixes is (`<ubl:Invoice xmlns:ubl="…">`).
+    return nevterTartalmaz(doc, 'oasis:names:specification:ubl');
   },
 
   ertelmez: (gyoker: Csomopont, doc: Dokumentum): NyersValasz => {

@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Szabályos NAV Online Számla (OSA 3.0) bejövő számla, három ÁFA-sorral.
+
+  Ez a magyar számlázóprogramok alapértelmezett exportja — és ezért a
+  legfontosabb minta a négy közül: a hazai bizonylatok érdemi része ilyen
+  alakban is elérhető, vagyis modellhívás NÉLKÜL, nulla forintból olvasható ki
+  (`forras_jelleg: strukturalt_xml`).
+
+  Az összegek szándékosan konzisztensek:
+     27%:  160 000 nettó +  43 200 ÁFA
+      5%:  100 000 nettó +   5 000 ÁFA
+    TAM:    40 000 nettó +       0 ÁFA   (tárgyi adómentes)
+    ------------------------------------
+           300 000 nettó +  48 200 ÁFA = 348 200 bruttó
+
+  Két dolgot érdemes tudni róla:
+
+  1. A `vatPercentage` TÖRT, nem százalék (`0.27`) — a NAV sémája így írja elő
+     (`RateType`, maxInclusive="1"). Az értelmező szorozza százzal.
+  2. A bizonylatszám és a kelt a GYÖKÉR közvetlen gyereke, nem az
+     `invoiceHead` alatt: a 2.0-s séma emelte ki őket. A régi helyüket még sok
+     netes példa mutatja.
+
+  Ha azt szeretnéd, hogy a vevő a saját céged legyen — mert az export
+  ügyfélszűrője adószám-TÖRZSSZÁMRA szűr —, írd át a `customerTaxNumber`
+  három elemét a saját adószámodra.
+-->
+<InvoiceData xmlns="http://schemas.nav.gov.hu/OSA/3.0/data"
+             xmlns:base="http://schemas.nav.gov.hu/OSA/3.0/base">
+  <invoiceNumber>NAV-2026/0142</invoiceNumber>
+  <invoiceIssueDate>2026-09-08</invoiceIssueDate>
+  <completenessIndicator>false</completenessIndicator>
+
+  <invoiceMain>
+    <invoice>
+      <invoiceHead>
+        <supplierInfo>
+          <supplierTaxNumber>
+            <base:taxpayerId>12345676</base:taxpayerId>
+            <base:vatCode>2</base:vatCode>
+            <base:countyCode>41</base:countyCode>
+          </supplierTaxNumber>
+          <supplierName>Derűs Iroda Kereskedelmi és Szolgáltató Kft.</supplierName>
+          <supplierAddress>
+            <base:detailedAddress>
+              <base:countryCode>HU</base:countryCode>
+              <base:postalCode>1114</base:postalCode>
+              <base:city>Budapest</base:city>
+              <base:streetName>Bartók Béla</base:streetName>
+              <base:publicPlaceCategory>út</base:publicPlaceCategory>
+              <base:number>76</base:number>
+            </base:detailedAddress>
+          </supplierAddress>
+          <supplierBankAccountNumber>10773381-12345678-00000000</supplierBankAccountNumber>
+        </supplierInfo>
+
+        <customerInfo>
+          <customerVatStatus>DOMESTIC</customerVatStatus>
+          <customerVatData>
+            <customerTaxNumber>
+              <base:taxpayerId>24680132</base:taxpayerId>
+              <base:vatCode>2</base:vatCode>
+              <base:countyCode>02</base:countyCode>
+            </customerTaxNumber>
+          </customerVatData>
+          <customerName>Könyvelő Partner Zrt.</customerName>
+          <customerAddress>
+            <base:simpleAddress>
+              <base:countryCode>HU</base:countryCode>
+              <base:postalCode>7600</base:postalCode>
+              <base:city>Pécs</base:city>
+              <base:additionalAddressDetail>Széchenyi tér 4.</base:additionalAddressDetail>
+            </base:simpleAddress>
+          </customerAddress>
+        </customerInfo>
+
+        <invoiceDetail>
+          <invoiceCategory>NORMAL</invoiceCategory>
+          <invoiceDeliveryDate>2026-09-05</invoiceDeliveryDate>
+          <currencyCode>HUF</currencyCode>
+          <exchangeRate>1</exchangeRate>
+          <paymentMethod>TRANSFER</paymentMethod>
+          <paymentDate>2026-09-22</paymentDate>
+          <invoiceAppearance>ELECTRONIC</invoiceAppearance>
+        </invoiceDetail>
+      </invoiceHead>
+
+      <invoiceLines>
+        <mergedItemIndicator>false</mergedItemIndicator>
+
+        <line>
+          <lineNumber>1</lineNumber>
+          <lineExpressionIndicator>true</lineExpressionIndicator>
+          <lineNatureIndicator>SERVICE</lineNatureIndicator>
+          <lineDescription>Könyvelési szolgáltatás, 2026. augusztus</lineDescription>
+          <quantity>1.00</quantity>
+          <unitOfMeasure>PIECE</unitOfMeasure>
+          <unitPrice>160000.00</unitPrice>
+          <lineAmountsNormal>
+            <lineNetAmountData>
+              <lineNetAmount>160000.00</lineNetAmount>
+              <lineNetAmountHUF>160000.00</lineNetAmountHUF>
+            </lineNetAmountData>
+            <lineVatRate>
+              <vatPercentage>0.27</vatPercentage>
+            </lineVatRate>
+            <lineVatData>
+              <lineVatAmount>43200.00</lineVatAmount>
+              <lineVatAmountHUF>43200.00</lineVatAmountHUF>
+            </lineVatData>
+            <lineGrossAmountData>
+              <lineGrossAmountNormal>203200.00</lineGrossAmountNormal>
+              <lineGrossAmountNormalHUF>203200.00</lineGrossAmountNormalHUF>
+            </lineGrossAmountData>
+          </lineAmountsNormal>
+        </line>
+
+        <line>
+          <lineNumber>2</lineNumber>
+          <lineExpressionIndicator>true</lineExpressionIndicator>
+          <lineNatureIndicator>PRODUCT</lineNatureIndicator>
+          <lineDescription>Szakkönyv, 5%-os kulccsal</lineDescription>
+          <quantity>4.00</quantity>
+          <unitOfMeasure>PIECE</unitOfMeasure>
+          <unitPrice>25000.00</unitPrice>
+          <lineAmountsNormal>
+            <lineNetAmountData>
+              <lineNetAmount>100000.00</lineNetAmount>
+              <lineNetAmountHUF>100000.00</lineNetAmountHUF>
+            </lineNetAmountData>
+            <lineVatRate>
+              <vatPercentage>0.05</vatPercentage>
+            </lineVatRate>
+            <lineVatData>
+              <lineVatAmount>5000.00</lineVatAmount>
+              <lineVatAmountHUF>5000.00</lineVatAmountHUF>
+            </lineVatData>
+            <lineGrossAmountData>
+              <lineGrossAmountNormal>105000.00</lineGrossAmountNormal>
+              <lineGrossAmountNormalHUF>105000.00</lineGrossAmountNormalHUF>
+            </lineGrossAmountData>
+          </lineAmountsNormal>
+        </line>
+
+        <line>
+          <lineNumber>3</lineNumber>
+          <lineExpressionIndicator>false</lineExpressionIndicator>
+          <lineNatureIndicator>SERVICE</lineNatureIndicator>
+          <lineDescription>Továbbszámlázott biztosítási díj</lineDescription>
+          <lineAmountsNormal>
+            <lineNetAmountData>
+              <lineNetAmount>40000.00</lineNetAmount>
+              <lineNetAmountHUF>40000.00</lineNetAmountHUF>
+            </lineNetAmountData>
+            <lineVatRate>
+              <vatExemption>
+                <case>TAM</case>
+                <reason>Mentes az adó alól, ÁFA tv. 86. § (1) a)</reason>
+              </vatExemption>
+            </lineVatRate>
+            <lineVatData>
+              <lineVatAmount>0.00</lineVatAmount>
+              <lineVatAmountHUF>0.00</lineVatAmountHUF>
+            </lineVatData>
+          </lineAmountsNormal>
+        </line>
+      </invoiceLines>
+
+      <invoiceSummary>
+        <summaryNormal>
+          <summaryByVatRate>
+            <vatRate>
+              <vatPercentage>0.27</vatPercentage>
+            </vatRate>
+            <vatRateNetData>
+              <vatRateNetAmount>160000.00</vatRateNetAmount>
+              <vatRateNetAmountHUF>160000.00</vatRateNetAmountHUF>
+            </vatRateNetData>
+            <vatRateVatData>
+              <vatRateVatAmount>43200.00</vatRateVatAmount>
+              <vatRateVatAmountHUF>43200.00</vatRateVatAmountHUF>
+            </vatRateVatData>
+            <vatRateGrossData>
+              <vatRateGrossAmount>203200.00</vatRateGrossAmount>
+              <vatRateGrossAmountHUF>203200.00</vatRateGrossAmountHUF>
+            </vatRateGrossData>
+          </summaryByVatRate>
+
+          <summaryByVatRate>
+            <vatRate>
+              <vatPercentage>0.05</vatPercentage>
+            </vatRate>
+            <vatRateNetData>
+              <vatRateNetAmount>100000.00</vatRateNetAmount>
+              <vatRateNetAmountHUF>100000.00</vatRateNetAmountHUF>
+            </vatRateNetData>
+            <vatRateVatData>
+              <vatRateVatAmount>5000.00</vatRateVatAmount>
+              <vatRateVatAmountHUF>5000.00</vatRateVatAmountHUF>
+            </vatRateVatData>
+            <vatRateGrossData>
+              <vatRateGrossAmount>105000.00</vatRateGrossAmount>
+              <vatRateGrossAmountHUF>105000.00</vatRateGrossAmountHUF>
+            </vatRateGrossData>
+          </summaryByVatRate>
+
+          <summaryByVatRate>
+            <vatRate>
+              <vatExemption>
+                <case>TAM</case>
+                <reason>Mentes az adó alól, ÁFA tv. 86. § (1) a)</reason>
+              </vatExemption>
+            </vatRate>
+            <vatRateNetData>
+              <vatRateNetAmount>40000.00</vatRateNetAmount>
+              <vatRateNetAmountHUF>40000.00</vatRateNetAmountHUF>
+            </vatRateNetData>
+            <vatRateVatData>
+              <vatRateVatAmount>0.00</vatRateVatAmount>
+              <vatRateVatAmountHUF>0.00</vatRateVatAmountHUF>
+            </vatRateVatData>
+          </summaryByVatRate>
+
+          <invoiceNetAmount>300000.00</invoiceNetAmount>
+          <invoiceNetAmountHUF>300000.00</invoiceNetAmountHUF>
+          <invoiceVatAmount>48200.00</invoiceVatAmount>
+          <invoiceVatAmountHUF>48200.00</invoiceVatAmountHUF>
+        </summaryNormal>
+
+        <summaryGrossData>
+          <invoiceGrossAmount>348200.00</invoiceGrossAmount>
+          <invoiceGrossAmountHUF>348200.00</invoiceGrossAmountHUF>
+        </summaryGrossData>
+      </invoiceSummary>
+    </invoice>
+  </invoiceMain>
+</InvoiceData>

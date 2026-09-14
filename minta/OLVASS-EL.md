@@ -4,7 +4,7 @@ Ezek a fájlok a **végponttól végpontig** próba korpusza: feltöltés → ki
 ellenőrzés → tételek → export. Nem eldobható segédanyag, ezért vannak a repóban:
 minden további körben (kvóta, Beállítások, Stripe) újra kellenek.
 
-Mind a négy fájlt a repó **saját** értelmezőjén és validátorán engedtük át, nem
+Mind az öt fájlt a repó **saját** értelmezőjén és validátorán engedtük át, nem
 csak ránézésre jó — az alábbi táblázat mért eredmény.
 
 ## Mi van bennük
@@ -15,6 +15,7 @@ csak ránézésre jó — az alábbi táblázat mért eredmény.
 | `cii-szabalyos.xml` | `xml/cii` | számla | 280 000 + 69 000 = **349 000** | A másik strukturált ág (Factur-X / ZUGFeRD belső alakja), nyolcjegyű dátumokkal |
 | `ubl-hibas-osszeg.xml` | `xml/ubl` | számla | 100 000 + 27 000 ≠ **130 000** | **Szándékosan elrontva.** A validátor mindhárom összeg-mezőn jelez |
 | `ubl-sztorno.xml` | `xml/ubl` | **sztornó** | −160 000 + −34 400 = **−194 400** | A `CreditNote` gyökér típuskód nélkül is sztornó; és hogy a mínuszjel túléli-e az exportot |
+| `nav-szabalyos.xml` | `xml/nav` | számla | 300 000 + 48 200 = **348 200** | **A magyar alapeset.** Három ÁFA-sor: 27%, 5% és tárgyi mentes (TAM) |
 
 Az `ubl-hibas-osszeg.xml`-t **ne javítsd ki**: pontosan attól hasznos. Egy
 rendszerről, amit csak a jó eseten próbáltunk ki, annyit tudunk, hogy a jó eset
@@ -52,20 +53,54 @@ Ha ezeknél élethűbb kell:
 > A linkeket nem tudom innen ellenőrizni (ez a környezet nem éri el a
 > nyílt internetet), ezért forrásokat nevezek meg, nem URL-eket.
 
-## ⚠️ Amit a NAV Online Számla XML-ről tudni kell
+## A NAV Online Számla XML — felismerve
 
-A magyar számlázóprogramok jellemzően **NAV Online Számla** sémájú XML-t adnak
-ki. Azt a rendszer ma **nem ismeri fel**: csak UBL-t (`shared/uzleti/xml/ubl.ts`)
-és CII-t (`cii.ts`).
+A magyar számlázóprogramok jellemzően **NAV Online Számla** (OSA 3.0) sémájú
+XML-t adnak ki. Ezt korábban a rendszer **nem ismerte fel**, vagyis egy
+magyar bizonylat csendben pénzbe került: strukturált adat volt a kezünkben, és
+mégis a modell olvasta ki.
 
-Egy fel nem ismert XML nem hibázik — a `kiolvas` szándékosan **továbbejti a
-modellhez** (`supabase/functions/kiolvas/index.ts`). Ez jó tervezés, mert így egy
-ismeretlen alak nem akad el. De azt is jelenti, hogy **egy NAV-formátumú XML
-csendben pénzbe kerül**, pedig strukturált adat van benne, amiből ingyen és
-találgatás nélkül ki lehetne olvasni mindent.
+Ma felismeri (`shared/uzleti/xml/nav.ts`), a `nav-szabalyos.xml` pedig ennek a
+mért bizonyítéka. A `document_extractions` soron `model: 'xml/nav'`, a `cost`
+és a `model_version` pedig `null`.
 
-Ez nem hiba, hanem egy hiányzó értelmező. Mielőtt megírnánk, érdemes **megnézni**,
-hogy a te forrásaid ténylegesen milyen formátumot adnak ki — egy harmadik
-értelmező találgatásra építve rosszabb, mint a mai őszinte hiány. Ha tényleg
-NAV-alak, egy `shared/uzleti/xml/nav.ts` a meglévő kettő mintájára nagyjából egy
-kör munka.
+**Két dolog, ami ebben a formátumban meglepő**, és amit érdemes tudni, ha
+valaha hozzá kell nyúlni:
+
+1. **A `vatPercentage` tört, nem százalék.** A NAV XSD-je szerint `0.27`, és a
+   `27` séma szerint *érvénytelen*. Az értelmező szorozza százzal — enélkül 27
+   százalékból csendben 27 forint lenne.
+2. **A bizonylatszám és a kelt a gyökér közvetlen gyereke**, nem az
+   `invoiceHead` alatt. A 2.0-s séma emelte ki őket; a netes példák jó része
+   még a régi helyüket mutatja.
+
+### Amit a formátum nem árul el
+
+**Sztornó és részleges helyesbítés nem különböztethető meg.** Az
+`invoiceOperation` (CREATE / MODIFY / STORNO) nincs a számla XML-jében — csak
+a NAV-nak küldött *kérés borítékában*, ami a könyvelőhöz eljutó fájlból
+hiányzik. Az egyetlen jel az `invoiceReference` megléte.
+
+Ezért minden ilyen okirat **helyesbítő számla** lesz, ami a pontos
+gyűjtőfogalom: a sztornó ennek a teljes esete. Szűkíteni veszélyes volna —
+egy helyesbítést sztornónak minősíteni egy egész számlát érvénytelenítene. Az
+Ellenőrzés képernyőn egy kattintás szűkíteni.
+
+És ami ebből következik: a helyesbítő okirat összegei **különbözetek**, nem új
+végösszegek, és rendszerint negatívak. Ez könyvelésileg helyes — a
+különbözet a könyvelendő tétel —, de meglepő, ha valaki új számlaértéket vár.
+
+### Ami nyitva maradt
+
+- **A base64/gzip API-boríték** (`ManageInvoiceRequest`,
+  `QueryInvoiceDataResponse`): a könyvelőnek átadott export sima XML, a
+  boríték hibakeresési melléktermék. Ilyen fájl ugyanúgy a modellhez esik,
+  mint bármi más fel nem ismert alak.
+- **A `K` (közösségi) és `G` (export) ÁFA-kategória**: a NAV ezeket szöveges
+  `case` kóddal teszi a mentes/hatályon kívüli ágba, és egy kódszótárat
+  valódi minták nélkül kitalálni találgatás volna.
+- **A több számlás `Invoices` gyökér** (az Online Számla felület exportja)
+  védekezően van megírva, mert **nincs rá kiadott XSD**. Az értelmező nem
+  feltételez fix mélységet: azt keresi, aminek `invoiceMain` gyereke van.
+  Ilyenkor az **első** számla adatai jönnek ki, és a bizonylat a „több
+  különálló bizonylat" jelzéssel emberhez kerül.

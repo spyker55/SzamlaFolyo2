@@ -20,8 +20,8 @@ const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
   // A prefixeket **nem** töletjük le a parserrel: a `helyiNev()` intézi, így
-  // az `xmlns` attribútum megmarad, és abból tudjuk UBL-ként azonosítani a
-  // dokumentumot.
+  // az `xmlns` deklarációk megmaradnak, és azokból tudjuk a dokumentumot
+  // UBL-ként vagy NAV-ként azonosítani.
   removeNSPrefix: false,
   trimValues: true,
   // A szabványos entitások (&amp; &lt; …) feldolgozása biztonságos, mert a
@@ -57,22 +57,58 @@ export function xmltFelolvas(xml: string, bajtHossz: number): Dokumentum | null 
   }
 
   const fa = parser.parse(xml) as unknown[];
-  const gyoker = elsoElem(fa);
+  const nyersGyoker = elsoElem(fa);
 
-  return gyoker === null ? null : { gyoker, nevter: nevterOlvas(gyoker) };
+  if (nyersGyoker === null) {
+    return null;
+  }
+
+  const gyoker = alakit(nyersGyoker);
+
+  return gyoker === null ? null : { gyoker, nevterek: nevterekOlvas(nyersGyoker[':@']) };
 }
 
-/** A gyökér `xmlns` attribútuma — ebből azonosítjuk az UBL-t. */
-function nevterOlvas(gyoker: Csomopont): string | null {
-  return gyoker.attr['xmlns'] ?? null;
+/**
+ * A gyökéren deklarált névterek.
+ *
+ * A **nyers** rekordból olvassuk, nem a kész csomópontból: az `attributumok()`
+ * addigra minden nevet helyi névre rövidít, tehát az `xmlns:ns2` kulcsból
+ * `ns2` lesz, és onnantól nem látszik, hogy névtér-deklaráció volt. Egy
+ * prefixes gyökér így csendben névtér nélkülinek tűnne.
+ */
+function nevterekOlvas(nyers: unknown): string[] {
+  if (nyers === null || typeof nyers !== 'object') {
+    return [];
+  }
+
+  const eredmeny: string[] = [];
+
+  for (const [kulcs, ertek] of Object.entries(nyers as Record<string, unknown>)) {
+    const nev = kulcs.startsWith('@_') ? kulcs.slice(2) : kulcs;
+
+    if (nev === 'xmlns' || nev.startsWith('xmlns:')) {
+      eredmeny.push(String(ertek));
+    }
+  }
+
+  return eredmeny;
 }
 
-/** A fast-xml-parser tömbjéből az első valódi elem (a `?xml` prológus kimarad). */
-function elsoElem(csomopontok: unknown[]): Csomopont | null {
+/**
+ * A fast-xml-parser tömbjéből az első valódi elem **nyers rekordja** (a `?xml`
+ * prológus kimarad). Nyersen, mert a névtér-attribútumok csak itt láthatók.
+ */
+function elsoElem(csomopontok: unknown[]): Record<string, unknown> | null {
   for (const nyers of csomopontok) {
-    const csomopont = alakit(nyers);
-    if (csomopont !== null && csomopont.nev !== '?xml') {
-      return csomopont;
+    if (nyers === null || typeof nyers !== 'object') {
+      continue;
+    }
+
+    const rekord = nyers as Record<string, unknown>;
+    const nev = Object.keys(rekord).find((k) => k !== ':@' && k !== '#text');
+
+    if (nev !== undefined && nev !== '?xml') {
+      return rekord;
     }
   }
 

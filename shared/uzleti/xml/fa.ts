@@ -21,11 +21,25 @@ export type Csomopont = {
   szoveg: string;
 };
 
-/** A gyökér névtér-URI-ja — az UBL felismeréséhez kell. */
+/** A gyökéren deklarált névterek — ezekből ismerjük fel a formátumot. */
 export type Dokumentum = {
   gyoker: Csomopont;
-  nevter: string | null;
+  /** Minden `xmlns` és `xmlns:*` **értéke** a gyökérről. */
+  nevterek: readonly string[];
 };
+
+/**
+ * Deklarálva van-e a gyökéren olyan névtér, ami tartalmazza a mintát.
+ *
+ * Miért lista, és miért nem egyetlen URI: a gyökér lehet prefixes
+ * (`<ns2:InvoiceData xmlns:ns2="…">`), és olyankor **nincs** alapértelmezett
+ * `xmlns`. Mérve: a magyar számlázók JAXB-alapú exportja rendszeresen ilyen —
+ * egy `xmlns`-re épített vizsgálat ott csendben `null`-t kapna, a bizonylat
+ * pedig felismeretlenül a modellhez esne, pénzért.
+ */
+export function nevterTartalmaz(doc: Dokumentum, minta: string): boolean {
+  return doc.nevterek.some((nevter) => nevter.includes(minta));
+}
 
 export function helyiNev(nev: string): string {
   const ketospont = nev.lastIndexOf(':');
