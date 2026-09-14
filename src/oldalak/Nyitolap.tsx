@@ -66,7 +66,18 @@ import { allapotCimke, tipusCimke } from '@uzleti/enumok.ts';
  */
 export function Nyitolap() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-vaszon text-slate-800 antialiased">
+    /*
+      ⚠️ **Itt nincs `overflow-x-hidden`, és ez nem feledékenység.** Egy őselem
+      `overflow` értéke — az `x` tengelyen is — görgetőkonténert csinál, és
+      onnantól a `sticky` fejléc **ahhoz** tapad, nem az ablakhoz: vagyis
+      együtt görög el a lappal. Mérve: ezzel az osztállyal a fejléc y=-4130-ra
+      került a lap alján, nélküle y=0.
+
+      A foltokat nem is a külső doboznak kell megfognia, hanem annak a
+      szakasznak, amelyikben keletkeznek — ott áll az `overflow-hidden`, a
+      heron és a Beérkező-mintán.
+    */
+    <div className="min-h-screen bg-vaszon text-slate-800 antialiased">
       <Fejlec />
       <main>
         <Hero />
