@@ -1,0 +1,38 @@
+# A Supabase CLI projektleírója.
+#
+# Enélkül a CLI el sem indul: ebből ismeri fel a projektgyökeret. Sokáig
+# hiányzott, miközben a `kiolvas/README.md` már ígérte a CLI-s telepítést —
+# vagyis egy parancsot dokumentáltunk, ami nem futott le. Ugyanaz a hibaosztály,
+# amit ebben a projektben mindenhol máshol is javítunk: ígéret, amit a kód nem
+# tart be.
+project_id = "szamlafolyo"
+
+# Mindkét függvény itt áll, nem csak az, amit épp telepítünk. Az ok gyakorlati:
+# a CLI a `config.toml`-ból veszi a beállításokat, és ami nincs leírva, azt egy
+# telepítés **csendben visszaállíthatja** az alapértékre. Egy `verify_jwt`,
+# ami magától kikapcsol, pont az a fajta hiba, amit senki nem vesz észre.
+
+[functions.kiolvas]
+# ⚠️ Maradjon bekapcsolva. A `shared/uzleti/token.ts` érvelése **arra
+# támaszkodik**, hogy a platform a tokent már hitelesítette, mire a kód megnézi
+# a `role` állítását — ezt méréssel igazoltuk: hamis aláírású, `service_role`
+# szerepű token 401-et kap, el sem jut a kódig. Kikapcsolva a kötegelt hívás
+# védtelen maradna.
+verify_jwt = true
+import_map = "./functions/deno.json"
+# A **forrás** a belépési pont, nem a generált csomag. A `kiolvas.bundle.js`
+# azért született, mert az MCP-s telepítés hívásába nem fér be sok fájl; a CLI
+# viszont maga oldja fel a `../../../shared/…` importokat az import-térkép
+# szerint, tehát nincs szüksége csomagra.
+#
+# Ha a CLI mégis elakadna rajtuk, a kijárat egyetlen sor: írd át ezt
+# `./functions/kiolvas/kiolvas.bundle.js`-re. Az a korábban telepített artefakt
+# alakja, tehát bizonyítottan fut — csak előtte `npm run kiolvas:csomag` kell.
+entrypoint = "./functions/kiolvas/index.ts"
+
+[functions.selejtez]
+# A selejtező a `szolgaltatasSzerep()`-elvvel szűri a hívót, ugyanazon az
+# alapon, mint a `kiolvas` kötegelt ága.
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/selejtez/index.ts"
