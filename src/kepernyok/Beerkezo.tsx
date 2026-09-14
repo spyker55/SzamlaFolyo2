@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.ts';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
-import { feltolt } from '../lib/feltoltes.ts';
+import { duplikatumotElvet, feltolt } from '../lib/feltoltes.ts';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
 import { keretMondat } from '@uzleti/keret.ts';
@@ -48,6 +48,8 @@ export function Beerkezo() {
   const [feltoltFolyik, setFeltoltFolyik] = useState(false);
   const [huzas, setHuzas] = useState(false);
   const [keret, setKeret] = useState<Keret | null>(null);
+  // Melyik duplikátumsor elvetése fut éppen — a gomb addig nem nyomható újra.
+  const [elvetes, setElvetes] = useState<string | null>(null);
   const bemenetRef = useRef<HTMLInputElement>(null);
 
   const betoltes = useCallback(async () => {
@@ -114,6 +116,19 @@ export function Beerkezo() {
     setHibak(ujHibak);
     setFeltoltFolyik(false);
     if (bemenetRef.current !== null) bemenetRef.current.value = '';
+    await betoltes();
+  }
+
+  async function elvet(id: string) {
+    setElvetes(id);
+
+    const eredmeny = await duplikatumotElvet(id);
+
+    if (!eredmeny.ok) {
+      setHibak([eredmeny.hiba ?? 'A sort nem sikerült elvetni.']);
+    }
+
+    setElvetes(null);
     await betoltes();
   }
 
@@ -248,6 +263,22 @@ export function Beerkezo() {
                       <Link to={`/ellenorzes/${sor.id}`} className="btn btn-primary btn-sm">
                         Ellenőrzés
                       </Link>
+                    )}
+                    {/*
+                      A duplikátum eddig zsákutca volt: ott állt a listában, és
+                      semmit nem lehetett vele csinálni. Megtekintőnek most sem
+                      kínáljuk fel — az RLS `szerkeszthet` politikája úgyis
+                      visszautasítaná, felajánlani pedig félrevezető.
+                    */}
+                    {sor.status === 'duplikatum' && szerkeszthet && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        disabled={elvetes !== null}
+                        onClick={() => void elvet(sor.id)}
+                      >
+                        {elvetes === sor.id ? 'Elvetés…' : 'Elvetem'}
+                      </button>
                     )}
                   </td>
                 </tr>

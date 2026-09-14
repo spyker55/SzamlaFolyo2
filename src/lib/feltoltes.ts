@@ -44,9 +44,29 @@ export async function feltolt(fajl: File, cegId: string): Promise<FeltoltesEredm
     .maybeSingle();
 
   if (meglevo !== null) {
+    // Megkeressük, **minek** a duplikátuma. A `duplicate_of_id` oszlop pont
+    // erre való, és sokáig kitöltetlen maradt: a sor tudta, hogy fölösleges,
+    // csak azt nem, hogy mi helyett az.
+    //
+    // A `status <> 'duplikatum'` szűrő nem apróság: enélkül egy harmadik
+    // feltöltés a **második** duplikátumra mutatna, és a lánc végén senki nem
+    // találná meg az igazi bizonylatot. Rendezés a legkorábbira, mert az az
+    // eredeti.
+    const { data: eredeti } = await supabase
+      .from('documents')
+      .select('id')
+      .eq('file_id', meglevo.id)
+      .neq('status', 'duplikatum')
+      .order('created_at')
+      .limit(1)
+      .maybeSingle();
+
     const { error } = await supabase.from('documents').insert({
       file_id: meglevo.id,
       status: 'duplikatum',
+      // Ha az eredetit időközben törölték, marad `null` — a sor akkor is
+      // igazat mond: a fájl bent van, csak nincs mire mutatni.
+      duplicate_of_id: eredeti?.id ?? null,
     });
 
     if (error !== null) {
@@ -109,6 +129,30 @@ export async function feltolt(fajl: File, cegId: string): Promise<FeltoltesEredm
     .catch(() => undefined);
 
   return { allapot: 'kesz', dokumentumId: dokumentum.id };
+}
+
+/**
+ * Egy duplikátumsor elvetése.
+ *
+ * A duplikátum **üzenet, nem bizonylat**: azt mondja meg, hogy ezt a fájlt már
+ * feltöltötted egyszer. Amíg egy kötegnél hasznos látni, mit hagyott ki a
+ * rendszer, egy véletlen dupla behúzás után már csak zaj — és eddig nem volt
+ * mód megszabadulni tőle.
+ *
+ * ⚠️ A `status` feltétel a lekérdezésben van, nem csak a hívó oldalán: így egy
+ * elgépelt azonosító **nem tud** valódi bizonylatot törölni. Ez nem biztonsági
+ * határ — az az RLS —, hanem az a fajta öv, ami mellé a nadrágtartó is jár.
+ *
+ * A fájlhoz nem nyúlunk: az az **eredeti** bizonylaté, nem ezé a soré.
+ */
+export async function duplikatumotElvet(dokumentumId: string): Promise<{ ok: boolean; hiba?: string }> {
+  const { error } = await supabase
+    .from('documents')
+    .delete()
+    .eq('id', dokumentumId)
+    .eq('status', 'duplikatum');
+
+  return error === null ? { ok: true } : { ok: false, hiba: error.message };
 }
 
 /** SHA-256 hexa alakban. A böngésző beépített kriptója adja, nincs hozzá könyvtár. */
