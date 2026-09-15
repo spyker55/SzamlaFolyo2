@@ -55,3 +55,15 @@ entrypoint = "./functions/selejtez/index.ts"
 verify_jwt = false
 import_map = "./functions/deno.json"
 entrypoint = "./functions/email-bekuldes/index.ts"
+
+[functions.meghivo-kuld]
+# Itt **bekapcsolva** marad, szemben az `email-bekuldes`-szel: ezt a végpontot
+# egy belépett tulajdonos hívja a böngészőből, tehát van érvényes JWT-je.
+#
+# A függvény ráadásul **támaszkodik is erre**: a levélbe írt „ki hívott" a token
+# `email` állításából jön, és azt csak azért olvashatjuk ellenőrzés nélkül, mert
+# a platform a tokent addigra már hitelesítette. Kikapcsolva bárki tetszőleges
+# feladót írhatna a mi nevünkben kimenő levélbe.
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/meghivo-kuld/index.ts"

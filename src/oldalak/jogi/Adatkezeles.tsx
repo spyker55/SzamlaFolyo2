@@ -42,6 +42,15 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  *   adata, hanem a *kézbesítésé* — és mert a megőrzésének **más az indoka**:
  *   nem a kiolvasás, hanem az, hogy egy elutasított levél ne tűnjön el
  *   nyomtalanul.
+ *
+ * # 2026. szeptember 15. — a meghívó
+ *
+ * Kollégát mostantól levélben lehet behívni (`20260915000300_meghivo.sql`).
+ * Ezzel egy **új adatkör** keletkezett, és szintén saját sort kapott a 2.
+ * pontban: a meghívott e-mail címe. Ez azért nem fér bele a „Név, e-mail cím,
+ * titkosított jelszó" sorba, mert az a **felhasználóinkról** szól — a
+ * meghívott viszont addig nem az, és lehet, hogy soha nem is lesz. A címet a
+ * cég tulajdonosa adja meg, a jogalap ezért jogos érdek, nem szerződés.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -116,6 +125,18 @@ export function Adatkezeles() {
               legrosszabb kimenetel
             </td>
             <td className="td">Az Előfizető utasítása (adatfeldolgozás)</td>
+            <td className="td">A szerződés megszűnéséig</td>
+          </tr>
+          <tr className="trow">
+            <td className="td">
+              A meghívott kolléga e-mail címe, a meghívó szerepköre és sorsa (elküldve,
+              elfogadva, visszavonva, lejárt)
+            </td>
+            <td className="td">
+              Hozzáférés adása a cég bizonylataihoz. Ez az egyetlen adat, amit olyan emberről
+              kezelünk, aki még nem a felhasználónk — a címet a cég tulajdonosa adja meg
+            </td>
+            <td className="td">Jogos érdek: a cég hozzáférés-kezelése</td>
             <td className="td">A szerződés megszűnéséig</td>
           </tr>
           <tr className="trow">

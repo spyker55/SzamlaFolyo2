@@ -14,6 +14,7 @@ import { AppElrendezes } from './komponensek/Elrendezes.tsx';
 import { Bejelentkezes } from './kepernyok/auth/Bejelentkezes.tsx';
 import { Regisztracio } from './kepernyok/auth/Regisztracio.tsx';
 import { ElfelejtettJelszo, JelszoBeallitas } from './kepernyok/auth/Jelszo.tsx';
+import { Meghivo } from './kepernyok/auth/Meghivo.tsx';
 import { CegLetrehozas } from './kepernyok/CegLetrehozas.tsx';
 import { Beerkezo } from './kepernyok/Beerkezo.tsx';
 import { Ellenorzes } from './kepernyok/Ellenorzes.tsx';
@@ -56,6 +57,14 @@ export function App() {
           <Route path="/aszf" element={<Aszf />} />
           <Route path="/adatkezeles" element={<Adatkezeles />} />
           <Route path="/impresszum" element={<Impresszum />} />
+
+          {/*
+            A meghívó **se nem vendég-, se nem védett** útvonal, és ez tudatos:
+            a meghívott lehet olyan, akinek még nincs fiókja, és lehet olyan,
+            aki már be van lépve. Egy „csak kilépve" kapu az utóbbit kidobná a
+            saját meghívójáról; egy „csak belépve" kapu az előbbit.
+          */}
+          <Route path="/meghivo/:token" element={<Meghivo />} />
 
           {/* Csak kilépve */}
           <Route

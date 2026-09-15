@@ -12,6 +12,35 @@
 
 export const szamlafolyo = {
   /*
+   * A webhely címe
+   *
+   * Egyetlen dolog miatt kell: a **meghívó levélbe** kerülő link. Minden más
+   * helyen a böngésző a saját címét ismeri, egy levelet viszont a szerver
+   * állít össze, és ott nincs `window.location`.
+   *
+   * ⚠️ Szándékosan **nem** a kérés `Origin` fejlécéből vesszük. Az a hívó
+   * állítása, és a levél a **mi** nevünkben megy ki: egy rossz irányba mutató
+   * link a saját, hitelesített tartományunkról küldött adathalász levél lenne.
+   * Egy kézzel karbantartott konstans itt kevésbé kényelmes, de nem hazudható.
+   *
+   * ⚠️ A domain felcsatolásakor **ezt kell először átírni**, és utána a
+   * `meghivo-kuld` függvényt újratelepíteni — a levélbe fordításkor ég bele.
+   * Addig a linkek a Vercel-címre mutatnak, ami ugyanaz az alkalmazás.
+   */
+  webcim: 'https://szamla-folyo2.vercel.app',
+
+  /*
+   * A rendszer leveleinek feladója.
+   *
+   * Szándékosan **valódi postafiók**, nem `noreply@`. Aki meghívót kap egy
+   * ismeretlen rendszertől, annak az első mozdulata a Válasz gomb — és egy
+   * megválaszolhatatlan levél pont abban a pillanatban hallgat el, amikor a
+   * címzett bizalmatlan. A tartomány DKIM-aláírt, tehát a levél hitelesen a
+   * miénk.
+   */
+  levelFelado: 'SzámlaFolyó <info@szamlafolyo.hu>',
+
+  /*
    * Feltöltés
    *
    * A méret- és típuskorlát egy helyen áll. Nem képernyő-beállítás, hanem a

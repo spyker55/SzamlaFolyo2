@@ -33,6 +33,23 @@
  * egyszerűen nem jogosít.
  */
 export function tokenSzerep(fejlec: string | null | undefined): string | null {
+  return tokenAllitas(fejlec, 'role');
+}
+
+/**
+ * Egy tetszőleges szöveges állítás a Bearer tokenből.
+ *
+ * A `role`-on kívül a `meghivo-kuld` függvénynek az `email` kell: a levélben
+ * meg kell nevezni, **ki** hívott. Ugyanaz az érvelés áll rá, mint a szerepre:
+ * a platform a tokent a `verify_jwt: true` miatt **már hitelesítette**, mire
+ * ide eljut — ezért olvasható ki belőle állítás anélkül, hogy ellenőriznénk.
+ *
+ * ⚠️ Kikapcsolt `verify_jwt` mellett ez a függvény semmit nem bizonyít.
+ */
+export function tokenAllitas(
+  fejlec: string | null | undefined,
+  nev: string,
+): string | null {
   if (fejlec === null || fejlec === undefined) {
     return null;
   }
@@ -58,9 +75,9 @@ export function tokenSzerep(fejlec: string | null | undefined): string | null {
     return null;
   }
 
-  const szerep = payload['role'];
+  const ertek = payload[nev];
 
-  return typeof szerep === 'string' && szerep !== '' ? szerep : null;
+  return typeof ertek === 'string' && ertek !== '' ? ertek : null;
 }
 
 /** Igaz, ha a hívó szolgáltatás-jogosultsággal (a cron vagy egy belső hívás) jön. */

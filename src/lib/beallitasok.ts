@@ -21,6 +21,14 @@ import { naploz } from './naplo.ts';
 export type Tag = {
   id: string;
   user_id: string;
+  /**
+   * A tag belépési címe.
+   *
+   * A `20260915000300` migráció óta a tagsági soron áll, mert az `auth.users` a
+   * klienstől zárva van — és az helyes is így. A régebbi sorokra a migráció
+   * visszatöltötte; `null` csak akkor lehet, ha a fiók időközben megszűnt.
+   */
+  email: string | null;
   role: Szerep;
   accepted_at: string | null;
   created_at: string;
@@ -193,7 +201,7 @@ export async function nevetMent(cegId: string, nev: string): Promise<Mentes> {
 export async function tagok(cegId: string): Promise<Tag[]> {
   const { data } = await supabase
     .from('company_members')
-    .select('id, user_id, role, accepted_at, created_at')
+    .select('id, user_id, email, role, accepted_at, created_at')
     .eq('company_id', cegId)
     .order('created_at');
 

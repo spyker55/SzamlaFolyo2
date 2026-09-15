@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
@@ -27,6 +27,15 @@ import { SZEREPEK, szerepCimke, type Szerep } from '@uzleti/enumok.ts';
 import { datum } from '@uzleti/ido.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { bekuldesiCim } from '@uzleti/bekuldes.ts';
+import { allapotCimke, ferMegTag, meghivoLink } from '@uzleti/meghivo.ts';
+import {
+  allapota as meghivoAllapota,
+  meghivok as meghivokatKer,
+  meghivotKuld,
+  meghivotLetrehoz,
+  meghivotVisszavon,
+  type Meghivo,
+} from '../lib/meghivo.ts';
 
 /**
  * Beállítások.
@@ -54,6 +63,7 @@ export function Beallitasok() {
   const [keret, setKeret] = useState<Keret | null>(null);
   const [tagLista, setTagLista] = useState<Tag[]>([]);
   const [levelek, setLevelek] = useState<BeerkezettLevel[]>([]);
+  const [meghivoLista, setMeghivoLista] = useState<Meghivo[]>([]);
   const [uzenet, setUzenet] = useState<string | null>(null);
   const [hiba, setHiba] = useState<string | null>(null);
 
@@ -63,6 +73,9 @@ export function Beallitasok() {
     if (ceg !== null) {
       setTagLista(await tagokatKer(ceg.id));
       setLevelek(await beerkezettLevelek(ceg.id));
+      // A meghívókat csak a tulajdonos látja (RLS). Aki nem az, üres listát
+      // kap — nem hibát, tehát nem kell külön ágra tenni.
+      setMeghivoLista(await meghivokatKer(ceg.id));
     }
   }, [ceg]);
 
@@ -185,7 +198,7 @@ export function Beallitasok() {
                 <label className="flabel" htmlFor="bekuldo-cim">
                   A cég beküldő címe
                 </label>
-                <CimSor cim={bekuldesiCim(ceg.bekuldes_token)} />
+                <CimSor id="bekuldo-cim" cim={bekuldesiCim(ceg.bekuldes_token)} />
 
                 {/*
                   Ez nem figyelmeztetés a figyelmeztetés kedvéért: a cím
@@ -437,7 +450,7 @@ export function Beallitasok() {
                   return (
                     <tr key={tag.id} className="trow">
                       <td className="td font-medium text-slate-900">
-                        {en ? `${user?.email ?? 'Te'} (te)` : rovidAzonosito(tag.user_id)}
+                        {en ? `${user?.email ?? 'Te'} (te)` : (tag.email ?? rovidAzonosito(tag.user_id))}
                       </td>
                       <td className="td">
                         {admin && !en ? (
@@ -492,16 +505,17 @@ export function Beallitasok() {
             </table>
           </div>
 
-          {/*
-            A meghívás e-mailt igényel, az SMTP pedig még nincs beállítva. Egy
-            gomb, ami némán nem küld levelet, rosszabb a hiányánál: a tulajdonos
-            azt hinné, hogy a kollégája megkapta.
-          */}
-          <div className="alert alert-figyelem mt-4">
-            <strong>A meghívás még nem elérhető.</strong> Ahhoz levélküldés kell, és az a
-            jelszó-emlékeztetővel együtt jön a következő körben. Addig a tagok felvétele
-            kézi művelet.
-          </div>
+          {admin && (
+            <Meghivas
+              cegId={ceg.id}
+              lista={meghivoLista}
+              tagokSzama={tagLista.length}
+              keret={keret}
+              frissit={betoltes}
+              uzen={setUzenet}
+              hibaz={setHiba}
+            />
+          )}
         </Kartya>
       </div>
     </AppElrendezes>
@@ -653,13 +667,13 @@ function Valasztas({
  * kattintásra kijelöli az egészet — a vágólap-API-ra pedig nem támaszkodunk
  * egyedül, mert az nem HTTPS alatt (és néhány böngészőben) egyszerűen nincs.
  */
-function CimSor({ cim }: { cim: string }) {
+function CimSor({ cim, id }: { cim: string; id?: string }) {
   const [masolva, setMasolva] = useState(false);
 
   return (
     <div className="flex gap-2">
       <input
-        id="bekuldo-cim"
+        id={id}
         className="control font-mono text-sm"
         value={cim}
         readOnly
@@ -743,12 +757,198 @@ function LevelLista({ levelek }: { levelek: BeerkezettLevel[] }) {
 }
 
 /**
- * Egy tag azonosítója, ha a nevét nem tudjuk.
+ * Egy tag azonosítója, ha a címét nem tudjuk.
  *
- * Az `auth.users` tábla a kliens elől zárva van — és ez így helyes. A többi tag
- * e-mail címét ezért ma nem tudjuk kiírni; a meghívás körében fog megjelenni,
- * amikor a `company_members` a meghívott címét is hordozza.
+ * Az `auth.users` tábla a kliens elől zárva van — és ez így helyes. A cím ezért
+ * a **tagsági soron** áll (`20260915000300` migráció): belépéskor másolódik oda,
+ * abban a pillanatban, amikor amúgy is hozzáférünk. Ez a tartalék alak így már
+ * csak egy esetben látszik: ha a fiók időközben megszűnt, és a sor árván maradt.
  */
 function rovidAzonosito(id: string): string {
   return `Tag · ${id.slice(0, 8)}`;
+}
+
+/**
+ * Meghívás és a meghívók listája.
+ *
+ * # Miért két lépés egy gombnyomás mögött
+ *
+ * Mert két dolog romolhat el külön. A meghívót az adatbázis hozza létre, a
+ * levelet a `meghivo-kuld` függvény küldi — és ha a **második** akad el, az
+ * első akkor is megvan. Ilyenkor nem azt mondjuk, hogy „nem sikerült", hanem
+ * azt, hogy a meghívó létrejött, csak a levél nem ment ki, és itt a link.
+ * A régi rendszer legrosszabb hibaosztálya épp ez volt: a felület sikert
+ * jelentett, a másik fél meg nem kapott semmit.
+ *
+ * # A link látszik, és ez szándékos
+ *
+ * A tulajdonos kimásolhatja és átadhatja máshogy — chaten, telefonban. Ettől a
+ * meghívó nem lesz gyengébb: elfogadni továbbra is **csak** a megcímzett
+ * e-mail címmel belépve lehet, akárhogy jut el a link a másik félhez.
+ */
+function Meghivas({
+  cegId,
+  lista,
+  tagokSzama,
+  keret,
+  frissit,
+  uzen,
+  hibaz,
+}: {
+  cegId: string;
+  lista: Meghivo[];
+  tagokSzama: number;
+  keret: Keret | null;
+  frissit: () => Promise<void>;
+  uzen: (szoveg: string | null) => void;
+  hibaz: (szoveg: string | null) => void;
+}) {
+  const [cim, setCim] = useState('');
+  const [szerep, setSzerep] = useState<Szerep>('szerkeszto');
+  const [dolgozik, setDolgozik] = useState(false);
+
+  async function meghiv(e: FormEvent) {
+    e.preventDefault();
+    uzen(null);
+    hibaz(null);
+    setDolgozik(true);
+
+    const letrejott = await meghivotLetrehoz(cegId, cim, szerep);
+
+    if (!letrejott.ok || letrejott.id === undefined) {
+      setDolgozik(false);
+      hibaz(letrejott.hiba ?? 'A meghívót nem sikerült létrehozni.');
+      return;
+    }
+
+    const kuldes = await meghivotKuld(letrejott.id);
+
+    setDolgozik(false);
+    setCim('');
+    await frissit();
+
+    if (!kuldes.ok) {
+      hibaz(
+        `A meghívó létrejött, de a levél nem ment ki (${kuldes.hiba ?? 'ismeretlen ok'}). ` +
+          'A linket a lenti listából kimásolhatod, vagy nyomj a „Küldd újra" gombra.',
+      );
+      return;
+    }
+
+    uzen('A meghívó elment.');
+  }
+
+  async function ujra(m: Meghivo) {
+    uzen(null);
+    hibaz(null);
+
+    const eredmeny = await meghivotKuld(m.id);
+
+    eredmeny.ok ? uzen('A meghívó újra elment.') : hibaz(eredmeny.hiba ?? 'A levél nem ment ki.');
+  }
+
+  async function visszavon(m: Meghivo) {
+    uzen(null);
+    hibaz(null);
+
+    const eredmeny = await meghivotVisszavon(m.id);
+
+    if (!eredmeny.ok) {
+      hibaz(eredmeny.hiba ?? 'A visszavonás nem sikerült.');
+      return;
+    }
+
+    await frissit();
+    uzen('A meghívó visszavonva, a link érvénytelen.');
+  }
+
+  const fuggo = lista.filter((m) => meghivoAllapota(m) === 'ervenyes');
+  const lezart = lista.filter((m) => meghivoAllapota(m) !== 'ervenyes').slice(0, 5);
+
+  // Amíg a keret nem töltődött be, nem tiltunk: egy hiányzó adat ne látsszon
+  // korlátnak. A meghívás akkor is átmegy — a felület ilyenkor nem tud
+  // többet, mint az adatbázis.
+  const hely = keret === null ? { fer: true } : ferMegTag(keret, tagokSzama, fuggo.length);
+
+  return (
+    <div className="mt-6 border-t border-slate-200 pt-5">
+      <h3 className="text-sm font-semibold text-slate-900">Kolléga meghívása</h3>
+      <p className="mt-1 text-sm text-slate-500">
+        Kap egy levelet a meghívó linkjével. Elfogadni <strong>csak ezzel az e-mail címmel</strong>{' '}
+        belépve tud — a link nem adható át másnak.
+      </p>
+
+      {!hely.fer && <div className="alert alert-figyelem mt-3">{hely.indok}</div>}
+
+      <form onSubmit={meghiv} className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <input
+          type="email"
+          className="control"
+          placeholder="kollega@pelda.hu"
+          required
+          value={cim}
+          onChange={(e) => setCim(e.target.value)}
+        />
+        <select
+          className="control sm:w-44"
+          value={szerep}
+          onChange={(e) => setSzerep(e.target.value as Szerep)}
+        >
+          {SZEREPEK.map((sz) => (
+            <option key={sz} value={sz}>
+              {szerepCimke(sz)}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="btn btn-primary shrink-0"
+          disabled={dolgozik || !hely.fer}
+        >
+          {dolgozik ? 'Küldés…' : 'Meghívom'}
+        </button>
+      </form>
+
+      {fuggo.length > 0 && (
+        <ul className="mt-4 space-y-3">
+          {fuggo.map((m) => (
+            <li key={m.id} className="rounded-lg border border-slate-200 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="text-sm font-medium text-slate-900">{m.email}</span>
+                  <span className="ml-2 text-xs text-slate-500">{szerepCimke(m.role)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="badge badge-varakozo">{allapotCimke('ervenyes')}</span>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => void ujra(m)}>
+                    Küldd újra
+                  </button>
+                  <button type="button" className="btn btn-danger btn-sm" onClick={() => void visszavon(m)}>
+                    Visszavonom
+                  </button>
+                </div>
+              </div>
+
+              <p className="mt-2 text-xs text-slate-400">{datum(m.expires_at)}-ig érvényes</p>
+
+              <div className="mt-2">
+                <CimSor cim={meghivoLink(m.token)} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {lezart.length > 0 && (
+        <ul className="mt-4 space-y-1">
+          {lezart.map((m) => (
+            <li key={m.id} className="flex items-center justify-between text-sm text-slate-500">
+              <span>{m.email}</span>
+              <span className="badge badge-semleges">{allapotCimke(meghivoAllapota(m))}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
