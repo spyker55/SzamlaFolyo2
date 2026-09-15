@@ -143,6 +143,14 @@ export type MellekletFej = {
   id: string;
   filename?: string | null;
   content_type?: string | null;
+  /**
+   * A melléklet mérete bájtban, vagy **`null`/hiányzó = nem tudjuk**.
+   *
+   * ⚠️ A kettő nem ugyanaz, és ezen élesben el is bukott egy valódi levél: a
+   * webhook payloadja a mellékletről csak azonosítót, nevet és típust ad,
+   * méretet **nem** — azt külön API-hívás adja. Egy `size ?? 0` így minden
+   * beérkező számlát „üres"-nek minősített.
+   */
   size?: number | null;
 };
 
@@ -188,9 +196,12 @@ export function mellekletValogat(mellekletek: readonly MellekletFej[]): Valogata
 
   for (const m of mellekletek) {
     const nev = m.filename ?? '(névtelen melléklet)';
-    const meret = m.size ?? 0;
+    // `null` = nem tudjuk. Ez NEM nulla bájt, és a kettőt összemosni annyi,
+    // mint hiányzó információra elutasítani — ugyanaz a hiba, mint amit a
+    // kredit- és keretszámolás mindenhol elkerül.
+    const meret = m.size ?? null;
 
-    if (meret > feltoltes.maxBajt) {
+    if (meret !== null && meret > feltoltes.maxBajt) {
       const mb = Math.round(feltoltes.maxBajt / 1024 / 1024);
       mellozott.push({ nev, indok: `Nagyobb ${mb} MB-nál.` });
       continue;
@@ -221,7 +232,13 @@ export function mellekletValogat(mellekletek: readonly MellekletFej[]): Valogata
         continue;
       }
 
-      if ((m.size ?? 0) < bekuldes.kepMinBajt) {
+      // Ismeretlen méretnél **átengedjük**. A küszöb heurisztika, és egy
+      // heurisztika nem utasíthat el olyasmit, amiről semmit nem tudunk: egy
+      // elveszett számla rosszabb, mint egy fölösleges bizonylat, amit a
+      // felhasználó egy kattintással eldob.
+      const meret = m.size ?? null;
+
+      if (meret !== null && meret < bekuldes.kepMinBajt) {
         const kb = Math.round(bekuldes.kepMinBajt / 1024);
         mellozott.push({ nev, indok: `Kisebb ${kb} kB-nál — valószínűleg aláíráskép.` });
         continue;

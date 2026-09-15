@@ -284,6 +284,92 @@ describe('mellekletValogat', () => {
   test('melléklet nélküli levélből nincs semmi, és ez nem hiba', () => {
     expect(mellekletValogat([])).toEqual({ elfogadott: [], mellozott: [] });
   });
+
+  /*
+   * ⚠️ Ez a blokk egy élesben elbukott levél miatt született.
+   *
+   * A webhook payloadja a mellékletről csak azonosítót, nevet és típust ad —
+   * **méretet nem**. A válogatás `size ?? 0`-val számolt, így egy valódi,
+   * 173 kB-os PDF-számla „Üres." indokkal esett ki, és a levélből nem lett
+   * bizonylat.
+   *
+   * A hiba azért jutott át a tesztjeimen, mert **mindegyik fixtúra adott
+   * méretet**. Az ismeretlen méret nem szélsőséges eset volt, hanem a valódi
+   * bemenet — csak én nem mértem meg, mit küld a szolgáltató.
+   *
+   * A szabály innentől: a `null`/hiányzó méret azt jelenti, hogy **nem
+   * tudjuk**, és hiányzó információra nem utasítunk el. Ugyanaz az elv, mint
+   * az ismeretlen oldalszámnál (1 kredit) és a lekérdezhetetlen keretnél
+   * (átengedjük).
+   */
+  describe('ismeretlen méret (a webhook payload nem ad méretet)', () => {
+    const meretNelkul = (n: string, tipus: string): MellekletFej => ({
+      id: n,
+      filename: n,
+      content_type: tipus,
+    });
+
+    test('a méret nélküli PDF átmegy — nem „üres"', () => {
+      const { elfogadott, mellozott } = mellekletValogat([
+        meretNelkul('szamla.pdf', 'application/pdf'),
+      ]);
+
+      expect(elfogadott.map((m) => m.id)).toEqual(['szamla.pdf']);
+      expect(mellozott).toEqual([]);
+    });
+
+    test('a null méretű PDF is átmegy', () => {
+      const { elfogadott } = mellekletValogat([
+        { id: 'sz', filename: 'sz.pdf', content_type: 'application/pdf', size: null },
+      ]);
+
+      expect(elfogadott.map((m) => m.id)).toEqual(['sz']);
+    });
+
+    /** Pontosan az a levél, ami élesben elbukott: számla PDF + aláíráskép. */
+    test('a valódi eset: méret nélküli PDF és kép — a PDF megy, a kép nem', () => {
+      const { elfogadott, mellozott } = mellekletValogat([
+        meretNelkul('image.png', 'image/png'),
+        meretNelkul('Dinavill Kft._DV-2025-1170_2025.03.06..pdf', 'application/pdf'),
+      ]);
+
+      expect(elfogadott.map((m) => m.filename)).toEqual([
+        'Dinavill Kft._DV-2025-1170_2025.03.06..pdf',
+      ]);
+      expect(mellozott).toEqual([
+        { nev: 'image.png', indok: 'A levélben van PDF vagy XML, a képeket ilyenkor kihagyjuk.' },
+      ]);
+    });
+
+    /**
+     * Méret nélküli kép, bizonylat nélkül: átengedjük. A küszöb heurisztika,
+     * és egy heurisztika nem utasíthat el olyasmit, amiről semmit nem tudunk —
+     * egy elveszett nyugta rosszabb, mint egy fölösleges bizonylat, amit a
+     * felhasználó egy kattintással eldob.
+     */
+    test('a méret nélküli kép átmegy, ha nincs mellette bizonylat', () => {
+      const { elfogadott } = mellekletValogat([meretNelkul('nyugta.jpg', 'image/jpeg')]);
+
+      expect(elfogadott.map((m) => m.id)).toEqual(['nyugta.jpg']);
+    });
+
+    /** A KIFEJEZETT nulla továbbra is elutasítás — az tény, nem hiány. */
+    test('a kifejezett 0 méret továbbra is „Üres."', () => {
+      const { elfogadott, mellozott } = mellekletValogat([
+        { id: 'u', filename: 'u.pdf', content_type: 'application/pdf', size: 0 },
+      ]);
+
+      expect(elfogadott).toEqual([]);
+      expect(mellozott).toEqual([{ nev: 'u.pdf', indok: 'Üres.' }]);
+    });
+
+    test('a méret nélküli, túl nagy melléklet nem ismerhető fel — a bájtok fogják meg', () => {
+      const { elfogadott } = mellekletValogat([meretNelkul('nagy.pdf', 'application/pdf')]);
+
+      // Itt nem tudjuk elutasítani; a letöltés utáni `ellenoriz()` viszont igen.
+      expect(elfogadott).toHaveLength(1);
+    });
+  });
 });
 
 describe('cimetKibont', () => {

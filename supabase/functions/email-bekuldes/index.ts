@@ -403,23 +403,38 @@ async function letolt(melleklet: Melleklet, levelAzonosito: string): Promise<Uin
   return new Uint8Array(await valasz.arrayBuffer());
 }
 
-/** A levél mellékletei — a payloadból, vagy ha ott nincs, a szolgáltatótól. */
+/**
+ * A levél mellékletei — **a szolgáltatótól, nem a payloadból.**
+ *
+ * ⚠️ Ez a sorrend élesben dőlt el, egy valódi számlán. A webhook payloadja a
+ * mellékletről csak azonosítót, nevet és típust ad; **méretet és letöltési
+ * hivatkozást nem**. A `mellekletValogat()` viszont méretből dolgozik, így a
+ * payload metaadatával minden beérkező számla „üres"-nek minősült.
+ *
+ * A mellékletlista-hívás nem plusz kör: a bájtokért úgyis ide kellene jönni a
+ * `download_url`-ért. Egy hívás levelenként, nem mellékletenként.
+ *
+ * A payload csak **tartalék**, ha az API nem elérhető — így a válogatás
+ * ismeretlen mérettel fut (ami most már nem elutasítás), és a bájtok döntenek.
+ */
 async function mellekleteket(adat: LevelAdat, levelAzonosito: string): Promise<Melleklet[]> {
-  if (adat.attachments !== undefined && adat.attachments.length > 0) {
-    return adat.attachments;
-  }
-
   try {
-    const lista = await resend<{ data?: Melleklet[] }>(
+    const lista = await resend<{ data?: Melleklet[] } | Melleklet[]>(
       `/emails/receiving/${levelAzonosito}/attachments`,
     );
 
-    return lista.data ?? [];
-  } catch (hiba) {
-    console.warn('A mellékletlista nem kérhető le:', hiba);
+    // A válasz `{ data: [...] }` alakú, de a csupasz tömböt is elfogadjuk: egy
+    // burkoló mező megjelenése vagy eltűnése ne vigye el a beküldést.
+    const mellekletek = Array.isArray(lista) ? lista : (lista.data ?? []);
 
-    return [];
+    if (mellekletek.length > 0) {
+      return mellekletek;
+    }
+  } catch (hiba) {
+    console.warn('A mellékletlista nem kérhető le, a payload metaadata jön:', hiba);
   }
+
+  return adat.attachments ?? [];
 }
 
 async function resend<T>(ut: string): Promise<T> {

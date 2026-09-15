@@ -8,7 +8,7 @@ töltötték volna fel.
 
 ```
 Resend (EU, eu-west-1)
-  → webhook: email.received   (CSAK metaadat: feladó, címzett, tárgy, melléklet-lista)
+  → webhook: email.received   (CSAK metaadat, és HIÁNYOS — lásd lentebb)
     → aláírás-ellenőrzés       shared/uzleti/alairas.ts
     → címzett → cég            shared/uzleti/bekuldes.ts  cimzettekbolToken()
     → be van-e kapcsolva?      companies.bekuldes_be
@@ -20,6 +20,34 @@ Resend (EU, eu-west-1)
     → tároló + files + documents
   → a percenkénti cron (`szamlafolyo-sor`) felveszi a kiolvasásra
 ```
+
+## ⚠️ Mit ad a webhook payloadja, és mit nem — mérve
+
+Ez élesben dőlt el, egy valódi számlán, nem dokumentációból. A payload
+`attachments` tömbjének elemei ennyit tartalmaznak:
+
+```json
+{ "id": "760d02d4-…", "filename": "szamla.pdf", "content_type": "application/pdf" }
+```
+
+**Nincs benne `size`, és nincs benne `download_url`.** Mindkettő csak a
+`GET /emails/receiving/{id}/attachments` válaszában van meg:
+
+```json
+{ "id": "760d02d4-…", "filename": "szamla.pdf", "content_type": "application/pdf",
+  "size": 173717, "download_url": "https://cdn.resend.app/…", "expires_at": "…" }
+```
+
+Ezért kéri a függvény a mellékletlistát **mindig az API-tól**, és használja a
+payload tömbjét csak tartalékként. Nem plusz kör: a bájtokért úgyis ide kellene
+jönni a `download_url`-ért.
+
+> Az első éles levél pontosan ezen bukott el: a válogatás `size ?? 0`-val
+> számolt, tehát a hiányzó méretet **nulla bájtnak** vette, és egy valódi,
+> 173 kB-os PDF-számla „Üres." indokkal esett ki. A tanulság nem a hiányzó
+> mezőről szól, hanem arról, hogy **a „nem tudjuk" és a „nulla" két különböző
+> dolog** — a `kredit.ts` és a keretellenőrzés ezt mindenhol máshol helyesen
+> kezeli. A `null` méret azóta átengedést jelent, és a bájtok döntenek.
 
 ## ⚠️ `verify_jwt = false` — az egyetlen ilyen függvény
 
@@ -105,11 +133,14 @@ egészségpróba: egy **rossz aláírású** kérés a végpontra **401**-et kel
 
 ## Nyitott tételek
 
-- **A `kepMinBajt` (50 kB) heurisztika, nem szabály.** Az aláírásban ülő logót
-  a mérete alapján választjuk el a lefotózott nyugtától. Az erősebb szűrő nem
-  ez, hanem az, hogy **ha a levélben van PDF vagy XML, a képekhez hozzá sem
-  nyúlunk** — és a gyakori esetre ez elég. Ha a szolgáltató jelzi a melléklet
-  `inline` elhelyezését, ez a szám **kidobandó**.
+- **A `kepMinBajt` (50 kB) heurisztika, nem szabály — és mérve gyenge.** Az
+  első éles levél aláírásképe **194 kB** volt, vagyis a küszöb négyszerese: ha
+  az lett volna a levél egyetlen melléklete, bizonylat lett volna belőle. Ami
+  megmentette, az az erősebb szabály: **ha a levélben van PDF vagy XML, a
+  képekhez hozzá sem nyúlunk.** A küszöb tehát csak a „csak képet küldtek"
+  esetre marad, és ott is gyenge. Ha a szolgáltató jelzi a melléklet `inline`
+  elhelyezését (`Content-Disposition`, `Content-ID`), ez a szám **kidobandó**,
+  és a jelzés lép a helyére.
 - **A feladó-szűrés nem biztonsági határ.** A `From` hamisítható; a határ maga
   a kitalálhatatlan cím. A levél fejlécei között elvileg ott az
   `Authentication-Results` (SPF/DKIM/DMARC), amiből valódi határt lehetne
