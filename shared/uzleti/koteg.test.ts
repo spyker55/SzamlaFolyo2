@@ -22,6 +22,7 @@ describe('kötegszétszedés — amit elfogadunk', () => {
 
     expect(d).toEqual({
       szet: true,
+      javitas: null,
       hatarok: [
         { oldal_tol: 1, oldal_ig: 2 },
         { oldal_tol: 3, oldal_ig: 4 },
@@ -67,16 +68,6 @@ describe('kötegszétszedés — amire nemet mondunk', () => {
     expect(d).toEqual({ szet: false, indok: 'A fájlban egyetlen bizonylat van.' });
   });
 
-  it('hézag: a 3. oldal senkihez nem tartozna', () => {
-    const d = negyOldal([
-      { oldal_tol: 1, oldal_ig: 2 },
-      { oldal_tol: 4, oldal_ig: 4 },
-    ]);
-
-    expect(d.szet).toBe(false);
-    expect(d.szet === false && d.indok).toContain('kihagynának');
-  });
-
   it('átfedés: a 2. oldal két bizonylathoz tartozna', () => {
     const d = negyOldal([
       { oldal_tol: 1, oldal_ig: 2 },
@@ -85,16 +76,6 @@ describe('kötegszétszedés — amire nemet mondunk', () => {
 
     expect(d.szet).toBe(false);
     expect(d.szet === false && d.indok).toContain('átfednék');
-  });
-
-  it('a lefedés nem ér a fájl végéig', () => {
-    const d = negyOldal([
-      { oldal_tol: 1, oldal_ig: 2 },
-      { oldal_tol: 3, oldal_ig: 3 },
-    ]);
-
-    expect(d.szet).toBe(false);
-    expect(d.szet === false && d.indok).toContain('minden oldalát');
   });
 
   it('a fájlon túlnyúló tartomány', () => {
@@ -168,6 +149,90 @@ describe('kötegszétszedés — amire nemet mondunk', () => {
     );
 
     expect(d.szet).toBe(false);
+  });
+});
+
+/**
+ * A hézagkitöltés — **a legdrágább leckéből**.
+ *
+ * Az első éles köteg (számla, üres oldal, szállítólevél) pont ezen bukott
+ * volna el másodszor is: egy üres elválasztó oldalról a modell jogosan nem
+ * állítja, hogy bizonylat, a szigorú lefedés-szabály viszont emiatt az egész
+ * szétszedést eldobta volna.
+ */
+describe('kötegszétszedés — a besorolatlan oldal', () => {
+  it('a köztes üres oldal a megelőző bizonylathoz kerül', () => {
+    const d = negyOldal([
+      { oldal_tol: 1, oldal_ig: 2 },
+      { oldal_tol: 4, oldal_ig: 4 },
+    ]);
+
+    expect(d.szet && d.hatarok).toEqual([
+      { oldal_tol: 1, oldal_ig: 3 },
+      { oldal_tol: 4, oldal_ig: 4 },
+    ]);
+    expect(d.szet && d.javitas).toBe('Besorolatlan oldal: 3. → a(z) 1. bizonylathoz');
+  });
+
+  it('a fájl végén maradt oldal az utolsó bizonylathoz kerül', () => {
+    const d = negyOldal([
+      { oldal_tol: 1, oldal_ig: 2 },
+      { oldal_tol: 3, oldal_ig: 3 },
+    ]);
+
+    expect(d.szet && d.hatarok).toEqual([
+      { oldal_tol: 1, oldal_ig: 2 },
+      { oldal_tol: 3, oldal_ig: 4 },
+    ]);
+    expect(d.szet && d.javitas).toContain('4. → a(z) 2. bizonylathoz');
+  });
+
+  it('a fájl elején maradt oldal az elsőhöz kerül — előtte nincs mihez', () => {
+    const d = negyOldal([
+      { oldal_tol: 2, oldal_ig: 3 },
+      { oldal_tol: 4, oldal_ig: 4 },
+    ]);
+
+    expect(d.szet && d.hatarok).toEqual([
+      { oldal_tol: 1, oldal_ig: 3 },
+      { oldal_tol: 4, oldal_ig: 4 },
+    ]);
+    expect(d.szet && d.javitas).toContain('1. → az 1. bizonylathoz');
+  });
+
+  it('több hézag egyszerre, mindegyik a saját megelőzőjéhez', () => {
+    const d = hatarokErtelmez(
+      {
+        dokumentumok: [
+          { oldal_tol: 1, oldal_ig: 1 },
+          { oldal_tol: 3, oldal_ig: 3 },
+          { oldal_tol: 6, oldal_ig: 6 },
+        ],
+      },
+      8,
+    );
+
+    expect(d.szet && d.hatarok).toEqual([
+      { oldal_tol: 1, oldal_ig: 2 },
+      { oldal_tol: 3, oldal_ig: 5 },
+      { oldal_tol: 6, oldal_ig: 8 },
+    ]);
+  });
+
+  it('a kitöltés után sincs átfedés és nincs kimaradó oldal', () => {
+    const d = hatarokErtelmez(
+      { dokumentumok: [{ oldal_tol: 2, oldal_ig: 2 }, { oldal_tol: 5, oldal_ig: 5 }] },
+      7,
+    );
+
+    expect(d.szet).toBe(true);
+    if (!d.szet) return;
+
+    const lefedett = d.hatarok.flatMap((h) =>
+      Array.from({ length: h.oldal_ig - h.oldal_tol + 1 }, (_, i) => h.oldal_tol + i),
+    );
+
+    expect(lefedett).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 });
 

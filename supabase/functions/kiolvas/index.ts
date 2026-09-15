@@ -539,8 +539,12 @@ async function esetlegSzetszed(
     model: valasz.modell,
     model_version: valasz.futtatottModell,
     prompt_version: valasz.promptVerzio,
+    // A `raw_response` a modell **érintetlen** válasza; a `fields` az, amit
+    // ebből csináltunk — a végleges tartományok és az, hogy hol toldottunk
+    // hozzá besorolatlan oldalt. A kettő együtt adja meg utólag, hogy egy
+    // oldaltartomány a modelltől vagy tőlünk származik-e.
     raw_response: valasz.nyers,
-    fields: null,
+    fields: dontes.szet ? { hatarok: dontes.hatarok, javitas: dontes.javitas } : null,
     confidence: null,
     input_tokens: valasz.bemenetToken,
     output_tokens: valasz.kimenetToken,

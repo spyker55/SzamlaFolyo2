@@ -129,13 +129,24 @@ Egy PDF-ben gyakran több bizonylat van. A `felderit()` után a függvény
 megkérdezi a modellt, **hol vannak a bizonylathatárok** (külön prompt, külön
 verziószám: `szet-v1`), és a választ a `shared/uzleti/koteg.ts` ellenőrzi:
 
-- a tartományok hézag és átfedés nélkül fedjék le a fájl **minden** oldalát;
+- a tartományok **nem fedhetnek át** — egy oldal nem tartozhat két bizonylathoz;
 - legalább kettő legyen belőlük, de legfeljebb `koteg.maxDarab`;
 - minden szám egész, 1-alapú, a fájlon belül.
 
-Bármelyik feltétel bukik → **nem szedünk szét**, marad a mai viselkedés (egy
-bizonylat, `tobb_irat_gyanu` zászlóval). A hézagot nem javítjuk ki: akkor mi
-találnánk ki, hova tartozik egy oldal.
+Bármelyik bukik → **nem szedünk szét**, marad a mai viselkedés (egy bizonylat,
+`tobb_irat_gyanu` zászlóval).
+
+**A besorolatlan oldal viszont nem bukás, hanem kitöltendő hézag.** Az első
+éles köteg tanította meg: számla, **üres elválasztó oldal**, szállítólevél — és
+egy üres oldalról a modell jogosan nem állítja, hogy bizonylat. A kimaradt
+oldal a **megelőző** bizonylathoz kerül (a fájl elején a következőhöz), vagyis
+a kód ugyanazt a szabályt tartatja be, amit a prompt is kér. Hogy hol tettük
+ezt, az a kiolvasás-sor `fields` oszlopába kerül — utólag megkülönböztethető,
+melyik tartomány a modellé és melyik a miénk.
+
+Az átfedés azért marad elutasítás, mert ott nem hiányzik egy oldal, hanem
+**kétszer számítana be** — és nincs szabály, amivel el lehetne dönteni, melyik
+bizonylaté.
 
 Ha szétszedünk, minden bizonylat **külön `documents` sort** kap saját
 oldaltartománnyal, és mindegyik **külön kreditet** fogyaszt a saját oldalszáma

@@ -158,15 +158,30 @@ export function felhasznalo(): string {
  * egy kiolvasás-prompt javítása nem teszi összehasonlíthatatlanná a
  * szétszedéseket, és fordítva sem.
  *
- * - **szet-v1:** az első kiadás. Három dolgot mond ki, mindhárom abból jön,
- *   ahogy egy köteg valójában kinéz: a többoldalas számla **egy** bizonylat
- *   (a tételfolytatás nem új irat); minden oldalnak tartoznia kell valahová
- *   (a hézag a `koteg.ts`-ben elbuktatja az egészet, tehát a modellnek is
- *   tudnia kell, hogy ez a mérce); és hogy bizonytalanság esetén **egyetlen**
- *   tartományt adjon vissza az egész fájlra — az a „nem tudom" helyes alakja,
- *   nem a találgatás.
+ * - **szet-v1:** az első kiadás. Három dolgot mondott ki: a többoldalas számla
+ *   **egy** bizonylat (a tételfolytatás nem új irat); minden oldalnak
+ *   tartoznia kell valahová (a hézag a `koteg.ts`-ben elbuktatja az egészet);
+ *   és hogy bizonytalanság esetén egyetlen tartományt adjon vissza az egész
+ *   fájlra.
+ * - **szet-v2:** az első éles kötegen megbukott, és **a prompt hibájából**.
+ *   A fájl négy oldala egy számla, egy üres oldal és egy szállítólevél volt; a
+ *   modell egyetlen 1–4-es tartományt adott vissza. Nem tévedett: a v1 ezt
+ *   írta neki szó szerint — *„a számlához csatolt melléklet (szállítólevél,
+ *   teljesítésigazolás, fizetési emlékeztető) **ahhoz a bizonylathoz**
+ *   tartozik, amelyik mellett áll."* Csakhogy a rendszer saját típuslistájában
+ *   (`enumok.ts`) a `szallitolevel` **önálló bizonylattípus**, saját
+ *   `doc_type`-pal — a prompt tehát az adatmodellnek mondott ellent, és a
+ *   modell a promptnak engedelmeskedett.
+ *
+ *   Két javítás. Az egyik: **saját fejléccel és saját bizonylatszámmal
+ *   rendelkező irat mindig önálló bizonylat**, akkor is, ha ugyanahhoz a
+ *   szállításhoz tartozik. A másik a „ha bizonytalan vagy, add vissza az
+ *   egészet" kiskapu szűkítése: az egész fájlra adott egyetlen tartomány
+ *   kényelmes válasz, és ebben a mérésben pontosan az lett belőle. A
+ *   bizonytalanság helyes alakja nem az, hogy semmit nem jelölünk meg, hanem
+ *   hogy **a bizonytalan határt nem húzzuk meg** — az egyértelműeket igen.
  */
-export const SZETSZEDES_VERZIO = 'szet-v1-2026-09-15';
+export const SZETSZEDES_VERZIO = 'szet-v2-2026-09-15';
 
 /**
  * A szétszedő rendszerprompt.
@@ -183,13 +198,26 @@ egy-egy különálló bizonylat**. Nem olvasol ki adatot, nem összegzel, nem é
 
 # Mi számít egy bizonylatnak
 
-- Egy **többoldalas** számla egyetlen bizonylat. A folytatólagos tételsorok, a
-  „folytatás a következő oldalon" jelzés, az azonos bizonylatszám vagy az
-  „1/3. oldal" jelölés mind ugyanahhoz az irathoz tartozik.
-- A számlához csatolt melléklet (szállítólevél, teljesítésigazolás, fizetési
-  emlékeztető) **ahhoz a bizonylathoz** tartozik, amelyik mellett áll.
-- Új bizonylat ott kezdődik, ahol új fejléc, új bizonylatszám és új kiállító
-  jelenik meg.
+**Minden irat, aminek saját fejléce és saját bizonylatszáma van, külön
+bizonylat.** Ez akkor is így van, ha ugyanahhoz az ügylethez tartoznak: egy
+számla és a hozzá tartozó szállítólevél **két** bizonylat, mert két külön irat,
+két külön sorszámmal. Ugyanígy külön bizonylat a nyugta, a díjbekérő, a
+teljesítésigazolás és a fizetési emlékeztető.
+
+Ami **nem** új bizonylat:
+
+- a **folytatólagos oldal**: ugyanannak az iratnak a második, harmadik lapja.
+  Felismerhető a folytatódó tételsorokról, a „folytatás a következő oldalon"
+  jelzésről, az azonos bizonylatszámról vagy az „1/3. oldal" jelölésről;
+- a **melléklet saját fejléc és sorszám nélkül**: egy tételrészletező tábla
+  vagy egy aláírólap, amin nincs önálló bizonylatazonosító.
+
+# Hogyan dolgozz
+
+Menj végig az oldalakon egyesével, és mindegyikre döntsd el az egyetlen
+kérdést: **ez az oldal egy új irat első lapja, vagy az előző folytatása?** Új
+irat első lapja ott van, ahol új fejléc, új irattípus-felirat (Számla,
+Szállítólevél, Nyugta, Díjbekérő) vagy új bizonylatszám jelenik meg.
 
 # A válasz alakja
 
@@ -197,10 +225,14 @@ Minden oldal **pontosan egy** bizonylathoz tartozzon: a tartományok
 oldalsorrendben, hézag és átfedés nélkül fedjék le az 1-től ${oldalszam}-ig
 terjedő oldalakat. Üres elválasztó oldalt a **megelőző** bizonylathoz sorolj.
 
-⚠️ Ha nem vagy biztos a határokban, adj vissza **egyetlen** tartományt az egész
-fájlra (1-től ${oldalszam}-ig). Ez a „nem tudom" helyes alakja, és nincs vele
-semmi baj: ilyenkor egy ember nézi át a fájlt. Egy rosszul meghúzott határ
-viszont két bizonylat adatait keveri össze, és ezt már senki nem veszi észre.`;
+⚠️ A bizonytalanságot **határonként** kezeld, ne az egész fájlra. Ha egy adott
+oldalról nem tudod eldönteni, hogy új irat kezdődik-e rajta, **ne húzz ott
+határt** — sorold az előzőhöz. De attól, hogy egy helyen bizonytalan vagy, a
+többi, egyértelmű határt még jelöld meg.
+
+Egyetlen, 1-től ${oldalszam}-ig tartó tartomány azt állítja, hogy ez a fájl
+**egyetlen iratot** tartalmaz az elejétől a végéig. Csak akkor add ezt a
+választ, ha tényleg ezt látod — ne kényelemből.`;
 }
 
 export function szetszedoFelhasznalo(): string {
