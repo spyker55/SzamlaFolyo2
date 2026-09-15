@@ -152,6 +152,16 @@ export type MellekletFej = {
    * beérkező számlát „üres"-nek minősített.
    */
   size?: number | null;
+  /**
+   * `'inline'` = a levél **törzsébe ágyazott** kép (aláírás-logó, beillesztett
+   * képernyőkép); `'attachment'` = csatolmány.
+   *
+   * Ez a jelzés sokkal erősebb, mint a méret: egy valódi levélen mérve az
+   * aláírás-logó 194 kB volt — a „valószínűleg aláíráskép" küszöb négyszerese
+   * —, miközben a `content_disposition` első ránézésre megmondta róla az
+   * igazat.
+   */
+  content_disposition?: string | null;
 };
 
 export type Valogatas = {
@@ -217,6 +227,13 @@ export function mellekletValogat(mellekletek: readonly MellekletFej[]): Valogata
 
   const vanBizonylat = meretre.some((m) => jellege(m) === 'bizonylat');
 
+  // Van-e olyan kép, amit **kifejezetten csatoltak**? Ha igen, a törzsbe
+  // ágyazottak mellette díszek — tipikusan az aláírás logója a lefotózott
+  // nyugta mellett. Ha viszont minden kép beágyazott, akkor nincs mihez
+  // képest dísznek lennie: valaki beillesztette a képet a levél törzsébe, és
+  // az a bizonylat. Ilyenkor marad a méretküszöb.
+  const vanCsatoltKep = meretre.some((m) => jellege(m) === 'kep' && !beagyazott(m));
+
   for (const m of meretre) {
     const nev = m.filename ?? '(névtelen melléklet)';
     const jelleg = jellege(m);
@@ -229,6 +246,11 @@ export function mellekletValogat(mellekletek: readonly MellekletFej[]): Valogata
     if (jelleg === 'kep') {
       if (vanBizonylat) {
         mellozott.push({ nev, indok: 'A levélben van PDF vagy XML, a képeket ilyenkor kihagyjuk.' });
+        continue;
+      }
+
+      if (beagyazott(m) && vanCsatoltKep) {
+        mellozott.push({ nev, indok: 'A levél törzsébe ágyazott kép — valószínűleg aláírás.' });
         continue;
       }
 
@@ -264,6 +286,17 @@ export function mellekletValogat(mellekletek: readonly MellekletFej[]): Valogata
  * nevet ad. Ha bármelyik azt mondja, hogy PDF, akkor megnézzük — a bájtok
  * úgyis eldöntik.
  */
+/**
+ * A levél **törzsébe ágyazott** melléklet-e.
+ *
+ * Csak a kifejezett `inline` számít annak. A hiányzó jelzés nem jelent
+ * beágyazottságot — ugyanaz az elv, mint a méretnél: hiányzó információra nem
+ * utasítunk el.
+ */
+function beagyazott(m: MellekletFej): boolean {
+  return (m.content_disposition ?? '').toLowerCase().trim() === 'inline';
+}
+
 function jellege(m: MellekletFej): Jelleg {
   const tipus = (m.content_type ?? '').toLowerCase().split(';')[0]?.trim() ?? '';
   const nev = (m.filename ?? '').toLowerCase();

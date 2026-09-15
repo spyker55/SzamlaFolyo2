@@ -27,10 +27,12 @@ Ez élesben dőlt el, egy valódi számlán, nem dokumentációból. A payload
 `attachments` tömbjének elemei ennyit tartalmaznak:
 
 ```json
-{ "id": "760d02d4-…", "filename": "szamla.pdf", "content_type": "application/pdf" }
+{ "id": "760d02d4-…", "filename": "szamla.pdf", "content_type": "application/pdf",
+  "content_disposition": "attachment", "content_id": "<f_mu2m9an01>" }
 ```
 
-**Nincs benne `size`, és nincs benne `download_url`.** Mindkettő csak a
+**Nincs benne `size`, és nincs benne `download_url`** — viszont **van benne
+`content_disposition`**, amit cserébe a mellékletlista-API nem ad. Mindkettő csak a
 `GET /emails/receiving/{id}/attachments` válaszában van meg:
 
 ```json
@@ -38,9 +40,10 @@ Ez élesben dőlt el, egy valódi számlán, nem dokumentációból. A payload
   "size": 173717, "download_url": "https://cdn.resend.app/…", "expires_at": "…" }
 ```
 
-Ezért kéri a függvény a mellékletlistát **mindig az API-tól**, és használja a
-payload tömbjét csak tartalékként. Nem plusz kör: a bájtokért úgyis ide kellene
-jönni a `download_url`-ért.
+Ezért a függvény a két forrást **összefésüli**, azonosító szerint: az API adja
+a `size`-t és a `download_url`-t, a payload a `content_disposition`-t. Választani
+közülük nem lehet — mindkettő tud olyat, amit a másik nem. A lista-hívás nem
+plusz kör: a bájtokért úgyis ide kellene jönni a `download_url`-ért.
 
 > Az első éles levél pontosan ezen bukott el: a válogatás `size ?? 0`-val
 > számolt, tehát a hiányzó méretet **nulla bájtnak** vette, és egy valódi,
@@ -133,14 +136,20 @@ egészségpróba: egy **rossz aláírású** kérés a végpontra **401**-et kel
 
 ## Nyitott tételek
 
-- **A `kepMinBajt` (50 kB) heurisztika, nem szabály — és mérve gyenge.** Az
-  első éles levél aláírásképe **194 kB** volt, vagyis a küszöb négyszerese: ha
-  az lett volna a levél egyetlen melléklete, bizonylat lett volna belőle. Ami
-  megmentette, az az erősebb szabály: **ha a levélben van PDF vagy XML, a
-  képekhez hozzá sem nyúlunk.** A küszöb tehát csak a „csak képet küldtek"
-  esetre marad, és ott is gyenge. Ha a szolgáltató jelzi a melléklet `inline`
-  elhelyezését (`Content-Disposition`, `Content-ID`), ez a szám **kidobandó**,
-  és a jelzés lép a helyére.
+- **A `kepMinBajt` (50 kB) küszöb visszaszorult, de nem tűnt el.** Az első éles
+  levél aláírásképe **194 kB** volt — a küszöb négyszerese —, tehát méret
+  alapján bizonylat lett volna belőle. A payload viszont `content_disposition:
+  "inline"`-nak jelölte, a számlát pedig `"attachment"`-nek, így a jelzés
+  megbízhatóbbnak bizonyult a méretnél, és át is vette a helyét:
+
+  1. ha a levélben van PDF vagy XML → a képekhez hozzá sem nyúlunk;
+  2. különben, ha van **csatolt** kép, a **beágyazottak** kiesnek mellőle;
+  3. és csak ha minden kép beágyazott — vagyis valaki a levél törzsébe
+     illesztette a nyugtát —, akkor dönt a méret.
+
+  A küszöb tehát már csak a 3. esetben szól bele, és ott is gyenge. A hiányzó
+  `content_disposition` **nem** jelent beágyazottságot: hiányzó információra
+  nem utasítunk el.
 - **A feladó-szűrés nem biztonsági határ.** A `From` hamisítható; a határ maga
   a kitalálhatatlan cím. A levél fejlécei között elvileg ott az
   `Authentication-Results` (SPF/DKIM/DMARC), amiből valódi határt lehetne

@@ -302,6 +302,78 @@ describe('mellekletValogat', () => {
    * az ismeretlen oldalszámnál (1 kredit) és a lekérdezhetetlen keretnél
    * (átengedjük).
    */
+  /*
+   * A `content_disposition` — mérve, ugyanazon a valódi levélen.
+   *
+   * A payload ezt adta: az aláírás-logó `"inline"`, a számla `"attachment"`.
+   * Ez sokkal erősebb jel, mint a méret: a logó **194 kB** volt, vagyis a
+   * „valószínűleg aláíráskép" küszöb négyszerese — méret alapján bizonylat
+   * lett volna belőle, ha nem lett volna mellette PDF.
+   */
+  describe('törzsbe ágyazott kép (content_disposition)', () => {
+    const kepD = (n: string, disp: string, meret = 194_014): MellekletFej => ({
+      id: n,
+      filename: `${n}.png`,
+      content_type: 'image/png',
+      size: meret,
+      content_disposition: disp,
+    });
+
+    test('a csatolt kép mellett a beágyazott kiesik', () => {
+      const { elfogadott, mellozott } = mellekletValogat([
+        kepD('logo', 'inline'),
+        kepD('nyugta', 'attachment'),
+      ]);
+
+      expect(elfogadott.map((m) => m.id)).toEqual(['nyugta']);
+      expect(mellozott).toEqual([
+        { nev: 'logo.png', indok: 'A levél törzsébe ágyazott kép — valószínűleg aláírás.' },
+      ]);
+    });
+
+    /**
+     * Ha MINDEN kép beágyazott, nincs mihez képest dísznek lennie: valaki
+     * beillesztette a nyugtát a levél törzsébe. Ilyenkor a méret dönt — és egy
+     * nagy kép átmegy.
+     */
+    test('ha minden kép beágyazott, a nagy átmegy', () => {
+      const { elfogadott } = mellekletValogat([kepD('beillesztett', 'inline')]);
+
+      expect(elfogadott.map((m) => m.id)).toEqual(['beillesztett']);
+    });
+
+    test('ha minden kép beágyazott, a kicsi továbbra is kiesik', () => {
+      const { mellozott } = mellekletValogat([kepD('logo', 'inline', 4_000)]);
+
+      expect(mellozott[0]?.indok).toContain('aláíráskép');
+    });
+
+    /** A PDF-szabály erősebb marad: az `inline` PDF is bizonylat. */
+    test('a beágyazottnak jelölt PDF is bizonylat', () => {
+      const { elfogadott } = mellekletValogat([
+        {
+          id: 'sz',
+          filename: 'sz.pdf',
+          content_type: 'application/pdf',
+          size: 120_000,
+          content_disposition: 'inline',
+        },
+      ]);
+
+      expect(elfogadott.map((m) => m.id)).toEqual(['sz']);
+    });
+
+    /** Hiányzó jelzés nem jelent beágyazottságot — nincs elutasítás hiányból. */
+    test('a jelzés nélküli kép nem számít beágyazottnak', () => {
+      const { elfogadott } = mellekletValogat([
+        { id: 'k', filename: 'k.png', content_type: 'image/png', size: 200_000 },
+        kepD('csatolt', 'attachment'),
+      ]);
+
+      expect(elfogadott.map((m) => m.id)).toEqual(['k', 'csatolt']);
+    });
+  });
+
   describe('ismeretlen méret (a webhook payload nem ad méretet)', () => {
     const meretNelkul = (n: string, tipus: string): MellekletFej => ({
       id: n,

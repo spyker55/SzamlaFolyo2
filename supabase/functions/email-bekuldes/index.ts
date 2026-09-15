@@ -418,6 +418,8 @@ async function letolt(melleklet: Melleklet, levelAzonosito: string): Promise<Uin
  * ismeretlen mérettel fut (ami most már nem elutasítás), és a bájtok döntenek.
  */
 async function mellekleteket(adat: LevelAdat, levelAzonosito: string): Promise<Melleklet[]> {
+  const payloadbol = adat.attachments ?? [];
+
   try {
     const lista = await resend<{ data?: Melleklet[] } | Melleklet[]>(
       `/emails/receiving/${levelAzonosito}/attachments`,
@@ -425,16 +427,35 @@ async function mellekleteket(adat: LevelAdat, levelAzonosito: string): Promise<M
 
     // A válasz `{ data: [...] }` alakú, de a csupasz tömböt is elfogadjuk: egy
     // burkoló mező megjelenése vagy eltűnése ne vigye el a beküldést.
-    const mellekletek = Array.isArray(lista) ? lista : (lista.data ?? []);
+    const apibol = Array.isArray(lista) ? lista : (lista.data ?? []);
 
-    if (mellekletek.length > 0) {
-      return mellekletek;
+    if (apibol.length > 0) {
+      /*
+       * ⚠️ **Összefésülés, nem választás.** A két forrás mást tud, és mindkettő
+       * kell:
+       *
+       *   - az API adja a `size`-t és a `download_url`-t,
+       *   - a payload adja a `content_disposition`-t (`inline` vs `attachment`).
+       *
+       * Ha csak az egyiket használnánk, a másik jelzése elveszne — és pont az
+       * `inline` az, ami az aláírás-logót megbízhatóbban elválasztja a
+       * lefotózott nyugtától, mint bármilyen méretküszöb.
+       *
+       * A kulcs a melléklet azonosítója; ami nem párosítható, az az API
+       * alakjában megy tovább.
+       */
+      const jelzesek = new Map(payloadbol.map((m) => [m.id, m]));
+
+      return apibol.map((m) => ({
+        ...m,
+        content_disposition: m.content_disposition ?? jelzesek.get(m.id)?.content_disposition ?? null,
+      }));
     }
   } catch (hiba) {
     console.warn('A mellékletlista nem kérhető le, a payload metaadata jön:', hiba);
   }
 
-  return adat.attachments ?? [];
+  return payloadbol;
 }
 
 async function resend<T>(ut: string): Promise<T> {
