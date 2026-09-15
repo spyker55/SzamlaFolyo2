@@ -39,7 +39,40 @@ type Meghivo = {
   companies: { name: string } | { name: string }[] | null;
 };
 
+/**
+ * CORS.
+ *
+ * ⚠️ **Ez az első böngészőből hívott Edge Function ebben a projektben**, és az
+ * első verzióból pont ez hiányzott. A `kiolvas` és a `selejtez` szerverről jön,
+ * az `email-bekuldes`-t a szolgáltató hívja — egyiknek sem kell CORS, tehát
+ * semmi nem kényszerítette ki.
+ *
+ * Élesben így nézett ki: a meghívó **létrejött**, a levél **soha nem indult el**,
+ * és a Resend naplójában egyetlen kérés sem volt. A böngésző az elővizsgálatot
+ * (`OPTIONS`) 405-tel és CORS-fejléc nélkül kapta vissza, tehát a POST-ot el sem
+ * küldte. A mérés, ami ezt kimondta: a platform saját 401-es válasza **hozott**
+ * `access-control-allow-origin` fejlécet, a mi 404-esünk **nem**.
+ *
+ * A böngészős próbám sem foghatta meg, mert mockolt hálózaton **nincs CORS**.
+ * Ez a bekezdés ezért itt áll: aki legközelebb böngészőből hívott függvényt ír,
+ * ne ugyanezt a délutánt töltse el vele.
+ *
+ * A `*` nem lazaság: a végpont védelme a JWT (`verify_jwt: true`), nem a
+ * származási hely — a Supabase saját elutasításai is `*`-ot adnak. Egy szűkített
+ * lista ráadásul a helyi fejlesztést (`localhost:5173`) csendben elrontaná, és
+ * az ilyet szokás „ideiglenesen" kikapcsolni.
+ */
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 Deno.serve(async (keres: Request): Promise<Response> => {
+  if (keres.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS });
+  }
+
   if (keres.method !== 'POST') {
     return valasz({ hiba: 'Csak POST.' }, 405);
   }
@@ -139,6 +172,16 @@ Deno.serve(async (keres: Request): Promise<Response> => {
     return valasz({ hiba: `A levél nem ment ki (${kuldes.status}).` }, 502);
   }
 
+  // A kiküldés nyoma. **A levél már elment**, tehát ha ez a hívás elakad, attól
+  // még nem hibás a művelet — csak a lista fog óvatosabbat mondani a
+  // valóságnál. Ez a helyes irány: inkább mondjuk azt, hogy nem tudunk a
+  // levélről, mint azt, hogy elküldtük, amikor nem.
+  const { error: jelzesHiba } = await db.rpc('meghivo_kikuldve', { meghivo: meghivoId });
+
+  if (jelzesHiba !== null) {
+    console.warn('A kiküldést nem sikerült rögzíteni:', jelzesHiba.message);
+  }
+
   return valasz({ ok: true, cim: data.email }, 200);
 });
 
@@ -170,6 +213,9 @@ function cegNeve(ceg: Meghivo['companies']): string {
 function valasz(test: unknown, statusz: number): Response {
   return new Response(JSON.stringify(test), {
     status: statusz,
-    headers: { 'Content-Type': 'application/json' },
+    // A CORS-fejlécek **minden** válaszon rajta vannak, a hibákon is. Enélkül a
+    // böngésző a hibaüzenetet sem látná — csak egy néma hálózati hibát —, és
+    // pont akkor nem tudnánk megmondani, mi a baj, amikor baj van.
+    headers: { 'Content-Type': 'application/json', ...CORS },
   });
 }

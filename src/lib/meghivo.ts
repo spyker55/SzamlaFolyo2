@@ -28,6 +28,13 @@ export type Meghivo = {
   expires_at: string;
   accepted_at: string | null;
   revoked_at: string | null;
+  /**
+   * Mikor ment ki a levél, vagy `null`, ha nem tudunk kiküldött levélről.
+   *
+   * ⚠️ Nem díszítés: az első verzió minden függő meghívóra „Elküldve"-t írt,
+   * miközben a levél a CORS-elővizsgálaton elakadt és el sem indult.
+   */
+  sent_at: string | null;
 };
 
 type Eredmeny = { ok: boolean; hiba?: string };
@@ -36,7 +43,7 @@ type Eredmeny = { ok: boolean; hiba?: string };
 export async function meghivok(cegId: string): Promise<Meghivo[]> {
   const { data } = await supabase
     .from('company_invites')
-    .select('id, email, role, token, created_at, expires_at, accepted_at, revoked_at')
+    .select('id, email, role, token, created_at, expires_at, accepted_at, revoked_at, sent_at')
     .eq('company_id', cegId)
     .order('created_at', { ascending: false })
     .limit(20);

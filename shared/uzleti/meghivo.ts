@@ -55,7 +55,7 @@ export function meghivoLink(token: string): string {
 export type MeghivoAllapot = 'ervenyes' | 'lejart' | 'visszavont' | 'elfogadott' | 'ismeretlen';
 
 const ALLAPOT_CIMKEK: Record<MeghivoAllapot, string> = {
-  ervenyes: 'Elküldve',
+  ervenyes: 'Függőben',
   lejart: 'Lejárt',
   visszavont: 'Visszavonva',
   elfogadott: 'Elfogadva',
@@ -64,6 +64,25 @@ const ALLAPOT_CIMKEK: Record<MeghivoAllapot, string> = {
 
 export function allapotCimke(allapot: MeghivoAllapot): string {
   return ALLAPOT_CIMKEK[allapot] ?? allapot;
+}
+
+/**
+ * Mit írjunk egy függő meghívó sorára a levélről.
+ *
+ * ⚠️ Az első verzió minden függő meghívóra azt írta, hogy **„Elküldve"** — akkor
+ * is, ha a levél soha nem indult el. Élesben ez azonnal el is sült: a böngésző a
+ * CORS-elővizsgálaton elbukott, a szolgáltatóhoz egyetlen kérés sem ment, a
+ * felület mégis sikert mutatott.
+ *
+ * Ezért néz ez a függvény **a `sent_at`-re**, nem az állapotra: csak akkor mondja
+ * azt, hogy elküldtük, ha van róla feljegyzés. A `null` itt állítás, nem hiányzó
+ * adat — és a tulajdonosnak pont ez a hasznos: tudja, hogy a linket kézzel kell
+ * átadnia, vagy újra kell próbálnia.
+ */
+export function kikuldesCimke(sentAt: string | null): { cimke: string; rendben: boolean } {
+  return sentAt === null
+    ? { cimke: 'A levél nem ment ki', rendben: false }
+    : { cimke: 'Elküldve', rendben: true };
 }
 
 /** Hány nap van még hátra. Lejárt meghívóra 0 — negatív napot nem írunk ki. */

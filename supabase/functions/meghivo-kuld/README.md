@@ -35,6 +35,27 @@ hívott" a token `email` állításából jön (`shared/uzleti/token.ts`), és a
 csak azért olvashatjuk ellenőrzés nélkül, mert a platform a tokent addigra már
 hitelesítette.
 
+## ⚠️ CORS — ezen bukott el az első verzió
+
+Ez **a projekt első böngészőből hívott Edge Functionje**. A `kiolvas` és a
+`selejtez` szerverről jön, az `email-bekuldes`-t a Resend hívja — egyiknek sem
+kell CORS, tehát semmi nem kényszerítette ki, és az első verzióból kimaradt.
+
+Élesben így nézett ki: a meghívó **létrejött**, a levél **soha nem indult el**,
+és a Resend naplójában egyetlen kérés sem volt. A böngésző a `supabase.functions
+.invoke` előtt elővizsgálatot (`OPTIONS`) küld; azt a függvény 405-tel és
+CORS-fejléc nélkül utasította el, tehát a POST el sem indult.
+
+A mérés, ami kimondta — két `pg_net` hívás válaszfejléce ugyanarra a végpontra:
+
+| Ki válaszolt | `access-control-allow-origin` |
+|---|---|
+| a platform 401-ese (a kód előtt) | `*` |
+| a mi 404-esünk (a kódból) | **nincs** |
+
+**A böngészős próba ezt nem foghatta meg: mockolt hálózaton nincs CORS.** Aki
+legközelebb böngészőből hívott függvényt ír, ezt a bekezdést olvassa el előbb.
+
 ## Titkok
 
 | Név | Mire |
@@ -76,10 +97,17 @@ A `verify_jwt` a `supabase/config.toml`-ból jön, nem kell kapcsoló.
 
 ### Utána azonnal mérni
 
-Nem a `status: ACTIVE` mezőt hisszük el — ez a PLACEHOLDER-eset tanulsága. A
-legolcsóbb próba: egy hitelesítés nélküli kérés a végpontra. **401**-et kell
-kapnia, a platformtól (`verify_jwt`), még mielőtt a kód elindulna. Ha
-időtúllépés jön, azonnal látszik, és egyetlen levél sem sérül.
+Nem a `status: ACTIVE` mezőt hisszük el — ez a PLACEHOLDER-eset tanulsága.
+Három lépcső:
+
+1. **Hitelesítés nélkül** → **401** a platformtól (`verify_jwt`), a kód előtt.
+   Ez a kaput méri, nem a függvényt.
+2. **Érvényes kulccsal, nem létező meghívóra** → **404** és a *saját* magyar
+   üzenetünk (`{"hiba":"Nincs ilyen meghívó."}`). Ez bizonyítja, hogy a kód
+   elindult és az importok feloldódtak.
+3. **A 2. válasz fejlécei között ott az `access-control-allow-origin`.** Enélkül
+   a böngésző soha nem jut el a függvényig — pontosan ez volt az első verzió
+   hibája, és ez az egyetlen olcsó próba, ami megfogja.
 
 ## Amit ez a kör szándékosan nyitva hagy
 
@@ -90,5 +118,9 @@ időtúllépés jön, azonnal látszik, és egyetlen levél sem sérül.
   csomagkorláttal együtt. Pénzbe nem kerül: a kreditkeretet a `kiolvas`
   szerveroldalon őrzi, és egy fejszám nem növeli az AI-költséget.
 - **Nincs emlékeztető levél** a lejárat előtt.
+- **A `sent_at` a mi állításunk, nem kézbesítési visszaigazolás.** Azt rögzíti,
+  hogy a Resend **átvette** a levelet — nem azt, hogy meg is érkezett. A
+  kézbesítési események (bounce, spam) webhookja külön kör lenne; addig a
+  „Küldd újra" gomb és a kimásolható link a kijárat.
 - **A tulajdonos nem kap értesítést** az elfogadásról. A naplóban ott a sor
   (`meghivo.elfogadva`), a tagok listájában ott az új sor — levelet nem küldünk.

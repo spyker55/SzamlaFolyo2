@@ -6,6 +6,7 @@ import {
   ferMegTag,
   hatralevoNap,
   helyek,
+  kikuldesCimke,
   meghivoLevel,
   meghivoLink,
 } from './meghivo.ts';
@@ -130,8 +131,23 @@ describe('meghivoLevel', () => {
 
 describe('allapotCimke', () => {
   it('emberi címkét ad', () => {
-    expect(allapotCimke('ervenyes')).toBe('Elküldve');
+    expect(allapotCimke('ervenyes')).toBe('Függőben');
     expect(allapotCimke('visszavont')).toBe('Visszavonva');
+  });
+});
+
+/*
+ * ⚠️ Ez a négy állítás egy élesben elsült hibát őriz. Az első verzió minden
+ * függő meghívóra „Elküldve"-t írt, miközben a levél a CORS-elővizsgálaton
+ * elakadt, és soha nem indult el. A címke azóta a `sent_at`-re néz.
+ */
+describe('kikuldesCimke', () => {
+  it('feljegyzés nélkül NEM állítja, hogy elküldtük', () => {
+    expect(kikuldesCimke(null)).toEqual({ cimke: 'A levél nem ment ki', rendben: false });
+  });
+
+  it('feljegyzéssel elküldöttnek mondja', () => {
+    expect(kikuldesCimke('2026-09-15T13:10:00Z')).toEqual({ cimke: 'Elküldve', rendben: true });
   });
 });
 

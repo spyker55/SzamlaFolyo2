@@ -27,7 +27,7 @@ import { SZEREPEK, szerepCimke, type Szerep } from '@uzleti/enumok.ts';
 import { datum } from '@uzleti/ido.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { bekuldesiCim } from '@uzleti/bekuldes.ts';
-import { allapotCimke, ferMegTag, meghivoLink } from '@uzleti/meghivo.ts';
+import { allapotCimke, ferMegTag, kikuldesCimke, meghivoLink } from '@uzleti/meghivo.ts';
 import {
   allapota as meghivoAllapota,
   meghivok as meghivokatKer,
@@ -512,8 +512,6 @@ export function Beallitasok() {
               tagokSzama={tagLista.length}
               keret={keret}
               frissit={betoltes}
-              uzen={setUzenet}
-              hibaz={setHiba}
             />
           )}
         </Kartya>
@@ -792,20 +790,30 @@ function Meghivas({
   tagokSzama,
   keret,
   frissit,
-  uzen,
-  hibaz,
 }: {
   cegId: string;
   lista: Meghivo[];
   tagokSzama: number;
   keret: Keret | null;
   frissit: () => Promise<void>;
-  uzen: (szoveg: string | null) => void;
-  hibaz: (szoveg: string | null) => void;
 }) {
   const [cim, setCim] = useState('');
   const [szerep, setSzerep] = useState<Szerep>('szerkeszto');
   const [dolgozik, setDolgozik] = useState(false);
+
+  /*
+   * A visszajelzés **helyben** áll, nem a lap tetején.
+   *
+   * ⚠️ Ez is élesből jött: a Beállítások hosszú, a Tagok kártya legalul van, a
+   * lap tetejére kiírt hibaüzenet pedig a képernyőn kívülre esett. A tulajdonos
+   * annyit látott, hogy a meghívó megjelent — azt nem, hogy a levél elakadt.
+   * Egy hibaüzenet, amiért görgetni kell, nem hibaüzenet.
+   */
+  const [uzenet, setUzenet] = useState<string | null>(null);
+  const [hiba, setHiba] = useState<string | null>(null);
+
+  const uzen = (szoveg: string | null) => { setUzenet(szoveg); setHiba(null); };
+  const hibaz = (szoveg: string | null) => { setHiba(szoveg); setUzenet(null); };
 
   async function meghiv(e: FormEvent) {
     e.preventDefault();
@@ -844,7 +852,16 @@ function Meghivas({
 
     const eredmeny = await meghivotKuld(m.id);
 
-    eredmeny.ok ? uzen('A meghívó újra elment.') : hibaz(eredmeny.hiba ?? 'A levél nem ment ki.');
+    // Frissítünk akkor is, ha hiba volt: a `sent_at` így a valóságot mutatja, ne
+    // a legutóbbi gombnyomás hangulatát.
+    await frissit();
+
+    if (eredmeny.ok) {
+      uzen(`A meghívó újra elment: ${m.email}`);
+      return;
+    }
+
+    hibaz(`${eredmeny.hiba ?? 'A levél nem ment ki.'} A linket alább kimásolhatod.`);
   }
 
   async function visszavon(m: Meghivo) {
@@ -877,6 +894,9 @@ function Meghivas({
         Kap egy levelet a meghívó linkjével. Elfogadni <strong>csak ezzel az e-mail címmel</strong>{' '}
         belépve tud — a link nem adható át másnak.
       </p>
+
+      {uzenet !== null && <div className="alert alert-siker mt-3">{uzenet}</div>}
+      {hiba !== null && <div className="alert alert-hiba mt-3">{hiba}</div>}
 
       {!hely.fer && <div className="alert alert-figyelem mt-3">{hely.indok}</div>}
 
@@ -919,7 +939,11 @@ function Meghivas({
                   <span className="ml-2 text-xs text-slate-500">{szerepCimke(m.role)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="badge badge-varakozo">{allapotCimke('ervenyes')}</span>
+                  <span
+                    className={`badge ${kikuldesCimke(m.sent_at).rendben ? 'badge-kesz' : 'badge-hiba'}`}
+                  >
+                    {kikuldesCimke(m.sent_at).cimke}
+                  </span>
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => void ujra(m)}>
                     Küldd újra
                   </button>
