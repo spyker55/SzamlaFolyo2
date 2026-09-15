@@ -100,7 +100,9 @@ export function Adatkezeles() {
             <td className="td">A számviteli előírások szerinti megőrzési ideig</td>
           </tr>
           <tr className="trow">
-            <td className="td">Feltöltött bizonylatok és a belőlük kiolvasott adatok</td>
+            <td className="td">
+              Feltöltött vagy e-mailben beküldött bizonylatok és a belőlük kiolvasott adatok
+            </td>
             <td className="td">A Szolgáltatás nyújtása</td>
             <td className="td">Az Előfizető utasítása (adatfeldolgozás)</td>
             <td className="td">Lásd a 4. pontot</td>
@@ -150,7 +152,7 @@ export function Adatkezeles() {
         </P>
       </Szakasz>
 
-      <Szakasz cim="3. Mi történik egy feltöltött bizonylattal">
+      <Szakasz cim="3. Mi történik egy beérkezett bizonylattal">
         <P>Ez a tájékoztató legfontosabb szakasza, mert itt hagyják el az adatok a szervert.</P>
         <Lista>
           <li>
@@ -215,6 +217,11 @@ export function Adatkezeles() {
             megszűnéséig, azt követően ésszerű időn belül törölve.
           </li>
           <li>
+            <strong>A beküldő címre érkezett levelek nyilvántartása</strong> (feladó, tárgy,
+            eredmény — a levél szövege nem): a szerződés megszűnéséig. Ez teszi láthatóvá, ha
+            egy levél elutasításra került.
+          </li>
+          <li>
             <strong>Számlázási adatok:</strong> a számviteli előírások szerinti megőrzési ideig —
             ezt jogszabály írja elő, törlési kérésre sem szüntethető meg.
           </li>
@@ -259,7 +266,7 @@ export function Adatkezeles() {
           ))}
         </Tablazat>
         <P>
-          <strong>Az adatbázis és a feltöltött fájlok az Európai Unión belül maradnak</strong>{' '}
+          <strong>Az adatbázis és a bizonylatok fájljai az Európai Unión belül maradnak</strong>{' '}
           (Frankfurt). A gépi kiolvasás és a fizetés viszont az Unión kívülre továbbítással jár.
           Ezekre az Európai Bizottság megfelelőségi határozata, illetve — ahol az nem alkalmazható
           — az Európai Bizottság által elfogadott általános szerződési feltételek adnak jogalapot.

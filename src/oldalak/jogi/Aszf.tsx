@@ -148,6 +148,16 @@ export function Aszf() {
           visszahívhatók javításra.
         </P>
         <P>
+          <strong>Az e-mailben történő beküldés kézbesítéséért a Szolgáltató nem felel.</strong>{' '}
+          Az elektronikus levél útja a Szolgáltató érdekkörén kívül esik: a levél elveszhet,
+          késhet, vagy levélszemétként elakadhat a küldő vagy a továbbító oldalán. A Szolgáltató
+          azokat a leveleket dolgozza fel, amelyek hozzá megérkeznek, és minden ilyen levél
+          sorsát — az elutasítottakét is, az elutasítás okával együtt — megmutatja a Beállítások
+          képernyőn. <strong>A feladónak viszont nem küld választ:</strong> a küldő nem kap
+          visszajelzést arról, hogy a levele feldolgozásra került-e. Annak ellenőrzése, hogy egy
+          beküldött bizonylat megérkezett-e, az Előfizető feladata.
+        </P>
+        <P>
           A Szolgáltatás nem minősül könyvelési, adótanácsadási vagy jogi szolgáltatásnak, és nem
           helyettesíti a könyvelő munkáját.
         </P>
@@ -217,8 +227,10 @@ export function Aszf() {
 
       <Szakasz cim="8. Darabkeret, kredit és túlhasználat">
         <P>
-          <strong>A keret mértékegysége a bizonylat, nem a feltöltött fájl.</strong> Ha egy fájl
-          több bizonylatot tartalmaz, a rendszer szétszedi őket, és mindegyik külön számít — de{' '}
+          <strong>A keret mértékegysége a bizonylat, nem a fájl</strong>, és nem számít, hogy a
+          fájl feltöltéssel vagy a cég beküldő címére küldött levél mellékleteként érkezett. Ha
+          egy fájl több bizonylatot tartalmaz, a rendszer szétszedi őket, és mindegyik külön
+          számít — de{' '}
           <strong>a szétszedés maga nem kerül külön kreditbe</strong>, az a Szolgáltatás része.
         </P>
         <P>

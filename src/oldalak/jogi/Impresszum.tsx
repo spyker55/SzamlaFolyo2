@@ -71,7 +71,7 @@ export function Impresszum() {
           ))}
         </dl>
         <P>
-          Az adatbázis és a feltöltött fájlok az Európai Unión belül, frankfurti kiszolgálón
+          Az adatbázis és a bizonylatok fájljai az Európai Unión belül, frankfurti kiszolgálón
           tárolódnak. A gépi kiolvasás és a fizetés viszont Unión kívüli közreműködőkkel jár; a
           teljes felsorolás és a jogalap az{' '}
           <Link to="/adatkezeles" className="underline">

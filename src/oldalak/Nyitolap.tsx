@@ -739,7 +739,7 @@ function Elonyok() {
  */
 function Arak() {
   const jellemzok = [
-    'Feltöltés a Beérkezőbe',
+    'Feltöltés a Beérkezőbe vagy beküldés e-mailben',
     'Számla, nyugta, külföldi bizonylat',
     'E-számla XML modellhívás nélkül',
     'Bizonytalan mezők megjelölése',
@@ -897,7 +897,7 @@ function Lablec() {
               Unión kívülre megy, és arról az Adatkezelési tájékoztató szól.
             */}
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              Az adatok és a feltöltött fájlok az Európai Unión belül, frankfurti kiszolgálón
+              Az adatok és a bizonylatok fájljai az Európai Unión belül, frankfurti kiszolgálón
               tárolódnak.
             </p>
           </div>

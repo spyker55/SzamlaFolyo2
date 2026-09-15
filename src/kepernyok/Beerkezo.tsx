@@ -217,7 +217,10 @@ export function Beerkezo() {
       {betolt ? (
         <div className="empty">Egy pillanat…</div>
       ) : sorok.length === 0 ? (
-        <div className="empty">Itt jelennek meg a feltöltött bizonylatok.</div>
+        <div className="empty">
+            Itt jelennek meg a bizonylatok — akár feltöltöd, akár a cég beküldő címére küldöd
+            őket.
+          </div>
       ) : (
         <div className="card overflow-x-auto">
           <table className="tbl">
