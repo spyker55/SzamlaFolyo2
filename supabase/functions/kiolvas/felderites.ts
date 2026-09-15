@@ -16,6 +16,12 @@ export type Felderites = {
   xml: string | null;
   oldalszam: number | null;
   szovegHossz: number;
+  /**
+   * PDF-nél az **oldalankénti** szöveg. A kötegszétszedő ezt küldi a modellnek
+   * a fájl helyett, ha van szövegréteg: a bizonylathatárok felismeréséhez a
+   * szöveg elég, és nagyságrenddel olcsóbb, mint a képek átvitele.
+   */
+  oldalSzovegek: string[] | null;
   hiba: string | null;
 };
 
@@ -33,26 +39,39 @@ export async function felderit(bajtok: Uint8Array, mime: string): Promise<Felder
       xml: new TextDecoder().decode(bajtok),
       oldalszam: null,
       szovegHossz: 0,
+      oldalSzovegek: null,
       hiba: null,
     };
   }
 
   if (mime !== 'application/pdf') {
-    return { jelleg: 'kep', xml: null, oldalszam: null, szovegHossz: 0, hiba: null };
+    return {
+      jelleg: 'kep',
+      xml: null,
+      oldalszam: null,
+      szovegHossz: 0,
+      oldalSzovegek: null,
+      hiba: null,
+    };
   }
 
   try {
     const pdf = await getDocumentProxy(bajtok);
     const oldalszam = pdf.numPages > 0 ? pdf.numPages : null;
 
-    const { text } = await extractText(pdf, { mergePages: true });
-    const szovegHossz = text.replace(/\s+/g, ' ').trim().length;
+    // **Oldalanként** kérjük, nem egybefűzve: ugyanannyiba kerül, de a
+    // kötegszétszedőnek oldalhatárokra bontva kell a szöveg. Az összhosszt
+    // ebből számoljuk, tehát a `SZOVEG_KUSZOB` mércéje nem változik.
+    const { text } = await extractText(pdf, { mergePages: false });
+    const oldalSzovegek = Array.isArray(text) ? text : [String(text)];
+    const szovegHossz = oldalSzovegek.join(' ').replace(/\s+/g, ' ').trim().length;
 
     return {
       jelleg: szovegHossz >= SZOVEG_KUSZOB ? 'szovegreteg' : 'kep',
       xml: null,
       oldalszam,
       szovegHossz,
+      oldalSzovegek,
       hiba: null,
     };
   } catch (hiba) {
@@ -65,6 +84,7 @@ export async function felderit(bajtok: Uint8Array, mime: string): Promise<Felder
       xml: null,
       oldalszam: null,
       szovegHossz: 0,
+      oldalSzovegek: null,
       hiba: hiba instanceof Error ? hiba.message : 'Ismeretlen PDF-hiba.',
     };
   }

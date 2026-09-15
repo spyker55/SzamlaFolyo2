@@ -47,7 +47,7 @@ const eredmeny = await build({
   platform: 'neutral',
   target: 'es2022',
   // Az import-térkép oldja fel őket futásidőben, ahogy a forrásban is.
-  external: ['unpdf', 'fast-xml-parser', '@supabase/supabase-js'],
+  external: ['unpdf', 'fast-xml-parser', 'pdf-lib', '@supabase/supabase-js'],
   minify: true,
   legalComments: 'none',
   // A fejlec szandekosan ekezet nelkuli: igy a teljes csomag tiszta ASCII

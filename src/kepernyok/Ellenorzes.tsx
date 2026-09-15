@@ -9,6 +9,7 @@ import { bukottak } from '@uzleti/validatorok.ts';
 import { sav as savBol, type Sav } from '@uzleti/konfidencia.ts';
 import { CIMKEK, type Mezo as MezoNev } from '@uzleti/sema.ts';
 import { DOKUMENTUM_TIPUSOK, tipusCimke } from '@uzleti/enumok.ts';
+import { oldalak } from '@uzleti/export/oszlopok.ts';
 import {
   bontastUrlapra,
   ellenorzottMezok,
@@ -207,6 +208,10 @@ export function Ellenorzes() {
   const { bizonylat, fajl, fajlUrl, hatravan } = adat;
   const kepE = (fajl?.mime_type ?? '').startsWith('image/');
 
+  // Tartomány csak akkor van, ha a fájlt szétszedtük — egyetlen bizonylat
+  // esetén a bizonylat maga az egész fájl, és nincs mit kiírni.
+  const oldaltartomany = oldalak(bizonylat.oldal_tol, bizonylat.oldal_ig);
+
   return (
     <AppElrendezes varakozo={hatravan}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -253,11 +258,33 @@ export function Ellenorzes() {
         </div>
       )}
 
-      {bizonylat.tobb_irat_gyanu && (
-        <div className="alert alert-figyelem mb-4">
-          Úgy tűnik, ebben a fájlban <strong>több különálló bizonylat</strong> van. Az alábbi
-          adatok az elsőre vonatkoznak — a többit külön érdemes feltölteni.
+      {/*
+        Két különböző helyzet, két különböző mondat — és eddig csak a második
+        létezett.
+
+        Ha a bizonylathoz **oldaltartomány** tartozik, a fájlt a rendszer
+        szétszedte: ez a sor a köteg egy darabja, a többi darab külön sorként
+        áll a Beérkezőben. Ilyenkor a „töltsd fel külön" tanács kifejezetten
+        rossz — a munka már meg van csinálva.
+
+        Tartomány nélküli `tobb_irat_gyanu` viszont pontosan azt jelenti, amit
+        eddig: több iratot **sejtünk**, de nem szedtük szét (mert a határok nem
+        voltak egyértelműek, vagy mert nem PDF). Ott marad a régi mondat.
+      */}
+      {oldaltartomany !== null ? (
+        <div className="alert alert-info mb-4">
+          Ebben a fájlban <strong>több bizonylat</strong> volt, ezért szétszedtük. Ez a
+          bizonylat a fájl <strong>{oldaltartomany}.</strong> oldalán áll; a többi külön sorként
+          került a Beérkezőbe, és külön jóváhagyást kér.
         </div>
+      ) : (
+        bizonylat.tobb_irat_gyanu && (
+          <div className="alert alert-figyelem mb-4">
+            Úgy tűnik, ebben a fájlban <strong>több különálló bizonylat</strong> van, de a
+            határaikat nem tudtuk biztosan megállapítani — ezért <strong>nem</strong> szedtük
+            szét. Az alábbi adatok az elsőre vonatkoznak; a többit külön érdemes feltölteni.
+          </div>
+        )
       )}
 
       {mentesiHiba !== null && <div className="alert alert-hiba mb-4">{mentesiHiba}</div>}

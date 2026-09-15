@@ -2,20 +2,28 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { szamlafolyo } from '../../../config/szamlafolyo.ts';
 import { bizonylatOldalszama, feldolgoz as lancotFuttat } from '../../../shared/uzleti/lanc.ts';
-import { kiolvas, KiolvasasHiba } from '../../../shared/uzleti/openrouter.ts';
+import { kiolvas, KiolvasasHiba, szetszed } from '../../../shared/uzleti/openrouter.ts';
+import { hatarokErtelmez, type Hatar } from '../../../shared/uzleti/koteg.ts';
 import { ertelmez as xmlErtelmez } from '../../../shared/uzleti/xml/xmlKiolvaso.ts';
 import { xmltFelolvas, XmlHiba } from '../../../shared/uzleti/xml/parser.ts';
 import { szolgaltatasSzerep } from '../../../shared/uzleti/token.ts';
 import { keretAllapot, type CegAllapot } from '../../../shared/uzleti/keret.ts';
 
 import { felderit, igenyelModellt, naplo } from './felderites.ts';
+import { oldaltartomany } from './pdf.ts';
 import { elozmenyt } from './elozmeny.ts';
 
 /**
  * A kiolvasó.
  *
- * A lánc: **claim → felderítés → XML-ág vagy modellhívás → tisztítás →
- * normalizálás → validátorok → konfidencia → kapuk → állapot + kredit.**
+ * A lánc: **keretellenőrzés → claim → felderítés → kötegszétszedés → XML-ág
+ * vagy modellhívás → tisztítás → normalizálás → validátorok → konfidencia →
+ * kapuk → állapot + kredit.**
+ *
+ * A keretellenőrzés a claim **előtt** áll, és ez nem stiláris: a claim növeli
+ * az `attempts`-et, három próbálkozás után a bizonylat `hiba` lesz. Ha a fék a
+ * claim után állna, egy elfogyott keret három perc alatt tönkretenné az összes
+ * várakozó iratot — pedig az nem a bizonylat hibája.
  *
  * A claim egyetlen feltételes `UPDATE`: aki elsőnek írja át az állapotot, azé a
  * munka. Nem kell hozzá sorzár, és két párhuzamos hívás sem tudja ugyanazt az
@@ -352,8 +360,13 @@ async function vegigfut(
     })
     .eq('id', dokumentum.file_id);
 
+  // Kötegszétszedés. Ha a fájlban több bizonylat van, ez a sor az elsőt kapja
+  // meg, a többihez új `documents` sor születik — mindegyik saját
+  // oldaltartománnyal, saját kiolvasással és saját kredittel.
+  const hatar = await esetlegSzetszed(db, dokumentum, felderites, bajtok, fajl);
+
   const { nyers, modell, futtatottModell, promptVerzio, bemenetToken, kimenetToken, koltseg } =
-    await kiolvasas(dokumentum, felderites, bajtok, fajl);
+    await kiolvasas(dokumentum, felderites, bajtok, fajl, hatar);
 
   // Az előzményt a nyers válaszból kérdezzük: a szállító adószámára, a
   // bizonylatszámra és a végösszegre kell, és ezek a tárolási alakra hozás
@@ -371,8 +384,8 @@ async function vegigfut(
   const lanc = lancotFuttat({
     nyers,
     oldalszam: bizonylatOldalszama(
-      dokumentum.oldal_tol,
-      dokumentum.oldal_ig,
+      hatar?.oldal_tol ?? dokumentum.oldal_tol,
+      hatar?.oldal_ig ?? dokumentum.oldal_ig,
       felderites.oldalszam,
     ),
     duplikatum: false,
@@ -428,8 +441,164 @@ async function vegigfut(
     indok: lanc.kapu.indok,
     kreditek: String(lanc.kreditek),
     forras: felderites.jelleg,
+    ...(hatar === null ? {} : { oldalak: `${hatar.oldal_tol}–${hatar.oldal_ig}` }),
     kiolvasas_id: String(kiolvasasSor?.id ?? ''),
   };
+}
+
+/**
+ * A kötegszétszedés.
+ *
+ * Egy PDF-ben gyakran több bizonylat van — a könyvelő egyben szkenneli be a havi
+ * paksamétát. Eddig ilyenkor a rendszer az **elsőt** olvasta ki, és a
+ * `tobb_irat_gyanu` zászlóval emberhez küldte: a többi bizonylat adata
+ * elveszett, és a felhasználónak kézzel kellett szétvágnia a fájlt.
+ *
+ * Most megkérdezzük a modellt, hol vannak a határok, és minden bizonylatból
+ * **külön `documents` sor** lesz, saját oldaltartománnyal. A fájlt nem vágjuk
+ * szét: a tartomány elég, és az előnézet `#page=N`-nel odaugrik.
+ *
+ * Amit visszaad: az **első** bizonylat határa (ez a sor azt kapja), vagy
+ * `null`, ha nem szedtük szét — akkor minden marad a réginél.
+ *
+ * ⚠️ A szétszedő futás **nulla kredit**. Nem kedvezmény: használható adatot
+ * önmagában nem adott, és a szétszedés a szolgáltatás része (ÁSZF 8. pont). A
+ * dollárban mért költsége viszont beíródik, különben nem tudnánk, mibe kerül.
+ */
+async function esetlegSzetszed(
+  db: SupabaseClient,
+  dokumentum: Dokumentum,
+  felderites: Awaited<ReturnType<typeof felderit>>,
+  bajtok: Uint8Array,
+  fajl: { mime_type: string | null; original_filename: string | null },
+): Promise<Hatar | null> {
+  const oldalszam = felderites.oldalszam;
+
+  // Csak többoldalas PDF-en van mit szétszedni. A kép egy oldal, az XML pedig
+  // strukturált: ott a `tobb_irat_gyanu`-t az értelmező állítja.
+  if (oldalszam === null || oldalszam < 2 || !igenyelModellt(felderites.jelleg)) {
+    return null;
+  }
+
+  // Ennek a sornak már van tartománya: ez a szétszedés **eredménye**, nem a
+  // bemenete. Egy újrapróbálkozás nem szedheti szét másodszor.
+  if (dokumentum.oldal_tol !== null) {
+    return null;
+  }
+
+  // Egy testvérsor tartománnyal azt jelenti, hogy a fájlt már szétszedtük, és
+  // ez a futás egy félbemaradt kör újrapróbálása. Ilyenkor sem szedjük szét
+  // újra — az duplikálná a bizonylatokat és a krediteket.
+  const { data: testver } = await db
+    .from('documents')
+    .select('id')
+    .eq('file_id', dokumentum.file_id)
+    .neq('id', dokumentum.id)
+    .not('oldal_tol', 'is', null)
+    .limit(1)
+    .maybeSingle();
+
+  if (testver !== null) {
+    return null;
+  }
+
+  let valasz: Awaited<ReturnType<typeof szetszed>>;
+  try {
+    valasz = await szetszed({
+      tartalom: bajtok,
+      mime: fajl.mime_type ?? 'application/pdf',
+      fajlnev: fajl.original_filename ?? 'koteg.pdf',
+      oldalszam,
+      // Szövegréteg esetén a szöveg megy, nem a fájl: a határok felismeréséhez
+      // elég, és nagyságrenddel olcsóbb. Egy nagyon hosszú kötegnél viszont a
+      // szöveg is sok lenne — ott marad a fájl, amit a modell lapozgat.
+      oldalSzovegek:
+        felderites.jelleg === 'szovegreteg' &&
+        felderites.oldalSzovegek !== null &&
+        oldalszam <= szamlafolyo.koteg.szovegMaxOldal
+          ? felderites.oldalSzovegek
+          : null,
+      apiKulcs: Deno.env.get('OPENROUTER_API_KEY') ?? '',
+    });
+  } catch (hiba) {
+    // A szétszedés elakadása **nem** állítja meg a feldolgozást: a bizonylat
+    // ugyanúgy kiolvasható egyben, ahogy eddig. Egy kiegészítő lépés soha ne
+    // tudja elvinni az alapszolgáltatást.
+    console.error('szetszedes', hiba instanceof Error ? hiba.message : hiba);
+    return null;
+  }
+
+  const dontes = hatarokErtelmez(valasz.nyers, oldalszam);
+
+  // A futás akkor is bekerül az audit-nyomba, ha nem lett belőle szétszedés:
+  // pénzbe került, és a `nem` is eredmény.
+  await db.from('document_extractions').insert({
+    company_id: dokumentum.company_id,
+    document_id: dokumentum.id,
+    file_id: dokumentum.file_id,
+    model: valasz.modell,
+    model_version: valasz.futtatottModell,
+    prompt_version: valasz.promptVerzio,
+    raw_response: valasz.nyers,
+    fields: null,
+    confidence: null,
+    input_tokens: valasz.bemenetToken,
+    output_tokens: valasz.kimenetToken,
+    cost: valasz.koltseg,
+    error: dontes.szet ? null : dontes.indok,
+    // A szétszedés a szolgáltatás része, nem külön tétel.
+    credits: 0,
+  });
+
+  if (!dontes.szet) {
+    return null;
+  }
+
+  const [elso, ...tobbi] = dontes.hatarok;
+
+  // A többi bizonylat új sorként születik, `feltoltve` állapotban — onnantól
+  // ugyanaz a sor viszi őket, mint bármely feltöltést: keretellenőrzés, claim,
+  // kiolvasás, kapuk. A cron egy percen belül felveszi őket.
+  if (tobbi.length > 0) {
+    const { error: beszurasiHiba } = await db.from('documents').insert(
+      tobbi.map((h) => ({
+        company_id: dokumentum.company_id,
+        file_id: dokumentum.file_id,
+        oldal_tol: h.oldal_tol,
+        oldal_ig: h.oldal_ig,
+        status: 'feltoltve',
+      })),
+    );
+
+    if (beszurasiHiba !== null) {
+      // Ha a testvérsorok nem jöttek létre, **nem** szűkítjük ezt a sort az
+      // első bizonylatra: úgy a fájl többi oldala némán elveszne. Marad az
+      // egészet átfogó bizonylat, ahogy eddig.
+      console.error('szetszedes-beszuras', beszurasiHiba.message);
+      return null;
+    }
+  }
+
+  if (elso === undefined) {
+    return null;
+  }
+
+  // ⚠️ **A saját tartomány azonnal beíródik, nem a futás végén** — és ez nem
+  // apróság, hanem egy mért hibaosztály elkerülése.
+  //
+  // A testvérsorok ekkor már léteznek. Ha ez a sor tartomány nélkül maradna, és
+  // a kiolvasás utána elhasalna (időtúllépés, modellhiba), az újrapróbálás így
+  // találná magát: a sornak nincs tartománya, a testvéreknek **van** — a
+  // szétszedés tehát nem fut újra —, és a kiolvasás az **egész fájlt** küldené
+  // el a modellnek. A köteg első bizonylata helyett egy összemosott válasz
+  // születne, csendben. Beírva viszont az újrapróbálás pontosan ott folytatja,
+  // ahol ez a sor tart.
+  await db
+    .from('documents')
+    .update({ oldal_tol: elso.oldal_tol, oldal_ig: elso.oldal_ig })
+    .eq('id', dokumentum.id);
+
+  return elso;
 }
 
 /** Az előzmény-lekérdezéshez elég a szállító adószáma és a bizonylat azonosítói. */
@@ -457,6 +626,7 @@ async function kiolvasas(
   felderites: Awaited<ReturnType<typeof felderit>>,
   bajtok: Uint8Array,
   fajl: { mime_type: string | null; original_filename: string | null },
+  frissHatar: Hatar | null = null,
 ) {
   if (!igenyelModellt(felderites.jelleg) && felderites.xml !== null) {
     try {
@@ -485,9 +655,16 @@ async function kiolvasas(
 
   const apiKulcs = Deno.env.get('OPENROUTER_API_KEY') ?? '';
 
+  // ⚠️ **A modell csak a saját bizonylatát láthatja.** Ha az egész köteget
+  // kapná meg, és csak a promptban kérnénk, hogy „a 3–4. oldalt olvasd",
+  // minden darabra ugyanaz történne: az első, legfeltűnőbb bizonylatot
+  // olvasná ki. Ezt nem lehet prompttal kikényszeríteni — a bemenetet kell
+  // szűkíteni. A kivágott PDF sehova nem kerül mentésre.
+  const kuldendo = await csakAzOldalai(dokumentum, frissHatar, bajtok, fajl.mime_type);
+
   try {
     const valasz = await kiolvas({
-      tartalom: bajtok,
+      tartalom: kuldendo,
       mime: fajl.mime_type ?? 'application/pdf',
       fajlnev: fajl.original_filename ?? 'bizonylat',
       cegNev: dokumentum.companies?.name ?? null,
@@ -499,5 +676,37 @@ async function kiolvasas(
   } catch (hiba) {
     if (hiba instanceof KiolvasasHiba) throw new Error(hiba.message);
     throw hiba;
+  }
+}
+
+/**
+ * A bizonylat saját oldalai a fájlból.
+ *
+ * Tartomány nélkül (a bizonylat az egész fájl) az eredeti bájtok mennek — egy
+ * egybizonylatos fájl nem megy át fölösleges újraíráson.
+ *
+ * Ha a kivágás nem sikerül (sérült vagy titkosított PDF), a **teljes fájl**
+ * megy el. Ez a mai viselkedés, tehát nem visszalépés: rosszabb esetben a
+ * modell az első bizonylatot olvassa ki — pontosan úgy, ahogy a szétszedés
+ * előtt tette.
+ */
+async function csakAzOldalai(
+  dokumentum: Dokumentum,
+  frissHatar: Hatar | null,
+  bajtok: Uint8Array,
+  mime: string | null,
+): Promise<Uint8Array> {
+  const tol = frissHatar?.oldal_tol ?? dokumentum.oldal_tol;
+  const ig = frissHatar?.oldal_ig ?? dokumentum.oldal_ig;
+
+  if (tol === null || ig === null || mime !== 'application/pdf') {
+    return bajtok;
+  }
+
+  try {
+    return await oldaltartomany(bajtok, tol, ig);
+  } catch (hiba) {
+    console.error('oldalvagas', hiba instanceof Error ? hiba.message : hiba);
+    return bajtok;
   }
 }

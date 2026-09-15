@@ -19,6 +19,15 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['shared/**/*.test.ts', 'src/**/*.test.ts', 'src/**/*.test.tsx'],
+    // Az Edge Function tesztjei is itt futnak. Nem minden fájlja tesztelhető
+    // innen (a `Deno.serve` és a `Deno.env` nem létezik Node alatt), de ami
+    // közönséges npm-csomagra épül — a PDF-darabolás — **mérhető telepítés
+    // előtt**, és pont az a fajta kód, amit nem szabad élesben először látni.
+    include: [
+      'shared/**/*.test.ts',
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'supabase/functions/**/*.test.ts',
+    ],
   },
 });

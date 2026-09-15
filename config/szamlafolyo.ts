@@ -45,6 +45,30 @@ export const szamlafolyo = {
    * számlán a 3.8 Flash pontosan 0,85-öt adott a szállító nevére — a lap
    * legalacsonyabb értékét, és az egyetlen rossz mezőt.
    */
+  /*
+   * Kötegszétszedés
+   *
+   * Egy PDF-ben több bizonylat is lehet — a könyvelő egyben szkenneli be a havi
+   * paksamétát. A rendszer ilyenkor megkérdezi a modellt, hol vannak a
+   * bizonylathatárok, és **külön bizonylatot csinál mindegyikből**,
+   * oldaltartománnyal. A fájlt nem vágjuk szét, csak a tartományt tároljuk.
+   *
+   * Kredit: **bizonylatonként**, a saját oldalszáma szerint. A szétszedő futás
+   * maga nulla kredit — a szétszedés a szolgáltatás része, nem külön tétel
+   * (ezt az ÁSZF 8. pontja is kimondja).
+   */
+  koteg: {
+    // Futótűz-fék. Minden darab külön modellhívás és külön kredit, ezért egy
+    // elszabadult válasz ("minden oldal külön bizonylat") ne tudjon egy
+    // százoldalas kötegből száz kiolvasást csinálni. E fölött nem szedjük szét:
+    // marad egy bizonylat, a `tobb_irat_gyanu` zászlóval, ahogy eddig.
+    maxDarab: 30,
+    // Ennyi oldalig küldjük a **szövegréteget** a szétszedőnek a PDF helyett.
+    // Sokkal olcsóbb, és a határok felismeréséhez a szöveg elég — a képet csak
+    // akkor kell nézni, ha nincs szövegréteg.
+    szovegMaxOldal: 60,
+  },
+
   kiolvasas: {
     ellenorzesKuszob: 0.85,
     figyelmeztetesKuszob: 0.5,

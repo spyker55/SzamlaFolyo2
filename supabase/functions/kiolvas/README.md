@@ -1,8 +1,8 @@
 # A `kiolvas` Edge Function
 
-A lánc: **keretellenőrzés → claim → felderítés → XML-ág vagy modellhívás →
-tisztítás → normalizálás → validátorok → konfidencia → kapuk → állapot +
-kredit.**
+A lánc: **keretellenőrzés → claim → felderítés → kötegszétszedés → XML-ág vagy
+modellhívás → tisztítás → normalizálás → validátorok → konfidencia → kapuk →
+állapot + kredit.**
 
 A keret a **claim előtt** áll, és ennek oka van: a claim megnöveli az
 `attempts` számlálót, három próbálkozás után pedig a bizonylat `hiba` állapotba
@@ -123,13 +123,48 @@ egy hiányzó beállítás nem tölti meg percenként a naplót. Hogy megvannak-
 select * from belso.sor_allapot();
 ```
 
+## Kötegszétszedés
+
+Egy PDF-ben gyakran több bizonylat van. A `felderit()` után a függvény
+megkérdezi a modellt, **hol vannak a bizonylathatárok** (külön prompt, külön
+verziószám: `szet-v1`), és a választ a `shared/uzleti/koteg.ts` ellenőrzi:
+
+- a tartományok hézag és átfedés nélkül fedjék le a fájl **minden** oldalát;
+- legalább kettő legyen belőlük, de legfeljebb `koteg.maxDarab`;
+- minden szám egész, 1-alapú, a fájlon belül.
+
+Bármelyik feltétel bukik → **nem szedünk szét**, marad a mai viselkedés (egy
+bizonylat, `tobb_irat_gyanu` zászlóval). A hézagot nem javítjuk ki: akkor mi
+találnánk ki, hova tartozik egy oldal.
+
+Ha szétszedünk, minden bizonylat **külön `documents` sort** kap saját
+oldaltartománnyal, és mindegyik **külön kreditet** fogyaszt a saját oldalszáma
+szerint. A szétszedő futás maga nulla kredit — a szétszedés a szolgáltatás
+része (ÁSZF 8. pont), a dollárköltsége viszont beíródik.
+
+⚠️ **A fájlt nem vágjuk szét, a modellnek küldött másolatot viszont igen.** Ha
+a modell az egész köteget kapná, és csak a promptban kérnénk, hogy „a 3–4.
+oldalt olvasd", minden darabra ugyanazt az első bizonylatot olvasná ki. A
+`pdf.ts` ezért kivág egy tartományt tartalmazó PDF-et a hívás idejére — az
+sehova nem kerül mentésre. A tárolt fájl érintetlen marad, és az előnézet
+`#page=N`-nel ugrik a helyére.
+
+A szétszedés a **saját sor tartományát azonnal beírja**, még a kiolvasás előtt.
+Enélkül egy félbemaradt futás után az újrapróbálás úgy találná a sort, hogy
+neki nincs tartománya, a testvéreinek van — és az egész fájlt küldené el.
+
 ## Amit a következő kör hoz
 
 - **Beágyazott XML** (Factur-X / ZUGFeRD PDF-ben). A felderítés ma a
   `strukturalt_xml`, a `szovegreteg` és a `kep` ágat ismeri; a PDF-be ágyazott
   XML kinyerése külön munka, és addig az ilyen bizonylat a modellhez megy —
   helyes eredménnyel, csak drágábban.
-- **Kötegszétszedés.** A `tobb_irat_gyanu` ma emberhez viszi a bizonylatot. A
-  modell által adott oldalhatárok szerinti bizonylatonkénti újrafuttatás a
-  következő lépés; az adatmodell (`oldal_tol`, `oldal_ig`) és a
-  kreditszámítás (`bizonylatOldalszama`) már készen áll rá.
+- **A szétszedés ára.** A szétszedő kör **minden többoldalas PDF-en** lefut,
+  akkor is, ha egy háromoldalas számláról van szó. Szövegréteggel ez olcsó
+  (csak a szöveg megy át, nem a képek), szkennelt kötegnél viszont egy teljes
+  modellhívásnyi. A `document_extractions` sorban `credits = 0`, a `cost`
+  viszont valódi — vagyis **mérhető**, mennyibe kerül. Ha a számok azt mutatják,
+  hogy sokba, a fék kézenfekvő: a szkennelt ágon a szétszedést a kiolvasás
+  `tobb_irat_gyanu` zászlójához lehet kötni, amit amúgy is megfizetünk. Ezt
+  most **nem** tettük meg, mert az a zászló még nincs mérve — előbb a számok,
+  utána az optimalizálás.

@@ -9,6 +9,7 @@ import { keretMondat } from '@uzleti/keret.ts';
 import { allapotCimke, tipusCimke, type DokumentumAllapot } from '@uzleti/enumok.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { datumIdo } from '@uzleti/ido.ts';
+import { oldalak } from '@uzleti/export/oszlopok.ts';
 
 type Sor = {
   id: string;
@@ -20,6 +21,9 @@ type Sor = {
   currency: string | null;
   error: string | null;
   created_at: string;
+  /** Csak a kötegből szétszedett bizonylaton van érték. */
+  oldal_tol: number | null;
+  oldal_ig: number | null;
   files: { original_filename: string | null; source: string } | null;
 };
 
@@ -56,7 +60,7 @@ export function Beerkezo() {
     const { data } = await supabase
       .from('documents')
       .select(
-        'id, status, doc_type, supplier_name, doc_number, gross_amount, currency, error, created_at, files(original_filename, source)',
+        'id, status, doc_type, supplier_name, doc_number, gross_amount, currency, error, created_at, oldal_tol, oldal_ig, files(original_filename, source)',
       )
       .in('status', ['feltoltve', 'feldolgozas_alatt', 'ellenorzesre_var', 'hiba', 'duplikatum'])
       .order('created_at', { ascending: false });
@@ -242,6 +246,14 @@ export function Beerkezo() {
                       */}
                       {sor.files?.source === 'email' ? 'E-mailben érkezett' : 'Feltöltve'} ·{' '}
                       {datumIdo(sor.created_at)}
+                      {/*
+                        Egy szétszedett kötegnél ez az egyetlen jel, ami
+                        megkülönbözteti a sorokat egymástól: ugyanaz a fájlnév
+                        áll mindegyiken, amíg a bizonylatszám ki nem olvasódik.
+                      */}
+                      {oldalak(sor.oldal_tol, sor.oldal_ig) !== null && (
+                        <> · {oldalak(sor.oldal_tol, sor.oldal_ig)}. oldal</>
+                      )}
                     </div>
                   </td>
                   <td className="td">{tipusCimke(sor.doc_type)}</td>

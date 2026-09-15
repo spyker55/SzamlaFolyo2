@@ -148,3 +148,61 @@ igazra, és az első bizonylat adatait add vissza.`;
 export function felhasznalo(): string {
   return 'Olvasd ki a csatolt bizonylat adatait, és add vissza a record_extraction függvénnyel.';
 }
+
+// ---------------------------------------------------------------------------
+// A szétszedő kör
+// ---------------------------------------------------------------------------
+
+/**
+ * A kötegszétszedő prompt verziója. **Külön verziószám**, mert külön kérdés:
+ * egy kiolvasás-prompt javítása nem teszi összehasonlíthatatlanná a
+ * szétszedéseket, és fordítva sem.
+ *
+ * - **szet-v1:** az első kiadás. Három dolgot mond ki, mindhárom abból jön,
+ *   ahogy egy köteg valójában kinéz: a többoldalas számla **egy** bizonylat
+ *   (a tételfolytatás nem új irat); minden oldalnak tartoznia kell valahová
+ *   (a hézag a `koteg.ts`-ben elbuktatja az egészet, tehát a modellnek is
+ *   tudnia kell, hogy ez a mérce); és hogy bizonytalanság esetén **egyetlen**
+ *   tartományt adjon vissza az egész fájlra — az a „nem tudom" helyes alakja,
+ *   nem a találgatás.
+ */
+export const SZETSZEDES_VERZIO = 'szet-v1-2026-09-15';
+
+/**
+ * A szétszedő rendszerprompt.
+ *
+ * Nem kiolvas, hanem **határokat jelöl**: melyik oldaltól melyikig tart egy
+ * bizonylat. Szándékosan nem kérünk tőle semmilyen adatot a bizonylatokról —
+ * azt a kiolvasó kör végzi, bizonylatonként, csak a saját oldalait látva. Két
+ * kérdés, két hívás: így egyik sem rontja a másikat.
+ */
+export function szetszedoRendszer(oldalszam: number): string {
+  return `Beszkennelt magyar számviteli bizonylatokat tartalmazó, ${oldalszam} oldalas
+PDF-et kapsz. A feladatod egyetlen dolog: megmondani, **hol kezdődik és hol ér véget
+egy-egy különálló bizonylat**. Nem olvasol ki adatot, nem összegzel, nem értelmezel.
+
+# Mi számít egy bizonylatnak
+
+- Egy **többoldalas** számla egyetlen bizonylat. A folytatólagos tételsorok, a
+  „folytatás a következő oldalon" jelzés, az azonos bizonylatszám vagy az
+  „1/3. oldal" jelölés mind ugyanahhoz az irathoz tartozik.
+- A számlához csatolt melléklet (szállítólevél, teljesítésigazolás, fizetési
+  emlékeztető) **ahhoz a bizonylathoz** tartozik, amelyik mellett áll.
+- Új bizonylat ott kezdődik, ahol új fejléc, új bizonylatszám és új kiállító
+  jelenik meg.
+
+# A válasz alakja
+
+Minden oldal **pontosan egy** bizonylathoz tartozzon: a tartományok
+oldalsorrendben, hézag és átfedés nélkül fedjék le az 1-től ${oldalszam}-ig
+terjedő oldalakat. Üres elválasztó oldalt a **megelőző** bizonylathoz sorolj.
+
+⚠️ Ha nem vagy biztos a határokban, adj vissza **egyetlen** tartományt az egész
+fájlra (1-től ${oldalszam}-ig). Ez a „nem tudom" helyes alakja, és nincs vele
+semmi baj: ilyenkor egy ember nézi át a fájlt. Egy rosszul meghúzott határ
+viszont két bizonylat adatait keveri össze, és ezt már senki nem veszi észre.`;
+}
+
+export function szetszedoFelhasznalo(): string {
+  return 'Jelöld meg a bizonylathatárokat, és add vissza a record_batch függvénnyel.';
+}

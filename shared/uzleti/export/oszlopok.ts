@@ -221,8 +221,15 @@ function konyvelendoE(tipus: string | null): boolean {
   return szamviteli(tipus as DokumentumTipus);
 }
 
-/** `3–4`, egy oldalnál `3`, egész fájlnál `null`. */
-function oldalak(tol: number | null, ig: number | null): string | null {
+/**
+ * Az oldaltartomány kiírási alakja: `3–4`, vagy `2`, ha egy oldal.
+ *
+ * Exportálva is, a felületen is ugyanez — a Beérkező és az Ellenőrzés is ezt
+ * hívja. Egy kötegből szétszedett bizonylatnál ez az egyetlen jel arról, hogy
+ * a fájl melyik részéről van szó; két helyen kétféleképpen írva zavarba ejtő
+ * lenne.
+ */
+export function oldalak(tol: number | null, ig: number | null): string | null {
   if (tol === null || ig === null) {
     return null;
   }

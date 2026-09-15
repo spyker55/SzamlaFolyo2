@@ -1,6 +1,14 @@
 import { szamlafolyo } from '../../config/szamlafolyo.ts';
 import { FUGGVENY_NEV, toolSema } from './sema.ts';
-import { felhasznalo, rendszer, VERZIO } from './prompt.ts';
+import { KOTEG_FUGGVENY_NEV, kotegSema } from './koteg.ts';
+import {
+  felhasznalo,
+  rendszer,
+  szetszedoFelhasznalo,
+  szetszedoRendszer,
+  SZETSZEDES_VERZIO,
+  VERZIO,
+} from './prompt.ts';
 
 /**
  * Az OpenRouter hívása.
@@ -37,6 +45,31 @@ export type KiolvasasValasz = {
   koltseg: number | null;
 };
 
+export type SzetszedesKeres = {
+  /** A PDF nyers bájtjai. Csak akkor megy át, ha nincs `oldalSzovegek`. */
+  tartalom: Uint8Array;
+  mime: string;
+  fajlnev: string;
+  /** A fájl oldalszáma — a prompt és a válasz ellenőrzése is erre épül. */
+  oldalszam: number;
+  /** Oldalankénti szöveg, ha van szövegréteg. `null` esetén a fájl megy. */
+  oldalSzovegek?: readonly string[] | null;
+  modell?: string | null;
+  apiKulcs: string;
+  hivoUrl?: string;
+};
+
+export type SzetszedesValasz = {
+  /** A `koteg.ts` `hatarokErtelmez()`-e értelmezi — itt nem hiszünk el semmit. */
+  nyers: Record<string, unknown>;
+  modell: string;
+  futtatottModell: string | null;
+  promptVerzio: string;
+  bemenetToken: number | null;
+  kimenetToken: number | null;
+  koltseg: number | null;
+};
+
 export class KiolvasasHiba extends Error {}
 
 export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
@@ -45,16 +78,123 @@ export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
   }
 
   const modell = keres.modell ?? szamlafolyo.modell.alapertelmezett;
-  const adatUrl = `data:${keres.mime};base64,${base64(keres.tartalom)}`;
 
-  // A PDF fájlként, a kép képként megy — a modellek ezt a két alakot értik, és
-  // a kettő nem cserélhető fel.
-  const resz = keres.mime.startsWith('image/')
+  const eredmeny = await hivas({
+    modell,
+    uzenetek: [
+      { role: 'system', content: rendszer(keres.cegNev, keres.cegAdoszam) },
+      { role: 'user', content: [fajlResz(keres.tartalom, keres.mime, keres.fajlnev), { type: 'text', text: felhasznalo() }] },
+    ],
+    fuggvenyNev: FUGGVENY_NEV,
+    fuggvenyLeiras: 'A bizonylatról leolvasott adatok rögzítése.',
+    sema: toolSema(),
+    maxTokens: 2048,
+    apiKulcs: keres.apiKulcs,
+    hivoUrl: keres.hivoUrl,
+  });
+
+  return { ...eredmeny, modell, promptVerzio: VERZIO };
+}
+
+/**
+ * A kötegszétszedés: **hol kezdődik és hol ér véget egy-egy bizonylat.**
+ *
+ * Külön hívás, külön prompttal és külön sémával. Nem takarékosságból külön:
+ * ha ugyanaz a hívás olvasná ki az adatokat *és* jelölné a határokat, a modell
+ * a hosszú kimenet végére elfáradna, és pont a határok romlanának el — azok
+ * viszont minden további lépést eldöntenek.
+ *
+ * ⚠️ **Szövegréteg esetén nem a PDF-et küldjük, hanem az oldalak szövegét.**
+ * A határok felismeréséhez a szöveg elég (fejléc, bizonylatszám, „1/3. oldal"),
+ * és ez nagyságrenddel olcsóbb, mint hatvan oldalnyi képet átvinni. Kép
+ * alapú (szkennelt) PDF-nél nincs mit szöveggé tenni: ott a fájl megy.
+ */
+export async function szetszed(keres: SzetszedesKeres): Promise<SzetszedesValasz> {
+  if (keres.apiKulcs === '') {
+    throw new KiolvasasHiba('Nincs beállítva az OpenRouter API-kulcs.');
+  }
+
+  const modell = keres.modell ?? szamlafolyo.modell.alapertelmezett;
+
+  const eredmeny = await hivas({
+    modell,
+    uzenetek: [
+      { role: 'system', content: szetszedoRendszer(keres.oldalszam) },
+      {
+        role: 'user',
+        content: [
+          keres.oldalSzovegek === null || keres.oldalSzovegek === undefined
+            ? fajlResz(keres.tartalom, keres.mime, keres.fajlnev)
+            : { type: 'text', text: oldalakSzovege(keres.oldalSzovegek) },
+          { type: 'text', text: szetszedoFelhasznalo() },
+        ],
+      },
+    ],
+    fuggvenyNev: KOTEG_FUGGVENY_NEV,
+    fuggvenyLeiras: 'A fájlban található bizonylatok oldalhatárainak rögzítése.',
+    sema: kotegSema(),
+    // Harminc tartomány két számmal bőven elfér ennyiben; a séma nem enged
+    // hosszabb kimenetet érdemben.
+    maxTokens: 1024,
+    apiKulcs: keres.apiKulcs,
+    hivoUrl: keres.hivoUrl,
+  });
+
+  return { ...eredmeny, modell, promptVerzio: SZETSZEDES_VERZIO };
+}
+
+/** A PDF fájlként, a kép képként megy — a modellek ezt a két alakot értik, és a kettő nem cserélhető fel. */
+function fajlResz(tartalom: Uint8Array, mime: string, fajlnev: string): Record<string, unknown> {
+  const adatUrl = `data:${mime};base64,${base64(tartalom)}`;
+
+  return mime.startsWith('image/')
     ? { type: 'image_url', image_url: { url: adatUrl } }
-    : { type: 'file', file: { filename: keres.fajlnev, file_data: adatUrl } };
+    : { type: 'file', file: { filename: fajlnev, file_data: adatUrl } };
+}
 
+/**
+ * Az oldalankénti szöveg egyetlen üzenetté.
+ *
+ * Az oldalszám **kiírva** megy, nem a sorrendre bízva: a modellnek 1-alapú
+ * oldalszámokkal kell válaszolnia, és a saját bemenetében kell látnia, melyik
+ * szöveg hányadik oldal.
+ */
+function oldalakSzovege(oldalak: readonly string[]): string {
+  return oldalak
+    .map((szoveg, i) => {
+      const tiszta = szoveg.replace(/[ \t]+/g, ' ').trim();
+      return `--- ${i + 1}. oldal ---\n${tiszta === '' ? '(nincs szöveg ezen az oldalon)' : tiszta}`;
+    })
+    .join('\n\n');
+}
+
+type HivasKeres = {
+  modell: string;
+  uzenetek: unknown[];
+  fuggvenyNev: string;
+  fuggvenyLeiras: string;
+  sema: Record<string, unknown>;
+  maxTokens: number;
+  apiKulcs: string;
+  hivoUrl?: string | undefined;
+};
+
+/**
+ * A közös szállító: egy kikényszerített függvényhívás az OpenRouteren.
+ *
+ * Mindkét kör ezen megy át, tehát az adatvédelmi kikötés, az időkorlát és a
+ * hibakezelés **egy helyen** él — a szétszedés ugyanolyan idegen cégek adatait
+ * viszi magával, mint a kiolvasás.
+ */
+async function hivas(keres: HivasKeres): Promise<{
+  nyers: Record<string, unknown>;
+  futtatottModell: string | null;
+  bemenetToken: number | null;
+  kimenetToken: number | null;
+  koltseg: number | null;
+}> {
   const torzs = {
-    model: modell,
+    model: keres.modell,
 
     // A bizonylat idegen cégek adatait viszi magával, ezért csak olyan
     // szolgáltatóhoz mehet, amelyik nem tárolja és nem tanul belőle. Az
@@ -68,22 +208,19 @@ export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
     // Ez a helyes irány: a csendben átengedett adatot már nem lehet visszakérni.
     provider: { data_collection: 'deny' },
 
-    messages: [
-      { role: 'system', content: rendszer(keres.cegNev, keres.cegAdoszam) },
-      { role: 'user', content: [resz, { type: 'text', text: felhasznalo() }] },
-    ],
+    messages: keres.uzenetek,
     tools: [
       {
         type: 'function',
         function: {
-          name: FUGGVENY_NEV,
-          description: 'A bizonylatról leolvasott adatok rögzítése.',
-          parameters: toolSema(),
+          name: keres.fuggvenyNev,
+          description: keres.fuggvenyLeiras,
+          parameters: keres.sema,
         },
       },
     ],
-    tool_choice: { type: 'function', function: { name: FUGGVENY_NEV } },
-    max_tokens: 2048,
+    tool_choice: { type: 'function', function: { name: keres.fuggvenyNev } },
+    max_tokens: keres.maxTokens,
     usage: { include: true },
   };
 
@@ -122,9 +259,7 @@ export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
 
   return {
     nyers: argumentumok(valaszJson),
-    modell,
     futtatottModell: typeof valaszJson['model'] === 'string' ? valaszJson['model'] : null,
-    promptVerzio: VERZIO,
     ...hasznalat(valaszJson),
   };
 }
