@@ -86,6 +86,13 @@ export function Aszf() {
         <Lista>
           <li>bizonylatokat tölthet fel a böngészőből;</li>
           <li>
+            a cég saját, titkos beküldő címére <strong>e-mailben is küldhet</strong> bizonylatot;
+            ez a lehetőség alapból ki van kapcsolva, és a cég tulajdonosa kapcsolhatja be.
+            Alapesetben csak a cég felhasználóinak címéről érkező levelet fogadjuk el; ez is
+            átállítható. Az e-mailben érkezett bizonylat ugyanúgy számít a darabkeretbe, mint a
+            feltöltött;
+          </li>
+          <li>
             a kiolvasott adatokat egy ellenőrző képernyőn átnézheti és javíthatja — a rendszer
             megjelöli azokat a mezőket, amelyekben bizonytalan;
           </li>

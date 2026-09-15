@@ -244,8 +244,9 @@ create table public.files (
   -- is mérés.
   forras_naplo jsonb,
 
-  -- A megszüntetett e-mailes beérkeztetés előtt érkezett sorok tényleg
-  -- e-mailben jöttek; egy megtörtént dolgot nem írunk át utólag.
+  -- 'email' = a cég beküldő címére érkezett levél mellékleteként jött. Ez az
+  -- oszlop a kezdetektől itt állt, még akkor is, amikor a beküldés útja nem
+  -- létezett; a 20260915000200 migráció óta él.
   source text not null default 'upload' check (source in ('upload', 'email')),
 
   uploaded_by uuid references auth.users (id) on delete set null,

@@ -54,10 +54,13 @@ import { allapotCimke, tipusCimke } from '@uzleti/enumok.ts';
  *
  * ## Két szándékos eltérés a régi laptól
  *
- * 1. **„Küldd tovább a számlát" → „Töltsd fel…".** Az eredeti mondat az
- *    e-mailes beküldésre utalt, ami a régi termékben működött; ebben **még
- *    nincs meg** (webhookkal jön, később). A mondat többi része szó szerint
- *    marad.
+ * 1. ~~**„Küldd tovább a számlát" → „Töltsd fel…".**~~ **Ez az eltérés
+ *    megszűnt** (`20260915000200_email_bekuldes.sql`): az e-mailes beküldés
+ *    elkészült, webhookkal. A hero mondata ezért mindkét utat mondja — a
+ *    feltöltés áll elöl, mert a beküldés **alapból kikapcsolva** érkezik, és a
+ *    cégnek egyszer be kell kapcsolnia a Beállításokban. Egy hero, ami az
+ *    alapállapotban nem létező utat hirdetne elsőként, ugyanaz a hazugság
+ *    lenne, mint amit ez a kör máshol javít.
  * 2. **A kiemelt szó színe.** A régi lapon a „könyvelésre kész adat" két színű
  *    volt, a második szó mustárral. A mustár ezen a háttéren **mérve
  *    olvashatatlan**: `#dfb671` a `#f6ede4` vásznon ~1,6:1, a WCAG nagy betűre
@@ -263,7 +266,8 @@ function Hero() {
 
             <p className="mb-8 text-lg leading-relaxed text-slate-500 sm:text-xl">
               <strong className="font-bold text-slate-800">
-                Töltsd fel a számlát vagy a nyugtát. A SzámlaFolyó kiolvassa.
+                Töltsd fel a számlát vagy a nyugtát — vagy küldd tovább e-mailben. A
+                SzámlaFolyó kiolvassa.
               </strong>{' '}
               Te csak azt ellenőrzöd, amiben nem biztos. Export, és kész. Nem funkciókat
               halmozunk, hanem a legkisebb, leggyorsabb munkafolyamatot adjuk.
@@ -477,8 +481,9 @@ function FormatumSav() {
 function Folyamat() {
   const lepesek = [
     {
-      cim: 'Feltöltés',
-      szoveg: 'Húzd be a fájlokat a Beérkezőbe — PDF, kép vagy e-számla XML, egyszerre több is.',
+      cim: 'Beküldés',
+      szoveg:
+        'Húzd be a fájlokat a Beérkezőbe — PDF, kép vagy e-számla XML, egyszerre több is. Vagy küldd tovább őket a céged saját beküldő címére.',
       ikon: <IkonFeltoltes className="h-8 w-8" />,
     },
     {

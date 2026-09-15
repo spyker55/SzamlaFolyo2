@@ -240,9 +240,12 @@ export function Beerkezo() {
                     </div>
                     <div className="text-xs text-slate-400">
                       {/*
-                        A `source` oszlop megmarad: a megszüntetett e-mailes
-                        beküldés előtt érkezett sorok tényleg e-mailben jöttek,
-                        és egy megtörtént dolgot nem írunk át utólag.
+                        A `source` a cég beküldő címén át érkezett bizonylatokat
+                        jelöli (`20260915000200` migráció). Ez a sor a régi
+                        rendszerből maradt itt, akkor még kimondottan a
+                        *megszűnt* beküldésre utalva — mostantól élő út, és a
+                        megkülönböztetés számít: egy e-mailben érkezett
+                        bizonylatot nem egy ember választott ki.
                       */}
                       {sor.files?.source === 'email' ? 'E-mailben érkezett' : 'Feltöltve'} ·{' '}
                       {datumIdo(sor.created_at)}

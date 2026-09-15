@@ -4,6 +4,9 @@ import { useAuth } from '../lib/auth.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
 import {
   autoJovahagyastMent,
+  beerkezettLevelek,
+  bekuldesBarkitolMent,
+  bekuldestMent,
   megorzesCimke,
   megorzesiNapok,
   megorzestMent,
@@ -12,7 +15,9 @@ import {
   szerepetMent,
   tagok as tagokatKer,
   tagotTorol,
+  tokentCserel,
   tulhasznalatotMent,
+  type BeerkezettLevel,
   type Tag,
 } from '../lib/beallitasok.ts';
 import { szamlafolyo } from '@config/szamlafolyo.ts';
@@ -21,6 +26,7 @@ import { keretMondat } from '@uzleti/keret.ts';
 import { SZEREPEK, szerepCimke, type Szerep } from '@uzleti/enumok.ts';
 import { datum } from '@uzleti/ido.ts';
 import { formaz } from '@uzleti/osszeg.ts';
+import { bekuldesiCim } from '@uzleti/bekuldes.ts';
 
 /**
  * Beállítások.
@@ -47,6 +53,7 @@ export function Beallitasok() {
 
   const [keret, setKeret] = useState<Keret | null>(null);
   const [tagLista, setTagLista] = useState<Tag[]>([]);
+  const [levelek, setLevelek] = useState<BeerkezettLevel[]>([]);
   const [uzenet, setUzenet] = useState<string | null>(null);
   const [hiba, setHiba] = useState<string | null>(null);
 
@@ -55,6 +62,7 @@ export function Beallitasok() {
 
     if (ceg !== null) {
       setTagLista(await tagokatKer(ceg.id));
+      setLevelek(await beerkezettLevelek(ceg.id));
     }
   }, [ceg]);
 
@@ -145,6 +153,119 @@ export function Beallitasok() {
               szólj — ellenőrzött úton javítjuk.
             </p>
           </div>
+        </Kartya>
+
+        <Kartya
+          cim="E-mailes beküldés"
+          leiras="A cégnek saját beküldő címe van. Amit oda küldesz, az úgy kerül a Beérkezőbe, mintha feltöltötted volna."
+        >
+          <Valasztas
+            nev="bekuldes"
+            be={ceg.bekuldes_be}
+            tiltva={!admin}
+            ki_opcio={{
+              cimke: 'Kikapcsolva',
+              leiras: 'A cím nem fogad el semmit. Bizonylat csak feltöltéssel kerül be.',
+            }}
+            be_opcio={{
+              cimke: 'Fogadjon leveleket',
+              leiras: 'A mellékletekből bizonylat lesz, ugyanúgy kreditért, mint feltöltéskor.',
+            }}
+            onValt={(be) =>
+              void ment(
+                () => bekuldestMent(ceg.id, be),
+                be ? 'Az e-mailes beküldés bekapcsolva.' : 'Az e-mailes beküldés kikapcsolva.',
+              )
+            }
+          />
+
+          {ceg.bekuldes_be && (
+            <>
+              <div className="mt-4">
+                <label className="flabel" htmlFor="bekuldo-cim">
+                  A cég beküldő címe
+                </label>
+                <CimSor cim={bekuldesiCim(ceg.bekuldes_token)} />
+
+                {/*
+                  Ez nem figyelmeztetés a figyelmeztetés kedvéért: a cím
+                  **bemutatóra szóló kulcs**. Aki ismeri, a cég keretéből költ —
+                  és ezt a felhasználónak tudnia kell, mielőtt kiteszi egy
+                  aláírásba vagy egy weboldalra.
+                */}
+                <p className="mt-2 text-sm text-slate-500">
+                  Ez a cím <strong>titok</strong>: aki ismeri, a ti keretetekből költ. Ne tedd
+                  ki nyilvános helyre. Ha kiszivárgott, cseréld le — a régi cím azonnal
+                  érvénytelen lesz.
+                </p>
+              </div>
+
+              <div className="mt-4">
+                <Valasztas
+                  nev="bekuldes-barkitol"
+                  be={ceg.bekuldes_barkitol}
+                  tiltva={!admin}
+                  ki_opcio={{
+                    cimke: 'Csak a cég tagjaitól',
+                    leiras:
+                      'A saját postafiókodból továbbküldött levelek jönnek át. Idegen feladót elutasítunk, és itt lent meg is mutatjuk.',
+                  }}
+                  be_opcio={{
+                    cimke: 'Bárkitől, aki ismeri a címet',
+                    leiras:
+                      'A szállítóid közvetlenül is küldhetnek ide. Cserébe minden odaérkező levél mellékletét feldolgozzuk.',
+                  }}
+                  onValt={(be) =>
+                    void ment(
+                      () => bekuldesBarkitolMent(ceg.id, be),
+                      be
+                        ? 'Mostantól bárkitől fogadunk levelet erre a címre.'
+                        : 'Mostantól csak a cég tagjaitól fogadunk levelet.',
+                    )
+                  }
+                />
+              </div>
+
+              <ul className="mt-3 space-y-1 text-sm text-slate-600">
+                <li>
+                  • <strong>PDF, kép és e-számla XML</strong> mellékleteket dolgozunk fel. Ha a
+                  levélben van PDF vagy XML, a képekhez hozzá sem nyúlunk — így az aláírásban
+                  ülő céglogóból nem lesz bizonylat.
+                </li>
+                <li>
+                  • Egy levélből legfeljebb{' '}
+                  <strong>{szamlafolyo.bekuldes.maxMelleklet}</strong> mellékletet dolgozunk fel.
+                </li>
+                <li>
+                  • A feladónak <strong>nem küldünk választ</strong>. Hogy mi lett a leveleddel,
+                  itt lent látod.
+                </li>
+              </ul>
+
+              {admin && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm mt-4"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        'Lecseréled a beküldő címet? A régi cím azonnal érvénytelen lesz, és az oda küldött levelek elvesznek.',
+                      )
+                    ) {
+                      void ment(
+                        () => tokentCserel(ceg.id),
+                        'Új beküldő cím. A régi mostantól érvénytelen.',
+                      );
+                    }
+                  }}
+                >
+                  Új címet kérek
+                </button>
+              )}
+
+              <LevelLista levelek={levelek} />
+            </>
+          )}
         </Kartya>
 
         <Kartya
@@ -521,6 +642,103 @@ function Valasztas({
         </label>
       ))}
     </fieldset>
+  );
+}
+
+/**
+ * A beküldő cím, másolható alakban.
+ *
+ * `readOnly` input, nem sima szöveg: egy hosszú, véletlen karaktersort a
+ * felhasználó jelölni és másolni akar, nem újragépelni. A `select()` a
+ * kattintásra kijelöli az egészet — a vágólap-API-ra pedig nem támaszkodunk
+ * egyedül, mert az nem HTTPS alatt (és néhány böngészőben) egyszerűen nincs.
+ */
+function CimSor({ cim }: { cim: string }) {
+  const [masolva, setMasolva] = useState(false);
+
+  return (
+    <div className="flex gap-2">
+      <input
+        id="bekuldo-cim"
+        className="control font-mono text-sm"
+        value={cim}
+        readOnly
+        onFocus={(e) => e.target.select()}
+        onClick={(e) => e.currentTarget.select()}
+      />
+      <button
+        type="button"
+        className="btn btn-secondary shrink-0"
+        onClick={() => {
+          void navigator.clipboard
+            ?.writeText(cim)
+            .then(() => {
+              setMasolva(true);
+              window.setTimeout(() => setMasolva(false), 2000);
+            })
+            .catch(() => undefined);
+        }}
+      >
+        {masolva ? 'Másolva' : 'Másolom'}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * A legutóbbi beérkezett levelek.
+ *
+ * Azért van itt, mert **a csendben eldobott levél a legrosszabb fajta hiba**:
+ * nem történik semmi, és senki nem tudja, hogy nem történt semmi. Ha egy
+ * szállítói számla azért nem jött át, mert a feladó nincs engedélyezve, annak
+ * látszania kell — méghozzá ott, ahol a kapcsoló is van, amivel orvosolható.
+ */
+function LevelLista({ levelek }: { levelek: BeerkezettLevel[] }) {
+  if (levelek.length === 0) {
+    return (
+      <p className="mt-4 text-sm text-slate-500">
+        Erre a címre még nem érkezett levél.
+      </p>
+    );
+  }
+
+  const jelvenye: Record<BeerkezettLevel['status'], { cimke: string; osztaly: string }> = {
+    feldolgozva: { cimke: 'Feldolgozva', osztaly: 'badge-kesz' },
+    ures: { cimke: 'Nem lett belőle bizonylat', osztaly: 'badge-semleges' },
+    elutasitva: { cimke: 'Elutasítva', osztaly: 'badge-hiba' },
+  };
+
+  return (
+    <div className="mt-4">
+      <h3 className="mb-2 text-sm font-medium text-slate-800">Legutóbbi levelek</h3>
+      <ul className="space-y-2">
+        {levelek.map((level) => {
+          const jelveny = jelvenye[level.status];
+
+          return (
+            <li key={level.id} className="rounded-lg border border-slate-200 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`badge ${jelveny.osztaly}`}>{jelveny.cimke}</span>
+                <span className="text-sm font-medium text-slate-800">
+                  {level.subject ?? '(tárgy nélkül)'}
+                </span>
+                {level.accepted_count > 0 && (
+                  <span className="text-sm text-slate-500">
+                    · {level.accepted_count} bizonylat
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-slate-500">
+                {level.from_address ?? 'ismeretlen feladó'} · {datum(level.created_at)}
+              </p>
+              {level.reason !== null && (
+                <p className="mt-1 text-sm text-slate-600">{level.reason}</p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

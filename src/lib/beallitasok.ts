@@ -109,6 +109,75 @@ export async function plafontMent(cegId: string, ft: number): Promise<Mentes> {
   return cegetMent(cegId, { overage_limit_ft: Math.round(ft) });
 }
 
+/**
+ * Az e-mailes beküldés kapcsolója.
+ *
+ * Alapból ki van kapcsolva (`20260915000200` migráció), és ez tudatos: egy élő,
+ * levelet fogadó végpont a cég nevében olyasmi, amit a tulajdonosnak ki kell
+ * mondania. A token attól még megvan — a cím létezik, csak nem fogad el semmit.
+ */
+export async function bekuldestMent(cegId: string, be: boolean): Promise<Mentes> {
+  return cegetMent(cegId, { bekuldes_be: be });
+}
+
+/**
+ * Elfogadunk-e levelet idegen feladótól.
+ *
+ * ⚠️ Ez **nem biztonsági határ**: a `From` fejléc hamisítható. A biztonsági
+ * határ maga a kitalálhatatlan cím. Ez a kapcsoló a véletlen ellen véd —
+ * hírlevél, automata válasz, aláírásból kiszivárgott cím.
+ */
+export async function bekuldesBarkitolMent(cegId: string, be: boolean): Promise<Mentes> {
+  return cegetMent(cegId, { bekuldes_barkitol: be });
+}
+
+/**
+ * A beküldő cím cseréje.
+ *
+ * **Nem `update()`**, hanem RPC — és ez nem stílus. A `bekuldes_token` oszlopra
+ * szándékosan nincs írási jog a REST API-n: egy szabad szöveges mezőben a
+ * tulajdonos rövid, kitalálható tokent adhatna magának, és ezzel csendben
+ * megszüntetné az egyetlen réteget, ami itt tényleg véd. A csere így mindig a
+ * generátoron megy át. (Megmérve: a közvetlen UPDATE `permission denied`-et ad.)
+ */
+export async function tokentCserel(cegId: string): Promise<Mentes> {
+  const { error } = await supabase.rpc('bekuldes_token_cserel', { ceg: cegId });
+
+  // A napló sorát maga a függvény írja, ugyanabban a tranzakcióban — nem innen,
+  // mert a régi cím érvénytelenítése akkor is megtörtént, ha a böngésző közben
+  // elment.
+  return error === null ? { ok: true } : { ok: false, hiba: error.message };
+}
+
+export type BeerkezettLevel = {
+  id: string;
+  from_address: string | null;
+  subject: string | null;
+  status: 'feldolgozva' | 'ures' | 'elutasitva';
+  reason: string | null;
+  accepted_count: number;
+  created_at: string;
+};
+
+/**
+ * A beküldő címre érkezett legutóbbi levelek.
+ *
+ * Azért kell a felületre, mert **a csendben eldobott levél a legrosszabb fajta
+ * hiba**: nem történik semmi, és senki nem tudja, hogy nem történt semmi. Ha
+ * egy szállítói számla azért nem érkezett meg, mert a feladó nincs
+ * engedélyezve, azt látni kell.
+ */
+export async function beerkezettLevelek(cegId: string, darab = 5): Promise<BeerkezettLevel[]> {
+  const { data } = await supabase
+    .from('inbound_emails')
+    .select('id, from_address, subject, status, reason, accepted_count, created_at')
+    .eq('company_id', cegId)
+    .order('created_at', { ascending: false })
+    .limit(darab);
+
+  return (data ?? []) as BeerkezettLevel[];
+}
+
 /** A cég neve. */
 export async function nevetMent(cegId: string, nev: string): Promise<Mentes> {
   const tiszta = nev.trim();

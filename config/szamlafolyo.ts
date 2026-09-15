@@ -34,6 +34,44 @@ export const szamlafolyo = {
   } as const,
 
   /*
+   * E-mailes beküldés
+   *
+   * A cégnek saját beküldő címe van: `b-<token>@bekuldes.szamlafolyo.hu`. A
+   * levelet **webhook** hozza, nem IMAP-olvasás — nincs kapcsolat, amit fenn
+   * kell tartani, és nincs postafiók-jelszó a folyamatban.
+   *
+   * ⚠️ A cím **bemutatóra szóló kulcs**: aki ismeri, a cég keretéből költ.
+   * Ezért a token kitalálhatatlan, és ezért van a Beállításokban csere-gomb.
+   */
+  bekuldes: {
+    domain: 'bekuldes.szamlafolyo.hu',
+    // A helyi rész előtagja. Nem díszítés: enélkül nem lehetne megkülönböztetni
+    // egy cégtokent a `postmaster@`-tól és az `abuse@`-tól, amiket egy levelet
+    // fogadó tartománynak kezelnie kell.
+    elotag: 'b-',
+    // Futótűz-fék, a `koteg.maxDarab` mintájára: egy kétszáz mellékletes levél
+    // ne csinálhasson kétszáz bizonylatot.
+    maxMelleklet: 20,
+    /*
+     * ⚠️ Ez a szám **heurisztika, nem szabály** — és ezt itt ki kell mondani.
+     *
+     * Az aláírásokban ülő céglogó ugyanolyan képmelléklet, mint egy lefotózott
+     * nyugta; a levélből magából nem derül ki, melyik melyik. A méret az
+     * egyetlen jel, ami a kettőt elválasztja: egy logó jellemzően pár tíz
+     * kilobájt, egy telefonnal készült fotó több száz.
+     *
+     * A másik, erősebb szűrő nem itt van, hanem a `mellekletValogat()`-ban:
+     * ha a levélben van PDF vagy XML, a képekhez **hozzá sem nyúlunk**. Ez az
+     * eset — szállítói számla PDF-ben, logó az aláírásban — a gyakori, és arra
+     * ez a küszöb nem is kell.
+     *
+     * Ha a szolgáltató a mellékleten jelzi az `inline` elhelyezést, ez a szám
+     * kidobható, és ki is kell dobni. Addig marad, megnevezve annak, ami.
+     */
+    kepMinBajt: 50 * 1024,
+  } as const,
+
+  /*
    * Kiolvasás
    *
    * A `ellenorzesKuszob` **fölött** a mező jelöletlen marad (a kiemelés a bajt

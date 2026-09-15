@@ -23,6 +23,13 @@ export type Ceg = {
   overage_enabled: boolean;
   overage_limit_ft: number | null;
   file_retention_days: number;
+  /**
+   * A beküldő cím titkos része. A `companies(*)` hozza, és **csak a cég
+   * tagjai látják** (RLS) — a felületen a teljes cím ebből áll össze.
+   */
+  bekuldes_token: string;
+  bekuldes_be: boolean;
+  bekuldes_barkitol: boolean;
 };
 
 type AuthAllapot = {

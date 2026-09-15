@@ -36,3 +36,22 @@ entrypoint = "./functions/kiolvas/index.ts"
 verify_jwt = true
 import_map = "./functions/deno.json"
 entrypoint = "./functions/selejtez/index.ts"
+
+[functions.email-bekuldes]
+# ⚠️ **Ez az egyetlen függvény, ahol a `verify_jwt` KI van kapcsolva**, és ez
+# nem lazítás, hanem kényszer: a levélszolgáltató nem tud Supabase-JWT-t
+# küldeni. Bekapcsolva a platform minden bejövő levelet 401-gyel utasítana el,
+# és a beküldés egyszerűen nem működne.
+#
+# Cserébe a hitelesítés **teljes egészében** a kódban van: a függvény legelső
+# művelete a webhook-aláírás ellenőrzése (`shared/uzleti/alairas.ts`) a
+# `RESEND_WEBHOOK_SECRET` titokkal, a nyers kérés-testtel, időbélyeg-tűréssel
+# és állandó idejű összehasonlítással. Aláírás nélkül a kód nem olvas
+# adatbázist, nem tölt le semmit, és nem ír naplót.
+#
+# Vagyis amit a `kiolvas`-nál a platform intéz, azt itt az `alairas.ts` intézi.
+# Ha valaki ezt a sort `true`-ra állítja, a beküldés **némán megáll** — a
+# levelek eltűnnek, és a felületen semmi nem jelzi.
+verify_jwt = false
+import_map = "./functions/deno.json"
+entrypoint = "./functions/email-bekuldes/index.ts"

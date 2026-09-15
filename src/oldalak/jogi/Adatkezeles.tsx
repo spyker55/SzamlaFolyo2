@@ -27,6 +27,21 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  *    nem előtte.
  * 5. **A munkamenet** nem sütiben él, hanem a böngésző tárolójában. Apróság, de
  *    egy süti-szakasz ne írjon le olyan sütit, ami nincs.
+ *
+ * # 2026. szeptember 15. — az e-mailes beküldés
+ *
+ * A bizonylat mostantól **levélben is érkezhet**, a cég saját beküldő címére
+ * (`20260915000200_email_bekuldes.sql`). Ez két helyen üt be, és mindkettőt ki
+ * kell mondani, nem elég a beküldést megemlíteni:
+ *
+ * - **Új adatfeldolgozó**: a Resend fogadja a leveleket és küldi a rendszer
+ *   saját leveleit. Bekerült az 5. pont táblázatába — ezt az ÁSZF 11. pontja
+ *   értesítési kötelezettséggé is teszi.
+ * - **Új adatkör**: harmadik felek (a szállítók) leveleinek feladója és tárgya.
+ *   Ez azért kerül a 2. pont táblázatába külön sorként, mert nem a bizonylat
+ *   adata, hanem a *kézbesítésé* — és mert a megőrzésének **más az indoka**:
+ *   nem a kiolvasás, hanem az, hogy egy elutasított levél ne tűnjön el
+ *   nyomtalanul.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -92,6 +107,17 @@ export function Adatkezeles() {
           </tr>
           <tr className="trow">
             <td className="td">
+              A beküldő címre érkezett levelek feladója, tárgya és sorsa (a levél szövege nem)
+            </td>
+            <td className="td">
+              Hogy a cég lássa, mi történt az odaküldött levéllel — a csendben eldobott levél a
+              legrosszabb kimenetel
+            </td>
+            <td className="td">Az Előfizető utasítása (adatfeldolgozás)</td>
+            <td className="td">A szerződés megszűnéséig</td>
+          </tr>
+          <tr className="trow">
+            <td className="td">
               A visszafordíthatatlan és a cégre kiható műveletek naplója (export, törlés, tag
               felvétele, beállításváltás)
             </td>
@@ -128,8 +154,17 @@ export function Adatkezeles() {
         <P>Ez a tájékoztató legfontosabb szakasza, mert itt hagyják el az adatok a szervert.</P>
         <Lista>
           <li>
-            A bizonylat a böngészőből, feltöltéssel érkezik, és az{' '}
+            A bizonylat a böngészőből, feltöltéssel érkezik — vagy, ha a cég ezt bekapcsolta, a
+            cég saját beküldő címére küldött levél mellékleteként. Mindkét esetben az{' '}
             <strong>Európai Unión belül, frankfurti kiszolgálón</strong> tárolódik.
+          </li>
+          <li>
+            <strong>Az e-mailes beküldésnél</strong> a levelet a Resend fogadja EU-régióban, és
+            webhookon adja át nekünk. A levélből a <strong>melléklet tartalmát</strong> vesszük
+            át; a levél szövegéből semmit nem tárolunk. A feladó címét és a tárgyat megőrizzük,
+            de kizárólag azért, hogy a cég látni tudja, mi történt az odaküldött levéllel — egy
+            csendben eldobott számla rosszabb, mint egy elutasított. Ha a címzett cím
+            ismeretlen, a levélről <strong>semmit nem tárolunk.</strong>
           </li>
           <li>
             A kiolvasáshoz a bizonylat tartalma — a PDF vagy a kép — <strong>elhagyja a

@@ -32,7 +32,7 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. szeptember 14.';
+export const hatalyos = '2026. szeptember 15.';
 
 /**
  * Az adatfeldolgozók — az Adatkezelési tájékoztató 5. pontjának táblázata.
@@ -47,6 +47,16 @@ export const hatalyos = '2026. szeptember 14.';
  * mondat is, hogy „a kiszolgálók, az adatbázis és a levelezés Magyarországon
  * üzemelnek" — ez ma **nem igaz**, és egy adatkezelési tájékoztatóban a
  * kényelmes régi mondat a legrosszabb fajta hiba.
+ *
+ * A 2026. szeptember 15-i körrel a **Resend** lépett be, két szerepben: a cég
+ * beküldő címére érkező leveleket fogadja, és a rendszer saját leveleit küldi
+ * ki. A fiók **EU-régióban** (Írország) áll, és ez tudatos választás volt, nem
+ * alapértelmezés — ugyanaz a megfontolás, amiért a Supabase Frankfurtban van.
+ *
+ * ⚠️ A sor mégis `unionBelul: false`, és ez nem tévedés: a régió az, ahol az
+ * adat *feldolgozódik*, a szolgáltató viszont amerikai, tehát a hozzáférés
+ * lehetősége fennáll. Egy adatkezelési tájékoztatóban a gyengébb állítás a
+ * helyes állítás.
  */
 export const adatfeldolgozok: readonly {
   ki: string;
@@ -76,6 +86,12 @@ export const adatfeldolgozok: readonly {
     ki: 'A kiolvasást végző modell szolgáltatója',
     mit: 'A bizonylat gépi kiolvasása',
     hol: 'Amerikai Egyesült Államok',
+    unionBelul: false,
+  },
+  {
+    ki: 'Resend',
+    mit: 'A cég beküldő címére érkező levelek fogadása és a rendszer leveleinek kiküldése',
+    hol: 'Európai Unió (Írország) / Amerikai Egyesült Államok',
     unionBelul: false,
   },
   {
