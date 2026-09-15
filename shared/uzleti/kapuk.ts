@@ -4,11 +4,16 @@ import type { Mezo } from './sema.ts';
 /**
  * Az automatikus jóváhagyás kapui.
  *
- * A régi rendszerben **minden** dokumentum az Ellenőrzés képernyőre ment, és az
- * ember mindegyiket jóváhagyta. Az új verzióban csak az kerüljön elé, amivel
- * baj van — de az automatikus jóváhagyás **nem jelent láthatatlanságot**: az
- * így átment bizonylat jelvényt kap, mellette egy sorban az indok, és exportig
- * visszahívható javításra.
+ * ⚠️ **Alapból egyik kapu sem jut szóhoz**: a `companies.auto_jovahagyas_be`
+ * alapértéke `false`, tehát minden bizonylat emberi jóváhagyásra vár, és a
+ * `dontes()` már az első feltételen kilép. Ez a termék ígérete — a nyitólap,
+ * az ÁSZF 3. pontja és az Adatkezelési tájékoztató 6. pontja is ezt mondja.
+ *
+ * Ez a modul attól nem felesleges: aki kifejezetten kéri, a Beállítások
+ * képernyőn bekapcsolhatja, és onnantól ez a hét kapu dönt. Az automatikus
+ * jóváhagyás akkor sem jelent láthatatlanságot: az így átment bizonylat
+ * jelvényt kap, mellette egy sorban az indok, és exportig visszahívható
+ * javításra.
  *
  * Soha ne írjuk ki, hogy „ellenőrizve", ha senki nem nézte meg. A felület
  * mondja meg őszintén, mi történt.

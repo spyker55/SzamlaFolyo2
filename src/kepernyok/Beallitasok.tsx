@@ -149,7 +149,7 @@ export function Beallitasok() {
 
         <Kartya
           cim="Automatikus jóváhagyás"
-          leiras="Ha egy bizonylat minden ellenőrzésen átmegy, ne várjon rád fölöslegesen."
+          leiras="Alapból ki van kapcsolva: minden bizonylat rád vár. Bekapcsolva az megy át magától, amelyik minden ellenőrzésen átment."
         >
           <Valasztas
             nev="auto-jovahagyas"

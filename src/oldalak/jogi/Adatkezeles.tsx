@@ -246,16 +246,20 @@ export function Adatkezeles() {
         </P>
       </Szakasz>
 
-      <Szakasz cim="6. Gépi jóváhagyás — mi megy át ember nélkül">
+      <Szakasz cim="6. Gépi jóváhagyás — alapból kikapcsolva">
         <P>
-          A rendszer nem minden bizonylatot tesz ember elé. Amelyik{' '}
-          <strong>minden gépi ellenőrzésen átmegy</strong>, az emberi jóváhagyás nélkül is
-          továbbengedhető. Ez a Szolgáltatás lényegi tulajdonsága, ezért írjuk le itt is:
+          <strong>Alapértelmezés szerint minden bizonylat emberhez kerül</strong>, és emberi
+          jóváhagyás nélkül egyetlen kiolvasott adat sem megy tovább. Automatikus döntés csak
+          akkor születik, ha azt a cég a Beállítások képernyőn <strong>kifejezetten
+          bekapcsolja</strong> — ekkor a minden gépi ellenőrzésen átmenő bizonylat emberi
+          jóváhagyás nélkül is továbbengedhető. Mivel ez a bekapcsolt állapot érinti az
+          érintettek adatainak kezelését, itt is leírjuk, mi tartozik hozzá:
         </P>
         <Lista>
           <li>
-            <strong>Cégenként kapcsolható</strong>, a Beállítások képernyőn. Kikapcsolva minden
-            bizonylat emberhez kerül.
+            <strong>Cégenként kapcsolható</strong>, a Beállítások képernyőn, és{' '}
+            <strong>alapból ki van kapcsolva</strong>. Kikapcsolva minden bizonylat emberhez
+            kerül.
           </li>
           <li>
             A cég <strong>első {szamlafolyo.automatikusJovahagyas.bemelegitesDarab} bizonylata

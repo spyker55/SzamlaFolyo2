@@ -43,20 +43,32 @@ import { allapotCimke, tipusCimke } from '@uzleti/enumok.ts';
  * - **A villám alakú logójel.** Van valódi szóvédjegyünk és jelünk
  *   (`komponensek/Logo.tsx`), az marad.
  *
- * # Mi változott a régi nyitólap **szövegéhez** képest, és miért
+ * # A hero szövege: vissza az eredetihez
  *
- * A régi lap egy **másik terméket** hirdetett. Két állítása ma valótlan:
+ * Egy korábbi körben a **gépi jóváhagyás** lett a lap fő ígérete („Csak azt
+ * kapod kézhez, amivel tényleg dolgod van"). Az élesben végigvitt folyamat
+ * után a döntés megfordult: **minden bizonylat emberi jóváhagyásra vár**, és
+ * ez a helyes működés. A gépezet megmarad, de alapból kikapcsolva
+ * (`20260915000100_auto_jovahagyas_alapbol_ki.sql`), és **egyetlen szöveg sem
+ * ígéri** — ezért állt vissza ide a régi lap hero-szövege.
  *
- * 1. A lábléce azt írta: „Az adatok magyar szervereken tárolódnak." Az adat
- *    2026 szeptembere óta Frankfurtban van. Ugyanaz a hibaosztály, amit a jogi
- *    szövegekben is javítani kellett — és egy nyitólapon még kényelmesebb
- *    bennhagyni, mert ott érvnek hangzik.
- * 2. A régi termékben **minden** bizonylat emberhez került. Ma nem: ami minden
- *    gépi ellenőrzésen átmegy, ember nélkül is továbbmehet.
+ * ## Két szándékos eltérés a régi laptól
  *
- * A második nem lábjegyzet lett, hanem **a fő ígéret** — mert ez a termék
- * valódi különbsége, és mert az ÁSZF 3. pontja már kimondja. A fékek ezért
- * **közvetlenül az ígéret alatt** állnak, nem egy külön szakasz mélyén.
+ * 1. **„Küldd tovább a számlát" → „Töltsd fel…".** Az eredeti mondat az
+ *    e-mailes beküldésre utalt, ami a régi termékben működött; ebben **még
+ *    nincs meg** (webhookkal jön, később). A mondat többi része szó szerint
+ *    marad.
+ * 2. **A kiemelt szó színe.** A régi lapon a „könyvelésre kész adat" két színű
+ *    volt, a második szó mustárral. A mustár ezen a háttéren **mérve
+ *    olvashatatlan**: `#dfb671` a `#f6ede4` vásznon ~1,6:1, a WCAG nagy betűre
+ *    is 3:1-et kér. Ezért a meglévő terrakotta színátmenet viszi mindkét szót
+ *    — ránézésre ugyanaz a kétszínű hatás, csak olvasható. A mustár ott marad,
+ *    ahol dísz: a háttérfoltokon és az „Ajánlott" jelvényen.
+ *
+ * Ami a lábléc „Az adatok magyar szervereken tárolódnak" mondatát illeti: az
+ * **nem tér vissza**. Az adat 2026 szeptembere óta Frankfurtban van, és ez az
+ * a fajta állítás, amit egy nyitólapon a legkönnyebb bennfelejteni, mert
+ * érvnek hangzik.
  *
  * # Amit nem írunk újra
  *
@@ -238,57 +250,24 @@ function Hero() {
                 <span className="absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75 motion-safe:animate-ping" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
               </span>
-              A legrövidebb út a bizonylattól a könyvelésig
+              A legtisztább számlafeldolgozó munkafolyamat
             </p>
 
             <h1 className="mb-6 text-4xl leading-tight font-extrabold text-slate-800 sm:text-5xl lg:text-6xl">
-              Csak azt kapod kézhez,{' '}
+              Dokumentumból ellenőrzött,{' '}
               <span className="bg-linear-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">
-                amivel tényleg dolgod van.
-              </span>
+                könyvelésre kész adat
+              </span>{' '}
+              percek alatt.
             </h1>
 
             <p className="mb-8 text-lg leading-relaxed text-slate-500 sm:text-xl">
               <strong className="font-bold text-slate-800">
-                Töltsd fel a számlát vagy a nyugtát. A SzámlaFolyó kiolvassa,
+                Töltsd fel a számlát vagy a nyugtát. A SzámlaFolyó kiolvassa.
               </strong>{' '}
-              és végigfuttatja a saját ellenőrzésein. Ami átmegy mindegyiken, magától jóváhagyásra
-              kerül; ami elhasal, azt megjelölve eléd tesszük. Export, és kész.
+              Te csak azt ellenőrzöd, amiben nem biztos. Export, és kész. Nem funkciókat
+              halmozunk, hanem a legkisebb, leggyorsabb munkafolyamatot adjuk.
             </p>
-
-            {/*
-              A fékek **itt** állnak, nem lejjebb. Aki most olvassa először, hogy
-              a gép jóváhagyhat helyette, annak ugyanabban a mozdulatban kell
-              látnia, mi tartja vissza — különben a következő gondolata a
-              „bezárom" lesz, és igaza is lenne.
-            */}
-            <div className="mb-8 rounded-2xl border border-zsalya/30 bg-white/70 p-5 shadow-sm backdrop-blur-sm">
-              <p className="text-sm font-bold text-slate-800">És amíg ez zavar, ki is kapcsolod:</p>
-              <ul className="mt-3 space-y-2.5">
-                <FekSor>
-                  Cégenként kapcsolható. Kikapcsolva{' '}
-                  <strong className="font-semibold text-slate-800">minden</strong> bizonylat hozzád
-                  kerül.
-                </FekSor>
-                <FekSor>
-                  Az első{' '}
-                  <strong className="font-semibold text-slate-800">
-                    {szamlafolyo.automatikusJovahagyas.bemelegitesDarab}
-                  </strong>{' '}
-                  bizonylatot mindig ember nézi át, és utána is minden{' '}
-                  <strong className="font-semibold text-slate-800">
-                    {szamlafolyo.automatikusJovahagyas.mintavetelMinden}.
-                  </strong>{' '}
-                  — így marad mérhető, mennyit téved.
-                </FekSor>
-                <FekSor>
-                  Ami magától ment át, az jelvényt kap és indokot.{' '}
-                  <strong className="font-semibold text-slate-800">
-                    Soha nem írjuk ki, hogy „ellenőrizve", ha senki nem nézte meg.
-                  </strong>
-                </FekSor>
-              </ul>
-            </div>
 
             <HeroGombok />
             <ProbaAdatok />
@@ -298,17 +277,6 @@ function Hero() {
         </div>
       </div>
     </section>
-  );
-}
-
-function FekSor({ children }: { children: ReactNode }) {
-  return (
-    <li className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-zsalya/25 text-zsalya">
-        <IkonPipa className="h-3.5 w-3.5" />
-      </span>
-      <span className="text-sm leading-relaxed text-slate-500">{children}</span>
-    </li>
   );
 }
 
@@ -522,7 +490,7 @@ function Folyamat() {
     {
       cim: 'Ellenőrzés',
       szoveg:
-        'Megjelöljük, ami bizonytalan vagy ellentmondásos. Amit nem jelöltünk meg, azzal nincs dolgod.',
+        'Minden bizonylatot te hagysz jóvá — de csak azzal van dolgod, amit megjelöltünk: a bizonytalan és az ellentmondásos mezőkkel.',
       ikon: <IkonPajzs className="h-8 w-8" />,
     },
     {
@@ -650,7 +618,7 @@ function BeerkezoMinta() {
     },
     {
       fajl: 'aws_invoice_08.pdf',
-      mit: 'Külföldi, fordított adózás • automatikusan',
+      mit: 'Külföldi, fordított adózás • minden mező átment az ellenőrzéseken',
       allapot: allapotCimke('jovahagyva'),
       jelveny: 'badge-kesz',
       ikon: <IkonKartya className="h-6 w-6" />,
@@ -716,13 +684,13 @@ function Elonyok() {
       ikon: <IkonToll className="h-6 w-6" />,
       cim: 'Kézírás külön elbírálás alá esik',
       szoveg:
-        'A kézzel írt bizonylatnál a nevet nem lehet ellenőrizni semmivel. Ezért azt mindig átnézésre jelöljük, és sosem megy át magától.',
+        'A kézzel írt bizonylatnál a szállító nevét nem lehet ellenőrizni semmivel — a modell pedig ilyenkor talál ki neveket a legmagabiztosabban. Ezért a kézírást külön megjelöljük.',
     },
     {
       ikon: <IkonPajzs className="h-6 w-6" />,
-      cim: 'A gépi jóváhagyásnak fékei vannak',
+      cim: 'Az utolsó szó a tiéd',
       szoveg:
-        'Cégenként kikapcsolható, az első bizonylatokat mindig ember nézi át, és utána is jut minta emberhez — ettől marad mérhető, mennyit téved.',
+        'Minden bizonylat jóváhagyásra vár: semmi nem kerül exportba úgy, hogy egy ember rá ne bólintott volna. A gép nem helyetted dönt — előkészíti a döntést.',
     },
   ];
 
@@ -914,7 +882,7 @@ function Lablec() {
           <div className="max-w-sm">
             <LogoSor jel="h-8 w-8" szoveg="text-xl" />
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
-              Csak azt kapod kézhez, amivel tényleg dolgod van.
+              Dokumentumból könyvelésre kész adat, percek alatt.
             </p>
             {/*
               ⚠️ A régi nyitólap itt azt írta: „Az adatok magyar szervereken

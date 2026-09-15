@@ -14,10 +14,13 @@ import { formaz } from '@uzleti/osszeg.ts';
  * **a termék változott meg**, és az ÁSZF nem maradhat a régi terméké:
  *
  * 1. **3. és 4. pont — a gépi jóváhagyás.** A régi szöveg azt írta, hogy „a
- *    rendszer minden tétel emberi jóváhagyását kéri". Ma nem kéri: ami minden
- *    gépi ellenőrzésen átmegy, ember nélkül is továbbmehet. Ezt ki kell mondani
- *    — és vele együtt azt is, hogy **a felelősség ettől nem költözik át**.
- *    Ez most fontosabb, mint volt.
+ *    rendszer minden tétel emberi jóváhagyását kéri". Egy ideig ez az ÁSZF az
+ *    ellenkezőjét mondta, mert a gépi jóváhagyás alapértelmezés volt — **ez
+ *    megfordult**: alapból minden bizonylat jóváhagyásra vár, a gépi
+ *    jóváhagyás pedig kifejezetten bekapcsolható lehetőség
+ *    (`20260915000100_auto_jovahagyas_alapbol_ki.sql`). A 3. pont ezt így
+ *    mondja, a 4. pedig azt, hogy **a felelősség a bekapcsolással sem költözik
+ *    át**.
  * 2. **8. pont — a kredit a bizonylatra szól, nem a fájlra.** A régi rendszer
  *    hibája az volt, hogy a köteg oldalarányosan fogyasztott, aztán az ember
  *    szétvágva újra feltöltötte, és **másodszor is fizetett**. A szétszedés
@@ -98,14 +101,16 @@ export function Aszf() {
         </P>
         <P>
           <strong>
-            A rendszer nem minden bizonylatot tesz ember elé: amelyik minden gépi ellenőrzésen
-            átmegy, azt emberi jóváhagyás nélkül is továbbengedheti.
+            A kiolvasott bizonylatok emberi jóváhagyásra várnak: alapértelmezés szerint minden
+            bizonylat az Ellenőrzés képernyőre kerül, és exportálni csak jóváhagyás után lehet.
           </strong>{' '}
-          Ez a Szolgáltatás rendeltetésszerű működése, és cégenként kapcsolható a Beállítások
-          képernyőn. Kikapcsolva minden bizonylat ellenőrzésre vár. Az így átengedett bizonylat
-          megjelölve és rövid indokkal jelenik meg, és az exportig visszahívható javításra; a
-          Szolgáltatás soha nem állítja egy bizonylatról, hogy ellenőrizte, ha azt ember nem nézte
-          meg. A működés részleteit az{' '}
+          Az Előfizető a Beállítások képernyőn ettől eltérhet: bekapcsolhatja a gépi
+          jóváhagyást, és ettől a minden gépi ellenőrzésen átmenő bizonylat emberi jóváhagyás
+          nélkül is továbbmehet. Ez a lehetőség <strong>alapból ki van kapcsolva</strong>, és
+          bekapcsolva sem jelent láthatatlanságot: az így átengedett bizonylat megjelölve és
+          rövid indokkal jelenik meg, és az exportig visszahívható javításra. A Szolgáltatás
+          soha nem állítja egy bizonylatról, hogy ellenőrizte, ha azt ember nem nézte meg. A
+          működés részleteit az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató 6. pontja
           </Link>{' '}
@@ -129,11 +134,11 @@ export function Aszf() {
             Az adat helyességéért — és mindazért, ami abból a könyvelésben, a bevallásokban vagy
             máshol következik — az Előfizető felel.
           </strong>{' '}
-          Ez akkor is így van, ha a bizonylat a 3. pont szerinti gépi jóváhagyással, emberi
-          ellenőrzés nélkül ment át: a gépi jóváhagyás a munkát könnyíti, a felelősséget nem
-          veszi át. Az Előfizető a Beállítások képernyőn bármikor előírhatja, hogy minden
-          bizonylat emberhez kerüljön, és a jóváhagyott tételek az exportig visszahívhatók
-          javításra.
+          Ez akkor is így van, ha az Előfizető bekapcsolta a 3. pont szerinti gépi jóváhagyást,
+          és a bizonylat emberi ellenőrzés nélkül ment át: a gépi jóváhagyás a munkát könnyíti,
+          a felelősséget nem veszi át. A gépi jóváhagyás alapból ki van kapcsolva, bekapcsolása
+          az Előfizető döntése, és bármikor visszakapcsolható; a jóváhagyott tételek az exportig
+          visszahívhatók javításra.
         </P>
         <P>
           A Szolgáltatás nem minősül könyvelési, adótanácsadási vagy jogi szolgáltatásnak, és nem

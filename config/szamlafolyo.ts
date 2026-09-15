@@ -113,13 +113,21 @@ export const szamlafolyo = {
   /*
    * Automatikus jóváhagyás
    *
-   * Csak az kerüljön ember elé, amivel baj van. De az automatikus jóváhagyás
-   * nem jelent láthatatlanságot: az így átment bizonylat jelvényt kap, és
-   * exportig visszahívható javításra.
+   * **Alapból ki van kapcsolva**: minden bizonylat emberi jóváhagyásra vár, és
+   * a nyilvános szövegek is ezt ígérik. Aki kifejezetten kéri, a Beállítások
+   * képernyőn bekapcsolhatja — onnantól a `kapuk.ts` hét kapuja dönt, és az
+   * így átment bizonylat jelvényt kap, indokkal, exportig visszahívhatóan.
+   *
+   * ⚠️ **Az alapállás nem itt lakik, hanem a sémában**: a
+   * `companies.auto_jovahagyas_be` oszlop `default false`-a mondja ki
+   * (`20260915000100_auto_jovahagyas_alapbol_ki.sql`). Állt itt korábban egy
+   * `alapbolBe` mező is — **senki nem olvasta**, tehát a kódban semmit nem
+   * jelentett. Egy konfigérték, ami mögött nincs viselkedés, ugyanaz a hamis
+   * ígéret, mint a sokáig sehol nem használt `fejlesztesAlatt` kapcsoló volt.
+   *
+   * Az alábbi két szám viszont **valóban** hat: a `kapuk.ts` olvassa őket.
    */
   automatikusJovahagyas: {
-    // Cégenként kapcsolható. Alapból bekapcsolva — ez a termék ígérete.
-    alapbolBe: true,
     // A cég első ennyi bizonylata **mindig** emberhez megy, akkor is, ha minden
     // kapu átmenne. Előzmény nélkül az „eltér-e a cég szokásaitól" kapu üresen
     // jár, és a felhasználónak is látnia kell egyszer, mit csinál a rendszer,

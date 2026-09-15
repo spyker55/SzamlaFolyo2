@@ -376,7 +376,9 @@ async function vegigfut(
       felderites.oldalszam,
     ),
     duplikatum: false,
-    autoJovahagyasBe: dokumentum.companies?.auto_jovahagyas_be ?? true,
+    // Ha a cég-join valamiért üresen jön vissza, **emberhez** dőlünk, nem
+    // automatikus jóváhagyás felé: a hiányzó adat nem engedély.
+    autoJovahagyasBe: dokumentum.companies?.auto_jovahagyas_be ?? false,
     elozmeny,
     mintaSorszam: elozmeny.cegEddigiBizonylatai + 1,
   });
