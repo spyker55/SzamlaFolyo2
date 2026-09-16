@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabase.ts';
 import { AuthElrendezes } from '../../komponensek/Elrendezes.tsx';
 import { useAuth } from '../../lib/auth.tsx';
 import { kapcsolatEmail } from '../../lib/kornyezet.ts';
-import { meghivoAdatok, meghivotElfogad, type MeghivoAdatok } from '../../lib/meghivo.ts';
+import {
+  meghivoAdatok,
+  meghivosFiok,
+  meghivotElfogad,
+  type MeghivoAdatok,
+} from '../../lib/meghivo.ts';
 import { hatralevoNap } from '@uzleti/meghivo.ts';
 import { szerepCimke } from '@uzleti/enumok.ts';
 
@@ -19,11 +23,20 @@ import { szerepCimke } from '@uzleti/enumok.ts';
  *
  * # És miért lehet itt fiókot nyitni, amikor a regisztráció zárva van
  *
- * Mert a kettő nem ugyanaz, és ezt a `kornyezet.ts` ki is mondja: a
- * `regisztracioNyitva` a **nyilvános** regisztrációt szabályozza. Egy meghívó
- * nem nyilvános: egy tulajdonos nevesítve hívott be valakit, a cége keretére.
- * Ha ez a kapcsolón múlna, a meghívás pont akkor nem működne, amikor a
- * leginkább kell.
+ * Mert a kettő nem ugyanaz: a `regisztracioNyitva` a **nyilvános**
+ * regisztrációt szabályozza. Egy meghívó nem nyilvános — egy tulajdonos
+ * nevesítve hívott be valakit, a cége keretére. Ha ez a kapcsolón múlna, a
+ * meghívás pont akkor nem működne, amikor a leginkább kell.
+ *
+ * ⚠️ Ezt a különbséget sokáig **csak a felület** tartotta: a fióknyitás a
+ * közönséges `supabase.auth.signUp()`-ot hívta, vagyis a nyilvános végpontot.
+ * Amíg az nyitva állt, bárki fiókot nyithatott a böngészőcsomagban szereplő
+ * publikálható kulccsal; amint bezárul, a `disable_signup` a meghívottat is
+ * ugyanúgy elutasítja, mint az idegent. A kettő így kizárta egymást.
+ *
+ * Ezért megy a fióknyitás a `meghivo-fiok` Edge Functionön: `service_role`-lal,
+ * de **csak meghívott címre** és **csak élő meghívóra**. A nyilvános
+ * regisztráció innentől zárható anélkül, hogy a meghívás megállna.
  *
  * # Amit a képernyő nem tesz
  *
@@ -129,8 +142,17 @@ function Belepes({ cim, token }: { cim: string; token: string }) {
   const [feltetelek, setFeltetelek] = useState(false);
   const [hiba, setHiba] = useState<string | null>(null);
   const [kuld, setKuld] = useState(false);
-  const [kesz, setKesz] = useState(false);
 
+  /**
+   * ⚠️ **Nincs megerősítő levél, és nincs „nézd meg a postafiókod" képernyő.**
+   *
+   * A cím ellenőrzése a meghívó jelével **már megtörtént**: az a jel ehhez a
+   * postafiókhoz ment ki. Egy második levélváltás semmi újat nem mérne, viszont
+   * pont az a lépés volt, ami élesben egyszer már elnyelt egy meghívót.
+   *
+   * Sikerkor nincs mit kiírni: a belépés megtörtént, az `onAuthStateChange`
+   * felébreszti a szülőt, és a képernyő magától az elfogadó gombra vált.
+   */
   async function fiokot(e: FormEvent) {
     e.preventDefault();
     setHiba(null);
@@ -142,61 +164,13 @@ function Belepes({ cim, token }: { cim: string; token: string }) {
 
     setKuld(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email: cim,
-      password: jelszo,
-      // Ha a projekt megerősítést kér, a levélben lévő link **ide** hozza
-      // vissza a látogatót — nem a nyitólapra, ahonnan a meghívó már nem
-      // volna megtalálható.
-      options: { emailRedirectTo: window.location.href },
-    });
+    const eredmeny = await meghivosFiok(token, jelszo);
 
     setKuld(false);
 
-    if (error !== null) {
-      setHiba(error.message);
-      return;
+    if (!eredmeny.ok) {
+      setHiba(eredmeny.hiba ?? 'A fiókot nem sikerült létrehozni.');
     }
-
-    // Nincs munkamenet: a projekt e-mail-megerősítést kér. Ilyenkor a
-    // látogatónak meg kell mondani, hogy a postafiókját nézze — enélkül azt
-    // hinné, nem történt semmi.
-    if (data.session === null) {
-      setKesz(true);
-    }
-  }
-
-  if (kesz) {
-    return (
-      <>
-        <div className="alert alert-info">
-          <strong>Nézd meg a postafiókod.</strong> Küldtünk egy megerősítő levelet a(z) {cim}{' '}
-          címre. A benne lévő link ide hoz vissza, és utána elfogadhatod a meghívót.
-        </div>
-
-        {/*
-          ⚠️ Ez a mondat egy mért zsákutcát zár be. A Supabase **szándékosan**
-          nem árulja el, ha a cím már foglalt (cím-kitalálás elleni védelem) —
-          vagyis aki már regisztrált, ugyanezt a „nézd meg a postafiókod"
-          üzenetet kapja, csak épp nem érkezik levél.
-
-          A `data.user.identities` hosszából ezt ki lehetne találni, de az
-          dokumentálatlan mellékjelenség: nem építünk rá. Helyette kimondjuk,
-          és odatesszük a kijáratot.
-        */}
-        <p className="mt-4 text-center text-sm text-slate-500">
-          Ha ehhez a címhez már tartozik fiók, nem érkezik új levél —{' '}
-          <Link
-            to="/bejelentkezes"
-            state={{ honnan: `/meghivo/${token}` }}
-            className="font-medium text-blue-700 hover:underline"
-          >
-            lépj be
-          </Link>
-          , és a meghívó itt vár rád.
-        </p>
-      </>
-    );
   }
 
   return (

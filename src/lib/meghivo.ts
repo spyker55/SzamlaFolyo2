@@ -5,7 +5,7 @@ import type { Szerep } from '@uzleti/enumok.ts';
 /**
  * A meghívó adatműveletei.
  *
- * Öt RPC és egy Edge Function-hívás. A táblát közvetlenül **csak olvassuk**:
+ * Öt RPC és két Edge Function-hívás. A táblát közvetlenül **csak olvassuk**:
  * írási jog nincs rajta (`20260915000300` migráció), és ez szándékos — a
  * meghívó három művelete mind olyan szabályt kényszerít ki, amit egy
  * RLS-politika nem tud kimondani (már tag-e a cím, egyezik-e a belépési cím,
@@ -146,6 +146,54 @@ export async function meghivoAdatok(token: string): Promise<MeghivoAdatok> {
   const sor = (data as MeghivoAdatok[] | null)?.[0];
 
   return sor ?? { allapot: 'ismeretlen', ceg_nev: null, cim: null, szerep: null, lejar: null };
+}
+
+/**
+ * Fiók nyitása meghívóra, és azonnali belépés.
+ *
+ * ⚠️ **Nem `supabase.auth.signUp()`.** A nyilvános regisztráció a Supabase-ben
+ * ki van kapcsolva — enélkül a böngészőcsomagban szereplő publikálható kulccsal
+ * bárki fiókot nyithatna az API-n, a felületi kapcsolót megkerülve. A
+ * `disable_signup` viszont nem tesz különbséget meghívott és idegen között,
+ * ezért a meghívós fióknyitás egy külön, `service_role`-os Edge Functionön megy
+ * (`meghivo-fiok`), ami **csak meghívott címre** és **csak élő meghívóra** ad
+ * fiókot.
+ *
+ * A belépés rögtön utána fut: megerősítő levél nincs, mert a cím ellenőrzése a
+ * meghívó jelével már megtörtént. Az `onAuthStateChange` innen viszi tovább —
+ * a meghívó képernyő magától átvált az elfogadó gombra.
+ */
+export async function meghivosFiok(token: string, jelszo: string): Promise<Eredmeny> {
+  const { data, error } = await supabase.functions.invoke<{ hiba?: string; cim?: string }>(
+    'meghivo-fiok',
+    { body: { jel: token, jelszo } },
+  );
+
+  if (error !== null) {
+    const reszletek = await hibaSzoveg(error);
+
+    return { ok: false, hiba: reszletek ?? 'A fiókot nem sikerült létrehozni.' };
+  }
+
+  if (data?.hiba !== undefined) {
+    return { ok: false, hiba: data.hiba };
+  }
+
+  if (data?.cim === undefined) {
+    return { ok: false, hiba: 'A fiókot nem sikerült létrehozni.' };
+  }
+
+  const { error: belepesHiba } = await supabase.auth.signInWithPassword({
+    email: data.cim,
+    password: jelszo,
+  });
+
+  // A fiók ilyenkor **megvan**, csak a belépés akadt el — ezt ki is mondjuk,
+  // különben a látogató újra próbálná a fióknyitást, és „már van fiók"
+  // üzenetet kapna a semmiért.
+  return belepesHiba === null
+    ? { ok: true }
+    : { ok: false, hiba: 'A fiók elkészült, de a belépés nem sikerült. Próbálj bejelentkezni.' };
 }
 
 /** Elfogadás. A négy kaput az adatbázis zárja — itt csak az üzenete látszik. */

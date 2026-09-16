@@ -38,9 +38,9 @@ import_map = "./functions/deno.json"
 entrypoint = "./functions/selejtez/index.ts"
 
 [functions.email-bekuldes]
-# ⚠️ **Ez az egyetlen függvény, ahol a `verify_jwt` KI van kapcsolva**, és ez
-# nem lazítás, hanem kényszer: a levélszolgáltató nem tud Supabase-JWT-t
-# küldeni. Bekapcsolva a platform minden bejövő levelet 401-gyel utasítana el,
+# ⚠️ **Itt a `verify_jwt` KI van kapcsolva**, és ez nem lazítás, hanem
+# kényszer: a levélszolgáltató nem tud Supabase-JWT-t küldeni. (A másik ilyen
+# a `meghivo-fiok` — ott a meghívottnak nincs még fiókja, tehát tokenje sem.) Bekapcsolva a platform minden bejövő levelet 401-gyel utasítana el,
 # és a beküldés egyszerűen nem működne.
 #
 # Cserébe a hitelesítés **teljes egészében** a kódban van: a függvény legelső
@@ -67,3 +67,23 @@ entrypoint = "./functions/email-bekuldes/index.ts"
 verify_jwt = true
 import_map = "./functions/deno.json"
 entrypoint = "./functions/meghivo-kuld/index.ts"
+
+[functions.meghivo-fiok]
+# ⚠️ **A második függvény, ahol a `verify_jwt` KI van kapcsolva** — és itt is
+# kényszerből: a meghívottnak ebben a pillanatban még **nincs fiókja**, tehát
+# JWT-je sincs. Bekapcsolva a platform minden meghívós fióknyitást 401-gyel
+# utasítana el, vagyis a függvény pont azt nem tudná megtenni, amiért van.
+#
+# A hitelesítés helyette a **meghívó jele**: 24 karakter a félreolvashatatlan
+# ábécéből (~119 bit), amit a tulajdonos adott ki egyetlen, általa megnevezett
+# címre. A függvény ezen kívül semmit nem fogad el a hívótól: a fiók címét a
+# meghívóból veszi, nem a kérésből.
+#
+# Ez a végpont az, ami lehetővé teszi, hogy a Supabase `disable_signup`
+# kapcsolója BE legyen kapcsolva: a nyilvános regisztráció zárva, a meghívás
+# mégis működik. Ha valaki ezt a függvényt törli vagy elrontja, a meghívás
+# **némán megáll**, és a felületen csak annyi látszik, hogy nem sikerült fiókot
+# nyitni.
+verify_jwt = false
+import_map = "./functions/deno.json"
+entrypoint = "./functions/meghivo-fiok/index.ts"

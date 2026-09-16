@@ -23,11 +23,18 @@ export const szamlafolyo = {
    * link a saját, hitelesített tartományunkról küldött adathalász levél lenne.
    * Egy kézzel karbantartott konstans itt kevésbé kényelmes, de nem hazudható.
    *
-   * ⚠️ A domain felcsatolásakor **ezt kell először átírni**, és utána a
-   * `meghivo-kuld` függvényt újratelepíteni — a levélbe fordításkor ég bele.
-   * Addig a linkek a Vercel-címre mutatnak, ami ugyanaz az alkalmazás.
+   * ⚠️ **Ez az érték és a Supabase Auth Site URL-je együtt mozog.** A levélbe
+   * kerülő link ebből épül, a levél utáni visszaút (megerősítés,
+   * jelszó-emlékeztető) pedig a Site URL-ből — ha a kettő eltér, a felhasználó
+   * két különböző helyre kerül. Az átírás után a `meghivo-kuld` függvényt
+   * **újra kell telepíteni**: az érték a levélbe fordításkor ég bele.
+   *
+   * A régi Vercel-cím (`szamla-folyo2.vercel.app`) ugyanazt az alkalmazást
+   * szolgálja ki, tehát a már kiküldött linkek nem törnek el — de az új
+   * levelek innentől a saját tartományra mutatnak, ami a levél hitelességének
+   * is része.
    */
-  webcim: 'https://szamla-folyo2.vercel.app',
+  webcim: 'https://szamlafolyo.hu',
 
   /*
    * A rendszer leveleinek feladója.
