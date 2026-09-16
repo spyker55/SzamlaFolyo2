@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { LogoSor } from '../komponensek/Logo.tsx';
 import { FejlesztesAlattSav } from '../komponensek/FejlesztesAlatt.tsx';
+import { FejlesztesAlattAblak } from '../komponensek/FejlesztesAlattAblak.tsx';
 import { kapcsolatEmail, regisztracioNyitva } from '../lib/kornyezet.ts';
 import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
@@ -94,6 +95,12 @@ export function Nyitolap() {
       heron és a Beérkező-mintán.
     */
     <div className="min-h-screen bg-vaszon text-slate-800 antialiased">
+      {/*
+        Az ablak a lap elején áll, de a helye a DOM-ban nem számít: `fixed`, és
+        a fókuszt magától magához veszi. Azért itt, mert így a `Nyitolap`
+        olvasásakor rögtön látszik, hogy a kilépett látogatót ez fogadja.
+      */}
+      <FejlesztesAlattAblak />
       <Fejlec />
       <main>
         <Hero />
