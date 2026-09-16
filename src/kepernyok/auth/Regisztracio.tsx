@@ -4,6 +4,27 @@ import { supabase } from '../../lib/supabase.ts';
 import { AuthElrendezes } from '../../komponensek/Elrendezes.tsx';
 import { kapcsolatEmail, regisztracioNyitva } from '../../lib/kornyezet.ts';
 
+/**
+ * Nyilvános regisztráció.
+ *
+ * # Két kapcsoló dönt egyetlen dologról, és külön is el tudnak romlani
+ *
+ * A `regisztracioNyitva` a **böngészőé** (`VITE_REGISZTRACIO_NYITVA`, a Vercel
+ * környezeti változójából, fordításkor beleégetve), a másik a Supabase Auth
+ * `disable_signup` kapcsolója. Az elsőt a felület olvassa, a másodikat a
+ * `signUp()` végpont kényszeríti ki.
+ *
+ * ⚠️ A kettő **nem mozog együtt**, és élesben szét is csúszott: a szerveroldali
+ * kapu bezárult, a kiadott csomag viszont még a nyitott ágat hordozta. A
+ * látogató így eljutott az űrlapig, és a végén a Supabase angol mondatát kapta
+ * („Signups not allowed for this instance") — egy magyar termék főoldalán.
+ *
+ * Ezért fut a `signup_disabled` hiba **ugyanabba a képernyőbe**, mint a
+ * felületi kapcsoló zárt állása: akármelyik miatt zárt a kapu, a látogató
+ * ugyanazt az egy igaz mondatot kapja. Ez nem a kapcsolót helyettesíti — a
+ * helyes javítás továbbra is az, hogy a két kapcsoló egyezzen —, hanem azt éri
+ * el, hogy a széttartás ne egy platformüzenet formájában érjen földet.
+ */
 export function Regisztracio() {
   const [email, setEmail] = useState('');
   const [jelszo, setJelszo] = useState('');
@@ -11,24 +32,12 @@ export function Regisztracio() {
   const [hiba, setHiba] = useState<string | null>(null);
   const [kesz, setKesz] = useState(false);
   const [kuld, setKuld] = useState(false);
+  const [zarva, setZarva] = useState(false);
 
   const navigate = useNavigate();
 
-  if (!regisztracioNyitva) {
-    return (
-      <AuthElrendezes>
-        <h1 className="mb-1 text-lg font-semibold text-slate-900">Regisztráció</h1>
-        <p className="mb-5 text-sm text-slate-500">
-          Új fiókot jelenleg nem lehet nyitni. Ha érdekel a SzámlaFolyó, írj:{' '}
-          <a href={`mailto:${kapcsolatEmail}`} className="font-medium text-blue-700 hover:underline">
-            {kapcsolatEmail}
-          </a>
-        </p>
-        <Link to="/bejelentkezes" className="btn btn-secondary w-full">
-          Vissza a bejelentkezéshez
-        </Link>
-      </AuthElrendezes>
-    );
+  if (!regisztracioNyitva || zarva) {
+    return <Zarva />;
   }
 
   async function regisztral(e: FormEvent) {
@@ -45,6 +54,11 @@ export function Regisztracio() {
     setKuld(false);
 
     if (error !== null) {
+      if (regisztracioTiltott(error)) {
+        setZarva(true);
+        return;
+      }
+
       setHiba(error.message);
       return;
     }
@@ -152,4 +166,47 @@ export function Regisztracio() {
       </p>
     </AuthElrendezes>
   );
+}
+
+/**
+ * A zárt kapu — **egy szöveg, egy helyen**.
+ *
+ * Két úton lehet ide jutni (a felületi kapcsoló és a Supabase `disable_signup`),
+ * de a látogatónak ez a különbség semmit nem mond: neki egy mondat kell arról,
+ * hogy most nem nyithat fiókot, és hogy hova írhat.
+ */
+function Zarva() {
+  return (
+    <AuthElrendezes>
+      <h1 className="mb-1 text-lg font-semibold text-slate-900">Regisztráció</h1>
+      <p className="mb-5 text-sm text-slate-500">
+        Új fiókot jelenleg nem lehet nyitni. Ha érdekel a SzámlaFolyó, írj:{' '}
+        <a href={`mailto:${kapcsolatEmail}`} className="font-medium text-blue-700 hover:underline">
+          {kapcsolatEmail}
+        </a>
+      </p>
+      <Link to="/bejelentkezes" className="btn btn-secondary w-full">
+        Vissza a bejelentkezéshez
+      </Link>
+    </AuthElrendezes>
+  );
+}
+
+/**
+ * „A Supabase zárva tartja a regisztrációt" — három jelből, mert egyik sem
+ * garantált önmagában.
+ *
+ * A `code` a supabase-js újabb verzióiban jön, a `status` a HTTP-válaszé, a
+ * szöveg pedig a végső tartalék. Ha mindhárom elvétené, a nyers üzenet jelenik
+ * meg, mint eddig — az kevesebbet mond, de nem mond rosszat.
+ */
+function regisztracioTiltott(hiba: {
+  code?: string | undefined;
+  status?: number | undefined;
+  message: string;
+}): boolean {
+  if (hiba.code === 'signup_disabled') return true;
+  if (hiba.status === 422 && /signup/i.test(hiba.message)) return true;
+
+  return /signups? not allowed/i.test(hiba.message);
 }

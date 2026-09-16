@@ -169,7 +169,11 @@ function allapota(m: Meghivo): string | null {
  * szöveg pedig a végső tartalék. Ha mindhárom elvétené, a hívó egy általános
  * 500-at kap — az kevesebbet mond, de nem mond rosszat.
  */
-function marLetezik(hiba: { code?: string; status?: number; message: string }): boolean {
+function marLetezik(hiba: {
+  code?: string | undefined;
+  status?: number | undefined;
+  message: string;
+}): boolean {
   if (hiba.code === 'email_exists' || hiba.code === 'user_already_exists') return true;
   if (hiba.status === 422 && /regist|exist/i.test(hiba.message)) return true;
 
