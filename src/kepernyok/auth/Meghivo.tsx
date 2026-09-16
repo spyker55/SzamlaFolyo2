@@ -168,10 +168,34 @@ function Belepes({ cim, token }: { cim: string; token: string }) {
 
   if (kesz) {
     return (
-      <div className="alert alert-info">
-        <strong>Nézd meg a postafiókod.</strong> Küldtünk egy megerősítő levelet a(z) {cim} címre.
-        A benne lévő link ide hoz vissza, és utána elfogadhatod a meghívót.
-      </div>
+      <>
+        <div className="alert alert-info">
+          <strong>Nézd meg a postafiókod.</strong> Küldtünk egy megerősítő levelet a(z) {cim}{' '}
+          címre. A benne lévő link ide hoz vissza, és utána elfogadhatod a meghívót.
+        </div>
+
+        {/*
+          ⚠️ Ez a mondat egy mért zsákutcát zár be. A Supabase **szándékosan**
+          nem árulja el, ha a cím már foglalt (cím-kitalálás elleni védelem) —
+          vagyis aki már regisztrált, ugyanezt a „nézd meg a postafiókod"
+          üzenetet kapja, csak épp nem érkezik levél.
+
+          A `data.user.identities` hosszából ezt ki lehetne találni, de az
+          dokumentálatlan mellékjelenség: nem építünk rá. Helyette kimondjuk,
+          és odatesszük a kijáratot.
+        */}
+        <p className="mt-4 text-center text-sm text-slate-500">
+          Ha ehhez a címhez már tartozik fiók, nem érkezik új levél —{' '}
+          <Link
+            to="/bejelentkezes"
+            state={{ honnan: `/meghivo/${token}` }}
+            className="font-medium text-blue-700 hover:underline"
+          >
+            lépj be
+          </Link>
+          , és a meghívó itt vár rád.
+        </p>
+      </>
     );
   }
 

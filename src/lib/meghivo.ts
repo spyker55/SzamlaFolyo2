@@ -5,7 +5,7 @@ import type { Szerep } from '@uzleti/enumok.ts';
 /**
  * A meghívó adatműveletei.
  *
- * Három RPC és egy Edge Function-hívás. A táblát közvetlenül **csak olvassuk**:
+ * Öt RPC és egy Edge Function-hívás. A táblát közvetlenül **csak olvassuk**:
  * írási jog nincs rajta (`20260915000300` migráció), és ez szándékos — a
  * meghívó három művelete mind olyan szabályt kényszerít ki, amit egy
  * RLS-politika nem tud kimondani (már tag-e a cím, egyezik-e a belépési cím,
@@ -153,6 +153,40 @@ export async function meghivotElfogad(token: string): Promise<Eredmeny> {
   const { error } = await supabase.rpc('meghivot_elfogad', { jel: token });
 
   return error === null ? { ok: true } : { ok: false, hiba: error.message };
+}
+
+export type VaroMeghivo = {
+  /** A token — ebből épül a `/meghivo/:token` útvonal. */
+  jel: string;
+  ceg_nev: string;
+  szerep: Szerep;
+  lejar: string;
+};
+
+/**
+ * A belépett fiókra váró, még élő meghívó — vagy `null`.
+ *
+ * A cégalapítás képernyője kérdezi meg, mielőtt bárki saját céget nyitna. Enélkül
+ * az a felhasználó, aki a meghívó **levelét** elveszítette, a `/ceg-letrehozas`-on
+ * köt ki, és ha ott céget alapít, a meghívóból **véglegesen** kizárja magát
+ * (`meghivot_elfogad` 3. kapuja) — a `/fiok-torles` pedig még helyőrző, tehát
+ * vissza sem tud lépni.
+ *
+ * ⚠️ **Nincs paramétere, és ez nem hiányosság.** A cím a munkamenetből jön, nem
+ * a kliens állításából: egy `varoMeghivo(cim)` alak cím-kitalálós orákulum volna.
+ *
+ * Hibánál is `null`, mert a hívó oldalon a hiba és az üres eredmény ugyanaz a
+ * döntés: ne mutassunk kártyát. Egy hibaüzenet itt csak zavarna — a cégalapítás
+ * enélkül is működik.
+ */
+export async function varoMeghivo(): Promise<VaroMeghivo | null> {
+  const { data, error } = await supabase.rpc('varo_meghivo');
+
+  if (error !== null) {
+    return null;
+  }
+
+  return (data as VaroMeghivo[] | null)?.[0] ?? null;
 }
 
 async function hibaSzoveg(error: unknown): Promise<string | null> {

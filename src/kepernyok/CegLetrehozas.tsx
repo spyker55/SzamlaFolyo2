@@ -1,9 +1,12 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { AuthElrendezes } from '../komponensek/Elrendezes.tsx';
+import { varoMeghivo, type VaroMeghivo } from '../lib/meghivo.ts';
 import { ervenyes, formaz } from '@uzleti/adoszam.ts';
+import { hatralevoNap } from '@uzleti/meghivo.ts';
+import { szerepCimke } from '@uzleti/enumok.ts';
 
 /**
  * Cég létrehozása. Első belépéskor ez az egyetlen elérhető képernyő — nincs
@@ -18,6 +21,19 @@ import { ervenyes, formaz } from '@uzleti/adoszam.ts';
  * Itt tehát **szigorúbb a mérce, mint a bizonylatokon**: ott az `Adoszam`
  * alapból megengedő, mert egy külföldi *szállító* adószáma nem magyar alakú és
  * attól még helyes — az a szabály a partnerre szól, ez pedig a saját cégünkre.
+ *
+ * # Miért kérdez rá a meghívóra, mielőtt bárki céget alapítana
+ *
+ * Mert ez a képernyő **egyirányú ajtó** volt. A `Ceggel` őr minden cég nélküli
+ * fiókot ide terel — köztük azt a meghívottat is, aki a levelét elveszítette.
+ * Ha ő itt céget alapít, a meghívóból **véglegesen** kizárja magát
+ * (`meghivot_elfogad` 3. kapuja: egy fiók egy céget kezel), a `/fiok-torles`
+ * pedig még helyőrző, tehát vissza sem tud lépni. Élesben ez meg is történt:
+ * egy fiók nulla tagsággal ragadt be.
+ *
+ * Az űrlap ezért **nem tűnik el** a kártya mellől: van, akit meghívtak, és
+ * mégis a saját cégét akarja. A választást nem vesszük el — csak láthatóvá
+ * tesszük, melyik ajtó csukódik be.
  */
 export function CegLetrehozas() {
   const [nev, setNev] = useState('');
@@ -25,8 +41,25 @@ export function CegLetrehozas() {
   const [hiba, setHiba] = useState<string | null>(null);
   const [kuld, setKuld] = useState(false);
 
+  const [meghivo, setMeghivo] = useState<VaroMeghivo | null>(null);
+
   const { ujratolt } = useAuth();
   const navigate = useNavigate();
+
+  // A kártya helye addig **üres**, amíg a válasz megjön: se helyőrző, se
+  // villanás. Az űrlap közben végig használható — a meghívó kiegészítés, nem
+  // feltétel.
+  useEffect(() => {
+    let el = true;
+
+    void varoMeghivo().then((m) => {
+      if (el) setMeghivo(m);
+    });
+
+    return () => {
+      el = false;
+    };
+  }, []);
 
   async function letrehoz(e: FormEvent) {
     e.preventDefault();
@@ -66,6 +99,8 @@ export function CegLetrehozas() {
     <AuthElrendezes>
       <h1 className="mb-1 text-lg font-semibold text-slate-900">Cég létrehozása</h1>
       <p className="mb-5 text-sm text-slate-500">Két adat, és indulhat a feltöltés.</p>
+
+      {meghivo !== null && <VarMegHivo meghivo={meghivo} />}
 
       {hiba !== null && <div className="alert alert-hiba mb-4">{hiba}</div>}
 
@@ -110,5 +145,35 @@ export function CegLetrehozas() {
         </button>
       </form>
     </AuthElrendezes>
+  );
+}
+
+/**
+ * „Vár rád egy meghívó" — a kijárat, ami eddig hiányzott.
+ *
+ * A gomb nem fogad el semmit, csak **odavisz**: a négy kaput továbbra is a
+ * `/meghivo/:token` képernyő és mögötte az adatbázis zárja. Két helyen eldöntve
+ * előbb-utóbb két választ adna.
+ */
+function VarMegHivo({ meghivo }: { meghivo: VaroMeghivo }) {
+  const nap = hatralevoNap(meghivo.lejar);
+
+  return (
+    <div className="alert alert-info mb-5">
+      <p>
+        Meghívtak a(z) <strong>{meghivo.ceg_nev}</strong> SzámlaFolyó-fiókjába —{' '}
+        {szerepCimke(meghivo.szerep).toLowerCase()} szerepben. A meghívó még {nap} napig
+        érvényes.
+      </p>
+
+      <Link to={`/meghivo/${meghivo.jel}`} className="btn btn-primary mt-3 w-full">
+        Belépek a céghez
+      </Link>
+
+      <p className="mt-3 text-xs">
+        Ha most <strong>saját céget</strong> alapítasz, ezt a meghívót már nem tudod
+        elfogadni: egy fiók egy céget kezel.
+      </p>
+    </div>
   );
 }
