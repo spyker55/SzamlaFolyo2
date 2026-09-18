@@ -259,10 +259,31 @@ export const szamlafolyo = {
    * adatbázisban van, a könyvelő az exportot kapja. Amíg viszont ott van, addig
    * idegen cégek számláit tároljuk. Ami nincs meg, azt nem is lehet
    * kiszivárogtatni.
+   *
+   * # Az export fájl ugyanez a kérdés, egy lépéssel arrébb
+   *
+   * Az export xlsx **ugyanazokat az adatokat viszi**, amikért az eredeti fájlra
+   * hét napos plafont tettünk: szállítónevek, adószámok, összegek. Sokáig
+   * korlátlan ideig állt a tárolóban — mérve: öt export négy napon át, és
+   * semmi nem vitte volna el soha. Ez a kapcsoló zárja le.
+   *
+   * ⚠️ **Az `exportNap` nem állítható cégenként, és ez szándékos.** A
+   * `file_retention_days` azért lett cégenkénti, mert ott a rövidebb idő a
+   * felhasználó *kényelmét* sérti (nem tud visszanézni a papírba) — ott van mit
+   * mérlegelnie. Itt nincs: az export bármikor újrakészíthető a Tételekből,
+   * tehát a hosszabb tárolás senkinek nem ad semmit, csak nekünk kockázatot.
+   * Egy kapcsoló, aminek csak rossz állása van, nem választás.
+   *
+   * ⚠️ **A számot az SQL is ismeri** (`20260918000100_export_selejtezes.sql`,
+   * `belso.selejtezheto_export`), mert egy napi cron nem tud TS-configot
+   * olvasni — ugyanaz a tükrözés, mint a `maxNap` és a `file_retention_days`
+   * `check (… between 0 and 7)` között. Ha ez a szám változik, **a migráció is
+   * változik**; az Adatkezelési tájékoztató innen olvassa.
    */
   megorzes: {
     maxNap: 7,
     probaFajlNap: 7,
+    exportNap: 30,
   },
 
   /*

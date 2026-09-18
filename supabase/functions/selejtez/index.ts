@@ -3,7 +3,18 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { szolgaltatasSzerep } from '../../../shared/uzleti/token.ts';
 
 /**
- * Az eredeti fájlok selejtezése.
+ * A selejtezés: az eredeti fájlok és az export fájlok.
+ *
+ * # Két megőrzési idő, egy futás
+ *
+ * Az **eredeti fájl** cégenként állítható türelmi időt kap (0–7 nap), mert ott
+ * a rövidebb idő a felhasználó kényelmét sérti: a papírba nem tud visszanézni.
+ * Az **export fájl** fix 30 napot, állítás nélkül — az bármikor újrakészíthető
+ * a Tételekből, tehát a hosszabb tárolás senkinek nem ad semmit, csak nekünk
+ * kockázatot.
+ *
+ * Egy futás, mert mindkettő napokban mérődik, és két hajnali cron csak még egy
+ * hely lenne, ahol széttarthatnak.
  *
  * # Miért külön függvény, és miért nem a `kiolvas`-ban
  *
@@ -16,10 +27,11 @@ import { szolgaltatasSzerep } from '../../../shared/uzleti/token.ts';
  *
  * # Mit csinál, és mit nem
  *
- * A **szabály nincs benne.** Azt a `belso.selejtezheto()` mondja ki az
- * adatbázisban, és ugyanazt hívja az `export_rogzit` is — így az azonnali és a
- * türelmi idős törlés nem tud széttartani. Ez a függvény csak azt teszi, amit
- * SQL-ből nem lehet: **kitörli a bájtokat a tárolóból.**
+ * A **szabály nincs benne.** Azt az adatbázis mondja ki — a fájlokra a
+ * `belso.selejtezheto()`, az exportokra a `belso.selejtezheto_export()` —, és a
+ * fájlokét ugyanaz a függvény adja az `export_rogzit`-nek is, így az azonnali
+ * és a türelmi idős törlés nem tud széttartani. Ez a függvény csak azt teszi,
+ * amit SQL-ből nem lehet: **kitörli a bájtokat a tárolóból.**
  *
  * ⚠️ `service_role`-lal fut, tehát megkerüli az RLS-t. Cégek fölött dolgozik,
  * ezért csak belső hívásból indítható.
@@ -44,7 +56,18 @@ Deno.serve(async (keres: Request): Promise<Response> => {
   const befejezett = await befejez(db);
   const ujak = await esedekeseket(db);
 
-  return valasz({ befejezett, selejtezett: ujak }, 200);
+  const exportBefejezett = await exportotBefejez(db);
+  const exportUjak = await exportokatSelejtez(db);
+
+  return valasz(
+    {
+      befejezett,
+      selejtezett: ujak,
+      export_befejezett: exportBefejezett,
+      export_selejtezett: exportUjak,
+    },
+    200,
+  );
 });
 
 function valasz(test: unknown, statusz: number): Response {
@@ -176,6 +199,114 @@ async function bajtokatTorol(db: SupabaseClient, fajlok: readonly Fajl[]): Promi
 
 /** Cégenkénti darabszám, a naplóbejegyzésekhez. */
 function cegenkent(fajlok: readonly Fajl[]): Map<string, number> {
+  const szamlalo = new Map<string, number>();
+
+  for (const fajl of fajlok) {
+    szamlalo.set(fajl.company_id, (szamlalo.get(fajl.company_id) ?? 0) + 1);
+  }
+
+  return szamlalo;
+}
+
+// ---------------------------------------------------------------------------
+// Az export fájlok
+//
+// Ugyanaz a három lépés és ugyanaz a sorrend, mint a fájloknál — az indoka is
+// szó szerint ugyanaz. Külön függvények, nem paraméterezett közös kód: a két
+// ág más táblán, más bucketben és más oszlopnéven dolgozik (`storage_path`
+// kontra `file_path`), és egy „általánosított" változat itt csak három
+// paramétert és egy elágazást nyerne, cserébe egy elgépelés mindkét ágat
+// elvinné.
+// ---------------------------------------------------------------------------
+
+type ExportFajl = { id: string; company_id: string; file_path: string };
+
+/**
+ * Az esedékes export fájlok elvitele.
+ *
+ * A sor **megmarad**, csak a bájtok tűnnek el: az `exports` sor az audit-nyom
+ * (mi, mikor, hány tétellel ment ki), és az Archívum ezután is mutatja —
+ * letöltés nélkül, a lejárat dátumával. Ez a `files` mintája: ott sem a sort
+ * töröljük, hanem a `storage_path`-t ürítjük.
+ */
+async function exportokatSelejtez(db: SupabaseClient): Promise<number> {
+  const { data, error } = await db.rpc('selejtezendo_exportok');
+
+  if (error !== null) {
+    return 0;
+  }
+
+  const fajlok = (data ?? []) as ExportFajl[];
+
+  if (fajlok.length === 0) {
+    return 0;
+  }
+
+  await db
+    .from('exports')
+    .update({ file_deleted_at: new Date().toISOString() })
+    .in(
+      'id',
+      fajlok.map((f) => f.id),
+    );
+
+  const torolt = await exportBajtokatTorol(db, fajlok);
+
+  for (const [ceg, darab] of exportCegenkent(fajlok)) {
+    await db.from('activity_log').insert({
+      company_id: ceg,
+      action: 'export.selejtezve',
+      subject_type: 'export',
+      summary: `${darab} export fájl törölve a 30 napos megőrzési idő lejártával.`,
+      context: { darab },
+    });
+  }
+
+  return torolt;
+}
+
+/** A félbemaradt export-selejtezés befejezése. Lásd `befejez()`. */
+async function exportotBefejez(db: SupabaseClient): Promise<number> {
+  const { data } = await db
+    .from('exports')
+    .select('id, company_id, file_path')
+    .not('file_deleted_at', 'is', null)
+    .not('file_path', 'is', null)
+    .limit(200);
+
+  const fajlok = (data ?? []) as ExportFajl[];
+
+  if (fajlok.length === 0) {
+    return 0;
+  }
+
+  return exportBajtokatTorol(db, fajlok);
+}
+
+/** A 2. és 3. lépés az `exportok` bucketen. */
+async function exportBajtokatTorol(
+  db: SupabaseClient,
+  fajlok: readonly ExportFajl[],
+): Promise<number> {
+  const { error } = await db.storage.from('exportok').remove(fajlok.map((f) => f.file_path));
+
+  if (error !== null) {
+    return 0;
+  }
+
+  await db
+    .from('exports')
+    .update({ file_path: null })
+    .in(
+      'id',
+      fajlok.map((f) => f.id),
+    );
+
+  return fajlok.length;
+}
+
+/** Cégenkénti darabszám, a naplóbejegyzésekhez. */
+function exportCegenkent(fajlok: readonly ExportFajl[]): Map<string, number> {
   const szamlalo = new Map<string, number>();
 
   for (const fajl of fajlok) {

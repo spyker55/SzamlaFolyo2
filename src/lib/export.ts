@@ -422,6 +422,15 @@ export type ExportSor = {
   item_count: number;
   file_name: string;
   file_path: string | null;
+  /**
+   * Mikor járt le a fájl 30 napos megőrzése, vagy `null`, ha még él.
+   *
+   * ⚠️ Nem ugyanaz, mint a `file_path === null`: a selejtezés három lépése
+   * között (jelöl → tárolóból töröl → mutatót ürít) a sor rövid ideig
+   * **jelölt, de még van útvonala**. A felület ilyenkor is a lejáratot
+   * mutassa, ne egy letöltést, ami a következő pillanatban elhasal.
+   */
+  file_deleted_at: string | null;
   file_bytes: number;
   created_at: string;
   /** Hány tétel tartozik hozzá **most** — a visszahívás után ez kevesebb lehet. */
@@ -431,7 +440,9 @@ export type ExportSor = {
 export async function exportok(): Promise<ExportSor[]> {
   const { data } = await supabase
     .from('exports')
-    .select('id, format, filters, item_count, file_name, file_path, file_bytes, created_at, documents(count)')
+    .select(
+      'id, format, filters, item_count, file_name, file_path, file_deleted_at, file_bytes, created_at, documents(count)',
+    )
     .order('created_at', { ascending: false })
     .limit(50);
 

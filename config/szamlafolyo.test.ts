@@ -64,3 +64,21 @@ describe('Árazás', () => {
     }
   });
 });
+
+/**
+ * A két megőrzési idő viszonya.
+ *
+ * Nem esztétika: az eredeti fájl az export **után** megy el, az exportnak
+ * pedig azt kell túlélnie. Ha valaki egyszer az `exportNap`-ot a `maxNap` alá
+ * vinné, keletkezne egy ablak, amiben már sem az eredeti, sem az export nincs
+ * meg — miközben a felhasználó még azt hiszi, hogy visszanézhet valamelyikbe.
+ *
+ * ⚠️ Amit ez a teszt **nem** tud megfogni: az `exportNap` a migrációban is ott
+ * áll számként (`interval '30 days'`), mert egy napi cron nem olvas TS-configot.
+ * Azt a tükrözést az SQL-oldali mérés őrzi, nem ez.
+ */
+describe('Megőrzés', () => {
+  it('az export túléli az eredeti fájlt', () => {
+    expect(szamlafolyo.megorzes.exportNap).toBeGreaterThan(szamlafolyo.megorzes.maxNap);
+  });
+});

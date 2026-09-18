@@ -13,6 +13,7 @@ import {
 import { tipusCimke } from '@uzleti/enumok.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { datumIdo, datum } from '@uzleti/ido.ts';
+import { szamlafolyo } from '@config/szamlafolyo.ts';
 
 /**
  * Az archívum: ami már kiment.
@@ -25,7 +26,32 @@ import { datumIdo, datum } from '@uzleti/ido.ts';
  * A végleges törlés (tétel vagy egész export) szándékosan **nincs itt**: az
  * visszafordíthatatlan, és a többi ilyen művelettel egy helyen, egyszerre
  * átgondolva a helye.
+ *
+ * # A fájl 30 nap után elmegy — a sor nem
+ *
+ * Az export fájl ugyanazokat az adatokat viszi, amikért az eredetire hét napos
+ * plafont tettünk, ezért az is lejár (`20260918000100`). A **sor megmarad**:
+ * továbbra is látszik, mi, mikor és hány tétellel ment ki, és a tételek
+ * megnyithatók — csak a letöltés tűnik el.
+ *
+ * ⚠️ Ez a képernyő ezt **ki is mondja**, mielőtt a felhasználó rákattint. Egy
+ * ott hagyott „Letöltés" gomb, ami hibaüzenetbe fut, pontosan az a
+ * *majdnem-működés*, amit ebben a projektben nem hagyunk. A `letoltes()`
+ * hibaága megmarad, de onnantól az a valódi versenyhelyzet ellen véd (a lap
+ * betöltése után, a kattintás előtt lejárt fájl), nem a mindennapos eset.
  */
+/**
+ * Lejárt-e az export fájlja.
+ *
+ * **Két feltétel, vagy kapcsolattal**, és ez nem túlbiztosítás: a selejtezés
+ * előbb jelöl (`file_deleted_at`), és csak utána üríti a `file_path`-t. A
+ * kettő között a sornak még van útvonala, de a bájtjai már mennek — egy csak
+ * `file_path`-ra épülő vizsgálat ilyenkor gombot mutatna egy halott fájlhoz.
+ */
+function lejart(sor: ExportSor): boolean {
+  return sor.file_path === null || sor.file_deleted_at !== null;
+}
+
 export function Archivum() {
   const szerkeszthet = useSzerkeszthet();
   const [sorok, setSorok] = useState<ExportSor[]>([]);
@@ -89,8 +115,8 @@ export function Archivum() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Archívum</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Ami már kiment. Az export fájl újra letölthető, és egy tétel vissza is hívható a
-          Tételek közé.
+          Ami már kiment. Az export fájl {szamlafolyo.megorzes.exportNap} napig újra letölthető,
+          és egy tétel vissza is hívható a Tételek közé.
         </p>
       </div>
 
@@ -132,14 +158,22 @@ export function Archivum() {
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => void letoltes(sor)}
-                >
-                  Letöltés
-                </button>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {lejart(sor) ? (
+                  <span className="text-xs text-slate-500">
+                    A fájl a {szamlafolyo.megorzes.exportNap} napos megőrzési idő lejártával
+                    törlődött{sor.file_deleted_at === null ? '' : ` (${datum(sor.file_deleted_at)})`}.
+                    A tételek megvannak — a Tételek közül újra exportálhatók.
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => void letoltes(sor)}
+                  >
+                    Letöltés
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"

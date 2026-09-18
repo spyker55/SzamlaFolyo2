@@ -40,6 +40,7 @@ import { formaz } from '@uzleti/osszeg.ts';
  */
 export function Aszf() {
   const mb = Math.round(szamlafolyo.feltoltes.maxBajt / (1024 * 1024));
+  const exportNap = szamlafolyo.megorzes.exportNap;
   const maxNap = szamlafolyo.megorzes.maxNap;
 
   return (
@@ -293,12 +294,19 @@ export function Aszf() {
           jóváhagyott adatok a törlés után is megmaradnak.
         </P>
         <P>
+          <strong>Az elkészült export fájl {exportNap} napig érhető el</strong>, azután a
+          Szolgáltató automatikusan törli. Ez az idő nem hosszabbítható és nem állítható: az
+          export a jóváhagyott tételekből bármikor újrakészíthető, az adat tehát nem vész el. Az
+          Archívum ezután is mutatja, mi, mikor és hány tétellel ment ki — csak a fájl letöltése
+          szűnik meg.
+        </P>
+        <P>
           <strong>A bizonylatok jogszabályi megőrzése az Előfizető kötelezettsége.</strong> A
           számviteli és adójogi előírások szerinti megőrzési időt a Szolgáltatás nem teljesíti és
           nem helyettesíti; a Szolgáltató általi törlés az Előfizető megőrzési kötelezettségét nem
           érinti. <strong>A Szolgáltatás „Archívum" képernyője ebben az értelemben nem
-          archiválás:</strong> az az elkészült exportokat tartja nyilván, hogy azok
-          visszakereshetők legyenek — munkafolyamati funkció, nem a jogszabály szerinti
+          archiválás:</strong> az az elkészült exportokat tartja nyilván, hogy azok a fenti
+          {' '}{exportNap} napig visszakereshetők legyenek — munkafolyamati funkció, nem a jogszabály szerinti
           bizonylatmegőrzés, és azt nem is pótolja. Az Előfizetőnek ezért az eredeti bizonylatokat
           magának kell megőriznie.
         </P>

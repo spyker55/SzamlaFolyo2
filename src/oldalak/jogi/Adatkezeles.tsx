@@ -55,6 +55,7 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
   const maxNap = szamlafolyo.megorzes.maxNap;
+  const exportNap = szamlafolyo.megorzes.exportNap;
 
   return (
     <JogiOldal cim="Adatkezelési tájékoztató">
@@ -234,6 +235,14 @@ export function Adatkezeles() {
             cégenként állítható türelmi idővel.
           </li>
           <li>
+            <strong>Export fájlok:</strong> az elkészültüktől számított{' '}
+            <strong>legfeljebb {exportNap} napig</strong>, azután automatikusan törlődnek. Ez az
+            idő nem hosszabbítható és nem állítható: az export bármikor újrakészíthető a
+            jóváhagyott tételekből, tehát a hosszabb tárolás nem ad többet, csak kockázatot. Az
+            elkészült exportok <em>nyilvántartása</em> (mikor, milyen formátumban, hány tétellel)
+            a fájl törlése után is megmarad.
+          </li>
+          <li>
             <strong>Kiolvasott és jóváhagyott adatok, fiókadatok:</strong> a szerződés
             megszűnéséig, azt követően ésszerű időn belül törölve.
           </li>
@@ -271,8 +280,8 @@ export function Adatkezeles() {
           A bizonylatok saját, jogszabályi megőrzéséről az Előfizetőnek kell gondoskodnia; a
           Szolgáltató általi törlés ezt a kötelezettséget nem teljesíti és nem helyettesíti.{' '}
           <strong>A rendszer „Archívum" képernyője sem archiválás ebben az értelemben:</strong>{' '}
-          az az elkészült exportokat tartja nyilván, hogy visszakereshetők legyenek.
-          Munkafolyamati funkció, nem bizonylatmegőrzés.
+          az az elkészült exportokat tartja nyilván, hogy visszakereshetők legyenek — a fájl
+          maga {exportNap} nap után törlődik. Munkafolyamati funkció, nem bizonylatmegőrzés.
         </P>
       </Szakasz>
 
