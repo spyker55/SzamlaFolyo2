@@ -799,7 +799,7 @@ function Arak() {
                 {/*
                   A pénznem a `formaz()`-ból jön, nem külön elemből: a szomszédos
                   `<span>` margója vizuálisan elválasztotta ugyan, a **szöveg**
-                  viszont „1 990Ft"-ként állt össze — így másolja a felhasználó és
+                  viszont „4 900Ft"-ként állt össze — így másolja a felhasználó és
                   így olvassa fel a képernyőolvasó is.
                 */}
                 <p className="mt-4 mb-6">

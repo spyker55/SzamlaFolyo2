@@ -24,6 +24,10 @@ export default defineConfig({
     // közönséges npm-csomagra épül — a PDF-darabolás — **mérhető telepítés
     // előtt**, és pont az a fajta kód, amit nem szabad élesben először látni.
     include: [
+      // Az árazási szabályok tesztje a számok mellett lakik (`config/`), nem a
+      // `shared/uzleti/`-ben: aki egy árat átír, annak ott akadjon meg a szeme
+      // rajta. E sor nélkül az a teszt **némán sosem futna le**.
+      'config/**/*.test.ts',
       'shared/**/*.test.ts',
       'src/**/*.test.ts',
       'src/**/*.test.tsx',

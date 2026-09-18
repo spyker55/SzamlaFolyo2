@@ -273,14 +273,39 @@ export const szamlafolyo = {
    * ár így nem havi keretet adna, hanem évit, vagyis egytizenketted terméket.
    * Havi keret + éves számlázás csak külön forgó ablakkal működne.
    *
-   * Az `extraFt` a keret fölötti darabár, és **mindig drágább**, mint az adott
-   * csomag saját darabára (ár ÷ darabszám: 39,8 / 24,95 / 19,98) — különben azt
-   * tanítanánk, hogy megéri a kis csomagban maradni és túllépni. Erre teszt van.
+   * # Az `extraFt` és a csomagok viszonya
    *
-   * Az árazonosítók a Stripe éles fiókjából valók, és pontosan ezeket a
-   * számokat hordozzák. **Ismeretlen árazonosító nem „korlátlan"**, hanem a
-   * legkisebb csomag keretét kapja, és a naplóba kerül — a régiben ez
-   * `PHP_INT_MAX` volt, épp az AI-költséges oldalon.
+   * Itt **állt egy szabály, ami elavult**, és érdemes tudni, hogyan: sokáig az
+   * volt kimondva, hogy az `extraFt` mindig drágább a csomag saját darabáránál
+   * (ár ÷ keret) — „és erre teszt van". Teszt nem volt, a 2026 szeptemberi
+   * árváltás pedig mindhárom csomagon **megfordította** az állítást (a saját
+   * darabár ma 98 / 49,5 / 39,8 Ft, az `extraFt` 50 / 40 / 30). A komment ettől
+   * nem lett hangosabb, csak hamis.
+   *
+   * Az az összehasonlítás amúgy sem a helyes kérdés volt: a havi díj
+   * elkötelezettség, az átlagár és a határár nem ugyanaz a szám, és a csökkenő
+   * határár bevett árazási alak. Amit a mondat védeni akart — *ne érje meg a
+   * kis csomagban maradni és túllépni* —, az **csomagok között** dől el:
+   *
+   * 1. egy kisebb csomag túlhasználattal felvitt kerete legyen **drágább**,
+   *    mint a következő csomag havi díja (Start → 200 db: 12 400 > 9 900;
+   *    Flow → 500 db: 21 900 > 19 900);
+   * 2. a keret fölötti darabár csomagról csomagra **csökkenjen** — aki többet
+   *    fizet, ne járjon rosszabbul a keretén felül.
+   *
+   * **Erre most valóban teszt van**, a számok mellett: `szamlafolyo.test.ts`.
+   * A configból olvas, tehát a következő árváltásnál is mér.
+   *
+   * ⚠️ **Az árazonosítók a régi árakat hordozzák.** A Stripe `price` objektum
+   * összege nem módosítható, tehát a dashboardos árátírás a háttérben **új**
+   * `price` objektumokat hozott létre — az alábbi hat azonosító cseréje a
+   * Stripe-körre marad, a checkouttal együtt. Ma ez kockázat nélküli: élő
+   * előfizető nincs, az `arazonositoExtra`-t egyetlen sor sem olvassa, az
+   * `arazonosito`-t is csak a `keret.ts` csomag-lekeresése.
+   *
+   * **Ismeretlen árazonosító nem „korlátlan"**, hanem a legkisebb csomag
+   * keretét kapja, és a naplóba kerül — a régiben ez `PHP_INT_MAX` volt, épp
+   * az AI-költséges oldalon.
    */
   csomagok: {
     kicsi: {
@@ -291,8 +316,8 @@ export const szamlafolyo = {
       // könyvelő is, aki be akar nézni. Az egyfős keret nem bevételt hoz, hanem
       // közös jelszót, ami biztonsági kockázat.
       felhasznalok: 2,
-      arHavi: 1990,
-      extraFt: 49,
+      arHavi: 4900,
+      extraFt: 50,
       arazonosito: 'price_1UCO5PV05U28wfjzx5lH1Swk',
       arazonositoExtra: 'price_1UCO5JV05U28wfjzSkoFKiKy',
     },
@@ -300,8 +325,8 @@ export const szamlafolyo = {
       nev: 'Flow',
       dokumentumok: 200,
       felhasznalok: 5,
-      arHavi: 4990,
-      extraFt: 29,
+      arHavi: 9900,
+      extraFt: 40,
       arazonosito: 'price_1UCO5OV05U28wfjzVC3xfvIz',
       arazonositoExtra: 'price_1UCO5MV05U28wfjzCk96wSra',
     },
@@ -313,8 +338,8 @@ export const szamlafolyo = {
       // darabszám fogja meg. A korlátlan *dokumentum* volt az, ami véletlenül
       // keletkezett és tilos; a fejszám más kérdés.
       felhasznalok: null,
-      arHavi: 9990,
-      extraFt: 24,
+      arHavi: 19900,
+      extraFt: 30,
       arazonosito: 'price_1UCO5JV05U28wfjz4FXUyHhe',
       arazonositoExtra: 'price_1UCO5JV05U28wfjzSPeyjMa1',
     },

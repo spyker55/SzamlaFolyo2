@@ -33,8 +33,8 @@ import { formaz } from '@uzleti/osszeg.ts';
  *
  * ⚠️ A formázás a repó saját `formaz()`-ával megy, **nem** a
  * `toLocaleString('hu-HU')`-val. Ez mérésből derült ki: a fejléc nélküli
- * Chromiumban a `toLocaleString` nem csoportosított (`1990 Ft` jött ki
- * `1 990 Ft` helyett), mert az ICU-adatok hiányoznak. Egy jogi szöveg számai
+ * Chromiumban a `toLocaleString` nem csoportosított (`4900 Ft` jött ki
+ * `4 900 Ft` helyett), mert az ICU-adatok hiányoznak. Egy jogi szöveg számai
  * ne függjenek attól, milyen böngészővel nyitják meg — a `formaz()` saját
  * csoportosítót használ, és egyben ugyanúgy néz ki, mint az alkalmazásban.
  */
