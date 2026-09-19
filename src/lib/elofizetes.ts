@@ -41,3 +41,37 @@ export async function elofizetestIndit(csomag: CsomagKulcs): Promise<Indulas> {
 
   return { ok: true, url: data.url };
 }
+
+/**
+ * A számlázási portál megnyitása.
+ *
+ * Ugyanaz az alak, mint az `elofizetestIndit`-nál, és ugyanabból az okból: a
+ * hívás egy **linket** kér, nem állapotot ír. Amit a felhasználó a portálon
+ * tesz, az a `stripe-webhook`-on jön vissza — a visszatérése a `return_url`-re
+ * itt sem bizonyít semmit.
+ *
+ * Paramétere nincs, és ez szándékos: a cég a hitelesített felhasználóból
+ * következik a szerveren. Amit nem küldünk el, azt nem is lehet meghamisítani.
+ */
+export async function portaltIndit(): Promise<Indulas> {
+  const { data, error } = await supabase.functions.invoke<{ url?: string; hiba?: string }>(
+    'stripe-portal',
+    { body: {} },
+  );
+
+  if (error !== null) {
+    const reszletek = await hibaSzoveg(error);
+
+    return { ok: false, hiba: reszletek ?? 'A számlázási portál megnyitása nem sikerült.' };
+  }
+
+  if (data?.hiba !== undefined) {
+    return { ok: false, hiba: data.hiba };
+  }
+
+  if (data?.url === undefined || data.url === '') {
+    return { ok: false, hiba: 'A számlázási portál megnyitása nem sikerült.' };
+  }
+
+  return { ok: true, url: data.url };
+}

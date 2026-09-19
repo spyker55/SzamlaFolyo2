@@ -26,11 +26,17 @@
  *
  *    ⚠️ A vízjel **eseményfajtánként** értendő, és ezt élesben tanultuk meg. Az
  *    első valódi fizetésnél a `checkout.session.completed` (Stripe szerinti
- *    ideje 16:47:56) és a `customer.subscription.created` (16:47:53) egyszerre
+ *    ideje 16:47:56) és a `customer.subscription.created` (16:47:55) egyszerre
  *    érkezett. A checkout nyert, a vízjelet a saját, **későbbi** idejére
- *    állította, és ezzel a három másodperccel régebbi előfizetés-eseményt
+ *    állította, és ezzel az egy másodperccel régebbi előfizetés-eseményt
  *    teljes egészében elutasította: a felhasználó fizetett, és próbaidőn
- *    maradt. A két esemény órája nem összemérhető, mert **más mezőkről**
+ *    maradt.
+ *
+ *    > A 16:47:53 — ami egy korábbi leírásban szerepelt — nem az esemény, hanem
+ *    > az **előfizetés objektum** születése; ezt a Stripe azóta is így adja
+ *    > vissza (`sub_1UHRQd…`, `created: 1789836473`). Az esemény ideje a
+ *    > beírt vízjelből 16:47:55 volt. A verseny egy másodperces volt, nem
+ *    > három; a következtetés változatlan. A két esemény órája nem összemérhető, mert **más mezőkről**
  *    beszélnek. A szabály ezért: amelyik esemény nem hoz `stripe_status`-t, az
  *    nem mozdítja a vízjelet, és nem is akad fenn rajta
  *    (`20260919000200_stripe_vizjel_javitas.sql`).
@@ -43,6 +49,20 @@
  *    onnan jön, ahová mi magunk írtuk (a checkout indításakor), de ettől még a
  *    hívó állítása. A hívó oldalon ez **ellenőrizendő** az ügyfélazonosító
  *    ellen — lásd a `stripe-webhook` függvényben.
+ *
+ * 5. **Egyetlen mező van, aminek a `null`-ja is üzenet: a `stripe_cancel_at`.**
+ *    A lemondás ugyanis **nem státusz**. Aki a számlázási portálon a ciklus
+ *    végére mond le, annak az előfizetése a fordulónapig `active` marad — a
+ *    `status` mezőben semmi nem változik, csak a `cancel_at` töltődik ki. Ha
+ *    ezt nem írnánk be, a felhasználó lemondana, a Beállítások pedig
+ *    változatlanul a futó csomagot mutatná: azt hinné, nem sikerült, és
+ *    lemondana újra.
+ *
+ *    Ezért ezt a mezőt az előfizetés-események **mindig** beírják, `null`-lal
+ *    is — a „mégsem mondom le" ugyanolyan érvényes hír, mint a lemondás. Az
+ *    1. szabály nem sérül: a hívó oldalon a kulcs **jelenléte** dönt, nem az
+ *    értéke (`stripe_allapot_frissit`, `20260919000300`). A checkout-esemény
+ *    ehhez a mezőhöz soha nem nyúl.
  *
  * ⚠️ **A ciklus dátumai elköltöztek.** A `current_period_start` / `_end` a
  * 2025 tavaszi API-verziótól kezdve nem az előfizetésen, hanem az **előfizetés
@@ -61,6 +81,13 @@ export type CegValtozas = {
   stripe_lookup_key?: string;
   current_period_start?: string;
   current_period_end?: string;
+  /**
+   * Mikor ér véget a lemondott előfizetés — `null`, ha nincs lemondva.
+   *
+   * ⚠️ Az **egyetlen** mező, aminek a `null`-ja is beíródik. Lásd az 5.
+   * szabályt: a lemondás nem státusz, és a visszavonása sem az.
+   */
+  stripe_cancel_at?: string | null;
 };
 
 export type Dontes =
@@ -210,6 +237,12 @@ function elofizetesbol(elofizetes: Rekord, esemenyIdo: string, torolt: boolean):
     idobol(tetel?.current_period_end) ?? idobol(elofizetes.current_period_end),
   );
 
+  // Az 5. szabály: ez a mező **mindig** megy, `null`-lal is. A lemondás és a
+  // visszavonása ugyanabban a `customer.subscription.updated` eseményben
+  // érkezik, státuszváltozás nélkül — ha csak a nem üres értéket írnánk be, a
+  // lemondást vissza lehetne vonni, de a rendszer örökre lemondottnak látná.
+  valtozas.stripe_cancel_at = lemondasIdeje(elofizetes, tetel);
+
   return {
     fajta: 'frissit',
     cegAzonosito: ceg,
@@ -220,6 +253,10 @@ function elofizetesbol(elofizetes: Rekord, esemenyIdo: string, torolt: boolean):
       ? 'Az előfizetés megszűnt.'
       : `Az előfizetés állapota: ${statusz}${
           valtozas.stripe_lookup_key !== undefined ? ` (${valtozas.stripe_lookup_key})` : ''
+        }${
+          typeof valtozas.stripe_cancel_at === 'string'
+            ? `, lemondva ${valtozas.stripe_cancel_at.slice(0, 10)}-ig`
+            : ''
         }`,
   };
 }
@@ -241,8 +278,44 @@ function elsoTetel(elofizetes: Rekord): Rekord | null {
   return rekord(tetelek[0]);
 }
 
-/** Beírja a mezőt, ha van értéke. A `null` kimarad — lásd az 1. szabályt. */
-function toltsd(hova: CegValtozas, kulcs: keyof CegValtozas, ertek: string | null): void {
+/**
+ * Mikor ér véget a lemondott előfizetés — vagy `null`, ha nincs lemondva.
+ *
+ * A Stripe a `cancel_at` mezőt tölti, amikor a lemondás a ciklus végére szól.
+ * Nem bízunk rá vakon: ha a `cancel_at_period_end` igaz, de a `cancel_at`
+ * üres, a ciklus végét adjuk vissza. Ugyanaz a védekező olvasás, mint a
+ * ciklusdátumoknál — és ugyanaz az indok: a hiba csendes volna.
+ *
+ * A **törölt** előfizetésnél nem vizsgálódunk külön: amit az objektum mond, azt
+ * írjuk. A felület a lemondás-jelzést úgyis csak futó előfizetésre mutatja, egy
+ * megszűnt előfizetésen pedig a státusz mondja meg az igazat.
+ */
+function lemondasIdeje(elofizetes: Rekord, tetel: Rekord | null): string | null {
+  const veg = idobol(elofizetes.cancel_at);
+
+  if (veg !== null) {
+    return veg;
+  }
+
+  if (elofizetes.cancel_at_period_end !== true) {
+    return null;
+  }
+
+  return idobol(tetel?.current_period_end) ?? idobol(elofizetes.current_period_end);
+}
+
+/**
+ * Beírja a mezőt, ha van értéke. A `null` kimarad — lásd az 1. szabályt.
+ *
+ * A `stripe_cancel_at` **szándékosan nincs** a kezelhető kulcsok között: annak
+ * a `null`-ja is beírandó (5. szabály), tehát nem eshet ugyanabba a kihagyó
+ * ágba. Ezt a típus kényszeríti ki, nem a figyelmem.
+ */
+function toltsd(
+  hova: CegValtozas,
+  kulcs: Exclude<keyof CegValtozas, 'stripe_cancel_at'>,
+  ertek: string | null,
+): void {
   if (ertek !== null) {
     hova[kulcs] = ertek;
   }

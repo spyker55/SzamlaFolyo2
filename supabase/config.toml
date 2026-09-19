@@ -111,3 +111,16 @@ entrypoint = "./functions/stripe-checkout/index.ts"
 verify_jwt = false
 import_map = "./functions/deno.json"
 entrypoint = "./functions/stripe-webhook/index.ts"
+
+[functions.stripe-portal]
+# Bekapcsolva, ugyanabból az okból, mint a `stripe-checkout`-nál — sőt itt
+# szigorúbban: ez a végpont belépőt ad a cég **számlázási adataihoz és
+# számlatörténetéhez** a Stripe-nál. A hívó azonosítója a token `sub`
+# állításából jön, ellenőrzés nélkül; azt csak azért tehetjük meg, mert a
+# platform a tokent addigra már hitelesítette.
+#
+# A függvény ezen kívül **semmit nem fogad el** a hívótól: nincs kérés-teste, a
+# cég a felhasználóból következik.
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/stripe-portal/index.ts"

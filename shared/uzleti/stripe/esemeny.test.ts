@@ -56,6 +56,10 @@ describe('esemenytErtelmez — előfizetés', () => {
       stripe_lookup_key: 'szamlafolyo_start_havi',
       current_period_start: new Date(MOST * 1000).toISOString(),
       current_period_end: new Date((MOST + 30 * 24 * 3600) * 1000).toISOString(),
+      // Az 5. szabály: a lemondás mezője **mindig** ott van, itt üresen. Ez az
+      // állítás egész objektumra szól, tehát egy csendben megjelenő vagy
+      // eltűnő mező is megbuktatja.
+      stripe_cancel_at: null,
     });
   });
 
@@ -121,6 +125,11 @@ describe('esemenytErtelmez — előfizetés', () => {
     expect(d.valtozas).not.toHaveProperty('stripe_lookup_key');
     expect(d.valtozas).not.toHaveProperty('current_period_end');
     expect(d.valtozas.stripe_status).toBe('active');
+
+    // A `stripe_cancel_at` viszont **itt is ott van**, üresen: az 5. szabály
+    // kivétel az 1. alól, és ezt a kettőt egy helyen érdemes egymás mellett
+    // látni — különben a következő olvasó egyiket a másik ellen javítja.
+    expect(d.valtozas).toHaveProperty('stripe_cancel_at', null);
   });
 
   /** Kifejtett (`expand`-olt) ügyfélnél az azonosító az objektumban ül. */
@@ -147,6 +156,90 @@ describe('esemenytErtelmez — előfizetés', () => {
 
     expect(d.cegAzonosito).toBeNull();
     expect(d.ugyfelAzonosito).toBe('cus_proba');
+  });
+});
+
+/**
+ * A lemondás mérése.
+ *
+ * ⚠️ A számlázási portál alapbeállítása szerint a lemondás **a ciklus végére**
+ * szól (sandboxban mérve: `subscription_cancel.mode = "at_period_end"`). Ilyenkor
+ * a Stripe egyetlen dolgot változtat: kitölti a `cancel_at` mezőt. A `status`
+ * marad `active`, a csomag és a ciklus is marad — vagyis ha ezt az egy mezőt
+ * nem olvasnánk, a lemondás **nyom nélkül** menne át a rendszeren.
+ */
+describe('esemenytErtelmez — lemondás a ciklus végére', () => {
+  const VEG = MOST + 30 * 24 * 3600;
+
+  it('kiolvassa a lemondás dátumát, és a státusz közben aktív marad', () => {
+    const d = esemenytErtelmez(
+      esemeny(
+        'customer.subscription.updated',
+        ujElofizetes({ cancel_at: VEG, cancel_at_period_end: true }),
+      ),
+    );
+
+    if (d.fajta !== 'frissit') throw new Error('frissítést vártunk');
+
+    expect(d.valtozas.stripe_cancel_at).toBe(new Date(VEG * 1000).toISOString());
+    expect(d.valtozas.stripe_status).toBe('active');
+    expect(d.naplo).toContain('lemondva');
+  });
+
+  /**
+   * A visszavonás ugyanilyen eseményben jön, és **semmi más nem változik**. Ha
+   * a modul csak a nem üres értéket írná be, a lemondást vissza lehetne vonni,
+   * de a rendszer örökre lemondottnak látná a céget — ezért `null` megy.
+   */
+  it('a visszavont lemondást üres mezővel írja felül, nem hagyja ki', () => {
+    const d = esemenytErtelmez(
+      esemeny(
+        'customer.subscription.updated',
+        ujElofizetes({ cancel_at: null, cancel_at_period_end: false }),
+      ),
+    );
+
+    if (d.fajta !== 'frissit') throw new Error('frissítést vártunk');
+
+    expect(d.valtozas).toHaveProperty('stripe_cancel_at', null);
+  });
+
+  /**
+   * Védekező olvasás: ha a `cancel_at` üres, de a `cancel_at_period_end` igaz,
+   * a ciklus vége a lemondás napja. Ugyanaz a minta, mint a ciklusdátumoknál —
+   * a hiba itt is csendes volna: a felületen semmi nem jelezné a lemondást.
+   */
+  it('cancel_at nélkül a ciklus végét veszi, ha a lemondás a ciklus végére szól', () => {
+    const d = esemenytErtelmez(
+      esemeny('customer.subscription.updated', ujElofizetes({ cancel_at_period_end: true })),
+    );
+
+    if (d.fajta !== 'frissit') throw new Error('frissítést vártunk');
+
+    expect(d.valtozas.stripe_cancel_at).toBe(new Date(VEG * 1000).toISOString());
+  });
+
+  /**
+   * ⚠️ A checkout-esemény ehhez a mezőhöz **soha nem nyúl**. Ha hozzányúlna, egy
+   * későn érkező checkout letörölné a portálon leadott lemondást — pontosan az
+   * a hibaosztály, amit a vízjel-javítás egyszer már megtanított.
+   */
+  it('a checkout-esemény nem írja a lemondás mezőjét', () => {
+    const d = esemenytErtelmez(
+      esemeny('checkout.session.completed', {
+        id: 'cs_proba',
+        object: 'checkout.session',
+        mode: 'subscription',
+        payment_status: 'paid',
+        customer: 'cus_proba',
+        subscription: 'sub_proba',
+        metadata: { company_id: CEG },
+      }),
+    );
+
+    if (d.fajta !== 'frissit') throw new Error('frissítést vártunk');
+
+    expect(d.valtozas).not.toHaveProperty('stripe_cancel_at');
   });
 });
 

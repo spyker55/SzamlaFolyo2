@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
-import { useAuth } from '../lib/auth.tsx';
+import { useAuth, type Ceg } from '../lib/auth.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
 import {
   autoJovahagyastMent,
@@ -21,8 +21,7 @@ import {
   type BeerkezettLevel,
   type Tag,
 } from '../lib/beallitasok.ts';
-import { elofizetestIndit } from '../lib/elofizetes.ts';
-import { kapcsolatEmail } from '../lib/kornyezet.ts';
+import { elofizetestIndit, portaltIndit } from '../lib/elofizetes.ts';
 import { csomagSorrend, szamlafolyo, type CsomagKulcs } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
 import { keretMondat } from '@uzleti/keret.ts';
@@ -100,8 +99,9 @@ export function Beallitasok() {
    */
   useEffect(() => {
     const fizetes = keresok.get('fizetes');
+    const portalbol = keresok.get('portal') !== null;
 
-    if (fizetes === null) {
+    if (fizetes === null && !portalbol) {
       return;
     }
 
@@ -109,6 +109,13 @@ export function Beallitasok() {
       setUzenet('Köszönjük! Ha a fizetés sikerült, a csomagod pár másodpercen belül itt lesz.');
     } else if (fizetes === 'megsem') {
       setUzenet('A fizetést megszakítottad. Nem történt terhelés.');
+    } else if (portalbol) {
+      // Ugyanaz a megfontolás, mint a `fizetes=kesz`-nél: a visszatérés nem
+      // állapot. Amit a portálon tettek, azt a webhook írja be — ez a mondat
+      // csak megmagyarázza, miért nem azonnal látszik.
+      setUzenet(
+        'Visszatértél a számlázási portálról. Ha ott változtattál, az pár másodpercen belül itt is megjelenik — frissítsd az oldalt.',
+      );
     }
 
     keresoketAllit({}, { replace: true });
@@ -156,7 +163,7 @@ export function Beallitasok() {
       <div className="space-y-4">
         <KeretKartya keret={keret} />
 
-        <ElofizetesKartya keret={keret} admin={admin} hibat={setHiba} />
+        <ElofizetesKartya keret={keret} ceg={ceg} admin={admin} hibat={setHiba} />
 
         <Kartya cim="A cég" leiras="Ami a bizonylatok fejlécén és az exporton szerepel.">
           <label className="flabel" htmlFor="cegnev">
@@ -609,26 +616,57 @@ function KeretKartya({ keret }: { keret: Keret | null }) {
  * tartasz *most*; ez azt, hogy mi alapján. Aki elfogyott kerettel érkezik ide,
  * annak a második kérdés a sürgős.
  *
- * # Amit ez a kártya nem tud
+ * # Csomagváltás, lemondás, kártyacsere: a számlázási portálon
  *
- * **Csomagot váltani és lemondani.** Az a Stripe számlázási portálján lesz,
- * külön körben — addig a kártya ezt ki is mondja, és ad egy címet, ahol
- * kérhető. Egy gomb, ami „hamarosan"-t üzen, rosszabb a hiányzó gombnál; egy
- * mondat, ami megmondja a valódi utat, nem az.
+ * Ez a kártya korábban egy e-mail címet adott helyettük, és ki is mondta, hogy
+ * ideiglenes. Most a **Stripe számlázási portálja** áll a helyén — ugyanaz a
+ * megfontolás, mint a fizetésnél: bankkártyaadat és számlatörténet nem kerül
+ * hozzánk.
  *
- * ⚠️ A gombok **nem írnak semmit**: a Stripe fizetési oldalára visznek. A cég
- * állapotát kizárólag a `stripe-webhook` írja, aláírás után.
+ * ⚠️ **Amit a portálon lehet, azt a Stripe dashboardja dönti el**, nem ez a
+ * fájl. Ezért a felsorolás itt szűk és óvatos: azt mondjuk, amiért odaküldjük,
+ * nem ígérünk képernyőket, amiket egy dashboard-kapcsoló holnap átrendezhet.
+ *
+ * # A lemondás, ami státusz nélkül történik
+ *
+ * ⚠️ A portál a ciklus **végére** mond le (sandboxban mérve). A Stripe ilyenkor
+ * a `status`-t nem bántja: az előfizetés a fordulónapig `active` marad, és
+ * egyedül a `cancel_at` töltődik ki. Ha ezt nem mutatnánk meg, a felhasználó
+ * lemondana, visszatérne ide, és **ugyanazt a futó csomagot látná** — azt
+ * hinné, nem sikerült. Ezért van a `stripe_cancel_at`-ra külön sáv.
+ *
+ * ⚠️ A gombok **nem írnak semmit**: a Stripe oldalára visznek. A cég állapotát
+ * kizárólag a `stripe-webhook` írja, aláírás után.
  */
 function ElofizetesKartya({
   keret,
+  ceg,
   admin,
   hibat,
 }: {
   keret: Keret | null;
+  ceg: Ceg;
   admin: boolean;
   hibat: (uzenet: string | null) => void;
 }) {
   const [indul, setIndul] = useState<CsomagKulcs | null>(null);
+  const [portal, setPortal] = useState(false);
+
+  async function portalt() {
+    hibat(null);
+    setPortal(true);
+
+    const eredmeny = await portaltIndit();
+
+    if (!eredmeny.ok) {
+      hibat(eredmeny.hiba);
+      setPortal(false);
+
+      return;
+    }
+
+    window.location.href = eredmeny.url;
+  }
 
   async function valaszt(kulcs: CsomagKulcs) {
     hibat(null);
@@ -650,6 +688,16 @@ function ElofizetesKartya({
 
   const elofizet = keret !== null && keret.allapot === 'elofizetes';
 
+  // A lemondást **csak futó előfizetésen** mutatjuk. Egy megszűnt előfizetésen
+  // a mező benne maradhat (azt írjuk, amit a Stripe mond), de ott már a
+  // státusz mondja meg az igazat — két üzenet egy állapotról félrevezetne.
+  const lemondva = elofizet ? ceg.stripe_cancel_at : null;
+
+  // A portál ügyfél nélkül üres: előbb az első fizetés, utána a portál. Ezért
+  // dönt a **Stripe-ügyfél megléte**, nem az, hogy épp fut-e előfizetés — aki
+  // lemondott, annak a számlái is ott vannak.
+  const vanPortal = admin && ceg.stripe_customer_id !== null;
+
   return (
     <Kartya
       cim="Előfizetés"
@@ -665,13 +713,20 @@ function ElofizetesKartya({
             Jelenlegi csomagod: <strong>{keret.csomag}</strong> ({keret.keret} bizonylat havonta)
             {keret.idoszakVege !== null && ` · következő fordulónap: ${datum(keret.idoszakVege)}`}.
           </p>
-          <p className="text-sm text-slate-500">
-            Csomagváltáshoz vagy lemondáshoz írj a{' '}
-            <a className="link" href={`mailto:${kapcsolatEmail}`}>
-              {kapcsolatEmail}
-            </a>{' '}
-            címre. A számlázási portál — ahol ezt magad intézheted — hamarosan itt lesz.
-          </p>
+          {lemondva !== null && (
+            <div className="alert alert-figyelem">
+              <p>
+                <strong>Lemondtad az előfizetést.</strong> {datum(lemondva)}-ig minden változatlan
+                — a teljes kereted megmarad —, utána nem terhelünk többet.
+              </p>
+              <p className="mt-1">
+                Meggondoltad magad? A számlázási portálon a lemondás visszavonható, amíg a
+                fordulónap el nem jött.
+              </p>
+            </div>
+          )}
+
+          <PortalSor mehet={vanPortal} fut={portal} onKattint={() => void portalt()} />
         </div>
       ) : (
         <div className="space-y-3">
@@ -709,9 +764,60 @@ function ElofizetesKartya({
               ? 'A fizetés a Stripe oldalán történik — bankkártyaadat nem kerül hozzánk. Az árak a fizetendő végösszegek: alanyi adómentesként áfa nem járul hozzájuk.'
               : 'Az előfizetést a cég tulajdonosa indíthatja.'}
           </p>
+
+          {/*
+            Aki már fizetett egyszer, annak a számlái és a számlázási adatai a
+            portálon vannak — attól még, hogy most épp nincs futó előfizetése.
+          */}
+          {vanPortal && (
+            <PortalSor mehet fut={portal} onKattint={() => void portalt()} korabbi />
+          )}
         </div>
       )}
     </Kartya>
+  );
+}
+
+/**
+ * A számlázási portál gombja és a mellette álló egy mondat.
+ *
+ * Két helyen jelenik meg — futó előfizetésnél és utána —, ezért egy komponens:
+ * a két szöveg így nem tud széttartani, és a gomb viselkedése is egy helyen áll.
+ *
+ * ⚠️ Amit felsorolunk, azt **szándékosan szűken** tartjuk. A portál tartalmát a
+ * Stripe fiókbeállítása dönti el, nem ez a fájl; egy bő ígéret itt pont az a
+ * fajta állítás volna, amit a kód nem tart be.
+ */
+function PortalSor({
+  mehet,
+  fut,
+  onKattint,
+  korabbi = false,
+}: {
+  mehet: boolean;
+  fut: boolean;
+  onKattint: () => void;
+  korabbi?: boolean;
+}) {
+  if (!mehet) {
+    return (
+      <p className="text-sm text-slate-500">
+        A csomagot és a számlázási adatokat a cég tulajdonosa kezeli.
+      </p>
+    );
+  }
+
+  return (
+    <div className={korabbi ? 'border-t border-slate-100 pt-3' : ''}>
+      <button type="button" className="btn btn-secondary" disabled={fut} onClick={onKattint}>
+        {fut ? 'Átirányítás…' : 'Számlázási portál'}
+      </button>
+      <p className="mt-2 text-sm text-slate-500">
+        {korabbi
+          ? 'A korábbi számláid és a számlázási adataid a Stripe portálján érhetők el.'
+          : 'Csomagváltás, lemondás, kártyacsere és a számláid — mind a Stripe oldalán, ahol a bankkártyaadat is van. Amit ott módosítasz, az pár másodpercen belül itt is látszik.'}
+      </p>
+    </div>
   );
 }
 

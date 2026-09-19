@@ -19,6 +19,16 @@ export type Ceg = {
   trial_ends_at: string | null;
   stripe_status: string | null;
   stripe_price_id: string | null;
+  /** A cég Stripe-ügyfele. Ebből tudja a felület, van-e egyáltalán portálja. */
+  stripe_customer_id: string | null;
+  /**
+   * Mikor ér véget a lemondott előfizetés — `null`, ha nincs lemondás.
+   *
+   * ⚠️ A portálon a lemondás **a ciklus végére** szól, tehát a `stripe_status`
+   * közben `active` marad. A lemondás egyedül ezen a mezőn látszik; enélkül a
+   * felület a lemondás után is változatlan előfizetést mutatna.
+   */
+  stripe_cancel_at: string | null;
   auto_jovahagyas_be: boolean;
   overage_enabled: boolean;
   overage_limit_ft: number | null;
