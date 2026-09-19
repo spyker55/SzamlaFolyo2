@@ -18,11 +18,22 @@
  *    előfizetés-eseményből már beírt csomagot és ciklust. Ezért a `CegValtozas`
  *    minden mezője elhagyható, és a hiányzó adat **kimarad**, nem nullázódik.
  *
- * 2. **Az esemény ideje vízjel.** A hívó csak akkor ír, ha ez az esemény nem
- *    régebbi a legutóbb feldolgozottnál (`stripe_event_at`). Enélkül egy
- *    késve érkező, régi `subscription.updated` visszaléptetné az állapotot — és
- *    ez nem elméleti, hanem a Stripe dokumentált viselkedése. Ez egyben az
+ * 2. **Az esemény ideje vízjel — de csak az előfizetés állapotára.** A hívó
+ *    egy állapot-eseményt csak akkor ír be, ha nem régebbi a legutóbb
+ *    feldolgozottnál (`stripe_event_at`). Enélkül egy késve érkező, régi
+ *    `subscription.updated` visszaléptetné az állapotot. Ez egyben az
  *    **idempotencia**: az újraküldött esemény ugyanazt írja újra, kárt nem tesz.
+ *
+ *    ⚠️ A vízjel **eseményfajtánként** értendő, és ezt élesben tanultuk meg. Az
+ *    első valódi fizetésnél a `checkout.session.completed` (Stripe szerinti
+ *    ideje 16:47:56) és a `customer.subscription.created` (16:47:53) egyszerre
+ *    érkezett. A checkout nyert, a vízjelet a saját, **későbbi** idejére
+ *    állította, és ezzel a három másodperccel régebbi előfizetés-eseményt
+ *    teljes egészében elutasította: a felhasználó fizetett, és próbaidőn
+ *    maradt. A két esemény órája nem összemérhető, mert **más mezőkről**
+ *    beszélnek. A szabály ezért: amelyik esemény nem hoz `stripe_status`-t, az
+ *    nem mozdítja a vízjelet, és nem is akad fenn rajta
+ *    (`20260919000200_stripe_vizjel_javitas.sql`).
  *
  * 3. **Ismeretlen eseménytípus nem hiba.** A Stripe végpontja több eseményt is
  *    küldhet, mint amennyire feliratkoztunk. Amit nem értünk, azt kihagyjuk —
