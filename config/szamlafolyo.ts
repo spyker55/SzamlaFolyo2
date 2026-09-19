@@ -317,14 +317,37 @@ export const szamlafolyo = {
    * **Erre most valóban teszt van**, a számok mellett: `szamlafolyo.test.ts`.
    * A configból olvas, tehát a következő árváltásnál is mér.
    *
-   * ⚠️ **Az árazonosítók a régi árakat hordozzák.** A Stripe `price` objektum
-   * összege nem módosítható, tehát a dashboardos árátírás a háttérben **új**
-   * `price` objektumokat hozott létre — az alábbi hat azonosító cseréje a
-   * Stripe-körre marad, a checkouttal együtt. Ma ez kockázat nélküli: élő
-   * előfizető nincs, az `arazonositoExtra`-t egyetlen sor sem olvassa, az
-   * `arazonosito`-t is csak a `keret.ts` csomag-lekeresése.
+   * # Miért `lookupKulcs`, és miért nem árazonosító
    *
-   * **Ismeretlen árazonosító nem „korlátlan"**, hanem a legkisebb csomag
+   * Itt **állt még egy elavult figyelmeztetés**, és ezt is érdemes tudni: azt
+   * mondta, hogy a dashboardos árátírás a háttérben új `price` objektumokat
+   * hozott létre, tehát az itteni azonosítók a *régi* árakat hordozzák.
+   * Megmérve **nem így történt**: a hat éles azonosító változatlan, aktív, és
+   * pontosan a fenti hat számot hordozza. A figyelmeztetés feltevés volt, nem
+   * mérés — és a feltevés drága lett volna, mert egy fölösleges cseréhez
+   * vezetett volna.
+   *
+   * Az árazonosítók helyett mégis a Stripe **`lookup_key`**-e áll itt, és ennek
+   * más oka van: az árazonosító **fiókhoz kötött**. A sandbox és az éles fiók
+   * ugyanazt a hat csomagot más-más azonosítón tartja (a különbség magában a
+   * betűsorban is látszik), tehát hat beírt azonosító mindig csak az egyik
+   * fiókban ér valamit — a másikban csendben ismeretlen csomag lenne belőle.
+   *
+   * A `lookup_key` ugyanaz mindkét fiókban. Ebből három dolog következik:
+   *
+   * 1. **ugyanaz a kód fut sandboxban és élesben** — hogy melyik fiókban,
+   *    azt egyedül a `STRIPE_SECRET_KEY` titok dönti el, nem a repó;
+   * 2. a `stripe-checkout` az árat **futásidőben** oldja fel a kulcsból, tehát
+   *    egy jövőbeli árcsere nem nyúl ehhez a fájlhoz;
+   * 3. a csomagot a `keret.ts` a `companies.stripe_lookup_key` oszlopból keresi
+   *    vissza, nem az árazonosítóból.
+   *
+   * ⚠️ A kulcsokat **mindkét Stripe-fiókban be kell állítani**. A sandboxban
+   * megvannak; az éles hat ár címkézése dashboard-lépés. Amelyik fiókban
+   * hiányzik, ott a checkout nem találja meg az árat — és ez jó hír: hangosan
+   * bukik, nem csendben rossz árat számláz.
+   *
+   * **Ismeretlen csomagkulcs nem „korlátlan"**, hanem a legkisebb csomag
    * keretét kapja, és a naplóba kerül — a régiben ez `PHP_INT_MAX` volt, épp
    * az AI-költséges oldalon.
    */
@@ -339,8 +362,8 @@ export const szamlafolyo = {
       felhasznalok: 2,
       arHavi: 4900,
       extraFt: 50,
-      arazonosito: 'price_1UCO5PV05U28wfjzx5lH1Swk',
-      arazonositoExtra: 'price_1UCO5JV05U28wfjzSkoFKiKy',
+      lookupKulcs: 'szamlafolyo_start_havi',
+      lookupKulcsExtra: 'szamlafolyo_start_extra',
     },
     kozepes: {
       nev: 'Flow',
@@ -348,8 +371,8 @@ export const szamlafolyo = {
       felhasznalok: 5,
       arHavi: 9900,
       extraFt: 40,
-      arazonosito: 'price_1UCO5OV05U28wfjzVC3xfvIz',
-      arazonositoExtra: 'price_1UCO5MV05U28wfjzCk96wSra',
+      lookupKulcs: 'szamlafolyo_flow_havi',
+      lookupKulcsExtra: 'szamlafolyo_flow_extra',
     },
     nagy: {
       nev: 'Pro',
@@ -361,8 +384,8 @@ export const szamlafolyo = {
       felhasznalok: null,
       arHavi: 19900,
       extraFt: 30,
-      arazonosito: 'price_1UCO5JV05U28wfjz4FXUyHhe',
-      arazonositoExtra: 'price_1UCO5JV05U28wfjzSPeyjMa1',
+      lookupKulcs: 'szamlafolyo_pro_havi',
+      lookupKulcsExtra: 'szamlafolyo_pro_extra',
     },
   },
 } as const;

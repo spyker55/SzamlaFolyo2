@@ -22,7 +22,7 @@ import { szamlafolyo, type CsomagKulcs } from '../../config/szamlafolyo.ts';
  *    `document_extractions`-ből. Egy számláló elcsúszhat, és amit a felhasználó
  *    el tud tüntetni (a `documents` sort), abból nem lehet keretet számolni.
  *
- * 3. **Ismeretlen árazonosító a legkisebb csomag keretét kapja**, nem
+ * 3. **Ismeretlen csomagkulcs a legkisebb csomag keretét kapja**, nem
  *    korlátlant — és a hívó naplózza. A régi rendszerben ez `PHP_INT_MAX` volt,
  *    épp az AI-költséges oldalon: egy elgépelt vagy egy Stripe-ban átnevezett
  *    ár csendben végtelen keretet adott. A hibás irány itt a szigorúbb.
@@ -41,6 +41,12 @@ import { szamlafolyo, type CsomagKulcs } from '../../config/szamlafolyo.ts';
 export type CegAllapot = {
   trial_ends_at: string | null;
   stripe_status: string | null;
+  /**
+   * A csomagot **ebből** keressük vissza, nem az árazonosítóból: az
+   * árazonosító fiókonként más (sandbox kontra éles), a `lookup_key` nem.
+   */
+  stripe_lookup_key: string | null;
+  /** Csak hibakereséshez és naplóhoz — a döntést a `stripe_lookup_key` hozza. */
   stripe_price_id: string | null;
   current_period_end: string | null;
   overage_enabled: boolean;
@@ -69,10 +75,10 @@ export type Keret = {
   /** A keret fölött is mehet — a cég bekapcsolta a túlhasználatot. */
   tulhasznalatban: boolean;
   /**
-   * Ismeretlen árazonosítót láttunk, és a legkisebb csomag keretét adtuk.
+   * Ismeretlen csomagkulcsot láttunk, és a legkisebb csomag keretét adtuk.
    * **A hívó naplózza** — ez csendben nem maradhat.
    */
-  ismeretlenArazonosito: boolean;
+  ismeretlenCsomag: boolean;
 };
 
 /**
@@ -87,14 +93,14 @@ function elofizetesFut(status: string | null): boolean {
   return status === 'active' || status === 'trialing' || status === 'past_due';
 }
 
-/** Az árazonosítóhoz tartozó csomag, vagy `null`, ha nem ismerjük. */
-function csomagAzonositobol(arazonosito: string | null): CsomagKulcs | null {
-  if (arazonosito === null || arazonosito === '') {
+/** A Stripe `lookup_key`-éhez tartozó csomag, vagy `null`, ha nem ismerjük. */
+function csomagKulcsbol(lookupKulcs: string | null): CsomagKulcs | null {
+  if (lookupKulcs === null || lookupKulcs === '') {
     return null;
   }
 
   for (const kulcs of Object.keys(szamlafolyo.csomagok) as CsomagKulcs[]) {
-    if (szamlafolyo.csomagok[kulcs].arazonosito === arazonosito) {
+    if (szamlafolyo.csomagok[kulcs].lookupKulcs === lookupKulcs) {
       return kulcs;
     }
   }
@@ -157,7 +163,7 @@ export function keretAllapot(
 }
 
 function elofizetesre(ceg: CegAllapot, felhasznalt: number): Keret {
-  const talalt = csomagAzonositobol(ceg.stripe_price_id);
+  const talalt = csomagKulcsbol(ceg.stripe_lookup_key);
   const ismeretlen = talalt === null;
   const kulcs = talalt ?? legkisebb();
   const csomag = szamlafolyo.csomagok[kulcs];
@@ -181,7 +187,7 @@ function elofizetesre(ceg: CegAllapot, felhasznalt: number): Keret {
         ? `Elfogyott a havi kereted (${csomag.dokumentumok} bizonylat). Válts nagyobb csomagra, vagy engedélyezd a túlhasználatot a Beállításokban.`
         : null,
     tulhasznalatban: elfogyott && tulhasznalat,
-    ismeretlenArazonosito: ismeretlen,
+    ismeretlenCsomag: ismeretlen,
   };
 }
 
@@ -217,7 +223,7 @@ function probara(ceg: CegAllapot, felhasznalt: number, most: Date): Keret {
     indok,
     // Próbaidőn nincs túlhasználat: ahhoz előbb csomag kell.
     tulhasznalatban: false,
-    ismeretlenArazonosito: false,
+    ismeretlenCsomag: false,
   };
 }
 

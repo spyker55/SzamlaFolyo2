@@ -87,3 +87,27 @@ entrypoint = "./functions/meghivo-kuld/index.ts"
 verify_jwt = false
 import_map = "./functions/deno.json"
 entrypoint = "./functions/meghivo-fiok/index.ts"
+
+[functions.stripe-checkout]
+# Bekapcsolva: ezt a végpontot egy belépett tulajdonos hívja a böngészőből.
+#
+# A függvény **támaszkodik is rá**: a hívó azonosítóját a token `sub`
+# állításából olvassa, ellenőrzés nélkül — azt csak azért teheti meg, mert a
+# platform a tokent addigra már hitelesítette. Kikapcsolva bárki indíthatna
+# előfizetést tetszőleges cég nevében, mert a cég a felhasználóból következik.
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/stripe-checkout/index.ts"
+
+[functions.stripe-webhook]
+# ⚠️ **A harmadik függvény, ahol a `verify_jwt` KI van kapcsolva** — és itt is
+# kényszerből: a Stripe nem tud Supabase-JWT-t küldeni.
+#
+# A hitelesítés helyette az **aláírás**: HMAC-SHA256 a `<időbélyeg>.<nyers
+# test>` fölött, a végpont `whsec_…` titkával, időbélyeg-tűréssel és állandó
+# idejű összehasonlítással (`shared/uzleti/stripe/alairas.ts`). Ez a végpont
+# írja a cég számlázási állapotát, tehát az aláírás nélkül bárki Pro csomagra
+# tehetné magát egy HTTP-kéréssel.
+verify_jwt = false
+import_map = "./functions/deno.json"
+entrypoint = "./functions/stripe-webhook/index.ts"

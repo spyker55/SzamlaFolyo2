@@ -9,6 +9,7 @@ function proba(felul: Partial<CegAllapot> = {}): CegAllapot {
   return {
     trial_ends_at: '2026-09-28T10:00:00Z',
     stripe_status: null,
+    stripe_lookup_key: null,
     stripe_price_id: null,
     current_period_end: null,
     overage_enabled: false,
@@ -21,7 +22,8 @@ function elofizeto(felul: Partial<CegAllapot> = {}): CegAllapot {
   return {
     trial_ends_at: '2026-08-01T10:00:00Z',
     stripe_status: 'active',
-    stripe_price_id: szamlafolyo.csomagok.kicsi.arazonosito,
+    stripe_lookup_key: szamlafolyo.csomagok.kicsi.lookupKulcs,
+    stripe_price_id: 'price_proba',
     current_period_end: '2026-10-01T10:00:00Z',
     overage_enabled: false,
     ...felul,
@@ -115,33 +117,53 @@ describe('előfizetés', () => {
     expect(k.mehet).toBe(true);
   });
 
-  test('mindhárom csomag azonosítója a saját keretét adja', () => {
+  test('mindhárom csomag kulcsa a saját keretét adja', () => {
     for (const kulcs of ['kicsi', 'kozepes', 'nagy'] as const) {
       const csomag = szamlafolyo.csomagok[kulcs];
-      const k = keretAllapot(elofizeto({ stripe_price_id: csomag.arazonosito }), 0, MOST);
+      const k = keretAllapot(elofizeto({ stripe_lookup_key: csomag.lookupKulcs }), 0, MOST);
 
       expect(k.keret).toBe(csomag.dokumentumok);
       expect(k.csomagKulcs).toBe(kulcs);
-      expect(k.ismeretlenArazonosito).toBe(false);
+      expect(k.ismeretlenCsomag).toBe(false);
     }
   });
 
   /**
-   * A régi rendszerben az ismeretlen azonosító `PHP_INT_MAX` keretet adott —
+   * ⚠️ A csomagot a `lookup_key` dönti el, **nem** az árazonosító — mert az
+   * utóbbi fiókonként más. Ez a teszt azt méri, hogy egy helyes árazonosító
+   * önmagában nem elég: ha a kulcs hiányzik, a legkisebb keret jár.
+   *
+   * Enélkül egy visszafejlődés (a lekeresés visszaállítása árazonosítóra)
+   * sandboxban zölden futna, és élesben adna ismeretlen csomagot — vagy
+   * fordítva.
+   */
+  test('az árazonosító önmagában nem azonosít csomagot', () => {
+    const k = keretAllapot(
+      elofizeto({ stripe_lookup_key: null, stripe_price_id: 'price_1UCO5PV05U28wfjzx5lH1Swk' }),
+      0,
+      MOST,
+    );
+
+    expect(k.ismeretlenCsomag).toBe(true);
+    expect(k.keret).toBe(szamlafolyo.csomagok.kicsi.dokumentumok);
+  });
+
+  /**
+   * A régi rendszerben az ismeretlen csomag `PHP_INT_MAX` keretet adott —
    * épp az AI-költséges oldalon. A hibás irány itt a szigorúbb.
    */
-  test('az ismeretlen árazonosító a LEGKISEBB keretet kapja, nem korlátlant', () => {
-    const k = keretAllapot(elofizeto({ stripe_price_id: 'price_nincs_ilyen' }), 0, MOST);
+  test('az ismeretlen csomagkulcs a LEGKISEBB keretet kapja, nem korlátlant', () => {
+    const k = keretAllapot(elofizeto({ stripe_lookup_key: 'szamlafolyo_nincs_ilyen' }), 0, MOST);
 
-    expect(k.ismeretlenArazonosito).toBe(true);
+    expect(k.ismeretlenCsomag).toBe(true);
     expect(k.keret).toBe(szamlafolyo.csomagok.kicsi.dokumentumok);
     expect(Number.isFinite(k.keret)).toBe(true);
   });
 
-  test('a hiányzó árazonosító ugyanígy viselkedik', () => {
-    const k = keretAllapot(elofizeto({ stripe_price_id: null }), 0, MOST);
+  test('a hiányzó csomagkulcs ugyanígy viselkedik', () => {
+    const k = keretAllapot(elofizeto({ stripe_lookup_key: null }), 0, MOST);
 
-    expect(k.ismeretlenArazonosito).toBe(true);
+    expect(k.ismeretlenCsomag).toBe(true);
     expect(k.keret).toBe(szamlafolyo.csomagok.kicsi.dokumentumok);
   });
 

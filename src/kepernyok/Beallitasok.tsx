@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
@@ -20,7 +21,9 @@ import {
   type BeerkezettLevel,
   type Tag,
 } from '../lib/beallitasok.ts';
-import { szamlafolyo } from '@config/szamlafolyo.ts';
+import { elofizetestIndit } from '../lib/elofizetes.ts';
+import { kapcsolatEmail } from '../lib/kornyezet.ts';
+import { csomagSorrend, szamlafolyo, type CsomagKulcs } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
 import { keretMondat } from '@uzleti/keret.ts';
 import { SZEREPEK, szerepCimke, type Szerep } from '@uzleti/enumok.ts';
@@ -66,6 +69,7 @@ export function Beallitasok() {
   const [meghivoLista, setMeghivoLista] = useState<Meghivo[]>([]);
   const [uzenet, setUzenet] = useState<string | null>(null);
   const [hiba, setHiba] = useState<string | null>(null);
+  const [keresok, keresoketAllit] = useSearchParams();
 
   const betoltes = useCallback(async () => {
     setKeret(await keretetKer());
@@ -82,6 +86,34 @@ export function Beallitasok() {
   useEffect(() => {
     void betoltes();
   }, [betoltes]);
+
+  /**
+   * A Stripe-ból visszatérő látogató.
+   *
+   * ⚠️ A `fizetes=kesz` **nem állapot, csak udvariasság**: a `success_url`-t
+   * bárki meghívhatja, és a fizetés akkor sem itt dől el. Ezért egy mondatot
+   * írunk ki, az állapotot viszont a szokásos úton töltjük újra — amit a
+   * webhook addigra beírt, az látszik, amit nem, az nem.
+   *
+   * A paramétert utána **eltávolítjuk**: egy frissítés ne hozza vissza
+   * ugyanazt az üzenetet egy hét múlva is.
+   */
+  useEffect(() => {
+    const fizetes = keresok.get('fizetes');
+
+    if (fizetes === null) {
+      return;
+    }
+
+    if (fizetes === 'kesz') {
+      setUzenet('Köszönjük! Ha a fizetés sikerült, a csomagod pár másodpercen belül itt lesz.');
+    } else if (fizetes === 'megsem') {
+      setUzenet('A fizetést megszakítottad. Nem történt terhelés.');
+    }
+
+    keresoketAllit({}, { replace: true });
+    void betoltes();
+  }, [keresok, keresoketAllit, betoltes]);
 
   if (ceg === null) {
     return null;
@@ -123,6 +155,8 @@ export function Beallitasok() {
 
       <div className="space-y-4">
         <KeretKartya keret={keret} />
+
+        <ElofizetesKartya keret={keret} admin={admin} hibat={setHiba} />
 
         <Kartya cim="A cég" leiras="Ami a bizonylatok fejlécén és az exporton szerepel.">
           <label className="flabel" htmlFor="cegnev">
@@ -563,6 +597,121 @@ function KeretKartya({ keret }: { keret: Keret | null }) {
       */}
       <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600">{szabaly()}</p>
     </div>
+  );
+}
+
+/**
+ * Az előfizetés.
+ *
+ * # Miért külön kártya a keret mellett
+ *
+ * Mert két különböző kérdésre felelnek. A `KeretKartya` azt mondja meg, hol
+ * tartasz *most*; ez azt, hogy mi alapján. Aki elfogyott kerettel érkezik ide,
+ * annak a második kérdés a sürgős.
+ *
+ * # Amit ez a kártya nem tud
+ *
+ * **Csomagot váltani és lemondani.** Az a Stripe számlázási portálján lesz,
+ * külön körben — addig a kártya ezt ki is mondja, és ad egy címet, ahol
+ * kérhető. Egy gomb, ami „hamarosan"-t üzen, rosszabb a hiányzó gombnál; egy
+ * mondat, ami megmondja a valódi utat, nem az.
+ *
+ * ⚠️ A gombok **nem írnak semmit**: a Stripe fizetési oldalára visznek. A cég
+ * állapotát kizárólag a `stripe-webhook` írja, aláírás után.
+ */
+function ElofizetesKartya({
+  keret,
+  admin,
+  hibat,
+}: {
+  keret: Keret | null;
+  admin: boolean;
+  hibat: (uzenet: string | null) => void;
+}) {
+  const [indul, setIndul] = useState<CsomagKulcs | null>(null);
+
+  async function valaszt(kulcs: CsomagKulcs) {
+    hibat(null);
+    setIndul(kulcs);
+
+    const eredmeny = await elofizetestIndit(kulcs);
+
+    if (!eredmeny.ok) {
+      hibat(eredmeny.hiba);
+      setIndul(null);
+
+      return;
+    }
+
+    // Teljes lapváltás, nem `navigate`: a Stripe fizetési oldala egy másik
+    // eredeten él, oda a router nem visz.
+    window.location.href = eredmeny.url;
+  }
+
+  const elofizet = keret !== null && keret.allapot === 'elofizetes';
+
+  return (
+    <Kartya
+      cim="Előfizetés"
+      leiras={
+        elofizet
+          ? 'A futó csomagod és a következő fordulónap.'
+          : 'Válassz csomagot, és ott folytathatod, ahol abbahagytad.'
+      }
+    >
+      {elofizet ? (
+        <div className="space-y-2">
+          <p className="text-sm text-slate-700">
+            Jelenlegi csomagod: <strong>{keret.csomag}</strong> ({keret.keret} bizonylat havonta)
+            {keret.idoszakVege !== null && ` · következő fordulónap: ${datum(keret.idoszakVege)}`}.
+          </p>
+          <p className="text-sm text-slate-500">
+            Csomagváltáshoz vagy lemondáshoz írj a{' '}
+            <a className="link" href={`mailto:${kapcsolatEmail}`}>
+              {kapcsolatEmail}
+            </a>{' '}
+            címre. A számlázási portál — ahol ezt magad intézheted — hamarosan itt lesz.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {csomagSorrend.map((kulcs) => {
+              const cs = szamlafolyo.csomagok[kulcs];
+
+              return (
+                <div key={kulcs} className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-sm font-semibold text-slate-900">{cs.nev}</p>
+                  <p className="mt-1 text-base font-semibold text-slate-900">
+                    {formaz(cs.arHavi, 'Ft')}
+                    <span className="text-sm font-normal text-slate-500"> / hó</span>
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {cs.dokumentumok} bizonylat · a keret fölött {cs.extraFt} Ft/db
+                  </p>
+                  {admin && (
+                    <button
+                      type="button"
+                      className="btn btn-primary mt-3 w-full"
+                      disabled={indul !== null}
+                      onClick={() => void valaszt(kulcs)}
+                    >
+                      {indul === kulcs ? 'Átirányítás…' : 'Kiválasztom'}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="text-sm text-slate-500">
+            {admin
+              ? 'A fizetés a Stripe oldalán történik — bankkártyaadat nem kerül hozzánk. Az árak a fizetendő végösszegek: alanyi adómentesként áfa nem járul hozzájuk.'
+              : 'Az előfizetést a cég tulajdonosa indíthatja.'}
+          </p>
+        </div>
+      )}
+    </Kartya>
   );
 }
 

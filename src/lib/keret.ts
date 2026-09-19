@@ -41,12 +41,16 @@ export async function keret(): Promise<Keret | null> {
 
   const allapot = keretAllapot(nyers, nyers.felhasznalt);
 
-  // Az ismeretlen árazonosító nem maradhat csendben: a legkisebb csomag keretét
+  // Az ismeretlen csomagkulcs nem maradhat csendben: a legkisebb csomag keretét
   // adtuk, és ha ez tévedés, csak innen derül ki. A naplózás **itt** történik,
   // nem a tiszta modulban — az ne tudjon a konzolról.
-  if (allapot.ismeretlenArazonosito) {
+  //
+  // Az árazonosító azért van a mondatban, mert a hibakeresés azzal kezdődik: a
+  // Stripe felületén az az egy betűsor, amire rá lehet keresni.
+  if (allapot.ismeretlenCsomag) {
     console.warn(
-      `Ismeretlen Stripe árazonosító (${nyers.stripe_price_id ?? 'nincs'}). ` +
+      `Ismeretlen Stripe csomagkulcs (${nyers.stripe_lookup_key ?? 'nincs'}, ` +
+        `ár: ${nyers.stripe_price_id ?? 'nincs'}). ` +
         `A legkisebb csomag keretét adtuk: ${allapot.keret} bizonylat.`,
     );
   }

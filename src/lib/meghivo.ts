@@ -1,6 +1,7 @@
 import { supabase } from './supabase.ts';
 import { cimHelyes, cimetNormalizal, type MeghivoAllapot } from '@uzleti/meghivo.ts';
 import type { Szerep } from '@uzleti/enumok.ts';
+import { hibaSzoveg } from './fuggveny.ts';
 
 /**
  * A meghívó adatműveletei.
@@ -235,20 +236,4 @@ export async function varoMeghivo(): Promise<VaroMeghivo | null> {
   }
 
   return (data as VaroMeghivo[] | null)?.[0] ?? null;
-}
-
-async function hibaSzoveg(error: unknown): Promise<string | null> {
-  const valasz = (error as { context?: Response }).context;
-
-  if (valasz === undefined || typeof valasz.json !== 'function') {
-    return null;
-  }
-
-  try {
-    const test = (await valasz.json()) as { hiba?: unknown };
-
-    return typeof test.hiba === 'string' ? test.hiba : null;
-  } catch {
-    return null;
-  }
 }
