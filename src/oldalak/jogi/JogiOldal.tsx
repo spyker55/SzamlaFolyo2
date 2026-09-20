@@ -1,15 +1,20 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { LogoSor } from '../../komponensek/Logo.tsx';
+import { LablecLinkek } from '../../komponensek/Lablec.tsx';
 import { hatalyos } from './adatok.ts';
 
 /**
- * A három jogi oldal közös kerete.
+ * A nyilvános szöveges oldalak közös kerete.
  *
- * Egy keret, mert a három oldal **egymásra hivatkozik**: mindegyik alján ott a
- * másik kettő. Ha külön-külön épülnének, a lábléc előbb-utóbb széttartana, és
- * az a fajta hiba, ami csak akkor derül ki, amikor valaki tényleg keresi az
+ * Egy keret, mert ezek az oldalak **egymásra hivatkoznak**: mindegyik alján ott
+ * a többi. Ha külön-külön épülnének, a lábléc előbb-utóbb széttartana, és az a
+ * fajta hiba, ami csak akkor derül ki, amikor valaki tényleg keresi az
  * Adatkezelést.
+ *
+ * A jogi hármason kívül a **Használati útmutató** is ezt használja
+ * (`datummal={false}`). Nem azért, mert jogi szöveg — nem az —, hanem mert
+ * ugyanaz a fajta lap: hosszú, nyilvános, olvasásra való.
  *
  * A logó **link a nyitólapra**. Egy jogi oldal gyakran az első, amit valaki
  * megnyit (az ÁSZF-re a regisztrációs űrlap mutat) — onnan legyen út vissza.
@@ -146,15 +151,7 @@ function JogiLablec() {
         <Link to="/" className="text-slate-600 underline hover:text-slate-900">
           Főoldal
         </Link>
-        <Link to="/aszf" className="text-slate-600 underline hover:text-slate-900">
-          ÁSZF
-        </Link>
-        <Link to="/adatkezeles" className="text-slate-600 underline hover:text-slate-900">
-          Adatkezelés
-        </Link>
-        <Link to="/impresszum" className="text-slate-600 underline hover:text-slate-900">
-          Impresszum
-        </Link>
+        <LablecLinkek osztaly="text-slate-600 underline hover:text-slate-900" />
       </nav>
       <p className="mt-4 text-xs text-slate-400">
         © {new Date().getFullYear()} SzámlaFolyó

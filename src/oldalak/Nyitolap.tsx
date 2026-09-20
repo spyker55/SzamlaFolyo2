@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { LogoSor } from '../komponensek/Logo.tsx';
 import { FejlesztesAlattSav } from '../komponensek/FejlesztesAlatt.tsx';
 import { FejlesztesAlattAblak } from '../komponensek/FejlesztesAlattAblak.tsx';
+import { LablecLinkek } from '../komponensek/Lablec.tsx';
 import { kapcsolatEmail, regisztracioNyitva } from '../lib/kornyezet.ts';
 import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
@@ -940,27 +941,27 @@ function Lablec() {
             </p>
           </div>
 
+          {/*
+            A linkek listája a `komponensek/Lablec.tsx`-ből jön, mert ugyanez a
+            lista áll a jogi oldalak lábában, a belépés előtti képernyőkön és a
+            **belépett felületen** is. Négy kézzel írt felsorolásból négyféle
+            igazság lett volna.
+
+            Ami innen kikerült, és miért:
+
+            - **Bejelentkezés** — a fejlécben és a heróban is ott a gomb; a
+              láblécben harmadszor is kiírva nem kínál semmi újat.
+            - **Kapcsolat** (`mailto:`) — a cím nem veszett el: ott áll az
+              Impresszumban, a Használati útmutató végén, és a zárt regisztráció
+              szövegében is (feljebb ezen a lapon).
+          */}
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-bold text-slate-500">
-            <Link to="/bejelentkezes" className="transition-colors hover:text-blue-600">
-              Bejelentkezés
-            </Link>
             {regisztracioNyitva && (
               <Link to="/regisztracio" className="transition-colors hover:text-blue-600">
                 Regisztráció
               </Link>
             )}
-            <a href={`mailto:${kapcsolatEmail}`} className="transition-colors hover:text-blue-600">
-              Kapcsolat
-            </a>
-            <Link to="/aszf" className="transition-colors hover:text-blue-600">
-              ÁSZF
-            </Link>
-            <Link to="/adatkezeles" className="transition-colors hover:text-blue-600">
-              Adatkezelés
-            </Link>
-            <Link to="/impresszum" className="transition-colors hover:text-blue-600">
-              Impresszum
-            </Link>
+            <LablecLinkek osztaly="transition-colors hover:text-blue-600" />
           </nav>
         </div>
 

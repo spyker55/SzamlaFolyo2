@@ -81,6 +81,26 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  * - ⚠️ **Elhitt**: hogy a beérkezett adatból a Vercel **nem épít tartós
  *   azonosítót**. Ez a kiszolgáló oldalán dől el, tehát innen nem mérhető — ez
  *   az egyetlen állítás a szakaszban, ami a Vercel kiadott leírásán nyugszik.
+ *
+ * # 2026. szeptember 20. — a Használati útmutató, és egy mondat, ami már előtte
+ * sem volt pontos
+ *
+ * A `/utmutato` nyilvános oldal, és bekerült a mérés fehérlistájába — a 2. pont
+ * felsorolása ezért egy taggal bővült. A felsorolás **tételes** („Sehol
+ * máshol"), tehát a listával együtt kell mozognia; a `MERT_UTVONALAK` fölött
+ * ez ki is van mondva.
+ *
+ * ⚠️ Ugyanitt egy **meglévő pontatlanság** is javult, amit ez a kör talált meg:
+ * a felsorolás a bejelentkező és a regisztrációs űrlapot nevezte meg, az
+ * **elfelejtett jelszó** űrlapja viszont a kezdetektől a fehérlistán állt. Nem
+ * a mérés terjedt ki többre, mint amit vállaltunk — a szöveg sorolt fel
+ * kevesebbet, mint ami történt. Most mindkettő ugyanazt mondja.
+ *
+ * Ezt a kötést nem őrzi teszt, és ez a szakasz kimondja, miért: a fehérlista
+ * útvonalakat tart (`/elfelejtett-jelszo`), a tájékoztató magyar oldalneveket
+ * („az elfelejtett jelszó űrlapon"). A kettő összevetése gépileg csak egy
+ * harmadik, kézzel karbantartott szótáron át menne — ami ugyanúgy elcsúszhat,
+ * csak eggyel messzebb.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -209,8 +229,9 @@ export function Adatkezeles() {
         </P>
         <Lista>
           <li>
-            <strong>Hol fut:</strong> a nyitólapon, ezen a tájékoztatón, az ÁSZF-en, az
-            Impresszumon, valamint a bejelentkező és regisztrációs űrlapon. Sehol máshol.
+            <strong>Hol fut:</strong> a nyitólapon, a Használati útmutatón, ezen a
+            tájékoztatón, az ÁSZF-en, az Impresszumon, valamint a bejelentkező, a
+            regisztrációs és az elfelejtett jelszó űrlapon. Sehol máshol.
           </li>
           <li>
             <strong>Hol nem fut:</strong> a bejelentkezés mögötti képernyőkön. Bizonylat

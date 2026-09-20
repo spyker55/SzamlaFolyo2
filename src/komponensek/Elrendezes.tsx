@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { LogoSor } from './Logo.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { FejlesztesAlattSav } from './FejlesztesAlatt.tsx';
+import { AppLablec, LablecLinkek } from './Lablec.tsx';
 
 /**
  * A menüpontok. **Egyetlen alak van belőlük**: ugyanaz a lista ül a nagy
@@ -34,7 +35,11 @@ export function AppElrendezes({
   }
 
   return (
-    <div className="min-h-screen">
+    /*
+      Oszlopos elrendezés, `min-h-screen`: így a lábléc a lap **alján** ül
+      akkor is, ha a tartalom rövid (üres Beérkező), és nem félmagasan lóg.
+    */
+    <div className="flex min-h-screen flex-col">
       {/* Fejléc — mobilon ez hordozza a menüt is. */}
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
@@ -73,7 +78,7 @@ export function AppElrendezes({
         )}
       </header>
 
-      <div className="mx-auto flex max-w-6xl gap-8 px-4 py-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-4 py-8">
         <aside className="hidden w-52 shrink-0 md:block">
           <nav className="space-y-1">
             <Menupontok varakozo={varakozo} />
@@ -82,6 +87,13 @@ export function AppElrendezes({
 
         <main className="min-w-0 flex-1">{children}</main>
       </div>
+
+      {/*
+        A nyilvános szövegek a belépett felületről is elérhetők. Enélkül aki
+        belépett, az **nem jutott el** az útmutatóhoz és a jogi szövegekhez —
+        pedig pont annak van velük dolga, aki használja a rendszert.
+      */}
+      <AppLablec />
     </div>
   );
 }
@@ -128,19 +140,9 @@ export function AuthElrendezes({ children }: { children: ReactNode }) {
 
       <div className="card card-pad w-full max-w-sm">{children}</div>
 
-      <p className="mt-6 text-xs text-slate-400">
-        <Link to="/aszf" className="hover:underline">
-          ÁSZF
-        </Link>
-        {' · '}
-        <Link to="/adatkezeles" className="hover:underline">
-          Adatkezelés
-        </Link>
-        {' · '}
-        <Link to="/impresszum" className="hover:underline">
-          Impresszum
-        </Link>
-      </p>
+      <nav className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-400">
+        <LablecLinkek osztaly="hover:underline" />
+      </nav>
     </div>
   );
 }

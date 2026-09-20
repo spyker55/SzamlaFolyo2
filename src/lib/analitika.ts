@@ -52,8 +52,9 @@ import type { BeforeSendEvent } from '@vercel/analytics/react';
  *    jelszó-visszaállító token mellett nem a saját levágásunkban akarunk
  *    bízni. Az ilyen képernyő inkább ne is kerüljön a mérésbe.
  *
- * Ami marad: a nyilvános tölcsér — nyitólap, jogi oldalak, és a belépés előtti
- * űrlapok. Pontosan az, amire egy látogatásmérő való.
+ * Ami marad: a nyilvános tölcsér — nyitólap, Használati útmutató, jogi
+ * oldalak, és a belépés előtti űrlapok. Pontosan az, amire egy látogatásmérő
+ * való.
  *
  * # Egy eltérés, ami fejlesztés közben megzavar
  *
@@ -84,8 +85,18 @@ import type { BeforeSendEvent } from '@vercel/analytics/react';
  * az OpenRouter `data_collection: "deny"`-jánál: az Adatkezelési tájékoztató
  * 2. pontja ígéretet tesz rá, és egy átbillenthető ígéret rosszabb a semminél.
  */
+/**
+ * A mért címek.
+ *
+ * ⚠️ **Ez a lista és az Adatkezelési tájékoztató 2. pontja együtt mozog.** A
+ * tájékoztató tételesen felsorolja, mely oldalakon fut a mérés („Sehol
+ * máshol"), tehát egy ide felvett útvonal ott is nevet kap — különben a
+ * szöveg csendben valótlanná válik. Ezt a kötést nem teszteli semmi: a lista
+ * útvonalakat tart, a tájékoztató magyar oldalneveket.
+ */
 export const MERT_UTVONALAK: readonly string[] = [
   '/',
+  '/utmutato',
   '/aszf',
   '/adatkezeles',
   '/impresszum',
