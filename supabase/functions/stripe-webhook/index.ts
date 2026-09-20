@@ -1,7 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { szamlafolyo } from '../../../config/szamlafolyo.ts';
+import { csomagKulcsbol } from '../../../shared/uzleti/keret.ts';
+import { tulhasznalatSzamol } from '../../../shared/uzleti/tulhasznalat.ts';
 import { stripeAlairastEllenoriz } from '../../../shared/uzleti/stripe/alairas.ts';
-import { esemenytErtelmez } from '../../../shared/uzleti/stripe/esemeny.ts';
+import { esemenytErtelmez, type Dontes } from '../../../shared/uzleti/stripe/esemeny.ts';
+
+const STRIPE_API = 'https://api.stripe.com/v1';
 
 /**
  * A Stripe webhookja: innen — és **csak innen** — íródik a cég számlázási
@@ -34,6 +39,23 @@ import { esemenytErtelmez } from '../../../shared/uzleti/stripe/esemeny.ts';
  *   fogad, ellenőriz és ír.
  * - **Nincs sorrend-feltételezés.** A vízjelet az SQL tartja
  *   (`stripe_allapot_frissit`), mert a Stripe nem garantál eseménysorrendet.
+ *
+ * # A második ág: a ciklus végi túlhasználat
+ *
+ * Ez a végpont 2026-09-20 óta **kétféle** eseményt dolgoz fel. Az
+ * `invoice.created` nem a cég állapotát írja, hanem egy **alkalmat** hoz: a
+ * frissen készült piszkozat számlához még hozzá lehet adni tételt.
+ *
+ * Miért itt, és miért nem egy napi cronban: egy „függő" (`pending`) tétel a
+ * **következő** számlára kerülne, vagyis a szeptemberi túlhasználat a
+ * novemberi számlán jelenne meg. A piszkozathoz közvetlenül hozzáadva ott
+ * van, ahol lennie kell — a most készülő számlán.
+ *
+ * ⚠️ **A megszűnt előfizetés záró időszaka így nem számlázódik ki**, mert
+ * lemondás után nincs több ciklusforduló, tehát nincs `invoice.created` sem.
+ * Ez tudatos v1-es határ: a tévedés iránya a felhasználó javára dől, és a
+ * kimaradt összeg a `overage_charges` táblából utólag látszik. Kimondva a
+ * `.env.example`-ben is.
  */
 
 Deno.serve(async (keres: Request): Promise<Response> => {
@@ -94,6 +116,10 @@ Deno.serve(async (keres: Request): Promise<Response> => {
     { auth: { persistSession: false } },
   );
 
+  if (dontes.fajta === 'tulhasznalat') {
+    return await tulhasznalast(db, dontes);
+  }
+
   const { data, error } = await db.rpc('stripe_allapot_frissit', {
     ceg_jelolt: dontes.cegAzonosito,
     ugyfel: dontes.ugyfelAzonosito,
@@ -138,6 +164,308 @@ Deno.serve(async (keres: Request): Promise<Response> => {
 
   return valasz({ rendben: true }, 200);
 });
+
+/** Amit a lezárult időszakról az adatbázis tud. Számot és döntést nem tartalmaz. */
+type Nyersanyag = {
+  ceg: string;
+  overage_enabled: boolean;
+  overage_limit_ft: number | null;
+  stripe_lookup_key: string | null;
+  stripe_status: string | null;
+  felhasznalt: number;
+  rogzitve: { id: string; stripe_tetel: string | null } | null;
+};
+
+/**
+ * A lezárult időszak túlhasználatának rátétele a most készülő számlára.
+ *
+ * # A sorrend, és miért pont ez
+ *
+ * **Előbb rögzítünk, aztán hívjuk a Stripe-ot, végül beírjuk az azonosítót.**
+ * A középső lépés az, ami elbukhat — és ha elbukik, a félbemaradt futás
+ * pontosan a befejezetlen munka listáját hagyja hátra: `overage_charges` sor
+ * `stripe_invoice_item_id is null`-lal. Ugyanaz a sorrendi elv, mint a
+ * selejtezésnél; a fordított sorrend egy kiszámlázott, de sehol nem
+ * nyilvántartott tételt hagyna, és az a rosszabb irány.
+ *
+ * A rögzített sor **felülírhatatlan**: egy újrafutás a tárolt darabszámmal és
+ * összeggel számláz tovább, nem egy friss újraszámolással. Ha közben változna
+ * a darabár a configban, a felhasználó akkor is azt fizeti, amit a lezáráskor
+ * ígértünk.
+ *
+ * # Mikor adunk 200-at, és mikor 5xx-et
+ *
+ * 200 mindenre, amin az újraküldés nem segítene: ismeretlen ügyfél, nincs
+ * engedély, nincs túlhasználat, ismeretlen csomag. 5xx arra, ami múló lehet
+ * (adatbázis- vagy Stripe-hiba) — ott az újraküldés a **helyes** viselkedés,
+ * mert a sor ilyenkor számlázatlanul áll.
+ *
+ * ⚠️ Az újraküldésnek van egy ablaka: a számla nagyjából egy óra múlva
+ * véglegesül, utána a `szamlabol()` kapuja már `kihagy`-ot ad. A Stripe az
+ * első újrapróbálkozásokat perceken belül intézi, tehát a gyakorlatban ez
+ * elég — de nem végtelen, és ezt jobb kimondva tudni.
+ */
+async function tulhasznalast(
+  db: SupabaseClient,
+  d: Extract<Dontes, { fajta: 'tulhasznalat' }>,
+): Promise<Response> {
+  const kulcs = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
+
+  if (kulcs === '') {
+    console.error('Nincs STRIPE_SECRET_KEY — a túlhasználat nem számlázható.');
+
+    return valasz({ hiba: 'A végpont nincs beállítva.' }, 503);
+  }
+
+  const { data, error } = await db.rpc('tulhasznalat_nyersanyag', {
+    ugyfel: d.ugyfelAzonosito,
+    kezdet: d.idoszakKezdete,
+    veg: d.idoszakVege,
+  });
+
+  if (error !== null) {
+    console.error('A túlhasználat nyersanyaga nem olvasható:', error);
+
+    return valasz({ hiba: 'Az olvasás nem sikerült.' }, 500);
+  }
+
+  if (data === null || data === undefined) {
+    // Nem a mi ügyfelünk. A Stripe-végpont több eseményt is küldhet, mint
+    // amennyire feliratkoztunk — ettől még nem hiba.
+    return valasz({ rendben: true, kihagyva: 'nincs_ceg' }, 200);
+  }
+
+  const ny = data as unknown as Nyersanyag;
+
+  if (ny.rogzitve !== null && ny.rogzitve.stripe_tetel !== null) {
+    return valasz({ rendben: true, kihagyva: 'mar_szamlazva' }, 200);
+  }
+
+  if (!ny.overage_enabled) {
+    // Nem kapcsolta be. Ilyenkor a `keret.ts` meg is állította a kereten —
+    // nincs mit számlázni, és nem is ígértünk semmi ilyet.
+    return valasz({ rendben: true, kihagyva: 'nincs_engedely' }, 200);
+  }
+
+  const csomagKulcs = csomagKulcsbol(ny.stripe_lookup_key);
+
+  if (csomagKulcs === null) {
+    // ⚠️ Itt **nem** esünk a legkisebb csomagra, pedig a keretszámolás azt
+    // teszi. Ott a szigorúbb irány a helyes; itt ugyanaz *többet* számlázna,
+    // mert a kisebb kerethez képest több esne túlhasználatba. Ismeretlen
+    // csomag mellett tehát nem számlázunk — és hangosan naplózunk.
+    console.error(
+      `Ismeretlen csomagkulcs a túlhasználat számlázásakor: ${ny.stripe_lookup_key ?? 'nincs'}`,
+    );
+
+    return valasz({ rendben: true, kihagyva: 'ismeretlen_csomag' }, 200);
+  }
+
+  const csomag = szamlafolyo.csomagok[csomagKulcs];
+
+  const szamitott = tulhasznalatSzamol({
+    keret: csomag.dokumentumok,
+    darabAr: csomag.extraFt,
+    felhasznalt: Number(ny.felhasznalt) || 0,
+    plafonFt: ny.overage_limit_ft,
+  });
+
+  // Nulla sort **nem rögzítünk**. Az ablak le van zárva, tehát az újraszámolás
+  // determinisztikus: egy újraküldött esemény ugyanezt a nullát kapja, és
+  // ugyanígy megáll. Cserébe a tábla csak valódi terheléseket tartalmaz.
+  if (ny.rogzitve === null && szamitott.szamlazhatoDarab <= 0) {
+    return valasz({ rendben: true, kihagyva: 'nincs_tulhasznalat' }, 200);
+  }
+
+  const { data: rogzites, error: rogzitesHiba } = await db.rpc('tulhasznalast_rogzit', {
+    ceg: ny.ceg,
+    kezdet: d.idoszakKezdete,
+    veg: d.idoszakVege,
+    kreditek: szamitott.szamlazhatoDarab,
+    forint: szamitott.ft,
+  });
+
+  if (rogzitesHiba !== null) {
+    console.error('A túlhasználat rögzítése nem sikerült:', rogzitesHiba);
+
+    return valasz({ hiba: 'A rögzítés nem sikerült.' }, 500);
+  }
+
+  const sor = (rogzites ?? {}) as { id?: string; kreditek?: number; forint?: number };
+  const darab = sor.kreditek ?? 0;
+  const forint = sor.forint ?? 0;
+
+  if (sor.id === undefined || darab <= 0) {
+    return valasz({ rendben: true, kihagyva: 'nincs_tulhasznalat' }, 200);
+  }
+
+  let tetelAzonosito: string;
+
+  try {
+    const ar = await arKulcsbol(kulcs, csomag.lookupKulcsExtra);
+
+    if (ar === null) {
+      // A sor rögzítve maradt, számlázatlanul. Az 500 miatt a Stripe
+      // újrapróbálja — és mire visszajön, a hiányzó címke pótolható.
+      console.error(`A ${csomag.lookupKulcsExtra} lookup_key nincs a Stripe-fiókban.`);
+
+      return valasz({ hiba: 'A túlhasználati ár nincs beállítva.' }, 500);
+    }
+
+    tetelAzonosito = await tetelt(kulcs, {
+      ugyfel: d.ugyfelAzonosito,
+      szamla: d.szamlaAzonosito,
+      ar,
+      darab,
+      ceg: ny.ceg,
+      kezdet: d.idoszakKezdete,
+      veg: d.idoszakVege,
+    });
+  } catch (hiba) {
+    console.error('A túlhasználati tétel létrehozása nem sikerült:', hiba);
+
+    return valasz({ hiba: 'A számlatétel létrehozása nem sikerült.' }, 502);
+  }
+
+  const { error: jeloloHiba } = await db.rpc('tulhasznalat_szamlazva', {
+    tetel: sor.id,
+    stripe_tetel: tetelAzonosito,
+  });
+
+  if (jeloloHiba !== null) {
+    // A tétel a Stripe-nál **létrejött**, csak a jelölés hiányzik. Az 500-ra
+    // érkező újraküldés ugyanazzal az idempotencia-kulccsal ugyanazt a tételt
+    // kapja vissza, tehát nem lesz belőle második terhelés.
+    console.error('A túlhasználat kiszámlázottnak jelölése nem sikerült:', jeloloHiba);
+
+    return valasz({ hiba: 'A jelölés nem sikerült.' }, 500);
+  }
+
+  const { error: naploHiba } = await db.from('activity_log').insert({
+    company_id: ny.ceg,
+    action: 'tulhasznalat.szamlazva',
+    subject_type: 'stripe',
+    summary:
+      `Túlhasználat kiszámlázva: ${darab} bizonylat, ${forint} Ft ` +
+      `(${d.idoszakKezdete.slice(0, 10)} – ${d.idoszakVege.slice(0, 10)}).`,
+    context: {
+      credits: darab,
+      amount_ft: forint,
+      invoice: d.szamlaAzonosito,
+      invoice_item: tetelAzonosito,
+    },
+  });
+
+  if (naploHiba !== null) {
+    console.error('A túlhasználat naplózása nem sikerült:', naploHiba);
+  }
+
+  return valasz({ rendben: true, szamlazva: darab }, 200);
+}
+
+/** Az árazonosító a `lookup_key`-ből. Csak **aktív** árat fogadunk el. */
+async function arKulcsbol(kulcs: string, lookupKulcs: string): Promise<string | null> {
+  const valaszok = await stripe<{ data: { id: string }[] }>(
+    kulcs,
+    `/prices?active=true&lookup_keys[]=${encodeURIComponent(lookupKulcs)}`,
+  );
+
+  return valaszok.data[0]?.id ?? null;
+}
+
+/**
+ * A számlatétel létrehozása, a piszkozat számlára téve.
+ *
+ * ⚠️ **`pricing[price]`, nem `price`.** A végpont API-verziója
+ * (`2026-08-26.dahlia`) alatt az ár a `pricing` objektumba költözött — ezt
+ * megmértem az API leírásában, nem emlékezetből írtam. Ugyanaz a csendes
+ * csapda, mint a ciklusdátumok elköltözése: egy `price=` mező nem hibaüzenetet
+ * adna, hanem ár nélküli tételt.
+ *
+ * Az összeget **nem mi mondjuk meg**: a darabár a Stripe árobjektumán áll, mi
+ * a darabszámot adjuk. Így a számlán a termék neve is a helyes, és a pénznem
+ * sem itt dől el.
+ *
+ * A `period` nem díszítés: enélkül a számlasoron a mai nap állna, nem az az
+ * időszak, amiben a munka történt.
+ */
+async function tetelt(
+  kulcs: string,
+  t: {
+    ugyfel: string;
+    szamla: string;
+    ar: string;
+    darab: number;
+    ceg: string;
+    kezdet: string;
+    veg: string;
+  },
+): Promise<string> {
+  const mezok = new URLSearchParams();
+
+  mezok.set('customer', t.ugyfel);
+  mezok.set('invoice', t.szamla);
+  mezok.set('pricing[price]', t.ar);
+  mezok.set('quantity', String(t.darab));
+  mezok.set('period[start]', String(Math.floor(Date.parse(t.kezdet) / 1000)));
+  mezok.set('period[end]', String(Math.floor(Date.parse(t.veg) / 1000)));
+  mezok.set(
+    'description',
+    `Túlhasználat: ${t.darab} bizonylat a kereten felül ` +
+      `(${t.kezdet.slice(0, 10)} – ${t.veg.slice(0, 10)})`,
+  );
+  mezok.set('metadata[company_id]', t.ceg);
+  mezok.set('metadata[period_start]', t.kezdet);
+
+  // Az idempotencia-kulcs a cégből és az időszakból áll össze, tehát egy
+  // újraküldött esemény **ugyanazt** a tételt kapja vissza, nem egy másodikat.
+  // A Stripe 24 órán át emlékszik rá — a piszkozat számla ennél jóval hamarabb
+  // véglegesül, tehát a fedezet elég.
+  const tetel = await stripe<{ id: string }>(kulcs, '/invoiceitems', mezok, {
+    'Idempotency-Key': `tulhasznalat-${t.ceg}-${t.kezdet}`,
+  });
+
+  return tetel.id;
+}
+
+/**
+ * Egy Stripe-hívás.
+ *
+ * ⚠️ Ugyanez a segédfüggvény ott áll a `stripe-checkout`-ban és a
+ * `stripe-portal`-ban is. A három példány **tudatos**: ezek külön telepített
+ * Deno-függvények, a `shared/uzleti` pedig szándékosan nulla függőségű, tiszta
+ * kód — egy `fetch`-elő segéd nem való bele. Ha valaha négy lesz belőle,
+ * érdemes egy `supabase/functions/_kozos/` mappát nyitni.
+ */
+async function stripe<T>(
+  kulcs: string,
+  ut: string,
+  mezok?: URLSearchParams,
+  extraFejlec: Record<string, string> = {},
+): Promise<T> {
+  const felelet = await fetch(`${STRIPE_API}${ut}`, {
+    method: mezok === undefined ? 'GET' : 'POST',
+    headers: {
+      Authorization: `Bearer ${kulcs}`,
+      ...(mezok === undefined
+        ? {}
+        : { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' }),
+      ...extraFejlec,
+    },
+    // A `body` **kimarad**, ha nincs — nem `undefined` értékkel szerepel. A
+    // testvérfüggvények `body: mezok?.toString()`-et írnak; az futásidőben
+    // ugyanaz, típusra viszont nem az (`exactOptionalPropertyTypes`). Ezt a
+    // `supabase/functions/` mappa nem is méri — a `tsconfig.app.json` csak a
+    // `src`, `shared` és `config` mappákat nézi.
+    ...(mezok === undefined ? {} : { body: mezok.toString() }),
+  });
+
+  if (!felelet.ok) {
+    throw new Error(`Stripe ${felelet.status}: ${(await felelet.text()).slice(0, 500)}`);
+  }
+
+  return (await felelet.json()) as T;
+}
 
 function valasz(test: unknown, statusz: number): Response {
   return new Response(JSON.stringify(test), {

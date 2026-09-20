@@ -38,6 +38,27 @@ function ujElofizetes(extra: Record<string, unknown> = {}): Record<string, unkno
   };
 }
 
+/**
+ * Ciklusforduló számlája.
+ *
+ * ⚠️ A `period_start`/`period_end` az **imént lezárult** időszak — ez a Stripe
+ * kimondott szabálya, és a modul erre épül. A számlán lévő előfizetés-tételsor
+ * a **következő** időszakra szólna; azt itt szándékosan nem is szerepeltetjük,
+ * hogy a fixtúra ne sugallja, mintha onnan olvasnánk.
+ */
+function ujSzamla(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'in_proba',
+    object: 'invoice',
+    customer: 'cus_proba',
+    status: 'draft',
+    billing_reason: 'subscription_cycle',
+    period_start: MOST - 30 * 24 * 3600,
+    period_end: MOST,
+    ...extra,
+  };
+}
+
 describe('esemenytErtelmez — előfizetés', () => {
   it('kiolvassa a csomagot, a státuszt és a ciklust az új alakból', () => {
     const d = esemenytErtelmez(esemeny('customer.subscription.created', ujElofizetes()));
@@ -339,9 +360,93 @@ describe('FIGYELT_ESEMENYEK', () => {
             customer: 'cus_proba',
             subscription: 'sub_proba',
           }
-        : ujElofizetes();
+        : tipus.startsWith('invoice')
+          ? ujSzamla()
+          : ujElofizetes();
 
-      expect(esemenytErtelmez(esemeny(tipus, targy)).fajta).toBe('frissit');
+      // Nem mind ugyanazt a döntést hozza: az `invoice.created` nem állapotot
+      // ír, hanem számlázási alkalmat jelent. Amit ez a teszt őriz: egyik
+      // figyelt típus sem esik a `kihagy` ágra.
+      expect(esemenytErtelmez(esemeny(tipus, targy)).fajta).not.toBe('kihagy');
     }
+  });
+});
+
+describe('esemenytErtelmez — ciklus végi túlhasználat', () => {
+  it('a ciklusforduló piszkozat számlájából az imént lezárult időszakot olvassa', () => {
+    const d = esemenytErtelmez(esemeny('invoice.created', ujSzamla()));
+
+    if (d.fajta !== 'tulhasznalat') throw new Error('túlhasználatot vártunk');
+
+    expect(d.szamlaAzonosito).toBe('in_proba');
+    expect(d.ugyfelAzonosito).toBe('cus_proba');
+    expect(d.idoszakKezdete).toBe(new Date((MOST - 30 * 24 * 3600) * 1000).toISOString());
+    expect(d.idoszakVege).toBe(new Date(MOST * 1000).toISOString());
+  });
+
+  /**
+   * A négy kapu. Mindegyik mögött egy konkrét rossz kimenetel áll — ezért
+   * külön méretnek, nem egyetlen „rossz számla" esetként.
+   */
+  it('az első számlát nem számlázza meg: nincs mögötte lezárult időszak', () => {
+    const d = esemenytErtelmez(
+      esemeny('invoice.created', ujSzamla({ billing_reason: 'subscription_create' })),
+    );
+
+    expect(d.fajta).toBe('kihagy');
+  });
+
+  it('az arányosítás sem ciklusforduló', () => {
+    const d = esemenytErtelmez(
+      esemeny('invoice.created', ujSzamla({ billing_reason: 'subscription_update' })),
+    );
+
+    expect(d.fajta).toBe('kihagy');
+  });
+
+  it('a véglegesített számlához már nem adunk tételt', () => {
+    const d = esemenytErtelmez(esemeny('invoice.created', ujSzamla({ status: 'open' })));
+
+    expect(d.fajta).toBe('kihagy');
+  });
+
+  /**
+   * Az első számlán a két dátum megegyezik. A `billing_reason` ezt amúgy is
+   * kizárja — ez a második háló ugyanarra a lyukra, mert egy üres ablakra
+   * számolt nulla **nem hibázna**, csak csendben rossz lenne.
+   */
+  it('a nulla hosszú időszakot elutasítja', () => {
+    const d = esemenytErtelmez(esemeny('invoice.created', ujSzamla({ period_start: MOST })));
+
+    expect(d.fajta).toBe('kihagy');
+  });
+
+  it('a visszafelé álló időszakot is elutasítja', () => {
+    const d = esemenytErtelmez(
+      esemeny('invoice.created', ujSzamla({ period_start: MOST, period_end: MOST - 3600 })),
+    );
+
+    expect(d.fajta).toBe('kihagy');
+  });
+
+  it('ügyfél nélkül nincs kit megtalálni', () => {
+    const d = esemenytErtelmez(esemeny('invoice.created', ujSzamla({ customer: null })));
+
+    expect(d.fajta).toBe('kihagy');
+  });
+
+  /**
+   * A számlát nem mi hoztuk létre, tehát nincs benne `metadata.company_id` —
+   * a céget az ügyfélazonosítóról találjuk meg. A kifejtett ügyfélobjektumot
+   * ugyanúgy el kell fogadni, mint az azonosítót (`expand`).
+   */
+  it('a kifejtett ügyfélobjektumból is kiolvassa az azonosítót', () => {
+    const d = esemenytErtelmez(
+      esemeny('invoice.created', ujSzamla({ customer: { id: 'cus_kifejtett' } })),
+    );
+
+    if (d.fajta !== 'tulhasznalat') throw new Error('túlhasználatot vártunk');
+
+    expect(d.ugyfelAzonosito).toBe('cus_kifejtett');
   });
 });

@@ -24,7 +24,7 @@ import {
 import { elofizetestIndit, portaltIndit } from '../lib/elofizetes.ts';
 import { csomagSorrend, szamlafolyo, type CsomagKulcs } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
-import { keretMondat } from '@uzleti/keret.ts';
+import { keretMondat, FUTO_ALLAPOTOK } from '@uzleti/keret.ts';
 import { SZEREPEK, szerepCimke, type Szerep } from '@uzleti/enumok.ts';
 import { datum } from '@uzleti/ido.ts';
 import { formaz } from '@uzleti/osszeg.ts';
@@ -413,63 +413,102 @@ export function Beallitasok() {
           cim="Túlhasználat"
           leiras="Mi történjen, ha egy hónapban elfogy a kereted."
         >
-          <Valasztas
-            nev="tulhasznalat"
-            be={ceg.overage_enabled}
-            tiltva={!admin}
-            ki_opcio={{
-              cimke: 'A keret állítson meg',
-              leiras:
-                'A hónap hátralévő részében nem dolgozunk fel több bizonylatot. A számlán nem ér meglepetés.',
-            }}
-            be_opcio={{
-              cimke: 'Menjen tovább, a plafonig',
-              leiras:
-                'A keret fölött is feldolgozunk, a lent megadott forintösszegig. Afölött megállunk.',
-            }}
-            onValt={(be) =>
-              void ment(
-                () => tulhasznalatotMent(ceg.id, be, ceg.overage_limit_ft),
-                be
-                  ? `Túlhasználat engedélyezve, ${formaz(ceg.overage_limit_ft ?? szamlafolyo.tulhasznalat.alapPlafonFt, 'Ft')}-os plafonnal.`
-                  : 'Túlhasználat kikapcsolva. A keret ezentúl megállít.',
-              )
-            }
-          />
+          {/*
+            ⚠️ Próbaidőn a kapcsoló **zárva**, és nem csak itt: ugyanezt egy
+            trigger is kimondja az adatbázisban (`20260920000300`). A felületi
+            tiltás megkerülhető — az `overage_enabled` oszlopra a tulajdonosnak
+            írási joga van a REST API-n át.
 
-          {ceg.overage_enabled && (
-            <div className="mt-4">
-              <label className="flabel" htmlFor="plafon">
-                Felső határ forintban
-              </label>
-              <div className="flex max-w-sm items-center gap-2">
-                <input
-                  id="plafon"
-                  type="number"
-                  min={1}
-                  step={1000}
-                  className="control"
-                  defaultValue={ceg.overage_limit_ft ?? szamlafolyo.tulhasznalat.alapPlafonFt}
-                  disabled={!admin}
-                  onBlur={(e) => {
-                    const ertek = Number(e.target.value);
+            Az ok nem kényelmi: próbaidőn nincs Stripe-ügyfél, akinek
+            számlázni lehetne. Egy bekapcsolható kapcsoló itt fedezet nélküli
+            ígéret lenne — a felhasználó azt hinné, hogy a keret fölött is
+            dolgozhat, a `keret.ts` viszont a próbaidős ágon mindig megáll.
 
-                    if (ertek !== ceg.overage_limit_ft) {
-                      void ment(
-                        () => plafontMent(ceg.id, ertek),
-                        'A túlhasználati plafon módosítva.',
-                      );
-                    }
-                  }}
-                />
-                <span className="text-sm text-slate-500">Ft</span>
+            A `stripe_status`-t olvassuk, nem a betöltött keretet: az a cég
+            sorával együtt már itt van, tehát nincs villanás betöltés közben.
+          */}
+          {!FUTO_ALLAPOTOK.includes(ceg.stripe_status ?? '') ? (
+            <p className="alert alert-info">
+              A túlhasználat <strong>előfizetéssel</strong> érhető el. A próbaidő kerete
+              zárt keret: ha elfogy, csomagot lehet választani — extra bizonylatot
+              számlázni nincs kinek.
+            </p>
+          ) : (
+          <>
+            <Valasztas
+              nev="tulhasznalat"
+              be={ceg.overage_enabled}
+              tiltva={!admin}
+              ki_opcio={{
+                cimke: 'A keret állítson meg',
+                leiras:
+                  'A hónap hátralévő részében nem dolgozunk fel több bizonylatot. A számlán nem ér meglepetés.',
+              }}
+              be_opcio={{
+                cimke: 'Menjen tovább, a plafonig',
+                leiras:
+                  'A keret fölött is feldolgozunk, a lent megadott forintösszegig. Afölött megállunk.',
+              }}
+              onValt={(be) =>
+                void ment(
+                  () => tulhasznalatotMent(ceg.id, be, ceg.overage_limit_ft),
+                  be
+                    ? `Túlhasználat engedélyezve, ${formaz(ceg.overage_limit_ft ?? szamlafolyo.tulhasznalat.alapPlafonFt, 'Ft')}-os plafonnal.`
+                    : 'Túlhasználat kikapcsolva. A keret ezentúl megállít.',
+                )
+              }
+            />
+
+            {ceg.overage_enabled && (
+              <div className="mt-4">
+                <label className="flabel" htmlFor="plafon">
+                  Felső határ forintban
+                </label>
+                <div className="flex max-w-sm items-center gap-2">
+                  <input
+                    id="plafon"
+                    type="number"
+                    min={1}
+                    step={1000}
+                    className="control"
+                    defaultValue={ceg.overage_limit_ft ?? szamlafolyo.tulhasznalat.alapPlafonFt}
+                    disabled={!admin}
+                    onBlur={(e) => {
+                      const ertek = Number(e.target.value);
+
+                      if (ertek !== ceg.overage_limit_ft) {
+                        void ment(
+                          () => plafontMent(ceg.id, ertek),
+                          'A túlhasználati plafon módosítva.',
+                        );
+                      }
+                    }}
+                  />
+                  <span className="text-sm text-slate-500">Ft</span>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  A plafon <strong>nem opcionális</strong>: a nyitott végű engedély váratlan
+                  számlát jelentene. Forintban mér, nem bizonylatban, mert a darabár csomagonként
+                  más. Ha a keret fölötti munka eléri, a feldolgozás <strong>megáll</strong> —
+                  itt emelheted.
+                </p>
+
+                {/*
+                  A jelenlegi állás. Enélkül a plafon egy szám a semmiben: a
+                  felhasználó nem tudja, hol tart benne, csak akkor szembesülne
+                  vele, amikor a feldolgozás megáll.
+                */}
+                {keret?.tulhasznalat != null && (
+                  <p className="mt-2 text-sm text-slate-500">
+                    Ebben a ciklusban <strong>{keret.tulhasznalat.darab}</strong> bizonylat ment a
+                    kereten felül — {formaz(keret.tulhasznalat.ft, 'Ft')} a{' '}
+                    {formaz(keret.tulhasznalat.plafonFt, 'Ft')}-os plafonból. A tétel a következő
+                    számlán jelenik meg, a ciklus fordulóján.
+                  </p>
+                )}
               </div>
-              <p className="mt-2 text-sm text-slate-600">
-                A plafon <strong>nem opcionális</strong>: a nyitott végű engedély váratlan
-                számlát jelentene. Forintban mér, nem bizonylatban, mert a darabár csomagonként
-                más.
-              </p>
-            </div>
+            )}
+          </>
           )}
         </Kartya>
 

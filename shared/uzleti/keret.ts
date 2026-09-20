@@ -1,4 +1,6 @@
 import { szamlafolyo, type CsomagKulcs } from '../../config/szamlafolyo.ts';
+import { formaz } from './osszeg.ts';
+import { tulhasznalatSzamol, type Tulhasznalat } from './tulhasznalat.ts';
 
 /**
  * Mennyi fér még a keretbe.
@@ -27,8 +29,18 @@ import { szamlafolyo, type CsomagKulcs } from '../../config/szamlafolyo.ts';
  *    épp az AI-költséges oldalon: egy elgépelt vagy egy Stripe-ban átnevezett
  *    ár csendben végtelen keretet adott. A hibás irány itt a szigorúbb.
  *
- * 4. **A keret megállít, a túlhasználat külön engedély.** Alapból senki nem kap
- *    váratlan számlát attól, hogy egy hónapban többet dolgozott.
+ * 4. **A keret megállít, a túlhasználat külön engedély — és az engedély sem
+ *    nyitott végű.** Alapból senki nem kap váratlan számlát attól, hogy egy
+ *    hónapban többet dolgozott. Aki bekapcsolja, az sem: a plafon forintban
+ *    mért felső határ, és **ez a modul tartja be** (`tulhasznalat.ts`). Sokáig
+ *    nem tartotta — a döntés `mehet: !elfogyott || overage_enabled` volt, ami
+ *    a képernyőn ígért plafont szó nélkül átlépte volna.
+ *
+ * 5. **Próbaidőn nincs túlhasználat, és ez nem a felület döntése.** Ez a modul
+ *    a próbaidős ágon mindig `tulhasznalatban: false`-t ad — nincs kinek
+ *    számlázni, mert nincs Stripe-előfizetés. A kapcsolót ezért szerveroldalon
+ *    is zárva tartjuk (`20260920000300_tulhasznalat.sql`), különben a
+ *    Beállítások olyat ígérne, aminek nincs fedezete.
  *
  * ⚠️ A próbaidő hossza **két helyen** van leírva: itt a `trial_ends_at`
  * oszlopból olvassuk (tehát a tárolt dátum dönt), a cégalapítás viszont
@@ -50,6 +62,8 @@ export type CegAllapot = {
   stripe_price_id: string | null;
   current_period_end: string | null;
   overage_enabled: boolean;
+  /** A túlhasználat forintban mért plafonja. `null` = az alapérték. */
+  overage_limit_ft: number | null;
 };
 
 export type Allapot = 'proba' | 'elofizetes' | 'lejart';
@@ -75,6 +89,15 @@ export type Keret = {
   /** A keret fölött is mehet — a cég bekapcsolta a túlhasználatot. */
   tulhasznalatban: boolean;
   /**
+   * A kereten felüli használat számokban. **Próbaidőn `null`**: ott nincs
+   * csomag, tehát darabár sincs, amihez mérni lehetne.
+   *
+   * Akkor is ki van töltve, ha a cég **nem** kapcsolta be a túlhasználatot —
+   * a Beállításoknak meg kell tudnia mutatni a plafont és az állást ahhoz,
+   * hogy a felhasználó dönteni tudjon róla.
+   */
+  tulhasznalat: Tulhasznalat | null;
+  /**
    * Ismeretlen csomagkulcsot láttunk, és a legkisebb csomag keretét adtuk.
    * **A hívó naplózza** — ez csendben nem maradhat.
    */
@@ -82,19 +105,47 @@ export type Keret = {
 };
 
 /**
- * Fut-e az előfizetés.
+ * Azok a Stripe-státuszok, amelyek mellett az előfizetés **fut** — vagyis a
+ * cégnek csomagja van, nem próbaideje.
  *
- * A `past_due` szándékosan **átmegy**: egy lejárt bankkártya nem ok arra, hogy
- * valakit a hónap közepén elvágjunk a saját bizonylataitól. A Stripe úgyis
- * újrapróbálja, és a ciklus végén a státusz magától `unpaid`-re vagy
+ * A `past_due` szándékosan **benne van**: egy lejárt bankkártya nem ok arra,
+ * hogy valakit a hónap közepén elvágjunk a saját bizonylataitól. A Stripe
+ * úgyis újrapróbálja, és a ciklus végén a státusz magától `unpaid`-re vagy
  * `canceled`-re vált — akkor viszont már nem megy át.
+ *
+ * ⚠️ **Ez a lista négy SQL-migrációban is le van írva**, mert a kvóta, a
+ * helykorlát, a fióktörlés tényei és a túlhasználat őre mind ugyanezt a
+ * kérdést teszi fel, az írás helyén. Az egyezést a `keret.test.ts`
+ * drift-tesztje méri: egy elcsúszott lista csendben rossz keretet adna, és a
+ * hiba csak a számlán derülne ki.
+ *
+ * ⚠️ Nem tévesztendő össze a `stripe-checkout` `FUTO` listájával: az
+ * **szándékosan tágabb** (`unpaid` és `incomplete` is), mert ott más a kérdés
+ * — nem „jár-e csomagkeret", hanem „van-e már bármilyen előfizetés, amire egy
+ * második checkout ráduplázna".
  */
+export const FUTO_ALLAPOTOK: readonly string[] = ['active', 'trialing', 'past_due'] as const;
+
 function elofizetesFut(status: string | null): boolean {
-  return status === 'active' || status === 'trialing' || status === 'past_due';
+  return status !== null && FUTO_ALLAPOTOK.includes(status);
 }
 
-/** A Stripe `lookup_key`-éhez tartozó csomag, vagy `null`, ha nem ismerjük. */
-function csomagKulcsbol(lookupKulcs: string | null): CsomagKulcs | null {
+/**
+ * A Stripe `lookup_key`-éhez tartozó csomag, vagy `null`, ha nem ismerjük.
+ *
+ * ⚠️ **Exportált, és a hívónak magának kell eldöntenie, mit kezd a `null`-lal
+ * — mert a biztonságos irány hívónként más.**
+ *
+ * A keretszámolás az ismeretlen kulcsot a **legkisebb** csomag keretére ejti
+ * (`legkisebb()`): ott a szigorúbb irány a helyes, mert a megengedőbb
+ * AI-költséget jelent. A ciklus végi **számlázás** viszont ugyanettől
+ * *többet* számlázna — a kisebb kerethez képest több esne túlhasználatba. Ott
+ * ezért a `null` azt jelenti: **nem számlázunk**, és a naplóba kerül.
+ *
+ * Ugyanaz a hiányzó adat, két ellentétes helyes válasz. Ezt a modul nem tudja
+ * eldönteni a hívó helyett, ezért nem is próbálja.
+ */
+export function csomagKulcsbol(lookupKulcs: string | null): CsomagKulcs | null {
   if (lookupKulcs === null || lookupKulcs === '') {
     return null;
   }
@@ -170,7 +221,19 @@ function elofizetesre(ceg: CegAllapot, felhasznalt: number): Keret {
 
   const maradek = Math.max(0, csomag.dokumentumok - felhasznalt);
   const elfogyott = felhasznalt >= csomag.dokumentumok;
-  const tulhasznalat = ceg.overage_enabled;
+
+  const tulhasznalat = tulhasznalatSzamol({
+    keret: csomag.dokumentumok,
+    darabAr: csomag.extraFt,
+    felhasznalt,
+    plafonFt: ceg.overage_limit_ft,
+  });
+
+  const engedve = ceg.overage_enabled;
+
+  // Két kapu, nem egy. Az első a cég **engedélye**, a második a saját
+  // **plafonja** — és a kettő közül eddig csak az első létezett a kódban.
+  const mehet = !elfogyott || (engedve && tulhasznalat.ferMegDarab > 0);
 
   return {
     allapot: 'elofizetes',
@@ -181,12 +244,18 @@ function elofizetesre(ceg: CegAllapot, felhasznalt: number): Keret {
     maradek,
     idoszakVege: ceg.current_period_end,
     hatralevoNap: null,
-    mehet: !elfogyott || tulhasznalat,
-    indok:
-      elfogyott && !tulhasznalat
-        ? `Elfogyott a havi kereted (${csomag.dokumentumok} bizonylat). Válts nagyobb csomagra, vagy engedélyezd a túlhasználatot a Beállításokban.`
-        : null,
-    tulhasznalatban: elfogyott && tulhasznalat,
+    mehet,
+    // A két elakadásnak **két külön indoka** van, mert két külön teendő
+    // tartozik hozzájuk: az egyiknél a túlhasználatot kell bekapcsolni, a
+    // másiknál a plafont emelni. Egy közös „elfogyott a kereted" mondat a
+    // plafonra futó felhasználót a Beállítások rossz kapcsolójához küldené.
+    indok: mehet
+      ? null
+      : engedve
+        ? `Elérted a túlhasználati plafont (${formaz(tulhasznalat.plafonFt, 'Ft')}). A Beállításokban emelheted, vagy válts nagyobb csomagra.`
+        : `Elfogyott a havi kereted (${csomag.dokumentumok} bizonylat). Válts nagyobb csomagra, vagy engedélyezd a túlhasználatot a Beállításokban.`,
+    tulhasznalatban: elfogyott && engedve,
+    tulhasznalat,
     ismeretlenCsomag: ismeretlen,
   };
 }
@@ -221,8 +290,11 @@ function probara(ceg: CegAllapot, felhasznalt: number, most: Date): Keret {
     hatralevoNap,
     mehet: !vege,
     indok,
-    // Próbaidőn nincs túlhasználat: ahhoz előbb csomag kell.
+    // Próbaidőn nincs túlhasználat: ahhoz előbb csomag kell. A `null` itt nem
+    // „nulla forint", hanem **nem értelmezett** — nincs darabár, amihez mérni
+    // lehetne, és nincs Stripe-ügyfél, akinek számlázni lehetne.
     tulhasznalatban: false,
+    tulhasznalat: null,
     ismeretlenCsomag: false,
   };
 }
@@ -245,8 +317,13 @@ export function keretMondat(k: Keret): string {
     return `Próbaidő: ${k.maradek} bizonylat és ${napSzo} van hátra.`;
   }
 
-  if (k.tulhasznalatban) {
-    return `A ${k.csomag} keretén túl vagy (${k.felhasznalt} / ${k.keret}). A további bizonylatok a túlhasználati díjszabás szerint mennek.`;
+  if (k.tulhasznalatban && k.tulhasznalat !== null) {
+    const t = k.tulhasznalat;
+
+    // A **forint** szerepel benne, nem csak az, hogy „díjszabás szerint": ez
+    // az a szám, ami a következő számlán meg fog jelenni. Aki a keretén túl
+    // dolgozik, annak nem a tény újdonság, hanem az összeg.
+    return `A ${k.csomag} keretén túl vagy (${k.felhasznalt} / ${k.keret}). A ${t.darab} többlet eddig ${formaz(t.ft, 'Ft')} — a plafonod ${formaz(t.plafonFt, 'Ft')}.`;
   }
 
   return `${k.csomag}: ${k.maradek} bizonylat van hátra a ${k.keret}-ből.`;

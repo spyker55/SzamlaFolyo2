@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import { keretAllapot, keretMondat, type CegAllapot } from './keret.ts';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { keretAllapot, keretMondat, FUTO_ALLAPOTOK, type CegAllapot } from './keret.ts';
 import { szamlafolyo } from '../../config/szamlafolyo.ts';
 
 const MOST = new Date('2026-09-14T10:00:00Z');
@@ -13,6 +16,7 @@ function proba(felul: Partial<CegAllapot> = {}): CegAllapot {
     stripe_price_id: null,
     current_period_end: null,
     overage_enabled: false,
+    overage_limit_ft: null,
     ...felul,
   };
 }
@@ -26,6 +30,7 @@ function elofizeto(felul: Partial<CegAllapot> = {}): CegAllapot {
     stripe_price_id: 'price_proba',
     current_period_end: '2026-10-01T10:00:00Z',
     overage_enabled: false,
+    overage_limit_ft: null,
     ...felul,
   };
 }
@@ -189,6 +194,65 @@ describe('előfizetés', () => {
   });
 
   /**
+   * A kör oka: a plafon sokáig **dísz volt**. A döntés `mehet: !elfogyott ||
+   * overage_enabled` volt, tehát a bekapcsolt túlhasználat nyitott végű
+   * engedélyt jelentett — pont azt, amit a Beállítások szerint nem lehet adni.
+   */
+  test('a plafon elérése megállít, engedélyezett túlhasználat mellett is', () => {
+    const plafon = 500;
+    const fer = Math.floor(plafon / szamlafolyo.csomagok.kicsi.extraFt);
+
+    const k = keretAllapot(
+      elofizeto({ overage_enabled: true, overage_limit_ft: plafon }),
+      szamlafolyo.csomagok.kicsi.dokumentumok + fer,
+      MOST,
+    );
+
+    expect(k.mehet).toBe(false);
+    expect(k.tulhasznalat?.ferMegDarab).toBe(0);
+  });
+
+  test('a plafon alatt egy hellyel még átenged', () => {
+    const plafon = 500;
+    const fer = Math.floor(plafon / szamlafolyo.csomagok.kicsi.extraFt);
+
+    const k = keretAllapot(
+      elofizeto({ overage_enabled: true, overage_limit_ft: plafon }),
+      szamlafolyo.csomagok.kicsi.dokumentumok + fer - 1,
+      MOST,
+    );
+
+    expect(k.mehet).toBe(true);
+  });
+
+  /**
+   * Két elakadás, két teendő. Aki a plafonra futott, annak a plafont kell
+   * emelnie — egy közös „elfogyott a kereted" mondat a Beállítások rossz
+   * kapcsolójához küldené.
+   */
+  test('a plafon indoka nem a keret indoka', () => {
+    const betelt = keretAllapot(
+      elofizeto({ overage_enabled: true, overage_limit_ft: 0 }),
+      szamlafolyo.csomagok.kicsi.dokumentumok,
+      MOST,
+    );
+
+    const keretVege = keretAllapot(
+      elofizeto(),
+      szamlafolyo.csomagok.kicsi.dokumentumok,
+      MOST,
+    );
+
+    expect(betelt.indok).toContain('plafont');
+    expect(keretVege.indok).toContain('Elfogyott');
+    expect(betelt.indok).not.toBe(keretVege.indok);
+  });
+
+  test('próbaidőn a túlhasználat nem értelmezett', () => {
+    expect(keretAllapot(proba({ overage_enabled: true }), 3, MOST).tulhasznalat).toBeNull();
+  });
+
+  /**
    * Egy lejárt bankkártya nem ok arra, hogy valakit a hónap közepén elvágjunk a
    * saját bizonylataitól — a Stripe úgyis újrapróbálja.
    */
@@ -247,9 +311,86 @@ describe('keretMondat', () => {
     expect(m).toContain('40');
   });
 
+  test('túlhasználatban a forintot mondja, nem csak a tényt', () => {
+    const m = keretMondat(
+      keretAllapot(
+        elofizeto({ overage_enabled: true }),
+        szamlafolyo.csomagok.kicsi.dokumentumok + 4,
+        MOST,
+      ),
+    );
+
+    expect(m).toContain('4');
+    // 4 × 50 Ft = 200 Ft — ez az a szám, ami a következő számlán megjelenik.
+    expect(m).toContain(String(4 * szamlafolyo.csomagok.kicsi.extraFt));
+  });
+
   test('lejárt keretnél magát az indokot mondja', () => {
     const k = keretAllapot(proba({ trial_ends_at: '2026-09-01T10:00:00Z' }), 0, MOST);
 
     expect(keretMondat(k)).toBe(k.indok);
+  });
+});
+
+/**
+ * A „fut-e az előfizetés" kérdést négy SQL-migráció is felteszi, mindegyik az
+ * **írás helyén** — a kvóta, a helykorlát, a fióktörlés tényei és a
+ * túlhasználat őre. Ez nem szépséghiba: a szabály ott ér valamit, ahol az írás
+ * történik, és egy SQL-függvény nem tud TS-configot olvasni.
+ *
+ * Amit viszont nem hagyunk: hogy a példányok **csendben elcsússzanak**. Egy
+ * kimaradt `past_due` azt jelentené, hogy egy lejárt bankkártyájú cég a
+ * kvótánál még előfizetőnek számít, a helykorlátnál viszont már próbaidősnek —
+ * és a kettő közül a megengedőbb mindig pénzbe kerül.
+ *
+ * Ugyanaz a fajta mérőeszköz, mint a `config/hely.test.ts`: a migrációs
+ * fájlokból olvas, nem egy kézzel karbantartott listából.
+ */
+describe('a futó előfizetés definíciója', () => {
+  const mappa = join(import.meta.dirname, '..', '..', 'supabase', 'migrations');
+
+  /**
+   * Minden `stripe_status … in ('…', '…')` lista a migrációkból — a
+   * `coalesce(new.stripe_status, '') not in (…)` alakot is beleértve. Ez a
+   * kiegészítés a teszt írásakor derült ki: az első, szűkebb regex a
+   * túlhasználat saját trigger-őrét **nem látta**, és némán háromra csökkent a
+   * mért példányok száma. Pont ezért áll alatta a „tényleg talál-e
+   * egyáltalán" állítás.
+   */
+  function sqlListak(): { fajl: string; allapotok: string[] }[] {
+    const talalt: { fajl: string; allapotok: string[] }[] = [];
+
+    for (const fajl of readdirSync(mappa).filter((f) => f.endsWith('.sql'))) {
+      const szoveg = readFileSync(join(mappa, fajl), 'utf8');
+
+      for (const egyezes of szoveg.matchAll(/stripe_status[^;]{0,40}?\bin\s*\(([^)]*)\)/gi)) {
+        const allapotok = [...(egyezes[1] ?? '').matchAll(/'([^']*)'/g)].map((m) => m[1] ?? '');
+
+        if (allapotok.length > 0) {
+          talalt.push({ fajl, allapotok });
+        }
+      }
+    }
+
+    return talalt;
+  }
+
+  test('a migrációk tényleg tartalmaznak ilyen listát', () => {
+    // Enélkül egy elrontott regex némán „mindent rendben"-t mondana: nulla
+    // találatra nulla állítás bukik meg.
+    expect(sqlListak().length).toBeGreaterThanOrEqual(4);
+  });
+
+  test('minden SQL-példány egyezik a keret.ts listájával', () => {
+    const vart = [...FUTO_ALLAPOTOK].sort();
+
+    for (const { fajl, allapotok } of sqlListak()) {
+      expect(
+        [...allapotok].sort(),
+        `${fajl}: az SQL a(z) [${allapotok.join(', ')}] listát írja, ` +
+          `a keret.ts viszont a(z) [${FUTO_ALLAPOTOK.join(', ')}] listát. ` +
+          'Az egyiknek követnie kell a másikat — a megengedőbb mindig pénzbe kerül.',
+      ).toEqual(vart);
+    }
   });
 });

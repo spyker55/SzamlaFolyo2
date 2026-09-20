@@ -255,6 +255,13 @@ export function Aszf() {
           megáll.
         </P>
         <P>
+          A kereten felüli feldolgozás <strong>előfizetéshez kötött</strong>: a próbaidő kerete
+          zárt keret, azon felül feldolgozás nem engedélyezhető. A kereten felül feldolgozott
+          dokumentumok díja az adott számlázási időszak lezárultakor,{' '}
+          <strong>a következő időszakról kiállított számlán</strong> jelenik meg, külön tételként,
+          a lezárult időszak megjelölésével.
+        </P>
+        <P>
           A felhasznált keretet a rendszer a ténylegesen elvégzett kiolvasások alapján tartja
           nyilván. Egy dokumentum utólagos törlése a már elvégzett kiolvasást nem teszi meg nem
           történtté, és a keretet nem adja vissza. A hibára futott kiolvasás nem fogyaszt keretet.

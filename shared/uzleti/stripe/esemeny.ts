@@ -64,6 +64,31 @@
  *    értéke (`stripe_allapot_frissit`, `20260919000300`). A checkout-esemény
  *    ehhez a mezőhöz soha nem nyúl.
  *
+ * # A modul második feladata: a ciklus végi túlhasználat
+ *
+ * A fenti öt szabály arról szól, mit írjunk a cég **állapotába**. Van egy
+ * hatodik eseményfajta, ami nem állapotot hoz, hanem **alkalmat**: az
+ * `invoice.created`. Ez az a pillanat, amit a Stripe maga jelöl ki arra, hogy
+ * „mi kerüljön még erre a számlára" — a frissen készült piszkozathoz még
+ * hozzá lehet adni tételt, a véglegesítés utána jön.
+ *
+ * 6. **A lezárult időszakot a számla mondja meg, nem a saját ciklusállapotunk.**
+ *    A Stripe szabálya (mérve, nem feltételezve): *az Invoice mindig az
+ *    **előző** időszakra szól, a rajta lévő előfizetés-tételsor viszont a
+ *    következőre.* Vagyis egy elsején kelt havi számlán a `period_start` és a
+ *    `period_end` pont az imént lezárult hónap.
+ *
+ *    Ez azért számít, mert a másik út **versenyhelyzet volna**: a
+ *    `customer.subscription.updated` (ami az új ciklust hozza) és az
+ *    `invoice.created` sorrendje nem garantált, tehát a saját sorunkból
+ *    olvasva hol a régi, hol az új időszakot látnánk. A számla objektum
+ *    viszont önmagában hordozza a választ.
+ *
+ *    ⚠️ Az **első** számlán a `period_start` és a `period_end` megegyezik (nincs
+ *    „előző" időszak). Ezt a `billing_reason` szűrése amúgy is kizárja, de a
+ *    dátumegyezésre külön is megállunk — két háló egy lyukra, mert a tévedés
+ *    ára itt egy hibás számla.
+ *
  * ⚠️ **A ciklus dátumai elköltöztek.** A `current_period_start` / `_end` a
  * 2025 tavaszi API-verziótól kezdve nem az előfizetésen, hanem az **előfizetés
  * tételén** (`items.data[]`) áll. Régebbi verziókon viszont még az előfizetésen.
@@ -103,6 +128,22 @@ export type Dontes =
       /** Egy emberi mondat a naplóba. */
       naplo: string;
     }
+  | {
+      /**
+       * Egy lezárult időszak túlhasználata számlázható — a piszkozat számlára
+       * még rá lehet tenni. A **mennyit** nem ez a modul dönti el: ahhoz a
+       * felhasznált kreditek kellenek az adatbázisból, és a
+       * `shared/uzleti/tulhasznalat.ts` számítása.
+       */
+      fajta: 'tulhasznalat';
+      ugyfelAzonosito: string;
+      /** A piszkozat számla, amire a tételt tesszük. */
+      szamlaAzonosito: string;
+      /** Az imént lezárult időszak — a számla saját `period_*` mezőiből. */
+      idoszakKezdete: string;
+      idoszakVege: string;
+      esemenyIdo: string;
+    }
   | { fajta: 'kihagy'; miert: string };
 
 /** Az eseménytípusok, amikre ez a kör feliratkozik. */
@@ -111,6 +152,9 @@ export const FIGYELT_ESEMENYEK: readonly string[] = [
   'customer.subscription.created',
   'customer.subscription.updated',
   'customer.subscription.deleted',
+  // A ciklus végi túlhasználat alkalma. **A Stripe-végponton is fel kell rá
+  // iratkozni** — enélkül a kód kész, de soha nem fut le.
+  'invoice.created',
 ] as const;
 
 type Rekord = Record<string, unknown>;
@@ -144,6 +188,10 @@ export function esemenytErtelmez(esemeny: unknown): Dontes {
     tipus === 'customer.subscription.deleted'
   ) {
     return elofizetesbol(objektum, esemenyIdo, tipus === 'customer.subscription.deleted');
+  }
+
+  if (tipus === 'invoice.created') {
+    return szamlabol(objektum, esemenyIdo);
   }
 
   return { fajta: 'kihagy', miert: `Nem figyelt eseménytípus: ${tipus}` };
@@ -258,6 +306,67 @@ function elofizetesbol(elofizetes: Rekord, esemenyIdo: string, torolt: boolean):
             ? `, lemondva ${valtozas.stripe_cancel_at.slice(0, 10)}-ig`
             : ''
         }`,
+  };
+}
+
+/**
+ * A frissen készült piszkozat számla: számlázható-e rá a lezárult időszak
+ * túlhasználata.
+ *
+ * Négy kapu, és mind a négy mögött egy konkrét rossz kimenetel áll:
+ *
+ * 1. **Csak `subscription_cycle`.** A `subscription_create` az első számla
+ *    (nincs mögötte lezárult időszak), a `subscription_update` egy menet
+ *    közbeni arányosítás, a `manual` pedig a mi saját, kézzel készített
+ *    számlánk. Egyikhez sem tartozik „most telt le egy hónap".
+ *
+ * 2. **Csak piszkozathoz.** Tételt hozzáadni csak `draft` állapotú számlához
+ *    lehet. Egy későn érkező vagy újrajátszott esemény ilyenkor már
+ *    véglegesített számlát találna, és a Stripe-hívás hibára futna — jobb itt
+ *    megállni, mint 500-zal visszadobni egy eseményt, amit a Stripe utána
+ *    napokig újraküld.
+ *
+ * 3. **Valódi időszak kell.** Az első számlán a `period_start` és a
+ *    `period_end` megegyezik. Ha egy ilyen átcsúszna, üres ablakra
+ *    számolnánk — ami nem hibázna, csak csendben nullát adna, és soha nem
+ *    derülne ki, hogy a szűrő rossz.
+ *
+ * 4. **Ügyfél és számlaazonosító nélkül nincs mit tenni.** A céget az
+ *    ügyfélazonosítóról találjuk meg — itt nincs `metadata.company_id`, és ez
+ *    jó: a számlát nem mi hoztuk létre, tehát nem is írtunk bele semmit.
+ */
+function szamlabol(szamla: Rekord, esemenyIdo: string): Dontes {
+  const ok = szoveg(szamla.billing_reason);
+
+  if (ok !== 'subscription_cycle') {
+    return { fajta: 'kihagy', miert: `A számla oka nem ciklusforduló: ${ok ?? 'ismeretlen'}` };
+  }
+
+  if (szoveg(szamla.status) !== 'draft') {
+    return { fajta: 'kihagy', miert: 'A számla már nem piszkozat.' };
+  }
+
+  const ugyfel = azonosito(szamla.customer);
+  const szamlaAzonosito = szoveg(szamla.id);
+
+  if (ugyfel === null || szamlaAzonosito === null) {
+    return { fajta: 'kihagy', miert: 'A számlából hiányzik az ügyfél vagy az azonosító.' };
+  }
+
+  const kezdet = idobol(szamla.period_start);
+  const veg = idobol(szamla.period_end);
+
+  if (kezdet === null || veg === null || kezdet >= veg) {
+    return { fajta: 'kihagy', miert: 'A számlán nincs értelmezhető lezárult időszak.' };
+  }
+
+  return {
+    fajta: 'tulhasznalat',
+    ugyfelAzonosito: ugyfel,
+    szamlaAzonosito,
+    idoszakKezdete: kezdet,
+    idoszakVege: veg,
+    esemenyIdo,
   };
 }
 
