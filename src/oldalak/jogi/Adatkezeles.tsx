@@ -68,11 +68,19 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  * egy feketelista némán romlik el: egy jövőbeli, azonosítót hordozó útvonal
  * magától kicsúszna rajta.
  *
- * ⚠️ Két állítás ebben a szakaszban **a Vercel kiadott leírásán** nyugszik, nem
- * a saját mérésünkön: hogy a mérés süti nélkül működik, és hogy nem épít
- * tartós azonosítót. Amit magunk mértünk, az az, hogy mely címek hagyhatják el
- * a böngészőt — arra 29 teszt áll (`src/lib/analitika.test.ts`), köztük egy
- * elcsúszás-őr, ami az `App.tsx` útvonaltáblájából olvas.
+ * Mit mértünk, és mi az, amit csak elhiszünk — érdemes szétválasztani:
+ *
+ * - **Mérve**: mely címek hagyhatják el a böngészőt. Erre 29 teszt áll
+ *   (`src/lib/analitika.test.ts`), köztük egy elcsúszás-őr, ami az `App.tsx`
+ *   útvonaltáblájából olvas.
+ * - **Mérve**: hogy a mérés nem tesz sütit. A telepítés után visszaolvasott
+ *   `/_vercel/insights/script.js` nem ír `document.cookie`-t; munkamenet-sütit
+ *   csak a `va('enableCookie')` kapcsolna be, amit sehol nem hívunk.
+ * - **Mérve**: hogy a szűrőnk valóban kapu. Ugyanabban a scriptben a
+ *   `beforeSend` `null` válaszára a függvény visszatér, kérés nélkül.
+ * - ⚠️ **Elhitt**: hogy a beérkezett adatból a Vercel **nem épít tartós
+ *   azonosítót**. Ez a kiszolgáló oldalán dől el, tehát innen nem mérhető — ez
+ *   az egyetlen állítás a szakaszban, ami a Vercel kiadott leírásán nyugszik.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;

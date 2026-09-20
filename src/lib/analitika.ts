@@ -6,13 +6,25 @@ import type { BeforeSendEvent } from '@vercel/analytics/react';
  * # Miért van erre szükség egyáltalán
  *
  * A Vercel Web Analytics a `beforeSend` visszahívásban adja át az eseményt,
- * mielőtt elküldené — és az esemény egy teljes **URL**-t hordoz. Hogy abba az
- * URL-be a lekérdezés és a horgony (`?…`, `#…`) beleszámít-e, azt nem a
- * telepített npm-csomag dönti el: az csak betölti a `/_vercel/insights/script.js`-t
- * a **saját domainünkről**, és átadja neki ezt a függvényt. A tényleges
- * összeállítás abban a távoli scriptben történik, amit innen nem látunk.
+ * mielőtt elküldené — és az esemény egy teljes **URL**-t hordoz. Hogy abba mi
+ * kerül, azt nem a telepített npm-csomag dönti el: az csak betölti a
+ * `/_vercel/insights/script.js`-t a **saját domainünkről**, és átadja neki ezt
+ * a függvényt.
  *
- * Ezért nem feltételezzük, hogy mit tesz bele, hanem **felülírjuk**.
+ * A telepítés után visszaolvastam azt a scriptet, és a kérdés eldőlt — a mérés
+ * **alapértelmezésben a teljes `location.href`-et küldi**, a lekérdezéssel és
+ * a horgonnyal együtt:
+ *
+ * ```js
+ * function e(e){let t=location.href; … return t}
+ * ```
+ *
+ * Vagyis szűrés nélkül egy `/meghivo/<token>` cím és egy `#access_token=…`
+ * horgony szó szerint elhagyná a böngészőt. Ugyanott az is látszik, hogy a
+ * `beforeSend` valóban kapu, nem díszítés: `null` vagy `false` esetén a
+ * függvény **visszatér**, és nem indul kérés.
+ *
+ * Ezért nem szűrünk, hanem **felülírjuk** a címet.
  *
  * # Fehérlista, nem feketelista — és ez a fájl lényege
  *
@@ -54,6 +66,19 @@ import type { BeforeSendEvent } from '@vercel/analytics/react';
  * `npm run dev` alatt viszont **él**: ott a csomag a hibakereső scriptet tölti
  * a `va.vercel-scripts.com`-ról. Ha a konzolban emiatt látsz egy sikertelen
  * kérést, az nem hiba és nem is kerül ki a látogatókhoz.
+ *
+ * # Két dolog a kiszolgált scriptből, amit érdemes tudni
+ *
+ * 1. **Sütit nem tesz.** A script nem ír `document.cookie`-t; munkamenet-sütit
+ *    csak a `va('enableCookie')` hívás kapcsolna be, amit sehol nem hívunk.
+ *    Az Adatkezelési tájékoztató 2. pontja ezért mondhatja ezt ki.
+ *
+ * 2. **Automatizált böngészőben nem mér.** A script az elején kilép, ha
+ *    `navigator.webdriver` igaz vagy a user agent `Headless`-t tartalmaz.
+ *    Ez azt is jelenti, hogy a mérés viselkedését **Playwrighttal nem lehet
+ *    ellenőrizni** — ott mindig a „semmi sem történik" eredmény jönne ki,
+ *    akkor is, ha a szűrőnk egyáltalán nem működne. A szűrő bizonyítéka
+ *    ezért az egységteszt, nem egy böngészős próba.
  *
  * ⚠️ **Ez a döntés a kódban él, nem env-kapcsolóban.** Ugyanaz az indok, mint
  * az OpenRouter `data_collection: "deny"`-jánál: az Adatkezelési tájékoztató
