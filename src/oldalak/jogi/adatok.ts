@@ -32,72 +32,140 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. szeptember 15.';
+export const hatalyos = '2026. szeptember 20.';
 
 /**
- * Az adatfeldolgozók — az Adatkezelési tájékoztató 5. pontjának táblázata.
+ * Az adatfeldolgozók — az Adatkezelési tájékoztató 5. pontjának melléklete.
  *
  * ⚠️ **Ez a lista szerződéses ígéret.** Az ÁSZF 11. pontja szerint új
  * al-adatfeldolgozó belépése előtt tizenöt nappal értesíteni kell az
  * Előfizetőket. Aki ide sort vesz fel, annak ez a kötelezettsége is keletkezik
  * — ezért áll a lista itt, kódban, és nem egy szerkeszthető szövegdobozban.
  *
- * A 2026. szeptemberi átállással a **Nethely kiesett**: a tárhely, az adatbázis
- * és a futtatás a Supabase-hez és a Vercelhez került. Ezzel együtt kiesett az a
- * mondat is, hogy „a kiszolgálók, az adatbázis és a levelezés Magyarországon
- * üzemelnek" — ez ma **nem igaz**, és egy adatkezelési tájékoztatóban a
- * kényelmes régi mondat a legrosszabb fajta hiba.
+ * # 2026. szeptember 20. — a jogi felülvizsgálat 1., 2. és 19. pontja
  *
- * A 2026. szeptember 15-i körrel a **Resend** lépett be, két szerepben: a cég
- * beküldő címére érkező leveleket fogadja, és a rendszer saját leveleit küldi
- * ki. A fiók **EU-régióban** (Írország) áll, és ez tudatos választás volt, nem
- * alapértelmezés — ugyanaz a megfontolás, amiért a Supabase Frankfurtban van.
+ * A lista eddig **nevet és régiót** tartott, jogi személyt és székhelyet nem;
+ * a kiolvasás mögött pedig egy megnevezetlen sor állt („A kiolvasást végző
+ * modell szolgáltatója"). Ez két dolgot sértett egyszerre: az ÁSZF 11. pontja
+ * **név szerinti** felsorolást ígér, az Eker. tv. 4. § h) pontja pedig a
+ * tényleges tárhelyszolgáltató megnevezését kéri az Impresszumban.
  *
- * ⚠️ A sor mégis `unionBelul: false`, és ez nem tévedés: a régió az, ahol az
- * adat *feldolgozódik*, a szolgáltató viszont amerikai, tehát a hozzáférés
- * lehetősége fennáll. Egy adatkezelési tájékoztatóban a gyengébb állítás a
+ * Amit ez a kör megoldott, és amit nem — mert a kettő szétválasztása többet
+ * ér, mint egy magabiztosnak látszó táblázat:
+ *
+ * - ✅ **A modellszolgáltató neve mérve van.** Az OpenRouter nyilvános API-ja
+ *   szerint (`/models/google/gemini-3.8-flash/endpoints`, 2026-09-20) a
+ *   modellt **hat végpont** szolgálja ki, és **mind a hat a Google**. A kérés
+ *   azóta kódból is csak ezt a két szolgáltatói azonosítót engedi
+ *   (`szolgaltatoiKikotes()`), tartalék útvonal nélkül — tehát a táblázat nem
+ *   pillanatkép, hanem kikényszerített állapot.
+ * - ⚠️ **A székhelyek forrása nyilvános cégadat, nem a szolgáltató velünk
+ *   kötött szerződése.** Ezért van a `szekhely` mező nullázható: ahol nem
+ *   találtam olyan forrást, amit vállalni tudok, ott **nincs beírva semmi** —
+ *   egy kitalált cím rosszabb, mint egy hiányzó.
+ * - ⛔ **A konkrét továbbítási mechanizmus szolgáltatónként nincs igazolva.**
+ *   Hogy melyik cég az EU–USA adatvédelmi keret résztvevője és melyik
+ *   általános szerződési feltételekkel dolgozik, azt az általad elfogadott
+ *   adatfeldolgozási szerződés mondja meg — ezt innen nem tudom megmérni, és
+ *   nem is találgatom. A táblázat ezért **a garancia forrására mutat**
+ *   (`garanciaUrl`): a tájékoztatónak azt kell megmondania, *hogyan ismerhető
+ *   meg* a garancia. Az egyes szerződések elfogadása és a bizonyítékuk
+ *   megőrzése viszont a te feladatod, nem a kódé.
+ *
+ * A `hol` mező az a hely, ahol az adat **feldolgozódik**; az `unionBelul`
+ * viszont azt mondja meg, hogy a szolgáltató Unión kívüli hozzáférése
+ * kizárható-e. A kettő nem ugyanaz: a Resend fiókja EU-régióban áll, a cég
+ * mégis amerikai — egy adatkezelési tájékoztatóban a gyengébb állítás a
  * helyes állítás.
  */
-export const adatfeldolgozok: readonly {
+export type Adatfeldolgozo = {
+  /** A szolgáltatás neve, ahogy a felhasználó ismeri. */
   ki: string;
+  /** A szerződő jogi személy, ha eltér a szolgáltatás nevétől. */
+  jogiSzemely?: string;
+  /** Székhely — `null`, ha nincs vállalható forrás rá. Kitalálni tilos. */
+  szekhely: string | null;
+  /** Mit végez nekünk. */
   mit: string;
+  /** Milyen adathoz fér hozzá közben. */
+  adatkor: string;
+  /** Hol dolgozza fel. */
   hol: string;
+  /** Kizárható-e az Unión kívüli hozzáférés. */
   unionBelul: boolean;
-}[] = [
+  /** Hol olvasható a szolgáltató adatvédelmi kötelezettségvállalása. */
+  garanciaUrl: string;
+};
+
+export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
   {
-    ki: 'Supabase, Inc.',
-    mit: 'Adatbázis, fájltárolás, felhasználókezelés és az ahhoz tartozó levelek',
+    ki: 'Supabase',
+    jogiSzemely: 'Supabase, Inc. (USA) / Supabase Pte. Ltd. (Szingapúr)',
+    szekhely: null,
+    mit: 'Adatbázis, fájltárolás, felhasználókezelés',
+    adatkor: 'Minden tárolt adat: fiókadatok, bizonylatok és a belőlük kiolvasott mezők',
     hol: 'Európai Unió (Frankfurt)',
     unionBelul: true,
+    garanciaUrl: 'https://supabase.com/legal/customer-resources/data-processing-addendum',
   },
   {
-    ki: 'Vercel, Inc.',
+    ki: 'Vercel',
+    jogiSzemely: 'Vercel Inc.',
+    szekhely: '440 N. Barranca Ave #4133, Covina, CA 91723, Amerikai Egyesült Államok',
     mit: 'A weboldal kiszolgálása és a nyilvános oldalak látogatásmérése',
+    adatkor: 'A böngésző kérésének adatai; bizonylat nem megy át rajta',
     hol: 'Amerikai Egyesült Államok (a kiszolgálás európai élhálózatról)',
     unionBelul: false,
+    garanciaUrl: 'https://vercel.com/legal/dpa',
   },
   {
-    ki: 'OpenRouter, Inc.',
+    ki: 'OpenRouter',
+    jogiSzemely: 'OpenRouter, Inc.',
+    szekhely: '169 Madison Ave #2404, New York, NY 10016, Amerikai Egyesült Államok',
     mit: 'A kiolvasási kérés továbbítása a modellhez',
+    adatkor: 'A bizonylat tartalma, valamint a saját cég neve és adószáma',
     hol: 'Amerikai Egyesült Államok',
     unionBelul: false,
+    garanciaUrl: 'https://openrouter.ai/privacy',
   },
   {
-    ki: 'A kiolvasást végző modell szolgáltatója',
+    ki: 'Google',
+    jogiSzemely: 'Google LLC (Google AI Studio, illetve Google Cloud Vertex AI)',
+    szekhely: null,
     mit: 'A bizonylat gépi kiolvasása',
+    adatkor: 'A bizonylat tartalma, valamint a saját cég neve és adószáma',
     hol: 'Amerikai Egyesült Államok',
     unionBelul: false,
+    garanciaUrl: 'https://cloud.google.com/terms/data-processing-addendum',
   },
   {
     ki: 'Resend',
+    jogiSzemely: 'Plus Five Five, Inc.',
+    szekhely: null,
     mit: 'A cég beküldő címére érkező levelek fogadása és a rendszer leveleinek kiküldése',
+    adatkor: 'A levelek feladója, tárgya és melléklete; a kimenő levelek címzettje',
     hol: 'Európai Unió (Írország) / Amerikai Egyesült Államok',
     unionBelul: false,
+    garanciaUrl: 'https://resend.com/legal/dpa',
   },
   {
     ki: 'Stripe',
+    jogiSzemely: 'Stripe Payments Europe, Limited (Írország) / Stripe, Inc. (USA)',
+    szekhely: null,
     mit: 'Bankkártyás fizetés, előfizetés-kezelés',
+    adatkor: 'A fizető neve, számlázási és kártyaadatai — ezeket a Szolgáltató nem látja',
     hol: 'Írország / Amerikai Egyesült Államok',
     unionBelul: false,
+    garanciaUrl: 'https://stripe.com/legal/dpa',
+  },
+  {
+    ki: 'Billingo',
+    jogiSzemely: 'Billingo Technologies Zrt. (cégjegyzékszám: 01-10-140802)',
+    szekhely: '1133 Budapest, Árbóc utca 6., Magyarország',
+    mit: 'Az előfizetési díjról kiállított számla elkészítése és megőrzése',
+    adatkor: 'Az Előfizető számlázási adatai és a számla tételei',
+    hol: 'Európai Unió (Magyarország)',
+    unionBelul: true,
+    garanciaUrl: 'https://www.billingo.hu/adatkezelesi-tajekoztato',
   },
 ];

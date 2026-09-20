@@ -180,6 +180,50 @@ type HivasKeres = {
 };
 
 /**
+ * A szolgáltatói kikötés — a kérés adatvédelmi kapuja.
+ *
+ * Négy mező, és **egyik sem helyettesíti a másikat**; ez a szétválasztás a
+ * jogi felülvizsgálat egyik kifejezett kérése volt, mert a „nem tanítanak
+ * vele" és a „nem tárolják" két különböző ígéret:
+ *
+ * - `only` — **kinek szabad kiszolgálnia.** Enélkül a tájékoztató nem tudna
+ *   céget megnevezni, az ÁSZF 11. pontja viszont név szerinti felsorolást
+ *   ígér. A névsor a configban áll, a mérésével együtt.
+ * - `allow_fallbacks: false` — **és senki másnak.** Az OpenRouter
+ *   alapértelmezésben továbbejti a kérést egy másik szolgáltatóhoz, ha az
+ *   első nem elérhető. Pont ez az a csendes út, amin egy meg nem nevezett
+ *   címzetthez kerülne a bizonylat. Inkább álljon meg.
+ * - `zdr: true` — **ne is tárolják.** Ez az OpenRouter külön jelzője a nulla
+ *   adatmegőrzésű végpontokra. ⚠️ Azért merjük bekapcsolni, mert megmértük:
+ *   a `/models` listája 446 modellt ad, a `?zdr=true` szűrővel 318-at, és a
+ *   `google/gemini-3.8-flash` **benne van** a szűkített listában (2026-09-20).
+ *   Enélkül ez a sor minden kiolvasást megállíthatott volna.
+ * - `data_collection: 'deny'` — **ne is tanuljanak belőle.** Ez marad a
+ *   legrégebbi kikötésünk, de magában kevés: az OpenRouter saját leírása
+ *   szerint ez az ő legjobb tudásuk, nem garancia.
+ *
+ * **Egyik sem kapcsolható ki környezeti változóból, és ez szándékos.** Az
+ * adatkezelési tájékoztató ígéretet tesz róluk; egy átbillenthető ígéret
+ * rosszabb, mint a semmilyen, mert az olvasó nem látja, épp melyik állapotban
+ * van. Ha nem marad választható szolgáltató, a kérés hibával áll meg — a
+ * dokumentum a Beérkezőben marad, és újrapróbálható. Ez a helyes irány: a
+ * csendben átengedett adatot már nem lehet visszakérni.
+ */
+export function szolgaltatoiKikotes(): {
+  only: readonly string[];
+  allow_fallbacks: false;
+  zdr: true;
+  data_collection: 'deny';
+} {
+  return {
+    only: szamlafolyo.modell.szolgaltatok,
+    allow_fallbacks: false,
+    zdr: true,
+    data_collection: 'deny',
+  };
+}
+
+/**
  * A közös szállító: egy kikényszerített függvényhívás az OpenRouteren.
  *
  * Mindkét kör ezen megy át, tehát az adatvédelmi kikötés, az időkorlát és a
@@ -196,17 +240,10 @@ async function hivas(keres: HivasKeres): Promise<{
   const torzs = {
     model: keres.modell,
 
-    // A bizonylat idegen cégek adatait viszi magával, ezért csak olyan
-    // szolgáltatóhoz mehet, amelyik nem tárolja és nem tanul belőle. Az
-    // OpenRouter a többit ilyenkor kihagyja az útválasztásból.
-    //
-    // **Nem kapcsolható ki környezeti változóból, és ez szándékos.** Az
-    // adatkezelési tájékoztató ígéretet tesz erről; egy átbillenthető ígéret
-    // pedig rosszabb, mint a semmilyen, mert az olvasó nem látja, épp melyik
-    // állapotban van. Ha egyszer nem marad választható szolgáltató, a kérés
-    // hibával áll meg — a dokumentum a Beérkezőben marad, és újrapróbálható.
-    // Ez a helyes irány: a csendben átengedett adatot már nem lehet visszakérni.
-    provider: { data_collection: 'deny' },
+    // A bizonylat idegen cégek adatait viszi magával, ezért négy kikötés
+    // megy vele — és a négy **külön dolgot** mond ki. Lásd a
+    // `szolgaltatoiKikotes()` fejlécét.
+    provider: szolgaltatoiKikotes(),
 
     messages: keres.uzenetek,
     tools: [

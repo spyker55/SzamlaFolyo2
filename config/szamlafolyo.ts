@@ -167,6 +167,28 @@ export const szamlafolyo = {
     alapertelmezett: 'google/gemini-3.8-flash',
     alapUrl: 'https://openrouter.ai/api/v1',
     idokorlatMp: 90,
+
+    /*
+     * **Az engedélyezett szolgáltatók zárt listája.**
+     *
+     * Eddig a kérés csak *politikát* írt elő (`data_collection: "deny"`): ami
+     * vállalja, hogy nem tárol és nem tanít, az kiszolgálhatja. Ez két dolgot
+     * nem adott meg. Egyrészt az Adatkezelési tájékoztató nem tudott konkrét
+     * céget megnevezni — csak annyit, hogy „a kiolvasást végző modell
+     * szolgáltatója" —, miközben az ÁSZF 11. pontja azt ígéri, hogy az
+     * al-adatfeldolgozók **név szerint** szerepelnek. Másrészt az OpenRouter
+     * saját leírása szerint a `deny` az ő **legjobb tudásuk**, nem garancia.
+     *
+     * A lista tehát nem óvatoskodás: enélkül a tájékoztató nem lehet igaz.
+     *
+     * A két szolgáltató nem találgatás. A modell végpontjait lekérdeztük az
+     * OpenRouter nyilvános API-járól (`/models/google/gemini-3.8-flash/
+     * endpoints`, 2026-09-20): **hat végpont van, és mind a hat a Google** —
+     * három a Google AI Studio, három a Vertex oldalán. A lista ezért nem
+     * szűkíti a választékot, csak kimondja, ami amúgy is igaz, és bezárja az
+     * ajtót egy későbbi, csendes bővülés előtt.
+     */
+    szolgaltatok: ['google-ai-studio', 'google-vertex'],
   },
 
   /*
@@ -284,6 +306,38 @@ export const szamlafolyo = {
     maxNap: 7,
     probaFajlNap: 7,
     exportNap: 30,
+
+    /*
+     * # A három kísérő megőrzési idő (2026. szeptember 20.)
+     *
+     * A jogi felülvizsgálat 12. pontja jogosan kifogásolta, hogy a tájékoztató
+     * három adatkörre is „a szerződés megszűnéséig" határidőt mondott —
+     * vagyis évekig, egy olyan nyomnak, aminek hetek múlva már nincs dolga.
+     *
+     * Mindhárom **kilencven nap**, és ez nem lustaság: ennyi idő alatt egy
+     * negyedéves könyvelési kör egyszer végigfut, tehát aki visszakeres,
+     * addigra megtette. Ami ennél régebbi, az nem visszakeresés, hanem
+     * felhalmozás.
+     *
+     * ⚠️ **A számokat az SQL is ismeri** (`20260920000100_adattakaritas.sql`),
+     * mert a napi takarítás nem tud TS-configot olvasni — ugyanaz a tükrözés,
+     * mint az `exportNap`-nál. Ha ez a három szám változik, a migráció is
+     * változik; a `config/megorzes.test.ts` méri, hogy a kettő együtt mozog.
+     */
+
+    /** Lezárult (elfogadott, visszavont, lejárt) meghívó sora ennyi nap után törlődik. */
+    meghivoNap: 90,
+    /** A beküldő címre érkezett levelek nyilvántartása ennyi nap után törlődik. */
+    levelNaploNap: 90,
+    /**
+     * A modell **nyers válasza** ennyi nap után törlődik a kiolvasás sorából.
+     *
+     * A sor maga megmarad, és ez szándékos: abból számol a havi keret
+     * (a terv 1. szabálya), tehát a darabszámnak túl kell élnie. Ami elmegy,
+     * az a bizonylat tartalmát hordozó nyers válasz — épp az, aminek a
+     * megőrzésére kilencven nap után már nincs indok.
+     */
+    nyersValaszNap: 90,
   },
 
   /*
