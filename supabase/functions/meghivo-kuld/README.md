@@ -111,12 +111,12 @@ Három lépcső:
 
 ## Amit ez a kör szándékosan nyitva hagy
 
-- **A csomagonkénti felhasználószám nincs szerveroldalon kikényszerítve.** A
-  számok a `config/szamlafolyo.ts`-ben élnek, egyetlen példányban, és azokat az
-  adatbázisba másolni két igazságot csinálna. A felület tiltja a túllépést
-  (`ferMegTag()`), az SQL-függvény nem. Ez a **Stripe-körre** tartozik, a többi
-  csomagkorláttal együtt. Pénzbe nem kerül: a kreditkeretet a `kiolvas`
-  szerveroldalon őrzi, és egy fejszám nem növeli az AI-költséget.
+> **Ez a tétel lezárult (2026-09-20).** A csomagonkénti felhasználószám azóta
+> **szerveroldalon is** kikényszerül: a `meghivot_letrehoz()` a kiküldéskor (a
+> függő meghívókat foglalásnak számolva), a `meghivot_elfogad()` az elfogadáskor
+> nézi meg (`20260920000200_hely_korlat.sql`). A két igazság gondját nem
+> kommentár oldja meg, hanem a `config/hely.test.ts`: az a migrációból olvassa
+> ki a számokat, és összeveti a configgal.
 - **Nincs emlékeztető levél** a lejárat előtt.
 - **A `sent_at` a mi állításunk, nem kézbesítési visszaigazolás.** Azt rögzíti,
   hogy a Resend **átvette** a levelet — nem azt, hogy meg is érkezett. A

@@ -200,15 +200,23 @@ export function helyek(keret: { allapot: string; csomagKulcs: CsomagKulcs | null
  * egy kétfős csomagot, és a túllépés csak az elfogadáskor derülne ki — a
  * meghívottnál, aki a legkevésbé tehet róla.
  *
- * ⚠️ **Ez a felület korlátja, nem az adatbázisé.** A `meghivot_letrehoz()`
- * SQL-függvény ma nem nézi a csomagot, mert a csomagszámok a
- * `config/szamlafolyo.ts`-ben élnek, egyetlen példányban — és azt az
- * adatbázisba másolni két igazságot csinálna. A kereté ugyanez a minta: a
- * számokat a TS tudja, a **kikényszerítés** pedig az Edge Functionben ül
- * (`kiolvas`). A meghívónál ez a lépés a **Stripe-körre** marad, a többi
- * csomagkorláttal együtt. Addig itt áll, kimondva: aki megkerüli a felületet,
- * több helyet vehet fel — pénzbe nem kerül, mert a kreditkeretet a szerver
- * őrzi.
+ * # Ez a szabály a felületé — de már nem csak azé
+ *
+ * Sokáig itt állt, hogy „aki megkerüli a felületet, több helyet vehet fel".
+ * **2026-09-20 óta nem igaz**: ugyanez a két szabály az adatbázisban is ott van
+ * (`20260920000200_hely_korlat.sql`), a `meghivot_letrehoz()`-ban és a
+ * `meghivot_elfogad()`-ban.
+ *
+ * ⚠️ A kettő **nem ugyanaz a feltétel**, és ez szándékos. Ez a függvény a
+ * **kiküldés** szabálya (tagok + függő meghívók), mert a függő meghívó
+ * foglalás. Az elfogadásnál viszont csak a tagok számítanak: aki két embert
+ * hívott egy helyre, az elsőt ne büntesse a második meghívó léte. Az elfogadás
+ * szabálya ezért **csak SQL-ben** él — a felület nem is tudná lefuttatni, mert
+ * abban a pillanatban a meghívott gépe fut, nem a tulajdonosé, és a
+ * taglétszámot az RLS előle elrejti.
+ *
+ * A számok továbbra is a `config/szamlafolyo.ts`-ben születnek; az SQL-beli
+ * másolatukat a `config/hely.test.ts` őrzi, ami a migrációból olvassa ki őket.
  */
 export function ferMegTag(
   keret: { allapot: string; csomagKulcs: CsomagKulcs | null },
