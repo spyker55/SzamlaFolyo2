@@ -27,9 +27,11 @@ import { szerepCimke } from '@uzleti/enumok.ts';
  * Mert ez a képernyő **egyirányú ajtó** volt. A `Ceggel` őr minden cég nélküli
  * fiókot ide terel — köztük azt a meghívottat is, aki a levelét elveszítette.
  * Ha ő itt céget alapít, a meghívóból **véglegesen** kizárja magát
- * (`meghivot_elfogad` 3. kapuja: egy fiók egy céget kezel), a `/fiok-torles`
- * pedig még helyőrző, tehát vissza sem tud lépni. Élesben ez meg is történt:
- * egy fiók nulla tagsággal ragadt be.
+ * (`meghivot_elfogad` 3. kapuja: egy fiók egy céget kezel). Élesben ez meg is
+ * történt: egy fiók nulla tagsággal ragadt be — és akkor a `/fiok-torles` még
+ * helyőrző volt, tehát vissza sem tudott lépni. A kijárat azóta elkészült, de
+ * ez a kártya attól még kell: a kiút nem pótolja azt, hogy az ajtó **ne**
+ * csukódjon be véletlenül.
  *
  * Az űrlap ezért **nem tűnik el** a kártya mellől: van, akit meghívtak, és
  * mégis a saját cégét akarja. A választást nem vesszük el — csak láthatóvá

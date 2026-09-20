@@ -25,8 +25,11 @@ import { formaz } from '@uzleti/osszeg.ts';
  *    hibája az volt, hogy a köteg oldalarányosan fogyasztott, aztán az ember
  *    szétvágva újra feltöltötte, és **másodszor is fizetett**. A szétszedés
  *    innentől a szolgáltatás része, és nem kerül külön kreditbe.
- * 3. **5. és 10. pont — a fiók törlése.** A felületről indítható törlés még
- *    nem készült el, tehát a szöveg azt mondja, ami igaz: e-mailben kérhető.
+ * 3. **5. és 10. pont — a fiók törlése.** Sokáig e-mailes kérelem volt, mert a
+ *    felületről indítható törlés nem készült el — a szöveg akkor is azt mondta,
+ *    ami igaz. **2026. szeptember 20-án elkészült** (`/fiok-torles`), tehát
+ *    ezek a pontok most a valódi működést írják le: azonnali, a felületről
+ *    indított, visszavonhatatlan törlés.
  *
  * A számok mind a configból jönnek (`config/szamlafolyo.ts`). Egy ÁSZF-ben
  * kézzel beírt ár az a fajta adat, ami csendben elavul.
@@ -175,13 +178,14 @@ export function Aszf() {
           az Előfizető felel.
         </P>
         <P>
-          A fiók törlése a{' '}
+          A fiók törlése a Beállítások képernyőről indítható, és azonnal hatályos; ha bármi
+          elakad, a{' '}
           <a className="underline" href={`mailto:${szolgaltato.email}`}>
             {szolgaltato.email}
           </a>{' '}
-          címen kérhető; a Szolgáltató a kérést öt munkanapon belül teljesíti. A cég adatai akkor
-          szűnnek meg, ha a cégnek nem marad felhasználója; amíg más felhasználó dolgozik benne, a
-          kilépő fiók törlése a cég adatait és az előfizetést nem érinti. A cég egyetlen
+          címen is kérhető. A cég adatai akkor szűnnek meg, ha a cégnek nem marad felhasználója;
+          amíg más felhasználó dolgozik benne, a kilépő fiók törlése a cég adatait és az
+          előfizetést nem érinti. A cég egyetlen
           tulajdonosának fiókja addig nem törölhető, amíg a cégben más felhasználó van — előbb
           másik tulajdonost kell kijelölni, vagy a többi felhasználót el kell távolítani.
         </P>

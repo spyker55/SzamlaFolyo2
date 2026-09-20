@@ -22,9 +22,11 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  *    pontosan az, ami megváltozott. Az automatikus jóváhagyás a termék része,
  *    kapcsolható, fékekkel. Elhallgatni rosszabb lenne, mint nem is írni róla.
  * 4. **A fiók törlése** a Beállítások képernyőről ígért, azonnali művelet volt.
- *    Az a képernyő **még nem készült el**, tehát a szöveg ma azt mondja, ami
- *    igaz: e-mailben kérhető. Amikor a gomb meglesz, ez a bekezdés változik —
- *    nem előtte.
+ *    Sokáig ez volt az egyetlen pont, ahol a szöveg **kevesebbet** ígért a
+ *    réginél: amíg a képernyő nem készült el, azt mondta, ami igaz — e-mailben
+ *    kérhető. **2026. szeptember 20-án elkészült** (`/fiok-torles`), és ezzel
+ *    ez a bekezdés visszatért az eredeti ígérethez. A sorrend végig ez volt:
+ *    előbb a gomb, aztán a mondat.
  * 5. **A munkamenet** nem sütiben él, hanem a böngésző tárolójában. Apróság, de
  *    egy süti-szakasz ne írjon le olyan sütit, ami nincs.
  *
@@ -257,13 +259,14 @@ export function Adatkezeles() {
           </li>
         </Lista>
         <P>
-          <strong>A fiók törlése</strong> jelenleg a{' '}
+          <strong>A fiók törlése</strong> a Beállítások képernyőről indítható, és{' '}
+          <strong>azonnal</strong> megtörténik — nem kérelem, hanem művelet. A képernyő előbb
+          kiírja, pontosan mi tűnik el, és a cég adatait érintő törléshez a cég nevét is be kell
+          gépelni. Ha bármi elakad, a{' '}
           <a className="underline" href={`mailto:${szolgaltato.email}`}>
             {szolgaltato.email}
           </a>{' '}
-          címen kérhető; a kérést öt munkanapon belül teljesítjük. (A felületről indítható,
-          azonnali törlés fejlesztés alatt áll — amíg nincs kész, nem ígérjük.) A törléssel a
-          felhasználói fiók megszűnik. Ha ezzel a cégnek nem marad felhasználója, vele együtt
+          címen is kérhető. A törléssel a felhasználói fiók megszűnik. Ha ezzel a cégnek nem marad felhasználója, vele együtt
           törlődnek a cég bizonylatai, a kiolvasott adatok, az exportok, a naplóbejegyzések és a
           szerveren lévő fájlok is, az esetleges Stripe-előfizetést pedig lemondjuk. A törlés nem
           vonható vissza, és a törölt adatokról nem tartunk fenn másolatot.
@@ -401,8 +404,9 @@ export function Adatkezeles() {
           Az érintett kérheti a rá vonatkozó adatokhoz való hozzáférést, azok helyesbítését,
           törlését vagy kezelésük korlátozását, kérheti az adatai hordozható formában történő
           kiadását, és tiltakozhat a jogos érdeken alapuló adatkezelés ellen. Az adatok
-          kimentésére az export szolgál, amit a fiók törlése előtt érdemes elkészíteni. A
-          kéréseket — a fiók törlését is — a{' '}
+          kimentésére az export szolgál, amit a fiók törlése előtt érdemes elkészíteni. A fiók
+          törlése a Beállítások képernyőről bármikor, kérelem nélkül elvégezhető; a többi kérést
+          a{' '}
           <a className="underline" href={`mailto:${szolgaltato.email}`}>
             {szolgaltato.email}
           </a>{' '}

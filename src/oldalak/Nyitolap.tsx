@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { LogoSor } from '../komponensek/Logo.tsx';
 import { FejlesztesAlattSav } from '../komponensek/FejlesztesAlatt.tsx';
@@ -102,6 +102,7 @@ export function Nyitolap() {
       */}
       <FejlesztesAlattAblak />
       <Fejlec />
+      <TorlesVisszajelzes />
       <main>
         <Hero />
         <FormatumSav />
@@ -118,6 +119,36 @@ export function Nyitolap() {
 // ---------------------------------------------------------------------------
 // Fejléc
 // ---------------------------------------------------------------------------
+
+/**
+ * A törölt fiók visszajelzése.
+ *
+ * A törlés után a felhasználó kijelentkezve ide érkezik. Enélkül a nyitólap
+ * fogadná, ugyanúgy, mint bárki mást — és nem tudná meg, sikerült-e az, amit
+ * kért. Egy visszafordíthatatlan műveletnek **legyen vége**, ne csak
+ * következménye.
+ *
+ * A paraméter itt sem állapot: a törlés a szerveren dőlt el. Ez egy mondat,
+ * nem bizonyíték — ezért nem is állít többet annál, hogy megtörtént.
+ */
+function TorlesVisszajelzes() {
+  const [keresok] = useSearchParams();
+
+  if (keresok.get('torles') === null) {
+    return null;
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 pt-6">
+      <div className="alert alert-siker">
+        <p>
+          <strong>A fiókod törölve.</strong> Köszönjük, hogy kipróbáltad a SzámlaFolyót. Ha
+          meggondolod magad, bármikor kezdhetsz újat.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function Fejlec() {
   return (

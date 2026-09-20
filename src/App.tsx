@@ -10,12 +10,12 @@ import {
 import { AuthProvider, useAuth } from './lib/auth.tsx';
 import { horgonyraUgrik, tetejereUgrik } from './lib/gorgetes.ts';
 import { Belepve, Ceggel, Vendeg } from './komponensek/Vedett.tsx';
-import { AppElrendezes } from './komponensek/Elrendezes.tsx';
 import { Bejelentkezes } from './kepernyok/auth/Bejelentkezes.tsx';
 import { Regisztracio } from './kepernyok/auth/Regisztracio.tsx';
 import { ElfelejtettJelszo, JelszoBeallitas } from './kepernyok/auth/Jelszo.tsx';
 import { Meghivo } from './kepernyok/auth/Meghivo.tsx';
 import { CegLetrehozas } from './kepernyok/CegLetrehozas.tsx';
+import { FiokTorles } from './kepernyok/FiokTorles.tsx';
 import { Beerkezo } from './kepernyok/Beerkezo.tsx';
 import { Ellenorzes } from './kepernyok/Ellenorzes.tsx';
 import { Tetelek } from './kepernyok/Tetelek.tsx';
@@ -107,7 +107,7 @@ export function App() {
             path="/fiok-torles"
             element={
               <Belepve>
-                <VazlatAlkalmazasban nev="Fiók törlése" />
+                <FiokTorles />
               </Belepve>
             }
           />
@@ -246,12 +246,3 @@ function Kezdolap() {
  * félkész oldalról is legyen kiút.
  */
 
-/** Ugyanez, de a belépett felület elrendezésében. */
-function VazlatAlkalmazasban({ nev }: { nev: string }) {
-  return (
-    <AppElrendezes>
-      <h1 className="text-xl font-semibold text-slate-900">{nev}</h1>
-      <p className="mt-2 text-sm text-slate-600">Ez a képernyő még nem készült el.</p>
-    </AppElrendezes>
-  );
-}

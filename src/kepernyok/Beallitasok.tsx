@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { useAuth, type Ceg } from '../lib/auth.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
@@ -556,6 +556,19 @@ export function Beallitasok() {
             />
           )}
         </Kartya>
+
+        {/*
+          A kijárat. **Nem kártyában** és nem gombként áll itt: ez az egyetlen
+          visszafordíthatatlan művelet a rendszerben, tehát ne lehessen
+          véletlenül nekiütközni — de megtalálható legyen, mert három jogi
+          szöveg ígéri. A következményeket a saját képernyője írja ki, számokkal;
+          idáig el sem jut senki úgy, hogy ne tudná, mi fog történni.
+        */}
+        <p className="pb-2 text-center text-sm text-slate-500">
+          <Link to="/fiok-torles" className="hover:text-red-700 hover:underline">
+            Fiók törlése
+          </Link>
+        </p>
       </div>
     </AppElrendezes>
   );

@@ -124,3 +124,17 @@ entrypoint = "./functions/stripe-webhook/index.ts"
 verify_jwt = true
 import_map = "./functions/deno.json"
 entrypoint = "./functions/stripe-portal/index.ts"
+
+[functions.fiok-torles]
+# ⚠️ Bekapcsolva, és ez a projekt legfontosabb `verify_jwt = true`-ja: ez az
+# egyetlen végpont, ami **visszafordíthatatlanul** töröl. A hívó azonosítója a
+# token `sub` állításából jön, ellenőrzés nélkül — azt csak azért tehetjük meg,
+# mert a platform a tokent addigra már hitelesítette. Kikapcsolva bárki
+# törölhetné bárki fiókját, egyetlen HTTP-kéréssel.
+#
+# A függvény a hívótól **semmit** nem fogad el a begépelt cégnéven kívül: a
+# tényeket a saját olvasásából veszi (a hívó jogán, a `fiok_torles_tenyek()`
+# RPC-vel), a döntést pedig ugyanaz a tiszta modul hozza, mint a képernyőn.
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/fiok-torles/index.ts"
