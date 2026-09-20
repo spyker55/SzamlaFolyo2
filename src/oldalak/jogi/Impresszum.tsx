@@ -63,17 +63,38 @@ export function Impresszum() {
       </Szakasz>
 
       <Szakasz cim="Tárhely és üzemeltetés">
+        <P>
+          A Szolgáltatás kiszolgálását és adattárolását az alábbi szolgáltatók végzik. Az
+          elérhetőségük a saját oldalukon megadott adatvédelmi és kapcsolattartási címük.
+        </P>
         <dl>
           {tarhely.map((a) => (
             <Adatsor key={a.ki} cimke={a.ki}>
+              {a.jogiSzemely ?? a.ki}
+              {a.szekhely !== null && (
+                <>
+                  <br />
+                  {a.szekhely}
+                </>
+              )}
+              <br />
               {a.mit} — {a.hol}
+              <br />
+              <a
+                className="underline"
+                href={a.garanciaUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                adatvédelmi feltételek és kapcsolat
+              </a>
             </Adatsor>
           ))}
         </dl>
         <P>
           Az adatbázis és a bizonylatok fájljai az Európai Unión belül, frankfurti kiszolgálón
           tárolódnak. A gépi kiolvasás és a fizetés viszont Unión kívüli közreműködőkkel jár; a
-          teljes felsorolás és a jogalap az{' '}
+          teljes felsorolás — székhellyel, feladattal és feldolgozási országgal — az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató 5. pontjában
           </Link>{' '}
@@ -81,12 +102,30 @@ export function Impresszum() {
         </P>
       </Szakasz>
 
-      <Szakasz cim="Panasz">
+      <Szakasz cim="Panasz és vitarendezés">
         <P>
           Panaszt a fenti e-mail címen lehet bejelenteni. A panaszt megvizsgáljuk, és legkésőbb
-          harminc napon belül írásban válaszolunk. Mivel a szolgáltatást kizárólag vállalkozások
-          vehetik igénybe, fogyasztói békéltető testületi eljárásnak nincs helye; a vitákra
-          egyebekben az ÁSZF rendelkezései irányadók.
+          harminc napon belül írásban válaszolunk.
+        </P>
+        <P>
+          A Szolgáltatást kizárólag vállalkozások vehetik igénybe, ezért a fogyasztókat megillető
+          elállási jog nem alkalmazandó.{' '}
+          <strong>
+            A békéltető testületi eljárást azonban nem zárjuk ki pusztán arra hivatkozva, hogy az
+            ügyfél vállalkozás
+          </strong>
+          : a fogyasztóvédelmi törvény fogyasztó-fogalma bizonyos kis- és középvállalkozásokat is
+          lefed. Ha az Előfizető e körbe tartozik, az illetékes békéltető testület a Szolgáltató
+          székhelye szerinti kereskedelmi és iparkamara mellett működik —{' '}
+          {szolgaltato.kamara}, {szolgaltato.kamaraCim}. Az adatvédelmi tárgyú panaszokról az{' '}
+          <Link to="/adatkezeles" className="underline">
+            Adatkezelési tájékoztató 8. pontja
+          </Link>{' '}
+          szól. Egyebekben a vitákra az{' '}
+          <Link to="/aszf" className="underline">
+            ÁSZF
+          </Link>{' '}
+          rendelkezései irányadók.
         </P>
       </Szakasz>
 

@@ -308,8 +308,10 @@ function Hero() {
                 Töltsd fel a számlát vagy a nyugtát — vagy küldd tovább e-mailben. A
                 SzámlaFolyó kiolvassa.
               </strong>{' '}
-              Te csak azt ellenőrzöd, amiben nem biztos. Export, és kész. Nem funkciókat
-              halmozunk, hanem a legkisebb, leggyorsabb munkafolyamatot adjuk.
+              Minden bizonylatot <strong className="font-bold text-slate-800">te hagysz
+              jóvá</strong> — de a rendszer megjelöli, amiben bizonytalan, tehát elsősorban
+              azzal van dolgod. Export, és kész. Nem funkciókat halmozunk, hanem a legkisebb,
+              leggyorsabb munkafolyamatot adjuk.
             </p>
 
             <HeroGombok />
@@ -528,7 +530,7 @@ function Folyamat() {
     {
       cim: 'Kiolvasás',
       szoveg:
-        'Az e-számla XML-jét gép olvassa, modell nélkül — ingyen és másodperc alatt. Papír vagy szkennelt PDF esetén jön az AI.',
+        'Az e-számla XML-jét gép olvassa, modell nélkül — másodperc alatt. Papír vagy szkennelt PDF esetén jön az AI.',
       ikon: <IkonVillam className="h-8 w-8" />,
     },
     {
@@ -596,7 +598,7 @@ function EgyFolyamatban() {
     {
       cim: 'E-számla XML modellhívás nélkül',
       szoveg:
-        'Az UBL és a CII (Factur-X, ZUGFeRD) bizonylatot gép olvassa ki: másodperc alatt, AI nélkül, a keretedből nulla forintért.',
+        'Az UBL-t, a CII-t (Factur-X, ZUGFeRD) és a magyar formátumokat gép olvassa ki: másodperc alatt, AI nélkül. A darabkeretbe ugyanúgy beleszámít, mint bármelyik bizonylat.',
     },
     {
       cim: 'Rendszerfüggetlenség',
@@ -734,7 +736,7 @@ function Elonyok() {
       ikon: <IkonPajzs className="h-6 w-6" />,
       cim: 'Az utolsó szó a tiéd',
       szoveg:
-        'Minden bizonylat jóváhagyásra vár: semmi nem kerül exportba úgy, hogy egy ember rá ne bólintott volna. A gép nem helyetted dönt — előkészíti a döntést.',
+        'Alapból minden bizonylat jóváhagyásra vár: semmi nem kerül exportba úgy, hogy egy ember rá ne bólintott volna. A gépi jóváhagyás külön bekapcsolható lehetőség, alapból ki van kapcsolva. És amit nem jelöltünk meg, az is lehet hibás — a nevekre nincs számtani ellenőrzés.',
     },
   ];
 

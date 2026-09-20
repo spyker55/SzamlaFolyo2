@@ -42,6 +42,23 @@ import { allapotCimke, szerepCimke, SZEREPEK } from '@uzleti/enumok.ts';
  * fejléc a visszaúttal, ugyanaz a szélesség, ugyanaz a lábléc. Nem azért, mert
  * jogi szöveg — nem az —, hanem mert ugyanaz a fajta lap: **hosszú, nyilvános,
  * olvasásra való**. Egy negyedik keret csak négyféleképpen tudna elromlani.
+ *
+ * # 2026. szeptember 20. — a jogi felülvizsgálat nyomai
+ *
+ * Négy helyen mondott az útmutató mást, mint a rendszer:
+ *
+ * - **Az „export után már nem" ellentmondás.** A Tételek fejezet azt írta, hogy
+ *   export után nincs javítás, az Archívum fejezet meg azt, hogy a tétel
+ *   visszahívható. A második az igaz.
+ * - **„Ha a bizonylat maga hibás, javítsd a valós értékre."** Ez félrevezető
+ *   volt: az alkalmazásban átírt adat a kibocsátott számlát nem helyesbíti. A
+ *   szöveg most szétválasztja a kiolvasási hibát és a bizonylat hibáját.
+ * - **Az XML és a keret.** A nyitólap „ingyen"-t hirdetett, az útmutató
+ *   hallgatott róla. Mérve: a kredit az oldalszámból jön, nem a kiolvasás
+ *   módjából — tehát az XML is fogyaszt keretet, csak modellköltsége nincs.
+ * - **A könyvelőirodás használat.** Az „aki több cégnek könyvel" mondat marad,
+ *   de mellé került, hogy az ügyfélszűrő nem hozzáférési korlát, és hogy ilyen
+ *   használatnál az Előfizető maga is adatfeldolgozó.
  */
 export function Utmutato() {
   return (
@@ -74,6 +91,18 @@ export function Utmutato() {
           <strong>ügyfelenként</strong> lehet leválogatni (lásd a {pont('tetelek-export')}. pontot). Cégváltó nincs, és
           ez nem elmaradás, hanem döntés.
         </P>
+        <Figyelem>
+          <strong>Az ügyfélszűrő kényelmi szűrés, nem hozzáférési korlát.</strong> A cégben
+          mindenki a <em>teljes</em> bizonylatállományt látja, a szerepe szerinti jogokkal — nem
+          csak azt az ügyfelet, akivel dolgozik. Ha egy ügyfél iratait el kell különíteni a
+          többitől, ahhoz külön cég (és külön előfizetés) kell. Adatvédelmi oldalról is érdemes
+          tudni: amikor az ügyfeled megbízásából dolgozol, <em>te</em> vagy az ő adatfeldolgozója,
+          és a SzámlaFolyó al-adatfeldolgozó — ehhez az ügyfél felhatalmazása kell. A részletek az{' '}
+          <Link to="/aszf" className="underline">
+            ÁSZF 11. pontjában
+          </Link>{' '}
+          állnak.
+        </Figyelem>
         <P>
           <strong>Kollégák meghívása.</strong> A Beállítások → <em>Tagok</em> kártyáján
           e-mail-címre szól a meghívó; a meghívott a levélben kapott linken nyit fiókot, vagy
@@ -140,6 +169,14 @@ export function Utmutato() {
             vagy miért nem —, azt a Beállítások ugyanezen kártyáján, a lap alján látod.
           </li>
         </Lista>
+        <Figyelem>
+          <strong>A beküldő cím olyan, mint egy kulcs: aki ismeri, a te keretedből költ.</strong>{' '}
+          Ne tedd ki nyilvános helyre, és ne írd bele körlevélbe. Alapesetben csak a cég
+          tagjainak címéről fogadunk el levelet — ez átállítható „bárkitől" állásba, de tudd,
+          hogy a feladómező hamisítható, tehát ez a szűrés a véletlen ellen véd (hírlevél,
+          automata válasz), nem a szándékos visszaélés ellen. Ha a cím kiszivárog, a Beállítások
+          kártyáján <strong>cseréld le</strong> — a régi cím azonnal érvénytelen lesz.
+        </Figyelem>
       </Fejezet>
 
       <Fejezet id="beerkezo">
@@ -225,8 +262,10 @@ export function Utmutato() {
           bizonylat magával összhangban van-e: kiadja-e a nettó és az ÁFA a bruttót, stimmel-e
           a tételsorok összege, érvényes-e az adószám ellenőrző számjegye, nem későbbi-e a
           teljesítés a keltnél. Ha egy ilyen megbukik, az vagy kiolvasási hiba, vagy{' '}
-          <strong>a bizonylat maga hibás</strong> — és a kettő közül a másodikat is jó időben
-          megtudni. A jelölés <strong>élő</strong>: ha átírsz egy számot, az ellenőrzés azonnal
+          <strong>a bizonylaton van eltérés</strong> — és a kettő közül a másodikat is jó időben
+          megtudni. A jelzés <strong>vizsgálandó eltérés, nem ítélet</strong>: a keltnél későbbi
+          teljesítés például teljesen szabályos lehet (időszakos elszámolásnál rendszeres is),
+          csak érdemes ránézni. A jelölés <strong>élő</strong>: ha átírsz egy számot, az ellenőrzés azonnal
           újrafut a javított értékkel.
         </P>
         <Figyelem>
@@ -255,8 +294,11 @@ export function Utmutato() {
       <Fejezet id="tetelek-export">
         <P>
           A <strong>Tételek</strong> képernyőn a jóváhagyott, még ki nem exportált bizonylatok
-          állnak. Innen <strong>még</strong> vissza lehet küldeni egyet javításra — az export
-          után már nem.
+          állnak. Innen vissza lehet küldeni egyet javításra. Az export sem zárja le véglegesen:
+          egy kiment tétel az Archívumból <strong>visszahívható</strong>, javítható és újra
+          exportálható (lásd a {pont('archivum')}. pontot). Ami az exporttal{' '}
+          <strong>tényleg elindul</strong>, az az eredeti fájl órája — a bizonylat képe a
+          megőrzési idő után nem hívható vissza.
         </P>
         <P>
           Az <strong>Export</strong> képernyőn választod ki, mi menjen ki. Szűrni lehet
@@ -289,8 +331,11 @@ export function Utmutato() {
           Ami kiment, az az Archívumba kerül, és az eredeti PDF-ek a beállított megőrzési idő
           (alapból <strong>0 nap</strong>, vagyis azonnal) után törlődnek a szerverről. Az{' '}
           <strong>adatok megmaradnak</strong>, a bizonylat képe viszont nem hívható vissza. A
-          megőrzési kötelezettség a tiéd — ha kell a papír képe, töltsd le a ZIP-et az export
-          előtt.
+          megőrzési kötelezettség a tiéd — ha kell a papír képe, <strong>töltsd le a ZIP-et az
+          export előtt</strong>, mert 0 napos megőrzésnél az export után már nincs mit letölteni.
+          Ha egy fájlban több bizonylat volt, az óra csak akkor indul, amikor{' '}
+          <strong>mindegyik</strong> kiment: egy részleges export nem viszi el a még
+          feldolgozatlan számlák forrását.
         </Figyelem>
       </Fejezet>
 
@@ -311,7 +356,10 @@ export function Utmutato() {
 
       <Fejezet id="keret">
         <P>
-          <strong>A mértékegység a bizonylat, nem a fájl.</strong> {szabaly()} Vagyis egy normál,
+          <strong>A mértékegység a bizonylat, nem a fájl.</strong> {szabaly()} Ez az{' '}
+          <strong>e-számla XML-re is vonatkozik</strong>: azt ugyan gép olvassa ki, modellhívás
+          nélkül és másodperc alatt, de a havi keretedbe ugyanúgy beleszámít, mint bármelyik
+          másik bizonylat. Vagyis egy normál,
           egy-három oldalas számla mindig egy dokumentum; egy hosszú köteg annyi, ahány bizonylat
           van benne. Amiért <strong>nem</strong> számolunk fel semmit: a köteg szétszedése, a
           duplikátum, és az a bizonylat, amit nem sikerült kiolvasni.
@@ -442,6 +490,13 @@ export function Utmutato() {
             újra; a tételekből utána is készíthető új export.
           </li>
           <li>
+            A <strong>kiolvasáshoz</strong> a papír- és a szkennelt bizonylat tartalma elhagyja a
+            szervert: két, név szerint megnevezett közreműködőn át jut el a modellhez (OpenRouter,
+            majd a Google). A kérés kiköti, hogy a tartalmat ne tárolják és ne tanítsanak vele, és
+            <strong> nincs tartalék útvonal</strong> meg nem nevezett szolgáltatóhoz. Az e-számla
+            XML-je fel sem megy: azt a rendszer helyben olvassa ki.
+          </li>
+          <li>
             A <strong>fiók és a cég törlése</strong> a Beállításokból indítható, és
             visszafordíthatatlan. Az egyedüli tulajdonos addig nem törölhet, amíg más is
             dolgozik a cégben — előbb át kell adni a tulajdonosi szerepet vagy el kell távolítani
@@ -470,8 +525,14 @@ export function Utmutato() {
           />
           <Sor
             allapot="A számok nem stimmelnek"
-            mit="Piros mező, alatta az ellenőrzés mondata."
-            dolog="Vesd össze a papírral. Ha a bizonylat maga hibás, javítsd a valós értékre — a jelölés azonnal frissül."
+            mit="Piros mező, alatta az ellenőrzés mondata. Két különböző dolog lehet mögötte."
+            dolog={
+              'Ha a kiolvasás olvasta félre a papírt: írd át arra, ami a bizonylaton áll — ' +
+              'a jelölés azonnal frissül. Ha viszont maga a bizonylat hibás, azt itt nem ' +
+              'lehet megjavítani: az alkalmazásban átírt adat a kibocsátott számlát nem ' +
+              'helyesbíti. Ilyenkor a kibocsátótól kell helyesbítő vagy sztornó számlát ' +
+              'kérni; hogy addig mi kerüljön a könyvelésbe, azt a könyvelővel egyeztesd.'
+            }
           />
           <Sor
             allapot="Nem érkezett meg az e-mailben küldött számla"

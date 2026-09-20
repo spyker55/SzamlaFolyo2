@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { JogiOldal, Lista, P, Szakasz, Tablazat } from './JogiOldal.tsx';
 import { szolgaltato } from './adatok.ts';
 import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
-import { szabaly } from '@uzleti/kredit.ts';
+import { oldalakbol, szabaly } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 
 /**
@@ -40,11 +40,51 @@ import { formaz } from '@uzleti/osszeg.ts';
  * `4 900 Ft` helyett), mert az ICU-adatok hiányoznak. Egy jogi szöveg számai
  * ne függjenek attól, milyen böngészővel nyitják meg — a `formaz()` saját
  * csoportosítót használ, és egyben ugyanúgy néz ki, mint az alkalmazásban.
+ *
+ * # 2026. szeptember 20. — jogi felülvizsgálat, első kör
+ *
+ * Egy külső átnézés huszonkét pontot talált. Amit az ÁSZF-ben átírt:
+ *
+ * - **1–2. pont:** eddig nem derült ki, *kivel* jön létre a szerződés és
+ *   *mikor*. Most: a szerződő fél a vállalkozás, a szerződés a cég
+ *   létrehozásával jön létre, a fizetős előfizetés ettől külön lépés, és a
+ *   később meghívott munkatárs nem köt önálló szerződést. A békéltetés
+ *   kizárása kikerült: nem a vállalkozói státusz dönti el, hanem a
+ *   fogyasztóvédelmi törvény KKV-fogalma.
+ * - **8. pont:** kimondtuk, hogy **az e-számla XML is a keretbe számít**. A
+ *   nyitólap „ingyen" szava a modellköltségre igaz, a darabkeretre nem — ez
+ *   volt a felülvizsgálat 9. pontja, és mérve is így van (a kredit az
+ *   oldalszámból jön, nem a kiolvasás módjából). Mellé három példa.
+ * - **9. pont:** szétvált a három művelet, amit eddig egy bekezdés kezelt:
+ *   az előfizetés lemondása, egy fiók törlése és a teljes céges környezet
+ *   törlése. Bekerült a csomagváltás azonnali keretcsökkenése, a Billingo
+ *   általi számlázás, és az, hogy a megszűnt előfizetés záró időszakának
+ *   túlhasználatát nem számlázzuk ki. A „nincs visszatérítés" szabály többé
+ *   **nem terjed ki** a Szolgáltató hibás teljesítésére.
+ * - **11. pont:** a könyvelőirodás eset (az Előfizető adatfeldolgozó, mi
+ *   al-adatfeldolgozók), a jogellenes utasítás jelzésének vállalása, a
+ *   bővített adatkör (munkavállalói költségbizonylat, nyers modellválasz,
+ *   javítási napló) és a megszűnéskori törlés: a visszaadás és a törlés nem
+ *   vagylagos, hanem egymás után következik.
+ * - **12–13. pont:** a felelősség négy esetre bomlik, és a közreműködők
+ *   hibája nem általános mentesülés. Az adatvédelmi felelősséget a
+ *   hathavi díjhoz kötött korlát **nem** érinti.
+ * - **15–17. pont:** a módosítás elutasítása valódi kilépési utat kapott
+ *   (a felmondás a hatálybalépés napján hatályosul, időarányos
+ *   visszatérítéssel), és új pont szól az adatkimentésről és a
+ *   szolgáltatóváltásról.
+ *
+ * ⚠️ A pontok **átszámozódtak** a 15. után: a régi „16. Alkalmazandó jog"
+ * a 17. lett, és közé került a 16. Adatkimentés. Aki ide hivatkozást ír,
+ * nézze meg a számot — az Adatkezelési tájékoztató az ÁSZF 11. pontjára
+ * mutat, az nem mozdult.
  */
 export function Aszf() {
   const mb = Math.round(szamlafolyo.feltoltes.maxBajt / (1024 * 1024));
   const exportNap = szamlafolyo.megorzes.exportNap;
   const maxNap = szamlafolyo.megorzes.maxNap;
+  // Egy hosszú, de egyetlen bizonylat — a példa a szabályt mutatja, nem a számot.
+  const peldaOldal = 12;
 
   return (
     <JogiOldal cim="Általános Szerződési Feltételek">
@@ -58,13 +98,42 @@ export function Aszf() {
           találhatók.
         </P>
         <P>
-          A szerződés a regisztrációval jön létre, a jelen ÁSZF és az{' '}
+          <strong>Ki a szerződő fél.</strong> A szerződés a Szolgáltató és{' '}
+          <strong>az a vállalkozás</strong> között jön létre, amelynek nevében és adószámával a
+          cég a rendszerben létrejön — nem a regisztráló természetes személlyel. A céget létrehozó
+          felhasználó a cégalapítással kijelenti, hogy e vállalkozás képviseletére jogosult, vagy
+          a szerződés megkötésére felhatalmazással rendelkezik.
+        </P>
+        <P>
+          <strong>Mikor jön létre.</strong> A regisztráció önmagában fiókot hoz létre; a
+          szerződés a <strong>cég létrehozásával</strong> jön létre, amikor a felhasználó a jelen
+          ÁSZF-et és az{' '}
           <Link to="/adatkezeles" className="underline">
-            Adatkezelési tájékoztató
+            Adatkezelési tájékoztatót
           </Link>{' '}
-          elfogadásával. A regisztráló ezzel kijelenti, hogy a feltételeket megismerte, és magára
-          nézve kötelezőnek fogadja el. A szerződés írásba foglalt szerződésnek nem minősül, azt a
-          Szolgáltató nem iktatja; nyelve a magyar.
+          elfogadva megadja a cég nevét és adószámát. A fizetős előfizetés ettől külön lépés: az
+          a csomag kiválasztásával és a fizetés teljesítésével jön létre, a 7. és 9. pont szerint.
+        </P>
+        <P>
+          <strong>A megrendelés lépései és az adatok javítása.</strong> A cégalapítás és a
+          csomagválasztás előtt a megadott adatok a képernyőn láthatók és az elküldés előtt
+          szabadon javíthatók; az adószámot a rendszer ellenőrzi, és hibás adószámmal a cég nem
+          jön létre. A cég létrejöttéről és az előfizetés megrendeléséről a Szolgáltató
+          elektronikus visszaigazolást ad.
+        </P>
+        <P>
+          <strong>A később meghívott munkatárs</strong> a meghívó elfogadásával{' '}
+          <strong>nem köt önálló szerződést</strong>: a cég nevében eljáró felhasználóként kap
+          hozzáférést, a szerepköréhez tartozó jogokkal. A jelen ÁSZF-et a cég képviseletében
+          eljáró tulajdonos fogadta el; a munkatársra az abban foglalt használati szabályok a cég
+          felhasználójaként irányadók.
+        </P>
+        <P>
+          <strong>A szerződés nyelve magyar.</strong> A szerződést a Szolgáltató nem iktatja
+          külön okiratként, az utóbb nem kereshető elő; a jelen ÁSZF mindenkor hatályos szövege
+          azonban ezen az oldalon elérhető, onnan menthető és kinyomtatható, és a Szolgáltató
+          nyilvántartja, hogy az Előfizető <strong>melyik időpontban</strong> fogadta el. A
+          hatálybalépés napja a lap tetején szerepel.
         </P>
       </Szakasz>
 
@@ -73,12 +142,25 @@ export function Aszf() {
           A Szolgáltatást kizárólag a Polgári Törvénykönyv szerinti vállalkozások — gazdasági
           társaságok, egyéni vállalkozók és egyéb, önálló foglalkozásuk vagy gazdasági
           tevékenységük körében eljáró személyek — vehetik igénybe. A felhasználó a
-          regisztrációval kijelenti, hogy vállalkozásként, gazdasági tevékenysége körében jár el.
+          cégalapítással kijelenti, hogy vállalkozásként, gazdasági tevékenysége körében jár el.
         </P>
         <P>
-          Ezt a rendszer is számon kéri: cég létrehozásához érvényes magyar adószám szükséges. A
-          szerződés ennek megfelelően nem fogyasztói szerződés, a fogyasztókat megillető külön
-          jogok (elállási jog, békéltető testületi eljárás) nem alkalmazandók.
+          Ezt a rendszer is számon kéri: cég létrehozásához érvényes magyar adószám szükséges.{' '}
+          <strong>Ez azonban csak formai ellenőrzés</strong> — az adószám ellenőrző számjegyének
+          helyessége nem bizonyítja sem azt, hogy a vállalkozás működik, sem azt, hogy a
+          regisztráló képviseletére jogosult.
+        </P>
+        <P>
+          A szerződés ennek megfelelően <strong>nem fogyasztói szerződés</strong>, és a
+          fogyasztókat megillető elállási jog nem alkalmazandó. A Szolgáltató a hozzá érkező
+          panaszokat a 17. pont szerint kivizsgálja.{' '}
+          <strong>
+            Ha az Előfizető a fogyasztóvédelmi szabályok szerint békéltető testületi eljárásra
+            jogosultnak minősül
+          </strong>{' '}
+          — a hatályos fogyasztóvédelmi törvény bizonyos kis- és középvállalkozásokat is e körbe
+          von —, e jogát a jelen ÁSZF nem korlátozza; az illetékes békéltető testület a
+          Szolgáltató székhelye szerinti kereskedelmi és iparkamara mellett működik.
         </P>
       </Szakasz>
 
@@ -241,9 +323,39 @@ export function Aszf() {
         <P>
           A keret felhasználását a rendszer bizonylatonként, oldalarányosan méri, mert egy
           sokoldalas bizonylat feldolgozása nem ugyanannyi munka, mint egy egyoldalas nyugta. A
-          szabály: <strong>{szabaly()}</strong> Egy szokásos, egy–három oldalas számla vagy nyugta
-          tehát egy dokumentumnak számít. Ha egy irat oldalszáma nem állapítható meg, egy
+          szabály: <strong>{szabaly()}</strong> Ha egy irat oldalszáma nem állapítható meg, egy
           dokumentumnak számít.
+        </P>
+        <P>Három példa, hogy a szabály ne maradjon elvont:</P>
+        <Lista>
+          <li>
+            <strong>Egy szokásos, egy–három oldalas számla:</strong> {oldalakbol(3)} dokumentum.
+          </li>
+          <li>
+            <strong>Egy {peldaOldal} oldalas számla:</strong> {oldalakbol(peldaOldal)} dokumentum —
+            ez <em>egy</em> bizonylat, csak hosszú.
+          </li>
+          <li>
+            <strong>Tíz darab egyoldalas számla egyetlen PDF-ben:</strong> a rendszer külön
+            bizonylatokra bontja, tehát <strong>{10 * oldalakbol(1)} dokumentum</strong>. A
+            szétbontás maga nem kerül külön kreditbe, de a benne lévő bizonylatok külön-külön
+            igen — ahogy akkor is, ha egyesével töltötted volna fel őket.
+          </li>
+        </Lista>
+        <P>
+          <strong>Az e-számla XML ugyanúgy a keretbe számít.</strong> Az ilyen iratot a rendszer
+          modellhívás nélkül, saját értelmezővel olvassa ki — ez gyorsabb és a Szolgáltatónak
+          nincs mesterséges intelligencia költsége —, de a keret szempontjából{' '}
+          <strong>ugyanannyi, mint bármelyik másik bizonylat</strong>, és túlhasználati díja is
+          ugyanúgy lehet. Ahol a Szolgáltatás kommunikációja az XML-ről azt írja, hogy
+          „ingyenes" vagy „modellhívás nélkül", az a <em>modellköltségre</em> vonatkozik, nem a
+          darabkeretre.
+        </P>
+        <P>
+          Ha a rendszer egy XML-t nem ismer fel — mert olyan formátumban készült, amit az
+          értelmezői nem kezelnek —, a bizonylat a szokásos gépi kiolvasás útjára kerül. Ez a
+          keret szempontjából nem jelent különbséget. Ugyanez vonatkozik a PDF-be ágyazott
+          e-számla XML-re: azt a Szolgáltatás jelenleg nem bontja ki, a PDF-et dolgozza fel.
         </P>
         <P>
           A keret kimerülése után a feldolgozás <strong>alapértelmezés szerint megáll</strong>. Az
@@ -270,29 +382,82 @@ export function Aszf() {
 
       <Szakasz cim="9. Fizetés, számlázás, felmondás">
         <P>
-          A díjfizetés bankkártyával, a Stripe fizetési szolgáltatón keresztül történik. A
-          Szolgáltató bankkártyaadatot nem kezel és nem tárol. Az előfizetés a számlázási időszak
-          végén automatikusan megújul.
+          A díjfizetés bankkártyával, a <strong>Stripe</strong> fizetési szolgáltatón keresztül
+          történik. A Szolgáltató bankkártyaadatot nem kezel és nem tárol. Az előfizetés a
+          számlázási időszak végén automatikusan megújul.
         </P>
         <P>
-          Az Előfizető az előfizetést bármikor felmondhatja a Beállítások képernyőről elérhető
-          számlázási felületen. A felmondás a kifizetett időszak végén lép hatályba; a már
-          kifizetett díj időarányos visszatérítésére nincs mód. A felmondást követően a
-          Szolgáltatás a keret és a felhasználószám szempontjából csomag nélküli állapotba kerül:
-          új dokumentum feldolgozására nincs lehetőség.
+          <strong>A számlát a Szolgáltató állítja ki</strong>, magyar számlázóprogramon keresztül
+          (Billingo), és az adójogi előírások szerint teljesíti a hozzá kapcsolódó
+          adatszolgáltatást. A Stripe fizetési visszaigazolása{' '}
+          <strong>nem számla</strong>: a számviteli elszámoláshoz a Szolgáltató által kiállított
+          számla szolgál, amelyet az Előfizető a megadott e-mail címén kap meg. A Szolgáltató
+          alanyi adómentes, ezért a számla áfát nem tartalmaz.
         </P>
         <P>
-          Az előfizetés a fiók törlésével is megszűnik, de ez a felmondástól eltérően{' '}
-          <strong>azonnal</strong> hatályos: a fiók törlésével az adatok is törlődnek, így a
-          kifizetett időszak hátralévő része nem használható fel, és nem téríthető vissza. Ha az
-          Előfizető a kifizetett időszakot ki akarja használni, előbb mondja fel az előfizetést,
-          és a fiók törlését csak az időszak végén kérje.
+          <strong>Három különböző művelet, és érdemes nem összekeverni őket:</strong>
+        </P>
+        <Lista>
+          <li>
+            <strong>Az előfizetés lemondása.</strong> Az Előfizető az előfizetést bármikor
+            felmondhatja a Beállítások képernyőről elérhető számlázási felületen. A felmondás{' '}
+            <strong>a kifizetett időszak végén</strong> lép hatályba: addig a Szolgáltatás és a
+            keret változatlanul használható. Ezt követően a Szolgáltatás csomag nélküli állapotba
+            kerül: új dokumentum feldolgozására nincs lehetőség, a meglévő adatok és exportok
+            viszont elérhetők maradnak, és kimenthetők.
+          </li>
+          <li>
+            <strong>Egy felhasználó fiókjának törlése.</strong> Ha a cégben más felhasználó is
+            dolgozik, ez a cég adatait és az előfizetést <strong>nem érinti</strong>: csak az
+            adott személy hozzáférése szűnik meg.
+          </li>
+          <li>
+            <strong>A teljes céges környezet törlése.</strong> Ha a törléssel a cégnek nem marad
+            felhasználója, az előfizetés <strong>azonnal</strong> megszűnik, és az adatok is
+            törlődnek — a kifizetett időszak hátralévő része így nem használható fel, és nem
+            téríthető vissza. Ha az Előfizető a kifizetett időszakot ki akarja használni, előbb
+            mondja fel az előfizetést, és a törlést csak az időszak végén indítsa.
+          </li>
+        </Lista>
+        <P>
+          <strong>Csomagváltás.</strong> Az Előfizető a számlázási felületen bármikor válthat
+          csomagot. A váltás <strong>azonnal hatályos</strong>, a számlázási időszak fordulónapja
+          viszont nem változik, és időarányos elszámolás nem történik: a különbözet a következő
+          fordulónapon jelentkezik.{' '}
+          <strong>Kisebb csomagra váltásnál a keret is azonnal csökken</strong> — ha az
+          Előfizető az adott időszakban már többet használt fel, mint az új csomag kerete, a
+          feldolgozás a kereten felüli feldolgozásra vonatkozó szabályok szerint folytatódik vagy
+          áll meg.
         </P>
         <P>
-          Sikertelen fizetés esetén a Szolgáltató jogosult a feldolgozást felfüggeszteni. A
-          Szolgáltató a szerződést harmincnapos határidővel, indokolás nélkül is felmondhatja;
-          súlyos szerződésszegés — így különösen a Szolgáltatás jogellenes vagy visszaélésszerű
-          használata — esetén azonnali hatállyal.
+          <strong>A próbaidő lejárta</strong> után a Szolgáltatás előfizetés nélkül nem dolgoz
+          fel új dokumentumot; a próbaidőben feldolgozott adatok elérhetők maradnak és
+          exportálhatók.
+        </P>
+        <P>
+          <strong>Az utolsó időszak túlhasználata.</strong> A kereten felül feldolgozott
+          dokumentumok díja a számlázási időszak fordulóján kerül kiszámlázásra. Ha az előfizetés
+          a forduló előtt megszűnik, a megszűnéssel lezárult időszak túlhasználatát a Szolgáltató{' '}
+          <strong>nem számlázza ki</strong>.
+        </P>
+        <P>
+          <strong>Visszatérítés.</strong> A már kifizetett díj időarányos visszatérítésére az
+          Előfizető saját döntéséből történő felmondás vagy törlés esetén nincs mód.{' '}
+          <strong>
+            Ez a szabály nem vonatkozik arra, ha a Szolgáltatás a Szolgáltatónak felróható okból
+            marad el vagy válik tartósan használhatatlanná
+          </strong>{' '}
+          — ilyenkor az Előfizetőt a hibás teljesítés általános szabályai szerinti igények
+          illetik meg, ideértve a díj arányos leszállítását is.
+        </P>
+        <P>
+          <strong>A Szolgáltató felmondása.</strong> Sikertelen fizetés esetén a Szolgáltató
+          jogosult a feldolgozást felfüggeszteni. A Szolgáltató a szerződést harmincnapos
+          határidővel, indokolás nélkül is felmondhatja; ilyenkor a már kifizetett, de fel nem
+          használt időszakra eső díjat <strong>időarányosan visszatéríti</strong>, és a
+          felmondási idő alatt biztosítja az adatok kimentését (16. pont). Súlyos
+          szerződésszegés — így különösen a Szolgáltatás jogellenes vagy visszaélésszerű
+          használata — esetén a felmondás azonnali hatályú; ilyenkor visszatérítés nem jár.
         </P>
       </Szakasz>
 
@@ -303,6 +468,13 @@ export function Aszf() {
           állíthat be, amely legfeljebb {maxNap} nap lehet. Az export képernyő a törlést előre
           kimondja, és felkínálja az eredetik ZIP-ben történő letöltését. A kiolvasott és
           jóváhagyott adatok a törlés után is megmaradnak.
+        </P>
+        <P>
+          <strong>A részleges export nem viszi el a többi bizonylat forrását.</strong> Ha egy
+          feltöltött fájl több bizonylatot tartalmaz, az eredeti fájl csak akkor törölhető, ha a
+          benne lévő <strong>összes</strong> bizonylat kiment egy exportba. Amíg akár egy
+          bizonylat feldolgozás alatt áll, a fájl marad. Ezt nem a felület, hanem az adatbázis
+          szabálya biztosítja.
         </P>
         <P>
           <strong>Az elkészült export fájl {exportNap} napig érhető el</strong>, azután a
@@ -350,14 +522,39 @@ export function Aszf() {
           szól.
         </P>
         <P>
+          <strong>
+            Ha az Előfizető nem a saját, hanem az ügyfele bizonylatait dolgozza fel — például
+            könyvelőirodaként —, akkor ő maga adatfeldolgozó, a Szolgáltató pedig
+            al-adatfeldolgozó.
+          </strong>{' '}
+          Ilyen használat esetén az Előfizető szavatolja, hogy az ügyfelétől (az adatkezelőtől)
+          rendelkezik a további adatfeldolgozó bevonására szóló felhatalmazással, és hogy az
+          ügyfelével kötött adatfeldolgozási szerződése lehetővé teszi a jelen pont szerinti
+          igénybevételt. A Szolgáltatót terhelő, alább felsorolt kötelezettségek ilyenkor
+          változatlanok, és az Előfizetőn keresztül az adatkezelő javára is fennállnak. Az
+          Előfizető az ügyfele felé fennálló kötelezettségeiért — így az értesítésért és a
+          hozzáférések szabályozásáért — maga felel.
+        </P>
+        <P>
+          ⚠️ <strong>A Szolgáltatás ügyfélszűrője nem hozzáférési korlát.</strong> Egy cégen belül
+          minden felhasználó a cég összes bizonylatát látja, a szerepköre szerinti jogokkal; az
+          ügyfelekre bontás az exportban kényelmi szűrés. Ha az Előfizetőnek az egyes ügyfelek
+          adatait egymástól el kell különítenie, ahhoz külön cég és külön előfizetés szükséges.
+        </P>
+        <P>
           <strong>Az adatfeldolgozás tárgya és időtartama:</strong> a Szolgáltatás nyújtása, a
           jelen szerződés hatálya alatt. <strong>Jellege és célja:</strong> a feltöltött
           bizonylatok tárolása, gépi kiolvasása, az adatok ellenőrizhetővé tétele és exportálása.{' '}
           <strong>A kezelt adatok típusa:</strong> a bizonylatokon szereplő adatok — így a partner
-          neve, címe, adószáma, a bizonylat számai és tételei —, amelyek személyes adatnak
-          minősülnek, ha a partner egyéni vállalkozó vagy magánszemély.{' '}
-          <strong>Az érintettek köre:</strong> az Előfizető partnerei és azok képviselői, valamint
-          az Előfizető által felvett felhasználók.
+          neve, címe, adószáma, a bizonylat számai és tételei —, ideértve a munkavállalói vagy
+          megbízotti költségbizonylatokon szereplő adatokat is; a bizonylathoz kapcsolódó
+          feldolgozási adatok, így a <strong>modell nyers válasza</strong>, a jóváhagyáskor
+          végzett <strong>javítások naplója</strong>, valamint e-mailes beküldés esetén a levél
+          feladója és tárgya. Ezek személyes adatnak minősülnek, ha a partner egyéni vállalkozó
+          vagy magánszemély, illetve ha a bizonylat természetes személyre vonatkozik.{' '}
+          <strong>Az érintettek köre:</strong> az Előfizető partnerei és azok képviselői, az
+          Előfizető munkavállalói és megbízottjai, valamint az Előfizető által felvett
+          felhasználók.
         </P>
         <P>A Szolgáltató adatfeldolgozóként vállalja, hogy:</P>
         <Lista>
@@ -365,24 +562,44 @@ export function Aszf() {
             a személyes adatokat kizárólag az Előfizető írásbeli utasítása alapján kezeli —
             ideértve a harmadik országba történő adattovábbítást is —, kivéve, ha a kezelést uniós
             vagy tagállami jog írja elő; a Szolgáltatás rendeltetésszerű használata (feltöltés,
-            kiolvasás, export) ilyen utasításnak minősül;
+            kiolvasás, export) ilyen utasításnak minősül.{' '}
+            <strong>
+              A Szolgáltatás igénybevétele egyben az Előfizető kifejezett utasítása arra is, hogy
+              a gépi kiolvasás céljából a bizonylat tartalma az Adatkezelési tájékoztató 5.
+              pontjában megnevezett, Unión kívüli közreműködőkhöz továbbításra kerüljön
+            </strong>
+            , az ott hivatkozott garanciák mellett;
+          </li>
+          <li>
+            <strong>
+              haladéktalanul tájékoztatja az Előfizetőt, ha megítélése szerint valamely utasítása
+              a GDPR-ba vagy más adatvédelmi rendelkezésbe ütközik
+            </strong>
+            , és az érintett utasítás teljesítését az egyeztetés lezárultáig felfüggesztheti;
           </li>
           <li>
             biztosítja, hogy az adatokhoz hozzáférő személyek titoktartási kötelezettséget
             vállaltak vagy jogszabályon alapuló titoktartási kötelezettség alatt állnak;
           </li>
           <li>
-            megteszi a GDPR 32. cikke szerinti biztonsági intézkedéseket; ezek felsorolása az
-            Adatkezelési tájékoztató „Adatbiztonság" pontjában található;
+            megteszi a GDPR 32. cikke szerinti biztonsági intézkedéseket. Ezek: a kapcsolat
+            titkosítása; a jelszavak visszafejthetetlen tárolása; a cégek adatainak{' '}
+            <strong>adatbázis-szintű, soronkénti elkülönítése</strong>, amely közvetlen
+            API-hívással sem kerülhető meg; szerepkörhöz kötött hozzáférés, amelyet minden művelet
+            maga ellenőriz; a visszafordíthatatlan műveletek naplózása; a bizonylatok privát
+            tárolóban, kizárólag időkorlátos, aláírt hivatkozással elérhető tárolása; valamint a
+            tárhelyszolgáltató üzemfolytonossági mentései, amelyek helyreállításra szolgálnak.
+            A felsorolás részletesebb leírása az Adatkezelési tájékoztató 7. pontjában található;
           </li>
           <li>
             további adatfeldolgozót az Előfizető <strong>általános felhatalmazása</strong> alapján
-            vesz igénybe. A mindenkori al-adatfeldolgozók az Adatkezelési tájékoztatóban név
-            szerint szerepelnek. Új al-adatfeldolgozó igénybevétele előtt a Szolgáltató az
-            Előfizetőt <strong>legalább tizenöt nappal korábban</strong> e-mailben értesíti; az
-            Előfizető ez ellen kifogást emelhet, és ha a felek nem jutnak megegyezésre, a
-            szerződést a változás hatálybalépéséig felmondhatja. A további adatfeldolgozókra a
-            Szolgáltató ugyanezeket a kötelezettségeket telepíti;
+            vesz igénybe. A mindenkori al-adatfeldolgozók az Adatkezelési tájékoztató 5.
+            pontjában <strong>név szerint, székhellyel és feldolgozási országgal</strong>{' '}
+            szerepelnek. Új al-adatfeldolgozó igénybevétele előtt a Szolgáltató az Előfizetőt{' '}
+            <strong>legalább tizenöt nappal korábban</strong> e-mailben értesíti; az Előfizető ez
+            ellen kifogást emelhet, és ha a felek nem jutnak megegyezésre, a szerződést a változás
+            hatálybalépéséig felmondhatja. A további adatfeldolgozókra a Szolgáltató ugyanezeket a
+            kötelezettségeket telepíti;
           </li>
           <li>
             az Előfizetőt a technikai lehetőségeihez mérten segíti az érintetti kérelmek
@@ -396,19 +613,27 @@ export function Aszf() {
               Adatvédelmi incidens esetén a Szolgáltató indokolatlan késedelem nélkül, de
               legkésőbb az észleléstől számított negyvennyolc órán belül
             </strong>{' '}
-            értesíti az Előfizetőt, és megad minden rendelkezésére álló információt;
+            értesíti az Előfizetőt, és megad minden rendelkezésére álló információt. Ez az
+            értesítés az Előfizetőt terhelő hatósági bejelentést nem teljesíti és nem
+            helyettesíti;
           </li>
           <li>
-            a szerződés megszűnésekor — az Előfizető választása szerint — az adatokat törli vagy
-            visszaadja, és a meglévő másolatokat törli, kivéve, ha jogszabály a megőrzést előírja
-            (ilyen a Szolgáltató által kiállított számla);
+            <strong>a szerződés megszűnésekor az adatokat törli.</strong> Az Előfizető a
+            megszűnés előtt bármikor exportálhatja az adatait, és a megszűnéskor a 16. pont
+            szerinti adatkimentés áll rendelkezésére; ha az Előfizető az adatok visszaadását kéri,
+            azt a Szolgáltató a 16. pont szerinti formátumokban teljesíti.{' '}
+            <strong>A visszaadás és a törlés tehát nem vagylagos, hanem egymás után következik</strong>{' '}
+            — előbb a kimentés, azután a törlés —, kivéve, ha jogszabály a megőrzést előírja
+            (ilyen a Szolgáltató által kiállított számla). A törlés lefolyásáról — aktív rendszer,
+            mentések kifutása, közreműködők — az Adatkezelési tájékoztató 4. pontja szól;
           </li>
           <li>
             az Előfizető rendelkezésére bocsát minden olyan információt, amely a jelen pont
             szerinti kötelezettségek igazolásához szükséges, és lehetővé teszi az Előfizető vagy
             az általa megbízott ellenőr által végzett auditot. Az ellenőrzést előzetesen
             egyeztetett időpontban, a Szolgáltatás működésének indokolatlan zavarása nélkül kell
-            lefolytatni.
+            lefolytatni; a Szolgáltató ennek keretében a közreműködői által kiadott
+            dokumentációra is hivatkozhat.
           </li>
         </Lista>
         <P>
@@ -417,9 +642,11 @@ export function Aszf() {
             modell tanítására
           </strong>
           , sem sajátéra, sem harmadik félére, és erre külön megállapodás hiányában nem is
-          jogosult. A gépi kiolvasáshoz igénybe vett szolgáltató felé a Szolgáltató kiköti, hogy a
-          bizonylat tartalma nem tárolható és tanításra nem használható; erről az Adatkezelési
-          tájékoztató 3. pontja szól részletesen.
+          jogosult. A gépi kiolvasáshoz igénybe vett szolgáltatók felé a Szolgáltató{' '}
+          <strong>két külön kikötést</strong> érvényesít: hogy a bizonylat tartalmát ne tárolják,
+          és hogy tanításra ne használják. A kiolvasást csak az Adatkezelési tájékoztató 5.
+          pontjában megnevezett szolgáltatók végezhetik; tartalék útvonal meg nem nevezett
+          címzetthez nincs. Erről az Adatkezelési tájékoztató 3. pontja szól részletesen.
         </P>
       </Szakasz>
 
@@ -431,23 +658,64 @@ export function Aszf() {
           tervezett, a szokásosnál hosszabb szünetről lehetőség szerint előre tájékoztat.
         </P>
         <P>
-          A Szolgáltató nem felel azért a kimaradásért, amely rajta kívül álló okból — így a
-          tárhelyszolgáltató, a fizetési szolgáltató, a modellszolgáltató vagy az
-          internetkapcsolat hibájából — következik be.
+          <strong>A közreműködők hibája nem általános mentesülés.</strong> A Szolgáltató által
+          igénybe vett közreműködők (tárhely-, fizetési és modellszolgáltató) teljesítéséért a
+          Szolgáltató úgy felel, mintha maga járt volna el — ez a szabály alól a jelen ÁSZF nem
+          tér el. A Szolgáltató kizárólag azokért a kimaradásokért nem felel, amelyek{' '}
+          <strong>rajta kívül álló, elháríthatatlan okból</strong> következnek be, és amelyeket
+          az elvárható gondosság mellett sem tudott megelőzni vagy elhárítani — ilyen az
+          internetkapcsolat általános hibája vagy a közreműködő előre nem látható, tartós
+          üzemzavara. Az ilyen kimaradás idejére eső díjról a felek elszámolnak.
         </P>
       </Szakasz>
 
       <Szakasz cim="13. Felelősség">
         <P>
-          A Szolgáltató felelőssége a szerződésszegéssel okozott károkért — a szándékosan okozott,
-          továbbá az emberi életet, testi épséget vagy egészséget megkárosító szerződésszegés
-          esetét kivéve — összesen legfeljebb a káresemény bekövetkeztét megelőző hat hónapban
-          ténylegesen megfizetett szolgáltatási díj összegéig terjed.
+          A felelősség kérdése <strong>négy, egymástól elkülönülő esetre</strong> bomlik, és ezek
+          nem kezelhetők egyben:
+        </P>
+        <Lista>
+          <li>
+            <strong>A gépi kiolvasás bizonytalansága.</strong> A kiolvasás eredménye tervezet; a
+            4. pont szerint az adat helyességéért az Előfizető felel. A Szolgáltató nem felel a
+            kiolvasás hibájából eredő kárért, ha az Előfizető a tételt a könyvelésben történő
+            felhasználás előtt nem ellenőrizte.
+          </li>
+          <li>
+            <strong>A Szolgáltatás hibája.</strong> Ha a rendszer nem úgy működik, ahogy a jelen
+            ÁSZF leírja — például elveszít egy feltöltött bizonylatot, vagy rosszul számolja a
+            keretet —, az <strong>hibás teljesítés</strong>, amelyért a Szolgáltató az általános
+            szabályok szerint felel.
+          </li>
+          <li>
+            <strong>Adatvesztés.</strong> A Szolgáltató a neki felróható adatvesztésért felel. Az
+            Előfizetőt terhelő bizonylatmegőrzést azonban a Szolgáltatás nem teljesíti (10.
+            pont), ezért a Szolgáltató nem felel azért a kárért, amely abból ered, hogy az
+            Előfizető a megőrzésről máshol nem gondoskodott.
+          </li>
+          <li>
+            <strong>Adatvédelmi kötelezettségek.</strong> A Szolgáltató adatfeldolgozói
+            kötelezettségeiért (11. pont) a GDPR szabályai szerint felel.{' '}
+            <strong>
+              Az érintettek és a hatóságok jogait, valamint a Szolgáltató adatvédelmi jogszabályon
+              alapuló felelősségét a jelen pont felelősségkorlátozása nem érinti és nem
+              korlátozza.
+            </strong>
+          </li>
+        </Lista>
+        <P>
+          <strong>Összegszerű korlát.</strong> A Szolgáltató szerződésszegéssel okozott károkért
+          fennálló felelőssége — a fenti negyedik eset, továbbá a{' '}
+          <strong>szándékosan okozott</strong>, valamint az emberi életet, testi épséget vagy
+          egészséget megkárosító szerződésszegés esetét kivéve — összesen legfeljebb a káresemény
+          bekövetkeztét megelőző hat hónapban ténylegesen megfizetett szolgáltatási díj összegéig
+          terjed. A Szolgáltató nem felel az elmaradt haszonért.
         </P>
         <P>
-          A Szolgáltató nem felel az elmaradt haszonért, az adatvesztésből eredő közvetett kárért,
-          továbbá a gépi kiolvasás hibájából eredő károkért, ha az Előfizető a tételt a
-          könyvelésben történő felhasználás előtt nem ellenőrizte.
+          A jelen pont a Szolgáltatás díjához mért, a felek által a szerződéskötéskor ismert
+          kockázatmegosztást rögzíti. Az Előfizető a szerződéskötéssel elismeri, hogy erről a
+          korlátozásról — csakúgy, mint a 10. pont szerinti automatikus fájltörlésről —{' '}
+          <strong>külön tájékoztatást kapott</strong>, és azt kifejezetten elfogadja.
         </P>
       </Szakasz>
 
@@ -463,21 +731,80 @@ export function Aszf() {
 
       <Szakasz cim="15. Az ÁSZF módosítása">
         <P>
-          A Szolgáltató jogosult a jelen ÁSZF-et és a díjakat egyoldalúan módosítani. A
-          módosításról az Előfizetőt a hatálybalépést megelőzően legalább tizenöt nappal e-mailben
-          tájékoztatja. Ha az Előfizető a módosítást nem fogadja el, a hatálybalépésig
-          felmondhatja az előfizetést; a Szolgáltatás további használata a módosítás elfogadásának
+          A Szolgáltató jogosult a jelen ÁSZF-et és a díjakat egyoldalúan módosítani, ha azt
+          jogszabályváltozás, a Szolgáltatás működésének változása, a közreműködők vagy a
+          költségek változása indokolja. A módosításról az Előfizetőt a hatálybalépést megelőzően
+          legalább <strong>tizenöt nappal</strong> e-mailben tájékoztatja, a változás
+          megjelölésével.
+        </P>
+        <P>
+          <strong>Ha az Előfizető a módosítást nem fogadja el</strong>, a hatálybalépésig
+          felmondhatja az előfizetést. Ilyenkor a felmondás{' '}
+          <strong>a módosítás hatálybalépésének napján</strong> hatályosul — nem kell megvárnia a
+          számlázási időszak végét —, és a Szolgáltató a már kifizetett, de fel nem használt
+          időszakra eső díjat <strong>időarányosan visszatéríti</strong>. A megszűnésig az
+          Előfizető a 17. pont szerint mentheti ki az adatait. Enélkül a felmondás joga csak
+          látszólagos volna: a változást elutasító Előfizető a hatálybalépés után is a módosított
+          feltételek szerint fizetne.
+        </P>
+        <P>
+          A Szolgáltatás további használata a hatálybalépés után a módosítás elfogadásának
           minősül. A díjemelés a már kifizetett számlázási időszakot nem érinti.
         </P>
       </Szakasz>
 
-      <Szakasz cim="16. Alkalmazandó jog és jogviták">
+      <Szakasz cim="16. Adatkimentés és szolgáltatóváltás">
+        <P>
+          <strong>Az Előfizető az adatait bármikor kimentheti</strong>, a szerződés fennállása
+          alatt és a megszűnését megelőzően egyaránt. Ez nem kérelem, hanem a felületről
+          elvégezhető művelet:
+        </P>
+        <Lista>
+          <li>
+            a <strong>jóváhagyott tételek</strong> XLSX, CSV vagy JSON formátumban exportálhatók,
+            tetszőleges időszakra és ügyfélre szűrve, tetszőleges számú alkalommal;
+          </li>
+          <li>
+            az <strong>eredeti fájlok</strong> (PDF-ek, képek) az export mellé ZIP-ben
+            letölthetők, amíg a 10. pont szerinti megőrzési idő alatt a szerveren vannak;
+          </li>
+          <li>
+            az <strong>elkészült exportok</strong> az Archívumban {exportNap} napig újra
+            letölthetők, és a tételekből bármikor új export készíthető.
+          </li>
+        </Lista>
+        <P>
+          <strong>Szolgáltatóváltás esetén</strong> a Szolgáltató — az Előfizető kérésére, a
+          szerződés megszűnésétől számított <strong>harminc napon belül</strong> — díjmentesen
+          biztosítja az Előfizető adatainak kiadását a fenti formátumokban, és ésszerű mértékű
+          segítséget nyújt azok értelmezéséhez. Ha az Előfizető ilyen kérést terjeszt elő, a
+          Szolgáltató az adatokat a kiadásig nem törli.{' '}
+          <strong>Kérés hiányában a törlés a 10–11. pont szerint történik</strong>, ezért az
+          Előfizetőnek érdemes a kimentést még a megszűnés előtt elvégeznie.
+        </P>
+        <P>
+          A Szolgáltató a váltás megkönnyítése érdekében nyílt, széles körben olvasható
+          formátumokat használ, és az exportfájlok szerkezetéről kérésre leírást ad. A
+          Szolgáltatás nem tartalmaz olyan technikai akadályt, amely a váltást gátolná.
+        </P>
+      </Szakasz>
+
+      <Szakasz cim="17. Panasz, alkalmazandó jog és jogviták">
+        <P>
+          <strong>Panasz.</strong> Panaszt az{' '}
+          <a className="underline" href={`mailto:${szolgaltato.email}`}>
+            {szolgaltato.email}
+          </a>{' '}
+          címen lehet bejelenteni. A Szolgáltató a panaszt megvizsgálja, és legkésőbb harminc
+          napon belül írásban válaszol.
+        </P>
         <P>
           A jelen szerződésre a magyar jog irányadó. A felek a vitáikat elsősorban egyeztetéssel
           rendezik; ennek eredménytelensége esetén a magyar bíróságok járnak el az általános
-          szabályok szerint. A jelen ÁSZF-ben nem szabályozott kérdésekben a Polgári Törvénykönyv
-          és az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII. törvény
-          rendelkezései az irányadók.
+          szabályok szerint. A 2. pont szerinti esetben a békéltető testületi eljárás lehetőségét
+          a jelen ÁSZF nem zárja ki. A jelen ÁSZF-ben nem szabályozott kérdésekben a Polgári
+          Törvénykönyv és az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII.
+          törvény rendelkezései az irányadók.
         </P>
         <P>
           Kérdés esetén:{' '}
@@ -486,6 +813,6 @@ export function Aszf() {
           </a>
         </P>
       </Szakasz>
-    </JogiOldal>
+        </JogiOldal>
   );
 }
