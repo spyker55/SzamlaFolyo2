@@ -7,7 +7,9 @@ import {
   useLocation,
   useNavigationType,
 } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider, useAuth } from './lib/auth.tsx';
+import { esemenytSzur } from './lib/analitika.ts';
 import { horgonyraUgrik, tetejereUgrik } from './lib/gorgetes.ts';
 import { Belepve, Ceggel, Vendeg } from './komponensek/Vedett.tsx';
 import { Bejelentkezes } from './kepernyok/auth/Bejelentkezes.tsx';
@@ -51,6 +53,18 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <GorgetesVisszaall />
+        {/*
+          Látogatásmérés — de **csak a nyilvános tölcsérre**. A szűrőt a
+          `lib/analitika.ts` adja, fehérlistával: ami nincs nevesítve benne,
+          arról esemény el sem indul. Így a bejelentkezés mögötti képernyők, a
+          meghívó tokenje és a jelszó-visszaállítás kimaradnak — az indoklás
+          ott, a modul fejlécében áll, az Adatkezelési tájékoztató 2. pontja
+          pedig ugyanezt ígéri a látogatónak.
+
+          A script a **saját domainünkről** (`/_vercel/insights/script.js`)
+          tölt be, tehát a böngésző nem keres meg tőle idegen kiszolgálót.
+        */}
+        <Analytics beforeSend={esemenytSzur} />
         <Routes>
           {/* Nyilvános */}
           <Route path="/" element={<Kezdolap />} />

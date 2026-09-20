@@ -53,6 +53,26 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  * titkosított jelszó" sorba, mert az a **felhasználóinkról** szól — a
  * meghívott viszont addig nem az, és lehet, hogy soha nem is lesz. A címet a
  * cég tulajdonosa adja meg, a jogalap ezért jogos érdek, nem szerződés.
+ *
+ * # 2026. szeptember 20. — látogatásmérés a nyilvános oldalakon
+ *
+ * A Vercel Web Analytics bekapcsolásával **ez a tájékoztató egy csapásra
+ * valótlanná vált**: a 2. pont félkövéren azt ígérte, hogy „a weboldalon nincs
+ * látogatásmérő". Nem a szöveget gyengítettük, hanem kimondtuk, mi van — és
+ * közben a mérést oda szorítottuk, ahol ez a mondat vállalható marad.
+ *
+ * A szűkítés nem szövegezési fogás, hanem kód: a `src/lib/analitika.ts`
+ * **fehérlistája** dönti el, melyik címről indulhat egyáltalán esemény. Ami
+ * nincs nevesítve benne — köztük minden bizonylat-, meghívó- és
+ * jelszó-visszaállító cím —, arról adat el sem indul. Megfordítva azért, mert
+ * egy feketelista némán romlik el: egy jövőbeli, azonosítót hordozó útvonal
+ * magától kicsúszna rajta.
+ *
+ * ⚠️ Két állítás ebben a szakaszban **a Vercel kiadott leírásán** nyugszik, nem
+ * a saját mérésünkön: hogy a mérés süti nélkül működik, és hogy nem épít
+ * tartós azonosítót. Amit magunk mértünk, az az, hogy mely címek hagyhatják el
+ * a böngészőt — arra 29 teszt áll (`src/lib/analitika.test.ts`), köztük egy
+ * elcsúszás-őr, ami az `App.tsx` útvonaltáblájából olvas.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -168,12 +188,40 @@ export function Adatkezeles() {
           </tr>
         </Tablazat>
         <P>
-          <strong>Sütiket mérésre vagy hirdetésre nem használunk.</strong> A weboldalon nincs
-          látogatásmérő, nincs hirdetési kódrészlet, és nincs profilalkotás. A bejelentkezett
+          <strong>Sütiket mérésre vagy hirdetésre nem használunk.</strong> Hirdetési kódrészlet
+          nincs, profilalkotás nincs, és más webhelyeken sem követünk senkit. A bejelentkezett
           állapotot nem süti, hanem a böngésző saját tárolója őrzi, és az is kizárólag a
           működéshez kell. Ezért süti-hozzájáruló ablak sem fogadja a látogatót: nincs mihez
           hozzájárulni.
         </P>
+        <P>
+          <strong>Látogatásmérés azonban van — de kizárólag a nyilvános oldalakon.</strong> Azt
+          szeretnénk tudni, hányan találnak ide és mit néznek meg, mielőtt fiókot nyitnának. Hogy
+          ez pontosan mit jelent:
+        </P>
+        <Lista>
+          <li>
+            <strong>Hol fut:</strong> a nyitólapon, ezen a tájékoztatón, az ÁSZF-en, az
+            Impresszumon, valamint a bejelentkező és regisztrációs űrlapon. Sehol máshol.
+          </li>
+          <li>
+            <strong>Hol nem fut:</strong> a bejelentkezés mögötti képernyőkön. Bizonylat
+            webcíme, meghívó-link és jelszó-visszaállító cím <strong>soha</strong> nem kerül a
+            mérésbe — ezt nem utólagos szűrés végzi, hanem egy engedélyezett címekből álló
+            lista: ami nincs rajta, arról adat el sem indul.
+          </li>
+          <li>
+            <strong>Ki méri:</strong> a tárhelyszolgáltató, a Vercel — vagyis nem új
+            adatfeldolgozó, hanem az, aki az oldalt amúgy is kiszolgálja (5. pont). A mérőkód a
+            saját domainünkről töltődik be, tehát a böngésző nem keres meg tőle idegen
+            kiszolgálót.
+          </li>
+          <li>
+            <strong>Mit látunk belőle:</strong> oldalanként összesített látogatásszámot. A mérés
+            nem tesz sütit, nem tárol adatot a látogató eszközén, és nem épít belőle tartós
+            azonosítót, amivel egy személy visszakereshető volna.
+          </li>
+        </Lista>
       </Szakasz>
 
       <Szakasz cim="3. Mi történik egy beérkezett bizonylattal">
@@ -362,9 +410,11 @@ export function Adatkezeles() {
         <Lista>
           <li>A kapcsolat titkosított (HTTPS), a jelszavak visszafejthetetlen formában tárolódnak.</li>
           <li>
-            A betűtípusokat és minden más eszközt <strong>az oldal saját címéről</strong>{' '}
-            szolgáljuk ki: az oldal megnyitása önmagában nem jár adattovábbítással harmadik
-            félhez. Külső betűszolgáltatót, látogatásmérőt és hirdetési kódot nem használunk.
+            A betűtípusokat és minden más eszközt — a nyilvános oldalak látogatásmérőjét is —{' '}
+            <strong>az oldal saját címéről</strong> szolgáljuk ki: a böngésző az oldal
+            megnyitásakor nem keres meg idegen kiszolgálót. Külső betűszolgáltatót és hirdetési
+            kódot nem használunk, a mérés pedig csak a 2. pontban felsorolt nyilvános oldalakra
+            terjed ki — a bejelentkezés mögé nem.
           </li>
           <li>
             A cégek adatai el vannak különítve egymástól, és ezt az{' '}

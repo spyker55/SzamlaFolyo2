@@ -72,7 +72,7 @@ export const adatfeldolgozok: readonly {
   },
   {
     ki: 'Vercel, Inc.',
-    mit: 'A weboldal kiszolgálása',
+    mit: 'A weboldal kiszolgálása és a nyilvános oldalak látogatásmérése',
     hol: 'Amerikai Egyesült Államok (a kiszolgálás európai élhálózatról)',
     unionBelul: false,
   },
