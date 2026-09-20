@@ -200,10 +200,15 @@ type Nyersanyag = {
  * (adatbázis- vagy Stripe-hiba) — ott az újraküldés a **helyes** viselkedés,
  * mert a sor ilyenkor számlázatlanul áll.
  *
- * ⚠️ Az újraküldésnek van egy ablaka: a számla nagyjából egy óra múlva
- * véglegesül, utána a `szamlabol()` kapuja már `kihagy`-ot ad. A Stripe az
- * első újrapróbálkozásokat perceken belül intézi, tehát a gyakorlatban ez
- * elég — de nem végtelen, és ezt jobb kimondva tudni.
+ * ⚠️ Az újraküldésnek van egy ablaka, és az **pontosan egy óra**: a
+ * ciklusforduló számláján az `automatically_finalizes_at` a létrehozás ideje
+ * **+ 3600 másodperc** (test clockon mérve, 2026-09-20 — korábban ez itt
+ * „nagyjából egy óra" volt, becslésként). Utána a `szamlabol()` kapuja már
+ * `kihagy`-ot ad, mert a számla nem piszkozat többé.
+ *
+ * Ugyanaz a mérés azt is megmutatta, hogy ez az egész út — nyersanyag,
+ * rögzítés, ár-feloldás, tételírás — **másodpercek** alatt lefut. Az ablak
+ * tehát bőven elég; de nem végtelen, és ezt jobb kimondva tudni.
  */
 async function tulhasznalast(
   db: SupabaseClient,

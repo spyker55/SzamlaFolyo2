@@ -78,11 +78,18 @@
  *    következőre.* Vagyis egy elsején kelt havi számlán a `period_start` és a
  *    `period_end` pont az imént lezárult hónap.
  *
- *    Ez azért számít, mert a másik út **versenyhelyzet volna**: a
+ *    Ez azért számít, mert a másik út **versenyhelyzet**: a
  *    `customer.subscription.updated` (ami az új ciklust hozza) és az
  *    `invoice.created` sorrendje nem garantált, tehát a saját sorunkból
  *    olvasva hol a régi, hol az új időszakot látnánk. A számla objektum
  *    viszont önmagában hordozza a választ.
+ *
+ *    ⚠️ **És ez a verseny nem elméleti — test clockon lemértük (2026-09-20),
+ *    és a rossz irányba dőlt.** A cég sorába az új ciklus (10-20 → 11-20)
+ *    már 13:08:24-kor beíródott, a túlhasználatot pedig 13:08:25-kor
+ *    számoltuk — vagyis a saját sorunkból olvasva az **imént kezdődött, üres**
+ *    időszakra számláztunk volna nullát, a lezárult hónap helyett. A számlából
+ *    olvasva a `period_start` helyesen a 09-20-at adta.
  *
  *    ⚠️ Az **első** számlán a `period_start` és a `period_end` megegyezik (nincs
  *    „előző" időszak). Ezt a `billing_reason` szűrése amúgy is kizárja, de a
