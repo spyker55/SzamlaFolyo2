@@ -194,10 +194,23 @@ type HivasKeres = {
  *   első nem elérhető. Pont ez az a csendes út, amin egy meg nem nevezett
  *   címzetthez kerülne a bizonylat. Inkább álljon meg.
  * - `zdr: true` — **ne is tárolják.** Ez az OpenRouter külön jelzője a nulla
- *   adatmegőrzésű végpontokra. ⚠️ Azért merjük bekapcsolni, mert megmértük:
- *   a `/models` listája 446 modellt ad, a `?zdr=true` szűrővel 318-at, és a
- *   `google/gemini-3.8-flash` **benne van** a szűkített listában (2026-09-20).
- *   Enélkül ez a sor minden kiolvasást megállíthatott volna.
+ *   adatmegőrzésű végpontokra. ⚠️ Azért mertük bekapcsolni, mert előbb
+ *   megmértük: a `/models` listája 446 modellt ad, a `?zdr=true` szűrővel
+ *   318-at, és a `google/gemini-3.8-flash` **benne van** a szűkített listában
+ *   (2026-09-20). Enélkül ez a sor minden kiolvasást megállíthatott volna.
+ *
+ *   **Azóta élesben is lefutott** (2026-09-20 18:33 UTC, `kiolvas` v14): egy
+ *   valódi PDF mind a négy kikötéssel átment — `error: null`, `attempts: 1`,
+ *   `model_version: google/gemini-3.8-flash`, 0,006703 USD, 9,0 s. Ez a
+ *   különbség számít: a modell-lista azt mondta meg, hogy *létezik* ilyen
+ *   végpont, ez pedig azt, hogy a négy kikötés **együtt** is kiszolgálható.
+ *   Ha az útválasztás kiürült volna, nem lassabb választ kaptunk volna,
+ *   hanem semmit — a bizonylat három próbálkozás után `hiba` lesz.
+ *
+ *   Összemérve a szigorítás előtti, ugyanilyen méretű PDF-fel (3457 bemeneti
+ *   token mindkétszer): 0,006429 → 0,006703 USD, 10,1 → 9,0 s. Vagyis a
+ *   névsor lekötésének **mérve nincs ára** — ugyanaz a Google-végpont
+ *   szolgál ki, csak most már ki is van mondva, hogy más nem.
  * - `data_collection: 'deny'` — **ne is tanuljanak belőle.** Ez marad a
  *   legrégebbi kikötésünk, de magában kevés: az OpenRouter saját leírása
  *   szerint ez az ő legjobb tudásuk, nem garancia.
