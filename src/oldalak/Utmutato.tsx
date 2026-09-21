@@ -406,15 +406,24 @@ export function Utmutato() {
         </P>
         <P>
           <strong>A csomagváltás nem indítja újra a számlázási ciklust</strong>, és nem terhelünk
-          érte azonnal semmit: a fordulónap marad, ahol volt, az új árat pedig a következő
-          fordulónapon fizeted. A <strong>keret viszont azonnal változik</strong> — nagyobb
-          csomagra váltva rögtön több, kisebbre váltva rögtön kevesebb.
+          érte azonnal semmit: a fordulónap marad, ahol volt, és külön számlát sem kapsz róla. A{' '}
+          <strong>keret viszont azonnal változik</strong> — nagyobb csomagra váltva rögtön több,
+          kisebbre váltva rögtön kevesebb.
+        </P>
+        <P>
+          A pénzt a <strong>következő havi számla</strong> rendezi, napra arányosan, és{' '}
+          <strong>mindkét irányban</strong>. Nagyobb csomagra váltva a hátralévő napok
+          különbözete külön soron jelenik meg rajta; kisebbre váltva a már kifizetett, de fel nem
+          használt rész <strong>jóváírásként jön vissza</strong> — szintén külön soron. Aki
+          meggondolja magát és visszavált, annál a sorok kiejtik egymást: a váltogatás nem kerül
+          semmibe.
         </P>
         <Figyelem>
-          <strong>Kisebb csomagra váltani a fordulónap közelében érdemes.</strong> A kisebb keret
-          azonnal életbe lép, a már kifizetett hónapból viszont nem jár vissza semmi. Nagyobb
-          csomagra váltva ugyanez fordítva, a javadra játszik: a nagyobb keretet azonnal
-          megkapod, és csak a fordulónapon fizetsz érte.
+          <strong>Kisebb csomagra váltva a keret azonnal szűkül.</strong> Ha a hónapban addigra
+          már több bizonylatot dolgoztál fel, mint amennyi az új csomagba fér, a váltás
+          pillanatában kereten kívülre kerülsz — onnantól a következő fordulónapig várnak a
+          bizonylatok, hacsak be nem kapcsolod a túlhasználatot. A pénzzel nincs baj: a
+          különbözet jóváíródik. Az idővel van: a keret nem.
         </Figyelem>
         <P>
           A lemondás a <strong>kifizetett időszak végéig</strong> hagyja használni a rendszert, és
