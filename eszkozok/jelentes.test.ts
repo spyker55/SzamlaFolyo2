@@ -97,6 +97,45 @@ describe('állandóság', () => {
   });
 });
 
+/**
+ * ⚠️ Több futásnál a **futásonkénti** számok is kellenek.
+ *
+ * Mérve (2026-09-21, három futás egy szövegréteges PDF-en): a jelentés csak az
+ * első futás tokenjeit és költségét írta ki, a többit egyetlen összegbe
+ * olvasztotta. Az összegből visszafejteni lehetett ugyan a maradék kettő
+ * átlagát, de az átlag pont azt tünteti el, amit mérni akarunk: hogy **melyik**
+ * futás szaladt el, és mennyivel. Egy mérőeszköz ne kényszerítsen kivonásra.
+ */
+describe('futásonkénti számok', () => {
+  function futas(ki: number, gondolkodas: number, koltseg: number, ido: number): Futas {
+    return { ...modellFutas(ALAP), kimenetToken: ki, gondolkodasToken: gondolkodas, koltseg, idoMs: ido };
+  }
+
+  const harom: Meres = {
+    fajl: { nev: 'nyugta.png', bajt: 1, mime: 'image/png' },
+    felderites: KEP,
+    futasok: [futas(625, 308, 0.004879, 5803), futas(812, 470, 0.00553, 9512), futas(731, 402, 0.004906, 8778)],
+  };
+
+  const szoveg = jelentes(harom);
+
+  test('mind a három futás költsége külön látszik', () => {
+    expect(szoveg).toContain('0.004879');
+    expect(szoveg).toContain('0.005530');
+    expect(szoveg).toContain('0.004906');
+  });
+
+  test('a gondolkodás szórása ki van írva — ezen múlik a költség', () => {
+    expect(szoveg).toMatch(/gondolkodás 308–470/);
+  });
+
+  test('egyetlen futásnál nincs ilyen szakasz: nincs mihez viszonyítani', () => {
+    expect(jelentes({ ...harom, futasok: [futas(625, 308, 0.004879, 5803)] })).not.toContain(
+      'FUTÁSONKÉNT',
+    );
+  });
+});
+
 describe('jelentés', () => {
   const meres: Meres = {
     fajl: { nev: 'nyugta.png', bajt: 12345, mime: 'image/png' },

@@ -131,7 +131,7 @@ export function jelentes(meres: Meres): string {
   sorok.push('', ...validatorSorok(elso), '', ...zaszloSorok(elso, meres.felderites));
 
   if (meres.futasok.length > 1) {
-    sorok.push('', ...ismetlesSorok(meres.futasok));
+    sorok.push('', ...futasonkentSorok(meres.futasok), '', ...ismetlesSorok(meres.futasok));
   }
 
   sorok.push('', ...osszesitesSorok(meres.futasok));
@@ -338,6 +338,69 @@ function zaszloSorok(f: Futas, felderites: Felderites): string[] {
     // hiányzó kulcsmező, alacsony magabiztosság, kézírás, kötegyanú.
     '  (A kapuk döntése nincs itt: annak a cég előzményei kellenek, azok meg az adatbázisban vannak.)',
   ];
+}
+
+/**
+ * Futásonként egy sor — **nem átlag.**
+ *
+ * Az összesítés egyetlen számba olvasztaná a futásokat, az átlag viszont pont
+ * azt tünteti el, amit mérni akarunk: hogy *melyik* futás szaladt el, és
+ * mennyivel. A szórás alatta azért a gondolkodásra és a költségre megy, mert
+ * élesben mérve ezek járnak együtt: ugyanaz a bemenet (a `be` token minden
+ * futásban azonos), és a drágulás a gondolkodáson múlik.
+ */
+function futasonkentSorok(futasok: readonly Futas[]): string[] {
+  const sorok = [
+    cim(`FUTÁSONKÉNT (${futasok.length} futás)`),
+    `  ${pad('#', 4)}${pad('idő', 12)}${pad('kimenet', 10)}${pad('gondolkodás', 14)}költség`,
+  ];
+
+  futasok.forEach((f, i) => {
+    sorok.push(
+      `  ${pad(String(i + 1), 4)}${pad(`${f.idoMs} ms`, 12)}` +
+        `${pad(f.kimenetToken === null ? '—' : String(f.kimenetToken), 10)}` +
+        `${pad(f.gondolkodasToken === null ? '—' : String(f.gondolkodasToken), 14)}` +
+        koltsegSzo(f.koltseg),
+    );
+  });
+
+  const szorasok = [
+    szoras('idő', futasok.map((f) => f.idoMs), String, ' ms'),
+    szoras('gondolkodás', futasok.map((f) => f.gondolkodasToken), String),
+    szoras('költség', futasok.map((f) => f.koltseg), (n) => n.toFixed(6), ' USD'),
+  ].filter((s) => s !== null);
+
+  if (szorasok.length > 0) {
+    sorok.push(`  szórás: ${szorasok.join(' · ')}`);
+  }
+
+  return sorok;
+}
+
+/**
+ * Egy mérőszám szélsőértékei. `null`, ha egyik futás sem szolgáltatta — a
+ * „nincs mérésünk" és a „nulla" itt sem ugyanaz.
+ *
+ * A mértékegység **egyszer** áll ki, a tartomány végén (`5803–9512 ms`), nem
+ * mindkét szám után: így a szem a két számot hasonlítja, nem a mértékegységet
+ * olvassa kétszer.
+ */
+function szoras(
+  nev: string,
+  ertekek: readonly (number | null)[],
+  kiir: (n: number) => string,
+  mertek = '',
+): string | null {
+  const szamok = ertekek.filter((e): e is number => e !== null);
+
+  if (szamok.length === 0) {
+    return null;
+  }
+
+  const kicsi = Math.min(...szamok);
+  const nagy = Math.max(...szamok);
+
+  return `${nev} ${kicsi === nagy ? kiir(kicsi) : `${kiir(kicsi)}–${kiir(nagy)}`}${mertek}`;
 }
 
 function ismetlesSorok(futasok: readonly Futas[]): string[] {
