@@ -336,8 +336,48 @@ tényleg jó volt, nem csak lefutott.
 
 ⚠️ **Amit ez a futás NEM mért:** a `getDocumentProxy(bajtok.slice())` másolatot a
 **modellhívásos** ág használja (onnan vágjuk ki a bizonylat oldalait), ez a
-bizonylat viszont az XML-ágon ment. A v19-en tehát a modellút még nem futott le;
-egy közönséges PDF feltöltése zárja le, nagyságrendileg két forintért.
+bizonylat viszont az XML-ágon ment. A v19-en tehát a modellút nem futott le.
+
+### ✅ A modellút lefutott — `kiolvas` v20, 2026-09-21 12:59 UTC
+
+A nyitva hagyott tétel lezárva, és egy verzióval odébb: a v20 már a
+`beolvasas.ts`-es kiemelést is viszi. A telepítés **12:58:54**-kor, a feltöltés
+**22 másodperccel utána**.
+
+| | |
+|---|---|
+| fájl | `Invoice-WKRJROOX-0002.pdf`, 34 830 bájt, 1 oldal, `szovegreteg` (836 karakter) |
+| modell | `google/gemini-3.8-flash` — a `model_version` **ugyanaz**, nem kaptunk mást, mint amit kértünk |
+| prompt | `v6-2026-09-04` |
+| token | 3 445 be · 763 ki, ebből **446 gondolkodás** (a kimenet 58%-a) |
+| költség · idő | **0,005445 USD** · 6 602 ms (ebből kiolvasás 6 258, felderítés **76**, letöltés 159) |
+| eredmény | `attempts: 1`, `error: null`, 1 kredit, **nulla bukott validátor**, **0** `document_corrections` |
+
+**A felderítés 76 milliszekunduma a lényeg.** A `bajtok.slice()` másolat itt
+futott le először a modellúton: ha a pdf.js a *hívó* pufferét vette volna el, a
+modellnek üres base64 ment volna — hibaüzenet nélkül. Helyette 3 445 bemeneti
+token és egy hibátlanul kiolvasott számla. A másolat tehát nemcsak elméletben
+véd, hanem a való úton sem került semmibe: a felderítés ideje a korábbi
+futásokéval azonos (71–76 ms).
+
+Az összemérés ugyanazzal a számlacsaláddal (mind 3 445 bemeneti token):
+
+| | kimenet | ebből gondolkodás | költség | teljes lánc |
+|---|---|---|---|---|
+| **v20** (12:59) | **763** | **446** | **0,005445 USD** | **6 602 ms** |
+| korábbi (03:21) | 591 | 303 | 0,004800 USD | 5 237 ms |
+| korábbi (03:17) | 716 | 399 | 0,005269 USD | 5 793 ms |
+| korábbi (03:08) | 1 194 | 891 | 0,007061 USD | 11 096 ms |
+
+A v20 a mezőnyön belül van, a szórás pedig a **gondolkodásé**: ugyanaz a
+feladat 303 és 891 token között ingadozik, és a költség meg az idő ezt követi.
+Négy futás nem eloszlás — de azt megmutatja, hogy a drágulás nem a bemeneten
+múlik, az minden futásnál ugyanannyi.
+
+⚠️ **Amit viszont a v20 még nem mért:** a **refaktorált XML-ág**. A
+`xmlbolKiolvas()` óta egyetlen strukturált bizonylat sem ment át élesben (a
+hibrid PDF még a v19-en futott). Egy `minta/*.xml` feltöltése zárja le —
+**nulla forintért**, mert az az ág nem hív modellt.
 
 ## A mérőeszköz: `npm run kiolvasas:proba`
 
