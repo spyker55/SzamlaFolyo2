@@ -120,163 +120,263 @@ $$;
 -- A politikák átkötése az új sémára
 -- ---------------------------------------------------------------------------
 
-drop policy "A tag latja a ceget" on public.companies;
-drop policy "A cegadatokat a tulajdonos szerkeszti" on public.companies;
+-- ⚠️ A politikákat **nem névre hivatkozva** ejtjük. Ez a migráció mind a tíz
+-- érintett táblán a TELJES politikakészletet lecseréli (a dobások és a
+-- létrehozások száma táblánként egyezik), tehát a „mindet" a pontos szándék —
+-- és így a név elírása, ékezete vagy későbbi változása nem tud csendben
+-- meghiúsítani egy dobást. Ugyanaz a minta, amit a 20260918000100 migráció
+-- vezetett be, ott is mérés után: egy `drop policy if exists "…ékezetes…"`
+-- némán nem csinált semmit, mert élesben ékezet nélkül állt a név.
 
-create policy "A tag latja a ceget"
+-- companies: 2 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'companies'
+  loop
+    execute format('drop policy %I on public.companies', r.policyname);
+  end loop;
+end;
+$$;
+
+create policy "A tag látja a cégét"
   on public.companies for select to authenticated
   using (id in (select belso.tag_cegei()));
 
-create policy "A cegadatokat a tulajdonos szerkeszti"
+create policy "A cégadatokat a tulajdonos szerkeszti"
   on public.companies for update to authenticated
   using (belso.adminisztralhat(id))
   with check (belso.adminisztralhat(id));
 
-drop policy "A tag latja a ceg tagjait" on public.company_members;
-drop policy "Tagot a tulajdonos hiv meg" on public.company_members;
-drop policy "A tagsagot a tulajdonos modositja, a meghivott elfogadja" on public.company_members;
-drop policy "Tagot a tulajdonos tavolit el, vagy ki-ki magat" on public.company_members;
+-- company_members: 4 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'company_members'
+  loop
+    execute format('drop policy %I on public.company_members', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag latja a ceg tagjait"
+create policy "A tag látja a cég tagjait"
   on public.company_members for select to authenticated
   using (
     user_id = (select auth.uid())
     or company_id in (select belso.tag_cegei())
   );
 
-create policy "Tagot a tulajdonos hiv meg"
+create policy "Tagot a tulajdonos hív meg"
   on public.company_members for insert to authenticated
   with check (belso.adminisztralhat(company_id));
 
-create policy "A tagsagot a tulajdonos modositja, a meghivott elfogadja"
+create policy "A tagságot a tulajdonos módosítja, a meghívott elfogadja"
   on public.company_members for update to authenticated
   using (belso.adminisztralhat(company_id) or user_id = (select auth.uid()))
   with check (belso.adminisztralhat(company_id) or user_id = (select auth.uid()));
 
-create policy "Tagot a tulajdonos tavolit el, vagy ki-ki magat"
+create policy "Tagot a tulajdonos távolít el, vagy ki-ki magát"
   on public.company_members for delete to authenticated
   using (belso.adminisztralhat(company_id) or user_id = (select auth.uid()));
 
-drop policy "A tag latja a ceg fajljait" on public.files;
-drop policy "Fajlt a szerkeszto tolt fel" on public.files;
-drop policy "Fajlt a szerkeszto modosit" on public.files;
-drop policy "Fajlt a szerkeszto torol" on public.files;
+-- files: 4 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'files'
+  loop
+    execute format('drop policy %I on public.files', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag latja a ceg fajljait"
+create policy "A tag látja a cég fájljait"
   on public.files for select to authenticated
   using (company_id in (select belso.tag_cegei()));
 
-create policy "Fajlt a szerkeszto tolt fel"
+create policy "Fájlt a szerkesztő tölt fel"
   on public.files for insert to authenticated
   with check (belso.szerkeszthet(company_id));
 
-create policy "Fajlt a szerkeszto modosit"
+create policy "Fájlt a szerkesztő módosít"
   on public.files for update to authenticated
   using (belso.szerkeszthet(company_id))
   with check (belso.szerkeszthet(company_id));
 
-create policy "Fajlt a szerkeszto torol"
+create policy "Fájlt a szerkesztő töröl"
   on public.files for delete to authenticated
   using (belso.szerkeszthet(company_id));
 
-drop policy "A tag latja a ceg bizonylatait" on public.documents;
-drop policy "Bizonylatot a szerkeszto hoz letre" on public.documents;
-drop policy "Bizonylatot a szerkeszto javit" on public.documents;
-drop policy "Bizonylatot a szerkeszto torol" on public.documents;
+-- documents: 4 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'documents'
+  loop
+    execute format('drop policy %I on public.documents', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag latja a ceg bizonylatait"
+create policy "A tag látja a cég bizonylatait"
   on public.documents for select to authenticated
   using (company_id in (select belso.tag_cegei()));
 
-create policy "Bizonylatot a szerkeszto hoz letre"
+create policy "Bizonylatot a szerkesztő hoz létre"
   on public.documents for insert to authenticated
   with check (belso.szerkeszthet(company_id));
 
-create policy "Bizonylatot a szerkeszto javit"
+create policy "Bizonylatot a szerkesztő javít"
   on public.documents for update to authenticated
   using (belso.szerkeszthet(company_id))
   with check (belso.szerkeszthet(company_id));
 
-create policy "Bizonylatot a szerkeszto torol"
+create policy "Bizonylatot a szerkesztő töröl"
   on public.documents for delete to authenticated
   using (belso.szerkeszthet(company_id));
 
-drop policy "A tag latja a ceg kiolvasasait" on public.document_extractions;
+-- document_extractions: 1 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'document_extractions'
+  loop
+    execute format('drop policy %I on public.document_extractions', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag latja a ceg kiolvasasait"
+create policy "A tag látja a cég kiolvasásait"
   on public.document_extractions for select to authenticated
   using (company_id in (select belso.tag_cegei()));
 
-drop policy "A tag latja a ceg javitasait" on public.document_corrections;
-drop policy "Javitast a szerkeszto rogzit" on public.document_corrections;
+-- document_corrections: 2 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'document_corrections'
+  loop
+    execute format('drop policy %I on public.document_corrections', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag latja a ceg javitasait"
+create policy "A tag látja a cég javításait"
   on public.document_corrections for select to authenticated
   using (company_id in (select belso.tag_cegei()));
 
-create policy "Javitast a szerkeszto rogzit"
+create policy "Javítást a szerkesztő rögzít"
   on public.document_corrections for insert to authenticated
   with check (belso.szerkeszthet(company_id));
 
-drop policy "A tag latja a ceg exportjait" on public.exports;
-drop policy "Exportot a szerkeszto keszit" on public.exports;
-drop policy "Exportot a szerkeszto modosit" on public.exports;
-drop policy "Exportot a tulajdonos torol" on public.exports;
+-- exports: 4 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'exports'
+  loop
+    execute format('drop policy %I on public.exports', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag latja a ceg exportjait"
+create policy "A tag látja a cég exportjait"
   on public.exports for select to authenticated
   using (company_id in (select belso.tag_cegei()));
 
-create policy "Exportot a szerkeszto keszit"
+create policy "Exportot a szerkesztő készít"
   on public.exports for insert to authenticated
   with check (belso.szerkeszthet(company_id));
 
-create policy "Exportot a szerkeszto modosit"
+create policy "Exportot a szerkesztő módosít"
   on public.exports for update to authenticated
   using (belso.szerkeszthet(company_id))
   with check (belso.szerkeszthet(company_id));
 
-create policy "Exportot a tulajdonos torol"
+create policy "Exportot a tulajdonos töröl"
   on public.exports for delete to authenticated
   using (belso.adminisztralhat(company_id));
 
-drop policy "A tulhasznalatot a tulajdonos latja" on public.overage_charges;
+-- overage_charges: 1 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'overage_charges'
+  loop
+    execute format('drop policy %I on public.overage_charges', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tulhasznalatot a tulajdonos latja"
+create policy "A túlhasználatot a tulajdonos látja"
   on public.overage_charges for select to authenticated
   using (belso.adminisztralhat(company_id));
 
-drop policy "A tag latja a ceg naplojat" on public.activity_log;
-drop policy "Naplobejegyzest a szerkeszto fuz hozza" on public.activity_log;
+-- activity_log: 2 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'public' and tablename = 'activity_log'
+  loop
+    execute format('drop policy %I on public.activity_log', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag latja a ceg naplojat"
+create policy "A tag látja a cég naplóját"
   on public.activity_log for select to authenticated
   using (company_id in (select belso.tag_cegei()));
 
-create policy "Naplobejegyzest a szerkeszto fuz hozza"
+create policy "Naplóbejegyzést a szerkesztő fűz hozzá"
   on public.activity_log for insert to authenticated
   with check (belso.szerkeszthet(company_id));
 
-drop policy "A tag letolti a cege bizonylatait" on storage.objects;
-drop policy "Bizonylatot a szerkeszto tolt fel" on storage.objects;
-drop policy "Bizonylatfajlt a szerkeszto cserel" on storage.objects;
-drop policy "Bizonylatfajlt a szerkeszto torol" on storage.objects;
+-- objects: 4 politika
+do $$
+declare r record;
+begin
+  for r in
+    select policyname from pg_policies
+    where schemaname = 'storage' and tablename = 'objects'
+  loop
+    execute format('drop policy %I on storage.objects', r.policyname);
+  end loop;
+end;
+$$;
 
-create policy "A tag letolti a cege bizonylatait"
+create policy "A tag letölti a cége bizonylatait"
   on storage.objects for select to authenticated
   using (
     bucket_id = 'bizonylatok'
     and ((storage.foldername(name))[1])::uuid in (select belso.tag_cegei())
   );
 
-create policy "Bizonylatot a szerkeszto tolt fel"
+create policy "Bizonylatot a szerkesztő tölt fel"
   on storage.objects for insert to authenticated
   with check (
     bucket_id = 'bizonylatok'
     and belso.szerkeszthet(((storage.foldername(name))[1])::uuid)
   );
 
-create policy "Bizonylatfajlt a szerkeszto cserel"
+create policy "Bizonylatfájlt a szerkesztő cserél"
   on storage.objects for update to authenticated
   using (
     bucket_id = 'bizonylatok'
@@ -287,7 +387,7 @@ create policy "Bizonylatfajlt a szerkeszto cserel"
     and belso.szerkeszthet(((storage.foldername(name))[1])::uuid)
   );
 
-create policy "Bizonylatfajlt a szerkeszto torol"
+create policy "Bizonylatfájlt a szerkesztő töröl"
   on storage.objects for delete to authenticated
   using (
     bucket_id = 'bizonylatok'

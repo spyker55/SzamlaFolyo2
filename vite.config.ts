@@ -32,6 +32,10 @@ export default defineConfig({
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
       'supabase/functions/**/*.test.ts',
+      // A migrációk elcsúszás-őre a migrációk mellett lakik, ugyanabból az
+      // okból, mint az árazási teszt: aki egy politikanevet átír, annak ott
+      // akadjon meg a szeme rajta.
+      'supabase/migrations/**/*.test.ts',
     ],
   },
 });
