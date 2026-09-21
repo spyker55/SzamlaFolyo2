@@ -20,14 +20,17 @@ project_id = "szamlafolyo"
 # védtelen maradna.
 verify_jwt = true
 import_map = "./functions/deno.json"
-# A **forrás** a belépési pont, nem a generált csomag. A `kiolvas.bundle.js`
-# azért született, mert az MCP-s telepítés hívásába nem fér be sok fájl; a CLI
-# viszont maga oldja fel a `../../../shared/…` importokat az import-térkép
-# szerint, tehát nincs szüksége csomagra.
+# A **forrás** a belépési pont, és 2026-09-21 óta nincs más. A CLI maga oldja
+# fel a `../../../shared/…` importokat az import-térkép szerint, tehát nincs
+# szüksége csomagra — a v6 óta minden telepítés így ment, tizenegy verzión át.
 #
-# Ha a CLI mégis elakadna rajtuk, a kijárat egyetlen sor: írd át ezt
-# `./functions/kiolvas/kiolvas.bundle.js`-re. Az a korábban telepített artefakt
-# alakja, tehát bizonyítottan fut — csak előtte `npm run kiolvas:csomag` kell.
+# Itt korábban egy generált `kiolvas.bundle.js` állt kijáratként. Nyugdíjazva:
+# a commitolt példány hat nap alatt húsz commitot csúszott el a forrástól, és
+# közben kimaradt belőle a `keretEllenoriz` meg a túlhasználati plafon. Aki
+# sietségből erre állította volna át ezt a sort, **keret nélkül futó
+# kiolvasást** telepít — ami nem hibázik, csak dolgozik, a mi AI-költségünkön.
+# A csomagoló a `c29c23a` commitig élt, ha valaha kellene:
+# `git show c29c23a:supabase/functions/kiolvas/csomagol.mjs`
 entrypoint = "./functions/kiolvas/index.ts"
 
 [functions.selejtez]

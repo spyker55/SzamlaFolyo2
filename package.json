@@ -9,8 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit",
-    "kiolvas:csomag": "node supabase/functions/kiolvas/csomagol.mjs"
+    "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.5",

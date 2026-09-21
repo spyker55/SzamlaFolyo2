@@ -52,33 +52,39 @@ visszaállíthatja az alapértékre.
 > használnál (`SUPABASE_ACCESS_TOKEN`), az **maradjon a gépeden** — ugyanaz a
 > megfontolás, mint a `service_role` kulcsnál.
 
-### Csomaggal, ha a CLI nem érhető el
+### A generált csomag — nyugdíjazva (2026-09-21)
 
-A `kiolvas.bundle.js` **generált** artefakt — a `csomagol.mjs` állítja elő:
+Itt korábban egy `kiolvas.bundle.js` állt, amit a `csomagol.mjs` gyártott
+(`npm run kiolvas:csomag`). Az MCP-s telepítéshez kellett: oda a fájlok a
+hívásba ágyazva utaznak, és a forrásfájlok nem férnek el egy hívásban.
+
+**Mindkettő törölve**, három mért okból:
+
+1. **A production nem használta.** A `config.toml` a v6 óta a forrásra mutat,
+   és azóta tizenegy verzió ment ki így — a telepített fájlokat többször
+   vetettük össze a repóval, bájtra egyeztek.
+2. **A commitolt példány elcsúszott, és pont a fékek maradtak ki belőle.** Hat
+   nap, húsz commit: hiányzott belőle a `keretEllenoriz` és a teljes
+   túlhasználati plafon. Aki sietségből arra állítja a belépési pontot, keret
+   nélkül futó kiolvasást telepít — és az nem hibázik, csak dolgozik.
+3. **A csomagoló be nem jelentett függőségen állt**: az `esbuild` nincs a
+   `package.json`-ban, csak a Vite húzta be tranzitívan. Egy Vite-frissítés
+   bármikor elvihette volna, és csak a kijárat használatakor derült volna ki.
+
+Ha valaha mégis kell egy egyfájlos csomag, a recept megvan a történetben:
 
 ```bash
-npm run kiolvas:csomag
+git show c29c23a:supabase/functions/kiolvas/csomagol.mjs > csomagol.mjs
 ```
 
-Ez akkor kell, ha a telepítés olyan úton megy, ahol a fájlok a hívásba
-ágyazva utaznak (például a Supabase MCP `deploy_edge_function` eszközével): a
-forrásfájlok nem férnek el egy hívásban, egy csomag igen. A belépési pont
-ilyenkor `supabase/functions/kiolvas/kiolvas.bundle.js`, az import-térkép
-változatlanul `supabase/functions/deno.json`.
-
-> ⚠️ **Ez az út drágább, mint amilyennek látszik, és nem gépidőben.** A csomag
-> ASCII-tiszta, tehát minden ékezet escape-ként utazik: **854 escape-szekvencia,
-> 962 backslash, 1400 idézőjel** — és a hívás JSON-jában mindet újra kell
-> escape-elni. Nem fájlmásolás, hanem több ezer karakter hibátlan átírása.
->
-> A hangos hiba nem baj: a csomag nem bootol, a percenkénti cron azonnal jelez.
-> A **csendes** viszont igen: egy rossz karakter a prompt szövegében átmegy a
-> szintaxison, és utána rosszabbul olvasunk ki bizonylatokat, anélkül hogy
-> bármelyik mérőeszközünk szólna. Ezért elsődleges a CLI.
-
-**A csomagot soha ne szerkeszd kézzel.** Ami benne változik, az a forrásban
-változzon, és futtasd újra a scriptet — a `csomagol.mjs` fejlécében ott az
-összes indok, a minifikálástól az ASCII-tisztaságig.
+> ⚠️ **És ha elővennéd, tudd, mit veszel elő.** A csomag ASCII-tiszta, tehát
+> minden ékezet escape-ként utazik — a legutóbbi mérés szerint 854
+> escape-szekvencia, 962 backslash és 1400 idézőjel, amit a hívás JSON-jában
+> mind újra kell escape-elni. A hangos hiba nem baj: a csomag nem bootol, a
+> percenkénti cron azonnal jelez. A **csendes** viszont igen: egy rossz
+> karakter a prompt szövegében átmegy a szintaxison, és utána rosszabbul
+> olvasunk ki bizonylatokat, anélkül hogy bármelyik mérőeszközünk szólna.
+> Ezért elsődleges a CLI.
 
 > A `verify_jwt` **maradjon bekapcsolva**. Mindkét valódi hívó érvényes JWT-t
 > küld (a böngésző a felhasználóét, a cron a `service_role` kulcsot), a függvény

@@ -8,7 +8,7 @@ import { oldaltartomany } from './pdf.ts';
  * Ez az a kód, ami nélkül a kötegszétszedés nem ér semmit: ha a modell az egész
  * köteget kapja meg, minden darabra ugyanazt az első bizonylatot olvassa ki. A
  * darabolás tehát nem kényelmi lépés, hanem a helyesség feltétele — és a
- * `csomagol.mjs` PLACEHOLDER-esete óta az ilyet nem telepítjük mérés nélkül.
+ * PLACEHOLDER-eset óta az ilyet nem telepítjük mérés nélkül.
  *
  * ⚠️ Az oldalakat **a méretük** azonosítja, nem beléjük írt szöveg. Az első
  * változat szöveget rajzolt, és a nyers bájtokban kereste — az mérve nem
