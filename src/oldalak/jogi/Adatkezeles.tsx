@@ -131,7 +131,7 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  *    hanem egy meglévő mondat lett hamissá egy új funkciótól.
  * 7. **A megőrzési idők** (12. pont) három adatkörre „a szerződés
  *    megszűnéséig" álltak. Most kilencven nap mindhármon, és **a törlést napi
- *    cron végzi** (`20260920000100_adattakaritas.sql`) — a szám nem ígéret
+ *    cron végzi** (`20260920000400_adattakaritas.sql`) — a szám nem ígéret
  *    marad, hanem lefut.
  * 8. **A sütiablak indoklása** (14. pont) arra hivatkozott, hogy a munkamenet
  *    „nem süti". Ez önmagában nem mentesít: ugyanaz a mérce vonatkozik a

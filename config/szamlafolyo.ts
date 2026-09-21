@@ -349,7 +349,7 @@ export const szamlafolyo = {
      * addigra megtette. Ami ennél régebbi, az nem visszakeresés, hanem
      * felhalmozás.
      *
-     * ⚠️ **A számokat az SQL is ismeri** (`20260920000100_adattakaritas.sql`),
+     * ⚠️ **A számokat az SQL is ismeri** (`20260920000400_adattakaritas.sql`),
      * mert a napi takarítás nem tud TS-configot olvasni — ugyanaz a tükrözés,
      * mint az `exportNap`-nál. Ha ez a három szám változik, a migráció is
      * változik; a `config/megorzes.test.ts` méri, hogy a kettő együtt mozog.

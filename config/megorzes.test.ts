@@ -19,7 +19,7 @@ import { szamlafolyo } from './szamlafolyo.ts';
  * A teszt ezért **a migráció szövegét olvassa**, nem a szándékot.
  */
 
-const MIGRACIO = 'supabase/migrations/20260920000100_adattakaritas.sql';
+const MIGRACIO = 'supabase/migrations/20260920000400_adattakaritas.sql';
 
 const sql = readFileSync(MIGRACIO, 'utf8');
 

@@ -48,6 +48,13 @@ rögzíti. **Ez a fájl nem elhagyható**: a CLI ebből ismeri fel a
 projektgyökeret, és ami nincs benne leírva, azt egy telepítés csendben
 visszaállíthatja az alapértékre.
 
+> ⚠️ **A CLI itt a függvényeké — a migrációké nem.** Ebben a projektben a
+> migrációk az MCP-n át mentek ki, saját időbélyeggel, ezért a repó egyetlen
+> verziószáma sem szerepel a `supabase_migrations.schema_migrations` táblában
+> (mérve: 0 a 25-ből). Egy `supabase db push` mind a 25-öt függőben lévőnek
+> látná. Mielőtt a CLI-t az adatbázisra engednéd, olvasd el:
+> `supabase/migrations/OLVASS-EL.md`.
+
 > Az access tokent a `login` böngészőben intézi. Ha inkább környezeti változót
 > használnál (`SUPABASE_ACCESS_TOKEN`), az **maradjon a gépeden** — ugyanaz a
 > megfontolás, mint a `service_role` kulcsnál.
