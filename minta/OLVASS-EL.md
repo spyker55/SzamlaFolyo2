@@ -31,6 +31,7 @@ lehetséges, és épp ezért ez méri a legtöbbet:
 | melléklet | `factur-x.xml`, 6 639 bájt |
 | felderített jelleg | **`beagyazott_xml`** |
 | értelmező | `xml/cii`, mind a 15 mező + kétkulcsos ÁFA-bontás, **nulla bukott validátor** |
+| élesben (2026-09-21) | kiolvasás **4 ms**, teljes lánc **451 ms**, költség **0** — ugyanaznap ugyanazon a cégen a modell 4 931–9 942 ms és 0,0048–0,0071 USD |
 
 A második és a negyedik sor együtt a lényeg: a fájlnak **van** használható
 szövegrétege, tehát a beágyazott XML felismerése előtt `szovegreteg` lett volna,

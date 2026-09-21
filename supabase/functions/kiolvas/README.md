@@ -299,6 +299,41 @@ Mintafájl a kézi próbához: `minta/factur-x-szabalyos.pdf` — **711 karakter
 szövegréteggel**, tehát e kör előtt `szovegreteg` lett volna és a modellhez ment
 volna.
 
+### Élesben mérve (2026-09-21, `kiolvas` v19)
+
+A `forras_naplo` szó szerint az, amit a Vitest-fixtúra előre megmondott:
+
+```json
+{"jelleg":"beagyazott_xml","xml_nev":"factur-x.xml","xml_bajt":6639,
+ "oldalszam":1,"szoveg_hossz":711}
+```
+
+És a kiolvasás-sor melletti összehasonlítás ugyanarról a napról, ugyanarról a
+cégről — mind egyoldalas, szövegréteges PDF:
+
+| Fájl | Kiolvasó | Kiolvasás | Teljes lánc | Költség |
+|---|---|---|---|---|
+| `factur-x-szabalyos.pdf` | **`xml/cii`** | **4 ms** | **451 ms** | **0** |
+| `Invoice-WKRJROOX-0001.pdf` | `google/gemini-3.8-flash` | 4 931 ms | 5 237 ms | 0,0048 USD |
+| `Invoice-WKRJROOX-0003.pdf` | `google/gemini-3.8-flash` | 5 333 ms | 5 793 ms | 0,0053 USD |
+| `Invoice-OL2ZOFQS-0004.pdf` | `google/gemini-3.8-flash` | 9 942 ms | 11 096 ms | 0,0071 USD |
+
+A kiolvasás szakasza **négy ezredmásodperc** a modell öt-tíz másodperce helyett,
+és `cost`, `model_version`, `prompt_version`, `input_tokens`, `output_tokens`,
+`reasoning_tokens` mind **`null`** — ez a bizonyíték, hogy nem a modell olvasta.
+A teljes lánc 451 ms-ából 303 a letöltés és 62 a felderítés (a PDF értelmezése
+és a melléklet kinyerése együtt).
+
+Mind a 15 mező pontos, az ÁFA-bontás kétkulcsos (27% és 5%), **nulla bukott
+validátor**, és a jóváhagyó ember **egyetlen mezőt sem írt át** (0
+`document_corrections` sor) — ez az egyetlen jelünk arról, hogy a kiolvasás
+tényleg jó volt, nem csak lefutott.
+
+⚠️ **Amit ez a futás NEM mért:** a `getDocumentProxy(bajtok.slice())` másolatot a
+**modellhívásos** ág használja (onnan vágjuk ki a bizonylat oldalait), ez a
+bizonylat viszont az XML-ágon ment. A v19-en tehát a modellút még nem futott le;
+egy közönséges PDF feltöltése zárja le, nagyságrendileg két forintért.
+
 ## Amit a következő kör hoz
 
 - ⚠️ **A `supabase/` alatti kód nincs típusellenőrizve.** Mérve: a
