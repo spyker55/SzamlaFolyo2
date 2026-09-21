@@ -12,6 +12,13 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
 export const regisztracioNyitva = import.meta.env.VITE_REGISZTRACIO_NYITVA === 'true';
 export const fejlesztesAlatt = import.meta.env.VITE_FEJLESZTES_ALATT !== 'false';
 
-export const kapcsolatEmail = 'info@szamlafolyo.hu';
+/**
+ * A kapcsolati cím a configból jön, nem innen.
+ *
+ * A név itt marad, mert hét képernyő importálja — de a betűsor egyetlen
+ * helyen születik (`config/szamlafolyo.ts`), ahonnan a jogi oldalak és a
+ * levelek feladója is olvassa.
+ */
+export const kapcsolatEmail = szamlafolyo.kapcsolatEmail;
 
 export { szamlafolyo };

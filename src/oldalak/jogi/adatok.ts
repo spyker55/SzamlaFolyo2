@@ -1,3 +1,5 @@
+import { szamlafolyo } from '@config/szamlafolyo.ts';
+
 /**
  * A szolgáltató azonosító adatai — egy helyen.
  *
@@ -19,7 +21,10 @@ export const szolgaltato = {
   adoszam: '92220155-1-30',
   kamara: 'Heves Vármegyei Kereskedelmi és Iparkamara (HKIK)',
   kamaraCim: '3300 Eger, Faiskola út 15.',
-  email: 'info@szamlafolyo.hu',
+  // Ugyanaz a cím, mint a felület „írj nekünk" linkjén és a kimenő levelek
+  // feladójában — egy betűsor, a configban. A külön név itt szándékos: ez az
+  // adatkezelő **hivatalos** elérhetősége, nem ügyfélszolgálati cím.
+  email: szamlafolyo.kapcsolatEmail,
   telefon: '+36 70 604 3043',
   telefonHivas: '+36706043043',
   weboldal: 'szamlafolyo.hu',

@@ -10,6 +10,28 @@
  * API-kulcsok viszont sosem kerülnek ide.
  */
 
+/**
+ * A kapcsolati cím — **egy betűsor, három néven**.
+ *
+ * Három helyen kell, három különböző okból: a felületen az „írj nekünk" link
+ * mögött (`kapcsolatEmail`), a jogi oldalakon az adatkezelő hivatalos
+ * elérhetőségeként (`szolgaltato.email`), és a kimenő levelek `From`
+ * fejlécében (`levelFelado`). Korábban mind a három **külön beírt literál**
+ * volt — ugyanaz a cím háromszor, ami pontosan addig igaz, amíg valaki az
+ * egyiket átírja.
+ *
+ * A nevek azért maradtak meg, mert a három szerep **nem ugyanaz**: az
+ * impresszumból nem lehet csak úgy `support@`-ot csinálni, a `From`-nak meg
+ * valódi postafióknak kell lennie (lásd a `levelFelado` indoklását). Ha
+ * egyszer tényleg szét kell válniuk, az egy sor itt — nem nyolc helyen
+ * keresgélés.
+ *
+ * ⚠️ **Itt lakik, és nem a `src/` alatt**, mert ezt a fájlt a böngésző **és**
+ * az Edge Function is importálja. A `levelFelado`-nak Denóból is látszania
+ * kell, a `src/oldalak/jogi/adatok.ts` viszont onnan elérhetetlen.
+ */
+const KAPCSOLAT_EMAIL = 'info@szamlafolyo.hu';
+
 export const szamlafolyo = {
   /*
    * A webhely címe
@@ -45,7 +67,15 @@ export const szamlafolyo = {
    * címzett bizalmatlan. A tartomány DKIM-aláírt, tehát a levél hitelesen a
    * miénk.
    */
-  levelFelado: 'SzámlaFolyó <info@szamlafolyo.hu>',
+  levelFelado: `SzámlaFolyó <${KAPCSOLAT_EMAIL}>`,
+
+  /*
+   * A felületen és a jogi oldalakon megjelenő kapcsolati cím.
+   *
+   * Ugyanaz a postafiók, mint a feladó — lásd a `KAPCSOLAT_EMAIL` docblockját
+   * arról, miért egy betűsor, és miért három név.
+   */
+  kapcsolatEmail: KAPCSOLAT_EMAIL,
 
   /*
    * Feltöltés
