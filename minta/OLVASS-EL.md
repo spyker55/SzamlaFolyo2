@@ -7,6 +7,19 @@ minden további körben (kvóta, Beállítások, Stripe) újra kellenek.
 Mind a hét fájlt a repó **saját** értelmezőjén és validátorán engedtük át, nem
 csak ránézésre jó — az alábbi táblázat mért eredmény.
 
+Ezt bármikor újra lehet mérni, böngésző és feltöltés nélkül:
+
+```bash
+npm run kiolvasas:proba minta/nav-szabalyos.xml
+```
+
+A `kiolvasas:proba` ugyanazt a láncot futtatja, amit a `kiolvas` Edge Function,
+és kiírja, ki olvasta ki, mit olvasott ki és mennyibe került. **Ezeken a
+fájlokon nulla forint** — mind a hét a strukturált ágon megy, hálózat nélkül.
+A négy XML-értelmezőt és a hibrid PDF-et a tesztkör (`eszkozok/meres.test.ts`)
+is ezekkel a fájlokkal méri, tehát ha egy értelmező elromlik, nem egy kézi
+próbán fog kiderülni.
+
 ## Mi van bennük
 
 | Fájl | Értelmező | Típus | Összeg | Mit mér |

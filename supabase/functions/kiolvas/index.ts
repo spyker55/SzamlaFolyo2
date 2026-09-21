@@ -4,8 +4,7 @@ import { szamlafolyo } from '../../../config/szamlafolyo.ts';
 import { bizonylatOldalszama, feldolgoz as lancotFuttat } from '../../../shared/uzleti/lanc.ts';
 import { kiolvas, KiolvasasHiba, szetszed } from '../../../shared/uzleti/openrouter.ts';
 import { hatarokErtelmez, type Hatar } from '../../../shared/uzleti/koteg.ts';
-import { ertelmez as xmlErtelmez } from '../../../shared/uzleti/xml/xmlKiolvaso.ts';
-import { xmltFelolvas, XmlHiba } from '../../../shared/uzleti/xml/parser.ts';
+import { xmlbolKiolvas } from '../../../shared/uzleti/xml/beolvasas.ts';
 import { szolgaltatasSzerep } from '../../../shared/uzleti/token.ts';
 import { keretAllapot, type CegAllapot } from '../../../shared/uzleti/keret.ts';
 
@@ -751,35 +750,31 @@ async function kiolvasas(
   frissHatar: Hatar | null = null,
 ) {
   if (!igenyelModellt(felderites.jelleg) && felderites.xml !== null) {
-    try {
-      // ⚠️ A hosszt a **felderítés** adja, nem a fájl mérete. Önálló XML-nél
-      // a kettő ugyanaz; egy PDF-be ágyazott XML-nél viszont a PDF méretét
-      // mérnénk a melléklet 4 MB-os korlátjához — lásd a `xmlBajt` mező
-      // fejlécét. A `??` csak azért van, mert a típus nem tudja, hogy az
-      // `xml !== null` mindig `xmlBajt !== null`-lal jár.
-      const doc = xmltFelolvas(felderites.xml, felderites.xmlBajt ?? bajtok.length);
-      const eredmeny = doc === null ? null : xmlErtelmez(doc);
+    // ⚠️ A hosszt a **felderítés** adja, nem a fájl mérete. Önálló XML-nél a
+    // kettő ugyanaz; egy PDF-be ágyazott XML-nél viszont a PDF méretét
+    // mérnénk a melléklet 4 MB-os korlátjához — lásd a `xmlBajt` mező
+    // fejlécét. A `??` csak azért van, mert a típus nem tudja, hogy az
+    // `xml !== null` mindig `xmlBajt !== null`-lal jár.
+    //
+    // A `null` azt jelenti: **menjen a modellhez.** Az értelmezhetetlen séma
+    // és a biztonsági okból eldobott (doctype-os, túl nagy) XML is ide esik —
+    // a `xmlbolKiolvas()` fejléce sorolja fel a három esetet.
+    const eredmeny = xmlbolKiolvas(felderites.xml, felderites.xmlBajt ?? bajtok.length);
 
-      if (eredmeny !== null) {
-        return {
-          nyers: eredmeny.nyers,
-          modell: eredmeny.nev,
-          futtatottModell: null,
-          // Nincs prompt-verzió: ezt nem modell olvasta ki.
-          promptVerzio: null,
-          bemenetToken: null,
-          kimenetToken: null,
-          // Nem modell olvasta ki, tehát gondolkodás sem volt. A `null` itt is
-          // azt mondja, amit máshol: nincs mérésünk — nem pedig „nulla".
-          gondolkodasToken: null,
-          koltseg: null,
-        };
-      }
-    } catch (hiba) {
-      // Egy értelmezhetetlen vagy gyanús XML nem állítja meg a feldolgozást:
-      // a modell még megpróbálhatja. A `doctype` miatt eldobott fájl is ide
-      // esik — XML-ként nem nyúlunk hozzá, de a tartalmát a modell láthatja.
-      if (!(hiba instanceof XmlHiba)) throw hiba;
+    if (eredmeny !== null) {
+      return {
+        nyers: eredmeny.nyers,
+        modell: eredmeny.nev,
+        futtatottModell: null,
+        // Nincs prompt-verzió: ezt nem modell olvasta ki.
+        promptVerzio: null,
+        bemenetToken: null,
+        kimenetToken: null,
+        // Nem modell olvasta ki, tehát gondolkodás sem volt. A `null` itt is
+        // azt mondja, amit máshol: nincs mérésünk — nem pedig „nulla".
+        gondolkodasToken: null,
+        koltseg: null,
+      };
     }
   }
 

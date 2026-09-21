@@ -24,6 +24,10 @@ export default defineConfig({
     // közönséges npm-csomagra épül — a PDF-darabolás — **mérhető telepítés
     // előtt**, és pont az a fajta kód, amit nem szabad élesben először látni.
     include: [
+      // A `kiolvasas:proba` mérőeszköz. Ha egy mérőeszköz elromlik, arról nem
+      // egy hibaüzenet szól, hanem egy rossz mérés — ezért van saját tesztje,
+      // és ezért kell ennek a sornak itt lennie.
+      'eszkozok/**/*.test.ts',
       // Az árazási szabályok tesztje a számok mellett lakik (`config/`), nem a
       // `shared/uzleti/`-ben: aki egy árat átír, annak ott akadjon meg a szeme
       // rajta. E sor nélkül az a teszt **némán sosem futna le**.

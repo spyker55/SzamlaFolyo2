@@ -339,15 +339,76 @@ tényleg jó volt, nem csak lefutott.
 bizonylat viszont az XML-ágon ment. A v19-en tehát a modellút még nem futott le;
 egy közönséges PDF feltöltése zárja le, nagyságrendileg két forintért.
 
+## A mérőeszköz: `npm run kiolvasas:proba`
+
+```bash
+npm run kiolvasas:proba minta/ubl-szabalyos.xml
+npm run kiolvasas:proba -- szamla.pdf --ismetles 5
+npm run kiolvasas:proba -- szamla.pdf --modell google/gemini-3.1-flash-lite
+```
+
+Egy bizonylatot végigvisz **ugyanazon a láncon**, amit ez a függvény futtat, és
+kiírja, amit az adatbázisba írna: a felderítést, hogy ki olvasta ki, a
+ténylegesen futtatott modellt, a prompt verzióját, a tokeneket (a gondolkodásit
+külön), a költséget, a 15 mezőt a **tárolt alakjában**, a magabiztossági
+sávokat, a bukott validátorokat, az ÁFA-bontást és a kreditet.
+
+A terv az első naptól felsorolta, és eddig hiányzott: **prompt- vagy
+modellcsere után enélkül nem lehet megmondani, javult-e a pontosság.**
+
+Az `--ismetles N` a lényege. Egyetlen modellfutás semmit nem mond a
+pontosságról: a projekt legdrágább leckéje az volt, hogy ugyanazt a kézzel
+írott számlát hatszor kiolvasva **hat különböző, kitalált szállítónév** jött
+ki, miközben minden szám hatszor helyes volt. Aki egyszer futtat, egy nevet
+lát — és elhiszi. Az `--ismetles` után a jelentés megmutatja, mely mezők
+ingadoztak, és milyen értékeket vettek fel. ⚠️ Az „egyik sem" **ismételhetőség,
+nem helyesség**.
+
+| Amit mér | Amit **nem** mér |
+|---|---|
+| a repó kódját, végig a valódi láncon | ⚠️ a **telepített** függvényt — ha a deploy elmarad, a script attól még zöld |
+| felderítés, olvasó, token, költség, sávok, validátorok | a kapuk döntését: a hét kapuból négy a cég adatbázisbeli előzményeiből dolgozik |
+| a négy XML-értelmezőt és a hibrid PDF-et **ingyen**, hálózat nélkül | semmit nem ír: nincs adatbázis, tároló, kredit, Beérkező |
+
+A modellhívásos ág **valódi pénz** az OpenRouter-egyenlegből (nagyságrendileg
+2 Ft bizonylatonként), és a fájl ugyanúgy elhagyja a gépet, mint élesben —
+ugyanazzal a négy szolgáltatói kikötéssel (`szolgaltatoiKikotes()`). Kell hozzá
+`OPENROUTER_API_KEY` a `.env`-ben; a kulcsot onnan **sehova nem másoljuk ki**.
+
+A script Node alatt fut, **külön futtató nélkül**: a Node 22 a TypeScriptet
+magától értelmezi, az `unpdf` pedig a `felderites.test.ts` óta amúgy is
+`devDependency`. Új függőség tehát nincs.
+
+### Egy kódút, nem kettő: `shared/uzleti/xml/beolvasas.ts`
+
+Az XML-ág döntése — *mikor essen a bizonylat a modellhez* — eddig ebben a
+fájlban ült, egyetlen példányban. A mérőeszköz a második hívó, és két példány
+előbb-utóbb széttart; egy mérőeszköznél ez nem stílushiba, hanem az, hogy a
+*hasonmását* mérné annak, ami élesben fut.
+
+Ezért a két fél (`xmltFelolvas` + `ertelmez`) és a köztük lévő `XmlHiba`-nyelés
+egy közös függvénybe került. Viselkedésben semmi nem változott — a `null`
+ugyanúgy azt jelenti, hogy „menjen a modellhez", és ugyanaz a három eset vezet
+oda (nincs elem, ismeretlen séma, biztonsági okból eldobott fájl). Amit
+nyertünk: hat teszt épp arra, ami eddig egy `catch`-ben lakott, köztük az, hogy
+egy **nem** `XmlHiba` kivétel nem válhat csendben modellhívássá.
+
+⚠️ **Ez a fájl (`index.ts`) tehát megváltozott a telepített v19 óta.** A
+változás viselkedés-azonos, a telepítés nem sürgős — de amíg meg nem történik,
+a „telepített fájlok bájtra egyeznek a repóval" ellenőrzés eltérést mutat erre
+az egy fájlra és a két XML-modulra.
+
 ## Amit a következő kör hoz
 
-- ⚠️ **A `supabase/` alatti kód nincs típusellenőrizve.** Mérve: a
-  `tsconfig.app.json` `include`-ja `src`, `shared` és `config` — a `npm run
-  typecheck` tehát **egyetlen Edge Function-fájlt sem** néz meg, és egy
-  szándékosan beírt típushibát nem talált meg. A hálót ma a Vitest-tesztek és a
-  telepítéskor futó `deno check` adják. Ez nem ennek a körnek a hibája és nem is
-  sürgős, de addig nem szabad elfelejteni, amíg a `typecheck` zöldjét
-  bizonyítéknak vesszük a telepített kódra.
+- ⚠️ **A `supabase/` alatti kód nagyrészt továbbra sincs típusellenőrizve —
+  de a rés szűkült.** A `tsconfig.app.json` `include`-ja mostantól az
+  `eszkozok`-et is tartalmazza, és a mérőscript importálja a `felderites.ts`-t,
+  tehát azt a fájlt a `npm run typecheck` **végigméri**. Ezt nem feltételezzük:
+  egy szándékosan beírt `const x: number = "…"` a `felderites.ts`-ben **piros
+  lett**, ugyanaz a sor az `index.ts`-ben viszont **nem** — oda nem vezet import
+  a programba. A hálót ott továbbra is a Vitest-tesztek és a telepítéskor futó
+  `deno check` adják. Amíg így van, a `typecheck` zöldje nem bizonyíték a
+  telepített kódra.
 - **A szétszedés ára.** A szétszedő kör **minden többoldalas PDF-en** lefut,
   akkor is, ha egy háromoldalas számláról van szó. Szövegréteggel ez olcsó
   (csak a szöveg megy át, nem a képek), szkennelt kötegnél viszont egy teljes

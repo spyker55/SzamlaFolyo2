@@ -28,5 +28,5 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "shared", "config"]
+  "include": ["src", "shared", "config", "eszkozok"]
 }
