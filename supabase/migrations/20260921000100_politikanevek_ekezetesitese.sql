@@ -20,15 +20,18 @@
 -- atnevezes `if exists` mogott — es ezert ellenorzi a blokk a vegen, hogy a
 -- regi nev tenyleg eltunt-e.
 --
--- ⚠️ A storage.objects NEGY atnevezese kulon kezet kivan. Merve: az MCP
--- `apply_migration` szerepe nem tulajdonosa a storage.objects tablanak
--- (`ERROR 42501: must be owner of table objects`), es az `alter policy …
--- rename` tulajdonosi jogot kivan. A `do` blokk atomi, tehat az elso
--- probalkozas TELJESEN visszagorgult — felkesz allapot nem keletkezett.
--- Elesben ezert a public resz ment MCP-n (22 atnevezes), a negy tarolos pedig
--- a Supabase SQL-editorbol, postgres szerepkent. Friss adatbazison ez a
--- kerdes fel sem merul: ott a regi nevek nem leteznek, tehat egyetlen rename
--- sem fut le.
+-- ⚠️ A storage.objects NEGY politikaja SZANDEKOSAN nincs ebben a listaban.
+-- Nem elfelejtettuk: **nem lehet oket atnevezni**. A tabla tulajdonosa a
+-- `supabase_storage_admin`, az `alter policy … rename` pedig tulajdonosi jogot
+-- kivan, es sem az MCP szerepe, sem a `postgres` nem tagja annak a szerepnek
+-- (`pg_has_role('postgres','supabase_storage_admin','MEMBER')` = false, sem
+-- kozvetlenul, sem kozvetve). Az SQL-editorbol ugyanaz a
+-- `42501: must be owner of table objects` jon.
+--
+-- Az elso probalkozas meg tartalmazta oket, es a `do` blokk atomisaga miatt
+-- TELJESEN visszagorgult — felkesz allapot nem keletkezett, es ez jol van igy.
+-- A negy nev ezert a 20260912000300 migracioban is ASCII maradt: a cel az,
+-- hogy a repo es az eles EGYEZZEN, nem az, hogy szep legyen.
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -61,11 +64,7 @@ begin
       ('public', 'exports', 'Exportot a tulajdonos torol', 'Exportot a tulajdonos töröl'),
       ('public', 'overage_charges', 'A tulhasznalatot a tulajdonos latja', 'A túlhasználatot a tulajdonos látja'),
       ('public', 'activity_log', 'A tag latja a ceg naplojat', 'A tag látja a cég naplóját'),
-      ('public', 'activity_log', 'Naplobejegyzest a szerkeszto fuz hozza', 'Naplóbejegyzést a szerkesztő fűz hozzá'),
-      ('storage', 'objects', 'A tag letolti a cege bizonylatait', 'A tag letölti a cége bizonylatait'),
-      ('storage', 'objects', 'Bizonylatot a szerkeszto tolt fel', 'Bizonylatot a szerkesztő tölt fel'),
-      ('storage', 'objects', 'Bizonylatfajlt a szerkeszto cserel', 'Bizonylatfájlt a szerkesztő cserél'),
-      ('storage', 'objects', 'Bizonylatfajlt a szerkeszto torol', 'Bizonylatfájlt a szerkesztő töröl')
+      ('public', 'activity_log', 'Naplobejegyzest a szerkeszto fuz hozza', 'Naplóbejegyzést a szerkesztő fűz hozzá')
     ) as t(sema, tabla, regi, uj)
   loop
     if exists (

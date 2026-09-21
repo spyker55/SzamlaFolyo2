@@ -362,21 +362,21 @@ begin
 end;
 $$;
 
-create policy "A tag letölti a cége bizonylatait"
+create policy "A tag letolti a cege bizonylatait"
   on storage.objects for select to authenticated
   using (
     bucket_id = 'bizonylatok'
     and ((storage.foldername(name))[1])::uuid in (select belso.tag_cegei())
   );
 
-create policy "Bizonylatot a szerkesztő tölt fel"
+create policy "Bizonylatot a szerkeszto tolt fel"
   on storage.objects for insert to authenticated
   with check (
     bucket_id = 'bizonylatok'
     and belso.szerkeszthet(((storage.foldername(name))[1])::uuid)
   );
 
-create policy "Bizonylatfájlt a szerkesztő cserél"
+create policy "Bizonylatfajlt a szerkeszto cserel"
   on storage.objects for update to authenticated
   using (
     bucket_id = 'bizonylatok'
@@ -387,7 +387,7 @@ create policy "Bizonylatfájlt a szerkesztő cserél"
     and belso.szerkeszthet(((storage.foldername(name))[1])::uuid)
   );
 
-create policy "Bizonylatfájlt a szerkesztő töröl"
+create policy "Bizonylatfajlt a szerkeszto torol"
   on storage.objects for delete to authenticated
   using (
     bucket_id = 'bizonylatok'
