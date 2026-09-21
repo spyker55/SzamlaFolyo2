@@ -42,6 +42,11 @@ export type KiolvasasValasz = {
   promptVerzio: string;
   bemenetToken: number | null;
   kimenetToken: number | null;
+  /**
+   * A gondolkodásra elment tokenek — a `kimenetToken` **része**, nem afölött.
+   * `null`, ha a szolgáltató nem küldte. Lásd a `hasznalatOlvas()` fejlécét.
+   */
+  gondolkodasToken: number | null;
   koltseg: number | null;
 };
 
@@ -67,6 +72,7 @@ export type SzetszedesValasz = {
   promptVerzio: string;
   bemenetToken: number | null;
   kimenetToken: number | null;
+  gondolkodasToken: number | null;
   koltseg: number | null;
 };
 
@@ -248,6 +254,7 @@ async function hivas(keres: HivasKeres): Promise<{
   futtatottModell: string | null;
   bemenetToken: number | null;
   kimenetToken: number | null;
+  gondolkodasToken: number | null;
   koltseg: number | null;
 }> {
   const torzs = {
@@ -310,7 +317,7 @@ async function hivas(keres: HivasKeres): Promise<{
   return {
     nyers: argumentumok(valaszJson),
     futtatottModell: typeof valaszJson['model'] === 'string' ? valaszJson['model'] : null,
-    ...hasznalat(valaszJson),
+    ...hasznalatOlvas(valaszJson),
   };
 }
 
@@ -346,16 +353,40 @@ function argumentumok(valasz: Record<string, unknown>): Record<string, unknown> 
   }
 }
 
-function hasznalat(valasz: Record<string, unknown>): {
+/**
+ * A `usage` blokk kiolvasása — **exportált és tiszta**, hogy tesztelhető legyen
+ * hálózat nélkül. Ez nem kényelmi döntés: ez a függvény a mérőeszközünk, és egy
+ * mérőeszköz, amit nem lehet megmérni, nem ér semmit.
+ *
+ * ## Miért van itt a gondolkodási token
+ *
+ * Egy valódi, egyoldalas PDF kiolvasása 9,0 másodperc volt (2026-09-20). A
+ * tárolt nyers válasz **836 karakter** — nagyjából 250-300 token —, a számlázott
+ * kimenet viszont **1096 token**. A különbség, úgy 800 token, **nincs benne a
+ * válaszban**: ez a modell gondolkodása.
+ *
+ * ⚠️ **A `reasoning_tokens` a `completion_tokens` RÉSZE, nem afölött van.**
+ * Aki egyszer összeadja a kettőt, az a kimenetet másfélszer számolja el. Ezért
+ * áll ez itt is, az oszlop megjegyzésében is, és ezért van rá külön teszt.
+ *
+ * `null`, ha a szolgáltató nem küldte — és ez tartalmi állítás: *nem tudjuk*,
+ * nem pedig *nulla*. A kettő különbsége akkor fog számítani, amikor a
+ * gondolkodás korlátozását mérjük: egy odaírt nulla úgy nézne ki, mintha a
+ * korlátozás már hatna.
+ */
+export function hasznalatOlvas(valasz: Record<string, unknown>): {
   bemenetToken: number | null;
   kimenetToken: number | null;
+  gondolkodasToken: number | null;
   koltseg: number | null;
 } {
   const u = valasz['usage'] as Record<string, unknown> | undefined;
+  const reszletek = u?.['completion_tokens_details'] as Record<string, unknown> | undefined;
 
   return {
     bemenetToken: szamVagyNull(u?.['prompt_tokens']),
     kimenetToken: szamVagyNull(u?.['completion_tokens']),
+    gondolkodasToken: szamVagyNull(reszletek?.['reasoning_tokens']),
     koltseg: szamVagyNull(u?.['cost']),
   };
 }

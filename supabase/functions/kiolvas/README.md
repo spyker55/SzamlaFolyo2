@@ -164,7 +164,42 @@ A szétszedés a **saját sor tartományát azonnal beírja**, még a kiolvasás
 Enélkül egy félbemaradt futás után az újrapróbálás úgy találná a sort, hogy
 neki nincs tartománya, a testvéreinek van — és az egész fájlt küldené el.
 
+## Hová megy el az idő
+
+Egy valódi, egyoldalas PDF **9 989 ms** alatt ment át (2026-09-20, v14): ebből
+~1,0 s a függvény saját köre (keretellenőrzés, claim, HTTP), 9,0 s a lánc. Az
+üres sorú cron-futások 0,5–2,0 s-ban lefutnak — vagyis **hidegindítás nincs**,
+a percenkénti cron melegen tartja a függvényt.
+
+A 9 másodpercen belül eddig nem láttunk semmit: a `duration_ms` egyetlen szám
+volt az egész láncra. Két oszlop ezt bontja fel:
+
+- **`szakaszok_ms`** — `letoltes`, `felderites`, `szetszedes`, `kiolvasas`,
+  `elozmeny`. A mérés a `finally`-ben zárul, tehát **egy időtúllépésnél is
+  megmarad** — épp ott a legértékesebb.
+- **`reasoning_tokens`** — a modell gondolkodására elment tokenek. Ez a
+  `output_tokens` **része**, nem afölött van.
+
+A második oszlop egy konkrét gyanú miatt van. A mért futásnál a tárolt nyers
+válasz **836 karakter** (nagyjából 250–300 token), a számlázott kimenet viszont
+**1096 token** — vagyis úgy 800 token **nincs benne a válaszban**. Ha ez a
+modell gondolkodása, akkor a generálási idő kétharmada-háromnegyede olyasmire
+megy el, amit soha nem használunk fel.
+
+⚠️ **Ez egyelőre következtetés, nem mérés** — pontosan ezért nem csináltunk
+belőle semmit. A két oszlop azt éri el, hogy a következő lassú bizonylat
+*megmondja*, hol ment el az idő.
+
 ## Amit a következő kör hoz
+
+- **A gondolkodás korlátozása** (`reasoning.effort` / `max_tokens` az
+  OpenRouteren; Gemini 3-on a Google `thinkingLevel`-jére képződik le). A
+  fenti számok alapján ez felezheti a kiolvasás idejét — de **csak akkor
+  nyúlunk hozzá, ha a `reasoning_tokens` igazolja a gyanút**, és akkor is
+  pontosságot mérünk hozzá, nem stopperórát. A `gemini-3.1-flash-lite`
+  pontosan azon bukott meg, hogy magabiztosan talált ki szállítóneveket, és a
+  `nehezen_olvashato` zászlót egyszer sem kapcsolta be. A sebességet egy
+  futásból meg lehet mérni, a pontosságot nem.
 
 - **Beágyazott XML** (Factur-X / ZUGFeRD PDF-ben). A felderítés ma a
   `strukturalt_xml`, a `szovegreteg` és a `kep` ágat ismeri; a PDF-be ágyazott

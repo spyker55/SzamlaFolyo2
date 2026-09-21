@@ -178,9 +178,10 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
   }
 
   const kezdet = Date.now();
+  const ora = meroora();
 
   try {
-    const eredmeny = await vegigfut(db, dokumentum, kezdet);
+    const eredmeny = await vegigfut(db, dokumentum, kezdet, ora);
     return { id, ...eredmeny };
   } catch (hiba) {
     const uzenet = hiba instanceof Error ? hiba.message : 'Ismeretlen hiba.';
@@ -194,6 +195,9 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
       file_id: dokumentum.file_id,
       error: uzenet,
       duration_ms: Date.now() - kezdet,
+      // A hibáig megtett szakaszok is bekerülnek: egy időtúllépésnél ez mondja
+      // meg, melyik lépésen akadt el, nem csak azt, hogy elakadt.
+      szakaszok_ms: ora.szakaszok,
       credits: 0,
     });
 
@@ -327,10 +331,46 @@ function egyesit(ertek: unknown): unknown {
 
 type Dokumentum = Awaited<ReturnType<typeof attemptsNovel>>;
 
+/**
+ * Szakaszonkénti időmérés.
+ *
+ * A `duration_ms` eddig egyetlen számot adott a teljes láncra, és egy szám nem
+ * mondja meg, **hol** ment el az idő. Egy 9 másodperces kiolvasásnál ez a
+ * különbség dönti el, hogy a modellen, a tárolón vagy a PDF-felderítésen
+ * érdemes-e dolgozni — enélkül csak következtetni lehet rá.
+ *
+ * ⚠️ A mérés a `finally`-ben zárul, **nem a sikeres ág végén**: egy
+ * időtúllépésnél pont az a legértékesebb adat, hogy melyik szakasz vitte el a
+ * kilencven másodpercet. Ha a mérés csak sikernél íródna, a legfontosabb
+ * esetről nem tudnánk semmit.
+ *
+ * Az összeadás (`+=`) szándékos: ha egy szakasz többször fut (újrapróbálkozás
+ * egy lépésen belül), az összesített idő az igaz válasz, nem az utolsó futásé.
+ */
+function meroora() {
+  const szakaszok: Record<string, number> = {};
+
+  return {
+    szakaszok,
+    async merj<T>(nev: string, mit: () => Promise<T>): Promise<T> {
+      const kezdet = Date.now();
+
+      try {
+        return await mit();
+      } finally {
+        szakaszok[nev] = (szakaszok[nev] ?? 0) + (Date.now() - kezdet);
+      }
+    },
+  };
+}
+
+type Meroora = ReturnType<typeof meroora>;
+
 async function vegigfut(
   db: SupabaseClient,
   dokumentum: Dokumentum,
   kezdet: number,
+  ora: Meroora,
 ): Promise<Record<string, string>> {
   const fajl = dokumentum.files;
 
@@ -338,16 +378,26 @@ async function vegigfut(
     throw new Error('A bizonylat fájlja már nem érhető el.');
   }
 
-  const { data: letoltes, error: letoltesiHiba } = await db.storage
-    .from('bizonylatok')
-    .download(fajl.storage_path);
+  // Az útvonalat külön konstansba vesszük: az őr fölötte már kizárta a
+  // `null`-t, de a szűkítés nem él át egy visszahívásba. Egy `as string`
+  // elfedné ezt — inkább a fordító lássa a bizonyítékot, mint hogy ígéretet
+  // tegyünk neki.
+  const utvonal = fajl.storage_path;
 
-  if (letoltesiHiba !== null || letoltes === null) {
-    throw new Error('A bizonylat fájlja nem tölthető le.');
-  }
+  // A bájtok kiolvasása **beletartozik** a letöltésbe: a fájl nincs a
+  // kezünkben, amíg az `arrayBuffer()` le nem futott. Egy 20 MB-os
+  // bizonylatnál ez nem nulla, és a szakasz neve azt ígéri, hogy mérjük.
+  const bajtok = await ora.merj('letoltes', async () => {
+    const { data, error } = await db.storage.from('bizonylatok').download(utvonal);
 
-  const bajtok = new Uint8Array(await letoltes.arrayBuffer());
-  const felderites = await felderit(bajtok, fajl.mime_type ?? '');
+    if (error !== null || data === null) {
+      throw new Error('A bizonylat fájlja nem tölthető le.');
+    }
+
+    return new Uint8Array(await data.arrayBuffer());
+  });
+
+  const felderites = await ora.merj('felderites', () => felderit(bajtok, fajl.mime_type ?? ''));
 
   // Az oldalszám a fájlé, nem a bizonylaté — egy fájlban több bizonylat is
   // lehet. Itt írjuk be, mert a felderítés most futott le.
@@ -363,19 +413,29 @@ async function vegigfut(
   // Kötegszétszedés. Ha a fájlban több bizonylat van, ez a sor az elsőt kapja
   // meg, a többihez új `documents` sor születik — mindegyik saját
   // oldaltartománnyal, saját kiolvasással és saját kredittel.
-  const hatar = await esetlegSzetszed(db, dokumentum, felderites, bajtok, fajl);
+  const hatar = await ora.merj('szetszedes', () =>
+    esetlegSzetszed(db, dokumentum, felderites, bajtok, fajl),
+  );
 
-  const { nyers, modell, futtatottModell, promptVerzio, bemenetToken, kimenetToken, koltseg } =
-    await kiolvasas(dokumentum, felderites, bajtok, fajl, hatar);
+  // Ez a szakasz a modellhívás **vagy** az XML-értelmezés — a kettő ugyanoda
+  // fut be. Épp ezért beszédes: ha a `kiolvasas` uralja az időt, a modellen
+  // kell dolgozni; ha nem, akkor máshol keressük.
+  const {
+    nyers,
+    modell,
+    futtatottModell,
+    promptVerzio,
+    bemenetToken,
+    kimenetToken,
+    gondolkodasToken,
+    koltseg,
+  } = await ora.merj('kiolvasas', () => kiolvasas(dokumentum, felderites, bajtok, fajl, hatar));
 
   // Az előzményt a nyers válaszból kérdezzük: a szállító adószámára, a
   // bizonylatszámra és a végösszegre kell, és ezek a tárolási alakra hozás
   // előtt is összevethetők (a törzsszám amúgy is normalizálva illeszt).
-  const elozmeny = await elozmenyt(
-    db,
-    dokumentum.company_id,
-    dokumentum.id,
-    elozmenyMezok(nyers),
+  const elozmeny = await ora.merj('elozmeny', () =>
+    elozmenyt(db, dokumentum.company_id, dokumentum.id, elozmenyMezok(nyers)),
   );
 
   // Innentől minden a tiszta láncban történik: tisztítás → normalizálás →
@@ -413,8 +473,12 @@ async function vegigfut(
       confidence: lanc.konfidencia.combined,
       input_tokens: bemenetToken,
       output_tokens: kimenetToken,
+      // A gondolkodás a kimenet RÉSZE, nem afölött. Lásd a `hasznalatOlvas()`
+      // fejlécét: a mért esetünkben 1096 kimeneti tokenből ~800 volt ez.
+      reasoning_tokens: gondolkodasToken,
       cost: koltseg,
       duration_ms: Date.now() - kezdet,
+      szakaszok_ms: ora.szakaszok,
       credits: lanc.kreditek,
     })
     .select('id')
@@ -548,6 +612,7 @@ async function esetlegSzetszed(
     confidence: null,
     input_tokens: valasz.bemenetToken,
     output_tokens: valasz.kimenetToken,
+    reasoning_tokens: valasz.gondolkodasToken,
     cost: valasz.koltseg,
     error: dontes.szet ? null : dontes.indok,
     // A szétszedés a szolgáltatás része, nem külön tétel.
@@ -646,6 +711,9 @@ async function kiolvasas(
           promptVerzio: null,
           bemenetToken: null,
           kimenetToken: null,
+          // Nem modell olvasta ki, tehát gondolkodás sem volt. A `null` itt is
+          // azt mondja, amit máshol: nincs mérésünk — nem pedig „nulla".
+          gondolkodasToken: null,
           koltseg: null,
         };
       }

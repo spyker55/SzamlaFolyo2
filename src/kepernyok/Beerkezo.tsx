@@ -42,6 +42,26 @@ function jelvenyStilus(allapot: DokumentumAllapot): string {
   }
 }
 
+/**
+ * A sor frissítésének üteme.
+ *
+ * Egy valódi PDF feldolgozása mérve **~10 másodperc** (9,0 s a lánc, ebből
+ * jórészt a modellhívás, plusz ~1 s a függvény saját köre). Eddig 3
+ * másodpercenként kérdeztünk, és ezzel az utolsó, akár 3 másodperc **tiszta
+ * várakozás** volt: a bizonylat rég elkészült, csak a böngésző nem tudott róla.
+ * Ez az a másodperc, amit a felhasználó a legjobban érez, mert pont akkor nézi
+ * a képernyőt.
+ *
+ * ⚠️ A visszalassulás viszont nem óvatoskodás. A `dolgozikMeg` akkor is igaz
+ * marad, ha egy bizonylat **beragad** — elfogyott keretnél a sor `feltoltve`
+ * állapotban marad, és a cron sem viszi tovább. Egy nyitva felejtett fül
+ * ilyenkor másodpercenként kérdezné az adatbázist, zárásig. A sűrű ütem ezért
+ * csak addig tart, ameddig egy feldolgozás reálisan tart.
+ */
+const SURU_POLL_MS = 1000;
+const RITKA_POLL_MS = 5000;
+const SURU_ABLAK_MS = 30_000;
+
 export function Beerkezo() {
   const { ceg } = useAuth();
   const szerkeszthet = useSzerkeszthet();
@@ -97,8 +117,32 @@ export function Beerkezo() {
   useEffect(() => {
     if (!dolgozikMeg) return;
 
-    const idozito = setInterval(() => void betoltes(), 3000);
-    return () => clearInterval(idozito);
+    const kezdet = Date.now();
+    let el = true;
+    let idozito = 0;
+
+    function utemez() {
+      const suru = Date.now() - kezdet < SURU_ABLAK_MS;
+
+      idozito = window.setTimeout(() => {
+        // A `catch` nem kozmetika: egy elutasított betöltés (pillanatnyi
+        // hálózati hiba) enélkül **némán megállítaná** a frissítést, és a sor
+        // örökre „feldolgozás alatt" maradna a képernyőn. Egy frissítő
+        // ciklusnak túl kell élnie egy rossz körutat.
+        void betoltes()
+          .catch(() => undefined)
+          .then(() => {
+            if (el) utemez();
+          });
+      }, suru ? SURU_POLL_MS : RITKA_POLL_MS);
+    }
+
+    utemez();
+
+    return () => {
+      el = false;
+      window.clearTimeout(idozito);
+    };
   }, [dolgozikMeg, betoltes]);
 
   async function fajlokat(lista: FileList | null) {
