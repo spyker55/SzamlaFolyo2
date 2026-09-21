@@ -119,8 +119,8 @@ táblában így semmi nem áll. A `service_role` kulcs viszont megkerüli az RLS
 azt **az SQL-editorban** érdemes beírni, ne egy chatablakon vagy egy
 eszköznaplón át.
 
-Jelenleg a `projekt_url` megvan, a `service_role_kulcs` **nincs** — vagyis a
-cron él, de nem csinál semmit.
+**Mindkettő megvan** (2026-09-13 óta), és a cron dolgozik is: a percenkénti
+futások 200-at adnak, és valódi bizonylatokat szedtek fel.
 
 Amíg ezek nincsenek meg, a `belso.sort_hajt()` **némán nem csinál semmit** —
 egy hiányzó beállítás nem tölti meg percenként a naplót. Hogy megvannak-e:
@@ -128,6 +128,11 @@ egy hiányzó beállítás nem tölti meg percenként a naplót. Hogy megvannak-
 ```sql
 select * from belso.sor_allapot();
 ```
+
+> A `sor_allapot()`-ot csak a `belso` sémához férő szerep hívhatja; az MCP-s
+> kapcsolat `permission denied`-et kap rá. Ez nem hiba, hanem a séma védelme —
+> kívülről a `vault.secrets` **nevei** és a `net._http_response` státuszai
+> mondják meg ugyanazt, a titkok értéke nélkül.
 
 ## Kötegszétszedés
 
