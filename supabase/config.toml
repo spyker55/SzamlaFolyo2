@@ -7,10 +7,20 @@
 # tart be.
 project_id = "szamlafolyo"
 
-# Mindkét függvény itt áll, nem csak az, amit épp telepítünk. Az ok gyakorlati:
-# a CLI a `config.toml`-ból veszi a beállításokat, és ami nincs leírva, azt egy
-# telepítés **csendben visszaállíthatja** az alapértékre. Egy `verify_jwt`,
-# ami magától kikapcsol, pont az a fajta hiba, amit senki nem vesz észre.
+# **Mind a kilenc függvény itt áll**, nem csak az, amit épp telepítünk. Az ok
+# gyakorlati: a CLI a `config.toml`-ból veszi a beállításokat, és ami nincs
+# leírva, azt egy telepítés **csendben visszaállíthatja** az alapértékre. Egy
+# `verify_jwt`, ami magától kikapcsol, pont az a fajta hiba, amit senki nem
+# vesz észre.
+#
+# (A mondat sokáig „mindkét függvény"-t írt, kettőről kilencre nőve is. Egy
+# szám, ami nem nő a valósággal, ugyanaz a hibaosztály, mint egy be nem
+# tartott ígéret — csak halkabb.)
+#
+# ⚠️ Ami **nincs** itt: a `functions/_kozos/`. Az nem végpont, hanem a többi
+# függvény által importált közös kód (a Stripe-hívó). A Supabase CLI az
+# `_`-szal kezdődő mappákat nem telepíti önálló függvénynek — ezért nem kell
+# és nem is szabad `[functions._kozos]` blokkot írni hozzá.
 
 [functions.kiolvas]
 # ⚠️ Maradjon bekapcsolva. A `shared/uzleti/token.ts` érvelése **arra
