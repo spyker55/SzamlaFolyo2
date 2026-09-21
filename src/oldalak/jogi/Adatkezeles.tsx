@@ -481,7 +481,10 @@ export function Adatkezeles() {
           </li>
           <li>
             Az e-számla XML feldolgozása <strong>modellhívás nélkül</strong> történik: az ilyen
-            irat tartalma nem hagyja el a szervert.
+            irat tartalma nem hagyja el a szervert. Ez a <strong>hibrid e-számlára</strong>{' '}
+            (Factur-X, ZUGFeRD) is vonatkozik, amelynél az XML a PDF mellékleteként érkezik: ha
+            a rendszer felismeri a beágyazott XML-t, a bizonylat — a PDF-fel együtt — el sem
+            indul a modellhez.
           </li>
           <li>
             A kiolvasott adat ezután vagy ellenőrzésre vár, vagy — ha a cég ezt bekapcsolta és a

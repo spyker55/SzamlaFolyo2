@@ -580,6 +580,19 @@ async function esetlegSzetszed(
 
   // Csak többoldalas PDF-en van mit szétszedni. A kép egy oldal, az XML pedig
   // strukturált: ott a `tobb_irat_gyanu`-t az értelmező állítja.
+  //
+  // ⚠️ **A `beagyazott_xml` itt is kimarad, és ez a fék most lett teherbíró.**
+  // Önálló XML-nél az `oldalszam` amúgy is `null`, tehát a jelleg-feltétel nem
+  // számított; egy hibrid PDF-nek viszont valódi oldalszáma van. A kihagyás a
+  // szabványt követi: a Factur-X és a ZUGFeRD **fájlonként egy bizonylatot**
+  // ír elő, és a melléklet maga mondja meg, mi van a fájlban — egy szétszedő
+  // modellhívás ugyanazt az egy számlát találná meg, fizetős áron.
+  //
+  // A határeset kimondva: egy **köteg** PDF, amiben véletlenül ül egy olyan
+  // `.xml` melléklet, amit az értelmezőink fel is ismernek, szétszedetlen
+  // marad. Ilyet még nem láttunk, és a `csatolmany.ts` tartalék szabálya is
+  // szűk — de ha előkerül, itt kell szűkíteni a feltételt a szabványos
+  // fájlnevekre, nem a tartalékot eldobni.
   if (oldalszam === null || oldalszam < 2 || !igenyelModellt(felderites.jelleg)) {
     return null;
   }
@@ -739,7 +752,12 @@ async function kiolvasas(
 ) {
   if (!igenyelModellt(felderites.jelleg) && felderites.xml !== null) {
     try {
-      const doc = xmltFelolvas(felderites.xml, bajtok.length);
+      // ⚠️ A hosszt a **felderítés** adja, nem a fájl mérete. Önálló XML-nél
+      // a kettő ugyanaz; egy PDF-be ágyazott XML-nél viszont a PDF méretét
+      // mérnénk a melléklet 4 MB-os korlátjához — lásd a `xmlBajt` mező
+      // fejlécét. A `??` csak azért van, mert a típus nem tudja, hogy az
+      // `xml !== null` mindig `xmlBajt !== null`-lal jár.
+      const doc = xmltFelolvas(felderites.xml, felderites.xmlBajt ?? bajtok.length);
       const eredmeny = doc === null ? null : xmlErtelmez(doc);
 
       if (eredmeny !== null) {

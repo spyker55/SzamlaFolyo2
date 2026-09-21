@@ -258,12 +258,56 @@ pontosságot nem. A `reasoning_tokens` oszlop addig is gyűjti a számokat.
 optimalizálás — enélkül a gondolkodás korlátozásán dolgoztunk volna, és a
 felhasználó továbbra is egy percet várt volna.
 
+## Hibrid e-számla: a beágyazott XML
+
+A Factur-X és a ZUGFeRD egyetlen fájl két olvasattal — ember által olvasható
+PDF, és **ugyanaz a számla** géppel olvasható XML-ként a mellékletei között. A
+`felderit()` ezért a PDF-ágon megnézi a mellékleteket, és ha talál e-számla
+XML-t, a jelleg **`beagyazott_xml`** lesz: onnantól ugyanaz az út fut, mint egy
+önállóan feltöltött XML-nél, nulla modellköltséggel.
+
+A **döntés** — hogy melyik melléklet az e-számla — a `shared/uzleti/xml/csatolmany.ts`-ben
+él, nem itt. Nem stiláris: ez az egyetlen része a műveletnek, ami hibázhat úgy,
+hogy közben látszólag működik, és így telepítés nélkül, egységteszttel mérhető.
+A `felderites.ts` dolga annyi, hogy a pdf.js válaszát erre az alakra képezze.
+
+Négy dolog, ami mérve van (`felderites.test.ts`, `csatolmany.test.ts`):
+
+- **a pdf.js a `Names/EmbeddedFiles` névfát olvassa, az `/AF` bejegyzéseket
+  nem.** A PDF/A-3 — és vele a Factur-X meg a ZUGFeRD — mindkettőt előírja,
+  tehát a szabványos hibrid számla átjön; egy csak `/AF`-et író kiadó
+  bizonylata a modellhez esik. Az irány jó: rosszabb kiolvasás helyett drágább.
+- **a `getAttachments()` melléklet nélküli PDF-re `null`-t ad**, nem üres
+  objektumot;
+- ⚠️ **a pdf.js átveszi a kapott puffert**, és leválasztja: a hívás után a
+  `bajtok.byteLength` **0** lenne. A `kiolvas` viszont a felderítés **után** is
+  ugyanebből vág ki oldalakat és ezt küldi a modellnek — ezért másolattal
+  hívjuk. Élesben ez eddig nem sült el, és ez tény; hogy *miért* nem, az
+  feltevés (valószínűleg az Edge Runtime álfeldolgozója nem ad át puffert), és
+  **innen nem mérhető** — ebben a környezetben nincs Deno. Egy feltevésre pedig
+  nem támaszkodunk;
+- **a melléklet saját bájthossza** megy a 4 MB-os XML-korláthoz, nem a fájlé. A
+  kettő önálló XML-nél ugyanaz; egy 5 MB-os PDF-be ágyazott 10 kB-os XML-t a
+  régi alak elutasított volna.
+
+**A hibrid számla nem kerül kötegszétszedésre**: a szabvány fájlonként egy
+bizonylatot ír elő, és a melléklet maga mondja meg, mi van a fájlban — egy
+szétszedő modellhívás ugyanazt az egy számlát találná meg, fizetős áron. A
+határeset az `esetlegSzetszed()` fejlécében ki van mondva.
+
+Mintafájl a kézi próbához: `minta/factur-x-szabalyos.pdf` — **711 karakteres
+szövegréteggel**, tehát e kör előtt `szovegreteg` lett volna és a modellhez ment
+volna.
+
 ## Amit a következő kör hoz
 
-- **Beágyazott XML** (Factur-X / ZUGFeRD PDF-ben). A felderítés ma a
-  `strukturalt_xml`, a `szovegreteg` és a `kep` ágat ismeri; a PDF-be ágyazott
-  XML kinyerése külön munka, és addig az ilyen bizonylat a modellhez megy —
-  helyes eredménnyel, csak drágábban.
+- ⚠️ **A `supabase/` alatti kód nincs típusellenőrizve.** Mérve: a
+  `tsconfig.app.json` `include`-ja `src`, `shared` és `config` — a `npm run
+  typecheck` tehát **egyetlen Edge Function-fájlt sem** néz meg, és egy
+  szándékosan beírt típushibát nem talált meg. A hálót ma a Vitest-tesztek és a
+  telepítéskor futó `deno check` adják. Ez nem ennek a körnek a hibája és nem is
+  sürgős, de addig nem szabad elfelejteni, amíg a `typecheck` zöldjét
+  bizonyítéknak vesszük a telepített kódra.
 - **A szétszedés ára.** A szétszedő kör **minden többoldalas PDF-en** lefut,
   akkor is, ha egy háromoldalas számláról van szó. Szövegréteggel ez olcsó
   (csak a szöveg megy át, nem a képek), szkennelt kötegnél viszont egy teljes

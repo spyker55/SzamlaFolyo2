@@ -4,7 +4,7 @@ Ezek a fájlok a **végponttól végpontig** próba korpusza: feltöltés → ki
 ellenőrzés → tételek → export. Nem eldobható segédanyag, ezért vannak a repóban:
 minden további körben (kvóta, Beállítások, Stripe) újra kellenek.
 
-Mind a hat fájlt a repó **saját** értelmezőjén és validátorán engedtük át, nem
+Mind a hét fájlt a repó **saját** értelmezőjén és validátorán engedtük át, nem
 csak ránézésre jó — az alábbi táblázat mért eredmény.
 
 ## Mi van bennük
@@ -17,6 +17,35 @@ csak ránézésre jó — az alábbi táblázat mért eredmény.
 | `ubl-sztorno.xml` | `xml/ubl` | **sztornó** | −160 000 + −34 400 = **−194 400** | A `CreditNote` gyökér típuskód nélkül is sztornó; és hogy a mínuszjel túléli-e az exportot |
 | `nav-szabalyos.xml` | `xml/nav` | számla | 300 000 + 48 200 = **348 200** | **A magyar alapeset.** Három ÁFA-sor: 27%, 5% és tárgyi mentes (TAM) |
 | `apeh-szabalyos.xml` | `xml/apeh` | számla | 120 000 + 28 000 = **148 000** | **A másik magyar alak.** Három tételsor, két ÁFA-rovat — a névütközés csapdája |
+| `factur-x-szabalyos.pdf` | `xml/cii` | számla | 280 000 + 69 000 = **349 000** | **A hibrid e-számla.** PDF, amibe a `cii-szabalyos.xml` mellékletként be van ágyazva |
+
+## A hibrid e-számla — és amit pont ez a fájl mér
+
+A `factur-x-szabalyos.pdf` az egyetlen olyan minta, amiből **két** olvasat
+lehetséges, és épp ezért ez méri a legtöbbet:
+
+| | |
+|---|---|
+| PDF mérete | 3 964 bájt, 1 oldal |
+| **szövegréteg** | **711 karakter** — bőven a 200-as küszöb fölött |
+| melléklet | `factur-x.xml`, 6 639 bájt |
+| felderített jelleg | **`beagyazott_xml`** |
+| értelmező | `xml/cii`, mind a 15 mező + kétkulcsos ÁFA-bontás, **nulla bukott validátor** |
+
+A második és a negyedik sor együtt a lényeg: a fájlnak **van** használható
+szövegrétege, tehát a beágyazott XML felismerése előtt `szovegreteg` lett volna,
+és a modellhez ment volna — helyes eredménnyel, csak pénzért és tízszer
+lassabban. A melléklet ezt megelőzi.
+
+> A PDF-et a `pdf-lib` állította elő, és a látható oldala szándékosan **ugyanazt
+> a számlát** mondja, mint a melléklet: ugyanaz a sorszám, ugyanazok az
+> összegek. Egy hibrid számla, aminek a két fele nem egyezik, hibás bizonylat —
+> ilyet mintának nem gyártunk.
+>
+> ⚠️ Egy apróság a látható oldalon: a `pdf-lib` beépített betűi WinAnsi
+> kódolásúak, amiben **nincs `ő` és `ű`**. A kirajzolt szövegben ezért `ö` és
+> `ü` áll („Könyv, tüzött kötés"). A mellékelt XML ékezetei **érintetlenek**, és
+> a gép azt olvassa — ami mellesleg pont a hibrid e-számla értelme.
 
 Az `ubl-hibas-osszeg.xml`-t **ne javítsd ki**: pontosan attól hasznos. Egy
 rendszerről, amit csak a jó eseten próbáltunk ki, annyit tudunk, hogy a jó eset
@@ -32,7 +61,10 @@ adószám-**törzsszámra** szűr —, írd át a `CompanyID` / `ram:ID schemeID
 
 1. **Nulla forint.** A strukturált ág nem hív modellt. Az adatbázisban a
    `document_extractions` soron `cost` és `model_version` **`null`** — ez a
-   bizonyíték, hogy tényleg az XML-ág futott.
+   bizonyíték, hogy tényleg az XML-ág futott. A `factur-x-szabalyos.pdf`-nél
+   ugyanez a bizonyíték, plusz a `files.forras_jelleg` **`beagyazott_xml`** és a
+   `forras_naplo`-ban az `xml_nev: "factur-x.xml"` — az mondja meg, melyik
+   mellékletből olvastunk.
 2. **Ember elé kerül.** A cég **első 20 bizonylata mindig** ellenőrzésre megy
    (bemelegítési fék), tehát automatikus jóváhagyást ne várj — az később, 20
    bizonylat után jelenik meg.
@@ -47,7 +79,12 @@ Ha ezeknél élethűbb kell:
 - **Peppol BIS Billing 3.0** — az OpenPEPPOL nyilvános példa-számlái (UBL). Ez az
   EU-s e-számla de facto alakja.
 - **Factur-X / ZUGFeRD** — a francia FNFE-MPE és a német FeRD hivatalos
-  példafájljai; PDF-ek, amikbe a CII XML be van ágyazva.
+  példafájljai; PDF-ek, amikbe a CII XML be van ágyazva. **Ezekből még nem
+  láttunk valódit**: a `factur-x-szabalyos.pdf` a mi gyártmányunk, és bár a
+  melléklet ugyanabba a `Names/EmbeddedFiles` névfába kerül, amit a pdf.js
+  olvas, egy valódi kiadó PDF/A-3 állománya tömörített mellékletfolyammal és
+  `/AF` bejegyzésekkel érkezik. Ha egy ilyen a kezünkbe kerül, végig kell
+  mérni ezen a láncon.
 - A saját könyvelt cégeid számlázóprogramja: sok rendszerben van „e-számla
   export" vagy „UBL/XML letöltés".
 

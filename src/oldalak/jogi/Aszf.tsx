@@ -78,6 +78,17 @@ import { formaz } from '@uzleti/osszeg.ts';
  * a 17. lett, és közé került a 16. Adatkimentés. Aki ide hivatkozást ír,
  * nézze meg a számot — az Adatkezelési tájékoztató az ÁSZF 11. pontjára
  * mutat, az nem mozdult.
+ *
+ * # 2026. szeptember 21. — a beágyazott XML
+ *
+ * A 8. pont eddig azt írta, hogy a PDF-be ágyazott e-számla XML-t a
+ * Szolgáltatás **nem bontja ki**, a PDF-et dolgozza fel. Ez a mondat akkor
+ * igaz volt, és a hibrid e-számla (Factur-X, ZUGFeRD) felismerésével
+ * valótlanná vált — ezért egy körben változott a kóddal, nem utána.
+ *
+ * A keretszabály **nem** változott, és ez a lényeg: a hibrid bizonylat
+ * ugyanúgy egy dokumentum, akár az XML-jéből, akár a PDF-jéből olvastuk ki.
+ * Csak a modellköltségünk tűnik el — az Előfizető számlája nem.
  */
 export function Aszf() {
   const mb = Math.round(szamlafolyo.feltoltes.maxBajt / (1024 * 1024));
@@ -354,8 +365,11 @@ export function Aszf() {
         <P>
           Ha a rendszer egy XML-t nem ismer fel — mert olyan formátumban készült, amit az
           értelmezői nem kezelnek —, a bizonylat a szokásos gépi kiolvasás útjára kerül. Ez a
-          keret szempontjából nem jelent különbséget. Ugyanez vonatkozik a PDF-be ágyazott
-          e-számla XML-re: azt a Szolgáltatás jelenleg nem bontja ki, a PDF-et dolgozza fel.
+          keret szempontjából nem jelent különbséget. Ugyanez vonatkozik a{' '}
+          <strong>hibrid e-számlára</strong> (Factur-X, ZUGFeRD), amelynél a PDF mellé az
+          e-számla XML is be van ágyazva: a Szolgáltatás ilyenkor a beágyazott XML-t dolgozza
+          fel, ha felismeri, egyébként a PDF-et. A keretbe mindkét esetben egy bizonylatként
+          számít.
         </P>
         <P>
           A keret kimerülése után a feldolgozás <strong>alapértelmezés szerint megáll</strong>. Az

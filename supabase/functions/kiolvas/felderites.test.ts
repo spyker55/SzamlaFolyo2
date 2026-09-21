@@ -1,0 +1,179 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { PDFDocument } from 'pdf-lib';
+import { felderit, naplo, SZOVEG_KUSZOB } from './felderites.ts';
+import { xmltFelolvas } from '../../../shared/uzleti/xml/parser.ts';
+import { ertelmez } from '../../../shared/uzleti/xml/xmlKiolvaso.ts';
+
+/**
+ * A **hibrid e-számla** felderítésének mérése — telepítés előtt.
+ *
+ * Ez a fájl azért létezik, mert a lépés két olyan dolgon áll, amit nem
+ * feltételezni akarunk, hanem tudni:
+ *
+ * 1. hogy a `unpdf` (pdf.js) `getAttachments()`-e **létezik és működik** az
+ *    általunk használt verzión, és mit ad vissza melléklet nélküli PDF-re;
+ * 2. hogy a kinyert bájtokból a repó **saját** lánca (`xmltFelolvas` →
+ *    `ertelmez`) valóban kiolvassa a számlát.
+ *
+ * A PLACEHOLDER-eset óta az ilyet nem telepítjük mérés nélkül — és a
+ * `unpdf` épp ezért került a `package.json`-be: enélkül ez a fájl a felderítést
+ * csak élesben látná először.
+ *
+ * ⚠️ A fixtúra PDF-jét a `pdf-lib` állítja elő, nem egy valódi Factur-X kiadó.
+ * Ami ettől **mérve** van: a `Names/EmbeddedFiles` névfa, amit a pdf.js olvas
+ * (a `pdf-lib` `attach()`-e pontosan oda ír). Ami **nincs** mérve: egy valódi
+ * gyártó PDF/A-3 állománya, a tömörített mellékletfolyammal. Az az első valódi
+ * hibrid számlán derül ki.
+ */
+
+const CII = readFileSync('minta/cii-szabalyos.xml', 'utf8');
+
+async function pdfCsatolmannyal(
+  mellekletek: { nev: string; tartalom: string }[],
+  oldalak = 1,
+): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+
+  for (let i = 0; i < oldalak; i++) doc.addPage([595, 842]);
+
+  for (const m of mellekletek) {
+    doc.attach(new TextEncoder().encode(m.tartalom), m.nev, {
+      mimeType: 'application/xml',
+      description: m.nev,
+    });
+  }
+
+  return await doc.save();
+}
+
+describe('felderítés: PDF-be ágyazott e-számla', () => {
+  it('a `factur-x.xml` mellékletet megtalálja, és `beagyazott_xml`-t ad', async () => {
+    const bajtok = await pdfCsatolmannyal([{ nev: 'factur-x.xml', tartalom: CII }]);
+
+    const f = await felderit(bajtok, 'application/pdf');
+
+    expect(f.jelleg).toBe('beagyazott_xml');
+    expect(f.xml).toBe(CII);
+    expect(f.xmlNev).toBe('factur-x.xml');
+    expect(f.oldalszam).toBe(1);
+
+    // A bájthossz a **mellékleté**, nem a PDF-é — ez az a szám, amit a 4 MB-os
+    // korlát mér. A kettő közti különbség itt látszik is.
+    expect(f.xmlBajt).toBe(Buffer.byteLength(CII, 'utf8'));
+    expect(f.xmlBajt).not.toBe(bajtok.byteLength);
+  });
+
+  it('**a kinyert XML-ből a repó saját lánca kiolvassa a számlát** — ez a kör lényege', async () => {
+    const bajtok = await pdfCsatolmannyal([{ nev: 'factur-x.xml', tartalom: CII }]);
+    const f = await felderit(bajtok, 'application/pdf');
+
+    const doc = xmltFelolvas(f.xml!, f.xmlBajt!);
+    const eredmeny = doc === null ? null : ertelmez(doc);
+
+    expect(eredmeny?.nev).toBe('xml/cii');
+    expect(eredmeny?.nyers['net_amount']).toBe(280000);
+    expect(eredmeny?.nyers['vat_amount']).toBe(69000);
+    expect(eredmeny?.nyers['gross_amount']).toBe(349000);
+  });
+
+  it('melléklet nélküli PDF-en semmi nem változik', async () => {
+    const f = await felderit(await pdfCsatolmannyal([]), 'application/pdf');
+
+    // A `pdf-lib` üres lapjain nincs szövegréteg, tehát `kep` — a lényeg, hogy
+    // **nem** `beagyazott_xml`, és nem is hibázik a hiányzó névfától.
+    expect(f.jelleg).toBe('kep');
+    expect(f.xml).toBeNull();
+    expect(f.xmlBajt).toBeNull();
+    expect(f.xmlNev).toBeNull();
+    expect(f.hiba).toBeNull();
+  });
+
+  it('a nem XML melléklet nem tereli el a PDF-et az útjáról', async () => {
+    const f = await felderit(
+      await pdfCsatolmannyal([{ nev: 'logo.png', tartalom: 'nem xml' }]),
+      'application/pdf',
+    );
+
+    expect(f.jelleg).toBe('kep');
+    expect(f.xml).toBeNull();
+  });
+
+  it('több melléklet közül a szabványos nevűt veszi, és ezt a napló is rögzíti', async () => {
+    const bajtok = await pdfCsatolmannyal([
+      { nev: 'kiseroleve.xml', tartalom: '<egyeb/>' },
+      { nev: 'factur-x.xml', tartalom: CII },
+    ]);
+
+    const f = await felderit(bajtok, 'application/pdf');
+
+    expect(f.xmlNev).toBe('factur-x.xml');
+    expect(naplo(f)).toMatchObject({
+      jelleg: 'beagyazott_xml',
+      xml_nev: 'factur-x.xml',
+      xml_bajt: Buffer.byteLength(CII, 'utf8'),
+      oldalszam: 1,
+    });
+  });
+
+  it('**a felderítés nem teszi tönkre a bemenetét** — a pdf.js átveszi a puffert', async () => {
+    const bajtok = await pdfCsatolmannyal([{ nev: 'factur-x.xml', tartalom: CII }]);
+    const elotte = bajtok.byteLength;
+
+    await felderit(bajtok, 'application/pdf');
+
+    // Másolat nélkül ez **0** lenne: a pdf.js a kapott `ArrayBuffer`-t átadja
+    // a feldolgozójának, és leválasztja. A `kiolvas` viszont a felderítés után
+    // is ugyanebből a tömbből vágja ki a bizonylat oldalait, és ezt küldi a
+    // modellnek — egy leválasztott puffer üres bizonylatot jelentene,
+    // hibaüzenet nélkül.
+    expect(bajtok.byteLength).toBe(elotte);
+    expect(bajtok.byteLength).toBeGreaterThan(0);
+  });
+
+  it('a valódi mintafájl a szövegrétegénél **erősebb** ágra kerül', async () => {
+    const bajtok = new Uint8Array(readFileSync('minta/factur-x-szabalyos.pdf'));
+
+    const f = await felderit(bajtok, 'application/pdf');
+
+    // Ez a fájl a kör értelme egyetlen sorban: **van** szövegrétege, bőven a
+    // küszöb fölött, tehát a kör előtt `szovegreteg` lett volna és a modellhez
+    // ment volna. A melléklet ezt megelőzi.
+    expect(f.szovegHossz).toBeGreaterThan(SZOVEG_KUSZOB);
+    expect(f.jelleg).toBe('beagyazott_xml');
+    expect(f.xmlNev).toBe('factur-x.xml');
+  });
+
+  it('a többoldalas hibrid számla is egy bizonylat marad', async () => {
+    const f = await felderit(
+      await pdfCsatolmannyal([{ nev: 'zugferd-invoice.xml', tartalom: CII }], 3),
+      'application/pdf',
+    );
+
+    // Az oldalszám megmarad (a kredit ebből számol), a jelleg viszont kizárja
+    // a kötegszétszedést — lásd az `esetlegSzetszed` fékjét.
+    expect(f.jelleg).toBe('beagyazott_xml');
+    expect(f.oldalszam).toBe(3);
+  });
+});
+
+describe('felderítés: az önálló XML ága nem változott', () => {
+  it('a feltöltött XML `strukturalt_xml`, és a bájthossza a sajátja', async () => {
+    const bajtok = new TextEncoder().encode(CII);
+
+    const f = await felderit(bajtok, 'application/xml');
+
+    expect(f.jelleg).toBe('strukturalt_xml');
+    expect(f.xml).toBe(CII);
+    expect(f.xmlBajt).toBe(bajtok.byteLength);
+    expect(f.xmlNev).toBeNull();
+    expect(f.oldalszam).toBeNull();
+  });
+
+  it('a `naplo()` nem ír `xml_nev`-et oda, ahol nincs melléklet', async () => {
+    const f = await felderit(new TextEncoder().encode(CII), 'application/xml');
+
+    expect(naplo(f)).not.toHaveProperty('xml_nev');
+    expect(naplo(f)).toHaveProperty('xml_bajt');
+  });
+});

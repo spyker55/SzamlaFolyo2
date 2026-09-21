@@ -120,7 +120,9 @@ export function Utmutato() {
           <li>
             Elfogadott formátumok: <strong>PDF, JPG, PNG, WEBP</strong> és{' '}
             <strong>e-számla XML</strong> (UBL, Factur-X/ZUGFeRD, NAV Online Számla és a régebbi
-            APEH-alak).
+            APEH-alak). A <strong>hibrid e-számlát</strong> — azt a PDF-et, amibe a kibocsátó az
+            XML-t is beletette (Factur-X, ZUGFeRD) — magától felismerjük, és a beágyazott
+            XML-ből olvassuk ki: neked ugyanúgy egy PDF-et kell feltöltened.
           </li>
           <li>
             Méret: legfeljebb <strong>{Math.round(szamlafolyo.feltoltes.maxBajt / 1024 / 1024)} MB</strong>{' '}
@@ -526,7 +528,8 @@ export function Utmutato() {
             szervert: két, név szerint megnevezett közreműködőn át jut el a modellhez (OpenRouter,
             majd a Google). A kérés kiköti, hogy a tartalmat ne tárolják és ne tanítsanak vele, és
             <strong> nincs tartalék útvonal</strong> meg nem nevezett szolgáltatóhoz. Az e-számla
-            XML-je fel sem megy: azt a rendszer helyben olvassa ki.
+            XML-je fel sem megy: azt a rendszer helyben olvassa ki — és ez a hibrid e-számlára
+            is áll, ahol az XML a PDF-be van ágyazva.
           </li>
           <li>
             A <strong>fiók és a cég törlése</strong> a Beállításokból indítható, és
