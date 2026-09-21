@@ -203,10 +203,11 @@ minden feltöltés ötven másodperccel lassabban.
 
 ### ✅ A javítás után, ugyanazon a napon
 
-| | Előtte (03:07) | Utána (03:16) |
-|---|---|---|
-| sorbanállás | **51,3 s** | **3,6 s** |
-| teljes idő a feltöltéstől | 62,4 s | **9,4 s** |
+| | Előtte (03:07) | Utána, hidegen (03:16) | Utána, melegen (03:21) |
+|---|---|---|---|
+| sorbanállás | **51,3 s** | 3,6 s | **1,2 s** |
+| letöltés | 922 ms | 314 ms | 174 ms |
+| teljes idő a feltöltéstől | 62,4 s | 9,4 s | **6,5 s** |
 
 A sorbanállás eltűnése egyértelműen a CORS-javításé: a böngésző hívása
 megérkezik, nem kell a percfordulóra várni.
@@ -216,10 +217,14 @@ változását. A két futás **két különböző PDF** (44 kB kontra 34 kB, 119
 716 kimeneti token) — a modell azért volt gyorsabb, mert kevesebbet írt, nem
 mert bármit gyorsítottunk volna rajta.
 
-A maradék 3,6 másodperc nagy része valószínűleg **hidegindítás**: a telepítés
-03:16:31-kor történt, a feltöltés 03:16:56-kor — vagyis ez volt az első hívás az
-új verzión, még az első cron előtt. Ez a következő feltöltésnél ingyen
-ellenőrizhető; ha akkor is 3-4 másodperc, nem a hidegindítás az ok.
+A 03:16-os futás 3,6 másodperces sorbanállása **hidegindítás volt**, és ezt a
+következő feltöltés igazolta: a telepítés 03:16:31-kor történt, az a feltöltés
+03:16:56-kor — az első hívás az új verzión, még az első cron előtt. Melegen a
+sorbanállás **1,2 másodperc**, a letöltés pedig 922 → 314 → 174 ms-ra esett.
+
+Ennél lejjebb nincs értelme menni: az 1,2 másodperc a hívás körútja, a
+keretellenőrzés és a claim együtt — ugyanaz a 0,5–2,0 s, amit az üres sorú
+cron-futások is mutatnak. A sorbanállásból nem maradt kergetnivaló.
 
 A gondolkodás aránya a két mérésen 74,6% és 55,7% — dokumentumonként változik,
 de mindkétszer érdemi.
