@@ -34,7 +34,43 @@ import { elozmenyt } from './elozmeny.ts';
  * lekérdezés kézzel szűr `company_id`-re; itt nincs mögöttes háló.
  */
 
+/**
+ * CORS — és ez a függvény **hónapokig** hiányzott innen, csendben.
+ *
+ * A `kiolvas`-t nem csak a cron hívja: a feltöltés után a böngésző is elindítja
+ * közvetlenül (`src/lib/feltoltes.ts`), hogy ne kelljen a következő percfordulóra
+ * várni. Egy böngészőből hívott, `verify_jwt = true` mögötti függvény viszont
+ * **elővizsgálatot** (`OPTIONS`) kap előbb, és arra a böngésző soha nem küld
+ * `Authorization` fejlécet. Ha a függvény nem válaszol rá CORS-fejlécekkel, az
+ * elővizsgálat elbukik, és **a POST el sem indul**.
+ *
+ * ⚠️ A tünet pontosan az a fajta, amit ebben a projektben végig irtottunk: nem
+ * hibaüzenet keletkezett, hanem *majdnem működés*. A bizonylat ugyanúgy
+ * feldolgozódott — csak nem azonnal, hanem amikor a percenkénti cron felszedte.
+ * Mérve: két független feltöltés, mindkettő a cron percfordulóján indult
+ * (03:08:00 és 18:33:00), átlagosan **kb. 50 másodperc várakozás** a semmiért.
+ *
+ * Azért maradhatott ennyi ideig észrevétlen, mert a hívó oldal a hibát
+ * szándékosan elnyelte (`.catch(() => undefined)`). Az elnyelés indoka jó volt
+ * — a feltöltés sikerült, nem szabad hibának látszania —, de néma is lett tőle.
+ * A `feltoltes.ts` ezért mostantól legalább a konzolra kiírja.
+ *
+ * A repó minden böngészőből hívott függvényében ott van ez a blokk
+ * (`stripe-checkout`, `stripe-portal`, `meghivo-kuld`, `meghivo-fiok`,
+ * `fiok-torles`); a `kiolvas` volt az egyetlen kivétel. A `selejtez` és az
+ * `email-bekuldes` helyesen nem tartalmazza: azokat nem böngésző hívja.
+ */
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 Deno.serve(async (keres: Request): Promise<Response> => {
+  if (keres.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS });
+  }
+
   const url = Deno.env.get('SUPABASE_URL') ?? '';
 
   const db = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', {
@@ -88,7 +124,11 @@ Deno.serve(async (keres: Request): Promise<Response> => {
 function valasz(test: unknown, statusz: number): Response {
   return new Response(JSON.stringify(test), {
     status: statusz,
-    headers: { 'Content-Type': 'application/json' },
+    // A CORS-fejléc a **hibaválaszokon is** kell, nem csak a 200-on: enélkül a
+    // böngésző a 403 törzsét sem olvashatná el, és a hívó oldal csak annyit
+    // látna, hogy „valami nem sikerült". Ez a `meghivo-kuld` első verziójának
+    // hibája volt, és ugyanaz a tanulság.
+    headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 }
 

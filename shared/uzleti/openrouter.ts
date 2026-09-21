@@ -365,6 +365,10 @@ function argumentumok(valasz: Record<string, unknown>): Record<string, unknown> 
  * kimenet viszont **1096 token**. A különbség, úgy 800 token, **nincs benne a
  * válaszban**: ez a modell gondolkodása.
  *
+ * **A gyanú beigazolódott** (2026-09-21, az első mérés a `reasoning_tokens`
+ * oszloppal): `output_tokens: 1194`, ebből `reasoning_tokens: 891` — a kimenet
+ * **74,6%-a** gondolkodás, a tényleges válasz nagyjából 300 token.
+ *
  * ⚠️ **A `reasoning_tokens` a `completion_tokens` RÉSZE, nem afölött van.**
  * Aki egyszer összeadja a kettőt, az a kimenetet másfélszer számolja el. Ezért
  * áll ez itt is, az oszlop megjegyzésében is, és ezért van rá külön teszt.

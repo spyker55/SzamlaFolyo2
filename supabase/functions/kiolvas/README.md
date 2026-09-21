@@ -164,31 +164,47 @@ A szétszedés a **saját sor tartományát azonnal beírja**, még a kiolvasás
 Enélkül egy félbemaradt futás után az újrapróbálás úgy találná a sort, hogy
 neki nincs tartománya, a testvéreinek van — és az egész fájlt küldené el.
 
-## Hová megy el az idő
+## Hová megy el az idő — mérve
 
-Egy valódi, egyoldalas PDF **9 989 ms** alatt ment át (2026-09-20, v14): ebből
-~1,0 s a függvény saját köre (keretellenőrzés, claim, HTTP), 9,0 s a lánc. Az
-üres sorú cron-futások 0,5–2,0 s-ban lefutnak — vagyis **hidegindítás nincs**,
-a percenkénti cron melegen tartja a függvényt.
+Egy valódi, egyoldalas PDF (2026-09-21), a szakaszmérés első éles futása:
 
-A 9 másodpercen belül eddig nem láttunk semmit: a `duration_ms` egyetlen szám
-volt az egész láncra. Két oszlop ezt bontja fel:
+| Szakasz | Idő |
+|---|---|
+| letöltés (a bájtok kiolvasásával) | 922 ms |
+| felderítés (PDF-értelmezés) | 76 ms |
+| szétszedés (egyoldalas, kihagyva) | 0 ms |
+| **kiolvasás (modellhívás)** | **9 942 ms** |
+| előzmény-lekérdezés | 101 ms |
+| *teljes lánc* | *11 096 ms* |
 
-- **`szakaszok_ms`** — `letoltes`, `felderites`, `szetszedes`, `kiolvasas`,
-  `elozmeny`. A mérés a `finally`-ben zárul, tehát **egy időtúllépésnél is
-  megmarad** — épp ott a legértékesebb.
-- **`reasoning_tokens`** — a modell gondolkodására elment tokenek. Ez a
-  `output_tokens` **része**, nem afölött van.
+A modell tehát a lánc **90%-a**. Az üres sorú cron-futások 0,5–2,0 s-ban
+lefutnak, vagyis hidegindítás nincs — a percenkénti cron melegen tartja.
 
-A második oszlop egy konkrét gyanú miatt van. A mért futásnál a tárolt nyers
-válasz **836 karakter** (nagyjából 250–300 token), a számlázott kimenet viszont
-**1096 token** — vagyis úgy 800 token **nincs benne a válaszban**. Ha ez a
-modell gondolkodása, akkor a generálási idő kétharmada-háromnegyede olyasmire
-megy el, amit soha nem használunk fel.
+### A gondolkodás: a gyanúból tény lett
 
-⚠️ **Ez egyelőre következtetés, nem mérés** — pontosan ezért nem csináltunk
-belőle semmit. A két oszlop azt éri el, hogy a következő lassú bizonylat
-*megmondja*, hol ment el az idő.
+`output_tokens: 1194`, ebből **`reasoning_tokens: 891`** — a kimenet **74,6%-a**
+gondolkodás. A tényleges válasz nagyjából 300 token. Vagyis a tízmásodperces
+modellhívás háromnegyede olyasmire megy el, amit soha nem használunk fel.
+
+Ez a szám most már mérés, nem becslés, és a korlátozás ettől **reális** lépés —
+de továbbra is a pontossággal együtt mérendő.
+
+### ⚠️ És egy nagyobb tétel, amit ugyanez a mérés hozott elő
+
+A bizonylat létrejöttétől a kiolvasás végéig **62 másodperc** telt el, miközben
+a lánc 11. A különbség — **~51 másodperc** — tiszta sorbanállás volt: a
+feltöltés utáni közvetlen hívás nem ment át, és a bizonylatot a percenkénti
+cron szedte fel.
+
+Az ok a hiányzó CORS-elővizsgálat volt ebben a függvényben (lásd a `CORS`
+konstans fejlécét az `index.ts`-ben). A böngésző el sem küldte a POST-ot, a
+hívó oldal pedig a hibát elnyelte — így a rendszer *majdnem működött*, csak
+minden feltöltés ötven másodperccel lassabban.
+
+**A tanulság sorrendje számít:** a modell 10 másodperce valódi, de mellette egy
+50 másodperces várakozás állt, amiről senki nem tudott. Előbb a mérés, utána az
+optimalizálás — enélkül a gondolkodás korlátozásán dolgoztunk volna, és a
+felhasználó továbbra is egy percet várt volna.
 
 ## Amit a következő kör hoz
 

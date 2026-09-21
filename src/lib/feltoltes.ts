@@ -121,12 +121,26 @@ export async function feltolt(fajl: File, cegId: string): Promise<FeltoltesEredm
   // másodpercekig tart, a felhasználónak viszont azonnal látnia kell a sorban a
   // bizonylatot. A Beérkező úgyis frissít, amíg van feldolgozandó.
   //
-  // A hibát elnyeljük, és ez szándékos: ha az indítás nem megy át, a
-  // dokumentum `feltoltve` állapotban marad, és a cron felveszi. A feltöltés
-  // maga sikeres volt — nem szabad hibának látszania.
+  // A hiba nem állítja meg a feltöltést, és ez szándékos: ha az indítás nem megy
+  // át, a dokumentum `feltoltve` állapotban marad, és a cron felveszi. A
+  // feltöltés maga sikeres volt — nem szabad hibának látszania.
+  //
+  // ⚠️ **De nem nyeljük el némán, és ennek ára volt.** Korábban itt egy
+  // `.catch(() => undefined)` állt, és emiatt hónapokig észrevétlen maradt,
+  // hogy ez a hívás **soha nem ment át**: a `kiolvas` függvényből hiányzott a
+  // CORS-elővizsgálat kezelése, tehát a böngésző el sem küldte a POST-ot. A
+  // bizonylatok ugyanúgy elkészültek — csak nem azonnal, hanem a következő
+  // percfordulón, átlagosan ötven másodperc várakozás után.
+  //
+  // A tartalék út léte nem ok arra, hogy ne tudjuk, mikor van rá szükség.
   void supabase.functions
     .invoke('kiolvas', { body: { dokumentum_id: dokumentum.id } })
-    .catch(() => undefined);
+    .catch((hiba: unknown) => {
+      console.error(
+        'A kiolvasás közvetlen indítása nem sikerült — a bizonylat a következő percfordulón indul.',
+        hiba,
+      );
+    });
 
   return { allapot: 'kesz', dokumentumId: dokumentum.id };
 }
