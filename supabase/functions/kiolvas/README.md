@@ -379,6 +379,40 @@ múlik, az minden futásnál ugyanannyi.
 hibrid PDF még a v19-en futott). Egy `minta/*.xml` feltöltése zárja le —
 **nulla forintért**, mert az az ág nem hív modellt.
 
+### ✅ És a refaktorált XML-ág — `kiolvas` v20, 2026-09-21 13:04 UTC
+
+`minta/apeh-szabalyos.xml`, vagyis a `xmlbolKiolvas()` első éles futása:
+
+| | |
+|---|---|
+| `forras_naplo` | `{"jelleg":"strukturalt_xml","xml_bajt":3868,"szoveg_hossz":0}` |
+| `model` | **`xml/apeh`** |
+| `model_version` · `prompt_version` · `cost` · a három token | mind **`null`** — a bizonyíték, hogy nem modell olvasta |
+| szakaszok | **kiolvasás 4 ms**, felderítés 0, letöltés 173, előzmény 91 — a teljes lánc 306 ms |
+| eredmény | `attempts: 1`, `error: null`, 1 kredit, **nulla bukott validátor**, 0 javítás |
+
+Mind a 14 kitöltött mező 1,0 magabiztosságot kapott (a `fizetendo` helyesen
+üres: az APEH-alakban nincs ilyen), és a bukott validátor hiánya nem
+feltételezés — az `osszevon()` a bukott mezőt 0,3-re húzza, tehát a csupa 1,0
+önmagában kizárja.
+
+**A névütközés csapdája élesben is kivédve.** Az ÁFA-bontás a két
+`osszesites/afarovat` értékét hozta (100 000 / 27 000 és 20 000 / 1 000), nem a
+**három** tételsorét (80 000 / 21 600, 20 000 / 5 400, 20 000 / 1 000) — pedig
+az elemnevek szó szerint azonosak. Ezért jár közvetlen gyerek-bejárás az
+`osszesites` alatt.
+
+Az összevetés a mérőscripttel: a `kiolvasas:proba` ugyanezen a fájlon **mind a
+15 mezőre, a sávokra és a kreditre ugyanazt** adta, mint az éles futás.
+
+> ⚠️ Egy apróság, ami ebből az összevetésből jött elő, és eddig sehol nem volt
+> leírva: a **jóváhagyás átírja az `afa_bontas` alakját.** A kiolvasó számokat
+> ír (`netto: 100000` — a `raw_response`-ban is ez áll), az Ellenőrzés
+> képernyőről mentett sor viszont szöveget (`"100000.00"`), ugyanabba a jsonb
+> oszlopba. Nem hiba: az `afaBontas.ts` szándékosan `unknown`-t fogad és az
+> `osszeg.ts` értelmezőjén futtatja, tehát mindkét alakot érti. De aki a tárolt
+> sort egy kiolvasás-kimenethez hasonlítja, ezen megakadhat.
+
 ## A mérőeszköz: `npm run kiolvasas:proba`
 
 ```bash

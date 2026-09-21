@@ -257,6 +257,18 @@ function pontSzo(pont: number | undefined): string {
   return pont === undefined ? '  —  ' : pont.toFixed(3).replace('.', ',');
 }
 
+/**
+ * Az ÁFA-bontás a **kiolvasás utáni** alakjában — pontosan az, amit a `kiolvas`
+ * a `documents.afa_bontas` oszlopba ír.
+ *
+ * ⚠️ Mérve (2026-09-21): a **jóváhagyás átírja.** A kiolvasó számokat ír
+ * (`netto: 100000`), az Ellenőrzés képernyőről mentett sor viszont szöveget
+ * (`"100000.00"`) — ugyanabban a jsonb oszlopban. Ez nem hiba: a bontás
+ * olvasói (`afaBontas.ts`) szándékosan `unknown`-t fogadnak és az `osszeg.ts`
+ * értelmezőjén futtatják, tehát mindkét alakot értik. De aki a tárolt sort a
+ * script kimenetéhez hasonlítja, ezen megakadhat — a kettő csak a
+ * jóváhagyás **előtt** azonos.
+ */
 function bontasSorok(f: Futas): string[] {
   const sorok = [cim('ÁFA-BONTÁS')];
   const s = sav(f.eredmeny.konfidencia.combined['afa_bontas']);
