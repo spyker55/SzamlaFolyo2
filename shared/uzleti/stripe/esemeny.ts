@@ -402,6 +402,14 @@ function elsoTetel(elofizetes: Rekord): Rekord | null {
  * üres, a ciklus végét adjuk vissza. Ugyanaz a védekező olvasás, mint a
  * ciklusdátumoknál — és ugyanaz az indok: a hiba csendes volna.
  *
+ * ⚠️ **A sorrend nem stiláris, és élesben mérve van (2026-09-21).** Az éles
+ * portálon leadott, ciklus végére szóló lemondás után a `cancel_at_period_end`
+ * **`false` maradt**, és egyedül a `cancel_at` hordozta a dátumot. Aki ezt a
+ * függvényt a kézenfekvő sorrendben írná meg — előbb `cancel_at_period_end`, és
+ * `null`, ha az hamis —, annál a lemondás **nyomtalan** maradna: a státusz
+ * `active`, a csomag és a ciklus változatlan, a felületen semmi nem jelezné.
+ * A `cancel_at` áll elöl; a `cancel_at_period_end` csak tartalék.
+ *
  * A **törölt** előfizetésnél nem vizsgálódunk külön: amit az objektum mond, azt
  * írjuk. A felület a lemondás-jelzést úgyis csak futó előfizetésre mutatja, egy
  * megszűnt előfizetésen pedig a státusz mondja meg az igazat.
