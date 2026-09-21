@@ -224,21 +224,30 @@ ellenőrizhető; ha akkor is 3-4 másodperc, nem a hidegindítás az ok.
 A gondolkodás aránya a két mérésen 74,6% és 55,7% — dokumentumonként változik,
 de mindkétszer érdemi.
 
+### A gondolkodás korlátozása: megmérve, és szándékosan nem lépünk
+
+A lehetőség adott és megnevezhető: `reasoning.effort` / `max_tokens` az
+OpenRouteren, Gemini 3-on a Google `thinkingLevel`-jére képezve. A mért
+arányok alapján a modellhívás érdemi részét vihetné le.
+
+**Mégsem csináljuk meg** (a felhasználó döntése, 2026-09-21), és ez nem
+halasztás: a CORS-javítás után a teljes folyamat pár másodperc, vagyis a
+maradék nyereség nem éri meg a kockázatot. A kockázat pedig konkrét: a termék
+egész ígérete azon áll, hogy a modell **észreveszi, ha bizonytalan** — a
+`nehezen_olvashato` zászlón és a mezőnkénti magabiztosságon. A
+`gemini-3.1-flash-lite` pontosan ezen bukott meg: magabiztosan talált ki
+szállítóneveket, és a zászlót egyszer sem kapcsolta be.
+
+Ha egyszer mégis előkerül, a feltétel ugyanaz marad: **pontosságot mérni
+hozzá, nem stopperórát.** A sebességet egy futásból meg lehet mérni, a
+pontosságot nem. A `reasoning_tokens` oszlop addig is gyűjti a számokat.
+
 **A tanulság sorrendje számít:** a modell 10 másodperce valódi, de mellette egy
 50 másodperces várakozás állt, amiről senki nem tudott. Előbb a mérés, utána az
 optimalizálás — enélkül a gondolkodás korlátozásán dolgoztunk volna, és a
 felhasználó továbbra is egy percet várt volna.
 
 ## Amit a következő kör hoz
-
-- **A gondolkodás korlátozása** (`reasoning.effort` / `max_tokens` az
-  OpenRouteren; Gemini 3-on a Google `thinkingLevel`-jére képződik le). A
-  fenti számok alapján ez felezheti a kiolvasás idejét — de **csak akkor
-  nyúlunk hozzá, ha a `reasoning_tokens` igazolja a gyanút**, és akkor is
-  pontosságot mérünk hozzá, nem stopperórát. A `gemini-3.1-flash-lite`
-  pontosan azon bukott meg, hogy magabiztosan talált ki szállítóneveket, és a
-  `nehezen_olvashato` zászlót egyszer sem kapcsolta be. A sebességet egy
-  futásból meg lehet mérni, a pontosságot nem.
 
 - **Beágyazott XML** (Factur-X / ZUGFeRD PDF-ben). A felderítés ma a
   `strukturalt_xml`, a `szovegreteg` és a `kep` ágat ismeri; a PDF-be ágyazott
