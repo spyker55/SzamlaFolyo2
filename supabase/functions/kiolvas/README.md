@@ -201,6 +201,29 @@ konstans fejlécét az `index.ts`-ben). A böngésző el sem küldte a POST-ot, 
 hívó oldal pedig a hibát elnyelte — így a rendszer *majdnem működött*, csak
 minden feltöltés ötven másodperccel lassabban.
 
+### ✅ A javítás után, ugyanazon a napon
+
+| | Előtte (03:07) | Utána (03:16) |
+|---|---|---|
+| sorbanállás | **51,3 s** | **3,6 s** |
+| teljes idő a feltöltéstől | 62,4 s | **9,4 s** |
+
+A sorbanállás eltűnése egyértelműen a CORS-javításé: a böngésző hívása
+megérkezik, nem kell a percfordulóra várni.
+
+⚠️ **Amit viszont NEM írunk a javítás javára:** a modellhívás 9 942 → 5 333 ms
+változását. A két futás **két különböző PDF** (44 kB kontra 34 kB, 1194 kontra
+716 kimeneti token) — a modell azért volt gyorsabb, mert kevesebbet írt, nem
+mert bármit gyorsítottunk volna rajta.
+
+A maradék 3,6 másodperc nagy része valószínűleg **hidegindítás**: a telepítés
+03:16:31-kor történt, a feltöltés 03:16:56-kor — vagyis ez volt az első hívás az
+új verzión, még az első cron előtt. Ez a következő feltöltésnél ingyen
+ellenőrizhető; ha akkor is 3-4 másodperc, nem a hidegindítás az ok.
+
+A gondolkodás aránya a két mérésen 74,6% és 55,7% — dokumentumonként változik,
+de mindkétszer érdemi.
+
 **A tanulság sorrendje számít:** a modell 10 másodperce valódi, de mellette egy
 50 másodperces várakozás állt, amiről senki nem tudott. Előbb a mérés, utána az
 optimalizálás — enélkül a gondolkodás korlátozásán dolgoztunk volna, és a
