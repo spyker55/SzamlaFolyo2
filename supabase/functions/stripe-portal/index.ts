@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import { szamlafolyo } from '../../../config/szamlafolyo.ts';
 import { tokenAllitas } from '../../../shared/uzleti/token.ts';
+import { stripe } from '../_kozos/stripe.ts';
 
 /**
  * A Stripe számlázási portál (Customer Portal) munkamenetének indítása.
@@ -42,8 +43,6 @@ import { tokenAllitas } from '../../../shared/uzleti/token.ts';
  * bárki belépőt kérhetne más cég számlázási adataihoz — ez itt súlyosabb, mint
  * a checkoutnál, mert ott legfeljebb fizetni lehetett volna valaki helyett.
  */
-
-const STRIPE_API = 'https://api.stripe.com/v1';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -157,25 +156,6 @@ Deno.serve(async (keres: Request): Promise<Response> => {
     return valasz({ hiba: 'A számlázási portál megnyitása nem sikerült.' }, 502);
   }
 });
-
-/** Egy Stripe-hívás. Nincs SDK — ugyanaz a döntés, mint a `stripe-checkout`-nál. */
-async function stripe<T>(kulcs: string, ut: string, mezok: URLSearchParams): Promise<T> {
-  const valasz = await fetch(`${STRIPE_API}${ut}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${kulcs}`,
-      'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
-    },
-    body: mezok.toString(),
-  });
-
-  if (!valasz.ok) {
-    // A Stripe hibaüzenete naplóba való, nem a böngészőbe.
-    throw new Error(`Stripe ${valasz.status}: ${(await valasz.text()).slice(0, 500)}`);
-  }
-
-  return (await valasz.json()) as T;
-}
 
 function valasz(test: unknown, statusz: number): Response {
   return new Response(JSON.stringify(test), {

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import { szamlafolyo, type CsomagKulcs } from '../../../config/szamlafolyo.ts';
 import { tokenAllitas } from '../../../shared/uzleti/token.ts';
+import { stripe } from '../_kozos/stripe.ts';
 
 /**
  * A Stripe Checkout munkamenet indítása.
@@ -43,8 +44,6 @@ import { tokenAllitas } from '../../../shared/uzleti/token.ts';
  * számláz. Ez a helyes irány: egy hiányzó címke hibaüzenet, nem meglepetés a
  * bankszámlán.
  */
-
-const STRIPE_API = 'https://api.stripe.com/v1';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -262,34 +261,6 @@ async function munkamenetet(
   }
 
   return munkamenet.url;
-}
-
-/**
- * Egy Stripe-hívás.
- *
- * Nincs SDK — ugyanaz a döntés, mint az `openrouter.ts`-nél: a Stripe REST
- * API-ja űrlapkódolt kéréseket vár, és ehhez egy `fetch` elég. Egy SDK
- * cserébe verziófüggőséget és egy nagyobb csomagot hozna az Edge Runtime alá.
- */
-async function stripe<T>(kulcs: string, ut: string, mezok?: URLSearchParams): Promise<T> {
-  const valasz = await fetch(`${STRIPE_API}${ut}`, {
-    method: mezok === undefined ? 'GET' : 'POST',
-    headers: {
-      Authorization: `Bearer ${kulcs}`,
-      ...(mezok === undefined
-        ? {}
-        : { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' }),
-    },
-    body: mezok?.toString(),
-  });
-
-  if (!valasz.ok) {
-    // A Stripe hibaüzenete **naplóba** való, nem a böngészőbe: tartalmazhat
-    // azonosítókat és fiókra vonatkozó részleteket.
-    throw new Error(`Stripe ${valasz.status}: ${(await valasz.text()).slice(0, 500)}`);
-  }
-
-  return (await valasz.json()) as T;
 }
 
 function valasz(test: unknown, statusz: number): Response {

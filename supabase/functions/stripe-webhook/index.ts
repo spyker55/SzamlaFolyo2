@@ -5,8 +5,7 @@ import { csomagKulcsbol } from '../../../shared/uzleti/keret.ts';
 import { tulhasznalatSzamol } from '../../../shared/uzleti/tulhasznalat.ts';
 import { stripeAlairastEllenoriz } from '../../../shared/uzleti/stripe/alairas.ts';
 import { esemenytErtelmez, type Dontes } from '../../../shared/uzleti/stripe/esemeny.ts';
-
-const STRIPE_API = 'https://api.stripe.com/v1';
+import { stripe } from '../_kozos/stripe.ts';
 
 /**
  * A Stripe webhookja: innen — és **csak innen** — íródik a cég számlázási
@@ -431,45 +430,6 @@ async function tetelt(
   });
 
   return tetel.id;
-}
-
-/**
- * Egy Stripe-hívás.
- *
- * ⚠️ Ugyanez a segédfüggvény ott áll a `stripe-checkout`-ban és a
- * `stripe-portal`-ban is. A három példány **tudatos**: ezek külön telepített
- * Deno-függvények, a `shared/uzleti` pedig szándékosan nulla függőségű, tiszta
- * kód — egy `fetch`-elő segéd nem való bele. Ha valaha négy lesz belőle,
- * érdemes egy `supabase/functions/_kozos/` mappát nyitni.
- */
-async function stripe<T>(
-  kulcs: string,
-  ut: string,
-  mezok?: URLSearchParams,
-  extraFejlec: Record<string, string> = {},
-): Promise<T> {
-  const felelet = await fetch(`${STRIPE_API}${ut}`, {
-    method: mezok === undefined ? 'GET' : 'POST',
-    headers: {
-      Authorization: `Bearer ${kulcs}`,
-      ...(mezok === undefined
-        ? {}
-        : { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' }),
-      ...extraFejlec,
-    },
-    // A `body` **kimarad**, ha nincs — nem `undefined` értékkel szerepel. A
-    // testvérfüggvények `body: mezok?.toString()`-et írnak; az futásidőben
-    // ugyanaz, típusra viszont nem az (`exactOptionalPropertyTypes`). Ezt a
-    // `supabase/functions/` mappa nem is méri — a `tsconfig.app.json` csak a
-    // `src`, `shared` és `config` mappákat nézi.
-    ...(mezok === undefined ? {} : { body: mezok.toString() }),
-  });
-
-  if (!felelet.ok) {
-    throw new Error(`Stripe ${felelet.status}: ${(await felelet.text()).slice(0, 500)}`);
-  }
-
-  return (await felelet.json()) as T;
 }
 
 function valasz(test: unknown, statusz: number): Response {

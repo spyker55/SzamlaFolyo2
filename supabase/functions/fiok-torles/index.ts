@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import { nevEgyezik, torlesDontes, type TorlesTenyek } from '../../../shared/uzleti/fiokTorles.ts';
 import { tokenAllitas } from '../../../shared/uzleti/token.ts';
+import { stripeKeres } from '../_kozos/stripe.ts';
 
 /**
  * A fiók törlése — a rendszer egyetlen visszafordíthatatlan művelete.
@@ -50,8 +51,6 @@ import { tokenAllitas } from '../../../shared/uzleti/token.ts';
  * ellenőrzés nélkül — azt csak azért tehetjük meg, mert a platform a tokent
  * addigra már hitelesítette. Kikapcsolva bárki törölhetné bárki fiókját.
  */
-
-const STRIPE_API = 'https://api.stripe.com/v1';
 
 /** A két bucket, ahol a cégnek fájlja lehet. Mindkettő `<cég-azonosító>/…`. */
 const TAROLOK = ['bizonylatok', 'exportok'];
@@ -258,9 +257,9 @@ async function elofizetestLemond(
     return { ok: false, miert: 'Nincs STRIPE_SECRET_KEY.' };
   }
 
-  const allapot = await fetch(`${STRIPE_API}/subscriptions/${elofizetes}`, {
-    headers: { Authorization: `Bearer ${kulcs}` },
-  });
+  // A **nem dobó** réteget hívjuk (`stripeKeres`), nem a `stripe()`-et: itt egy
+  // 404 nem hiba, hanem válasz — és egy kivétel megállítaná a törlési láncot.
+  const allapot = await stripeKeres(kulcs, `/subscriptions/${elofizetes}`);
 
   if (allapot.status === 404) {
     // A Stripe nem ismeri — nincs mit lemondani. Ez például egy fiókváltás
@@ -278,10 +277,7 @@ async function elofizetestLemond(
     return { ok: true };
   }
 
-  const torles = await fetch(`${STRIPE_API}/subscriptions/${elofizetes}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${kulcs}` },
-  });
+  const torles = await stripeKeres(kulcs, `/subscriptions/${elofizetes}`, { mod: 'DELETE' });
 
   if (!torles.ok) {
     return {
