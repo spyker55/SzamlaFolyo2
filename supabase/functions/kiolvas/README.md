@@ -453,6 +453,17 @@ A script Node alatt fut, **külön futtató nélkül**: a Node 22 a TypeScriptet
 magától értelmezi, az `unpdf` pedig a `felderites.test.ts` óta amúgy is
 `devDependency`. Új függőség tehát nincs.
 
+⚠️ **De a meglévőknek ott kell lenniük.** A `felderites.ts` a modul tetején
+importálja az `unpdf`-et, tehát **minden** futáshoz kell — az XML-ágakhoz is,
+nem csak a modellhez. Friss klónon vagy `--omit=dev`-es telepítés után a script
+`ERR_MODULE_NOT_FOUND`-dal áll meg; a válasz egy `npm install` (illetve
+`npm install --include=dev`). Ez nem a script hibája, de a hibaüzenet nem
+mondja meg, ezért itt áll.
+
+A `.env` hiánya viszont **nem** hiba: a `--env-file-if-exists` szándékosan
+továbbenged, mert a strukturált ágakhoz nincs szükség kulcsra. A modellhívásos
+ág ilyenkor a saját, magyar üzenetünkbe fut.
+
 ### Egy kódút, nem kettő: `shared/uzleti/xml/beolvasas.ts`
 
 Az XML-ág döntése — *mikor essen a bizonylat a modellhez* — eddig ebben a
