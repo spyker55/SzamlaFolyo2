@@ -394,9 +394,32 @@ export function Utmutato() {
           tételként.
         </P>
         <P>
-          A csomagváltás, a lemondás és a bankkártya cseréje a Beállítások →{' '}
-          <em>Előfizetés</em> kártyájáról indul, a Stripe számlázási portálján. A lemondás a{' '}
-          <strong>kifizetett időszak végéig</strong> hagyja használni a rendszert.
+          <strong>A csomagváltás, a lemondás és a bankkártya cseréje</strong> a Beállítások →{' '}
+          <em>Előfizetés</em> kártyájáról indul, a <em>Számlázási portál</em> gombbal. Az a gomb
+          a Stripe oldalára visz: a bankkártyaadat és a számlatörténet ott van, nem nálunk.
+        </P>
+        <P>
+          A Stripe lapján a csomagváltás az <strong>„Előfizetés frissítése"</strong> gomb mögött
+          van — ott lehet másik csomagot választani. Ugyanezen a lapon áll a lemondás, a
+          bankkártya cseréje és a korábbi számláid letöltése. Amit ott módosítasz, az pár
+          másodpercen belül a Beállításokon is látszik.
+        </P>
+        <P>
+          <strong>A csomagváltás nem indítja újra a számlázási ciklust</strong>, és nem terhelünk
+          érte azonnal semmit: a fordulónap marad, ahol volt, az új árat pedig a következő
+          fordulónapon fizeted. A <strong>keret viszont azonnal változik</strong> — nagyobb
+          csomagra váltva rögtön több, kisebbre váltva rögtön kevesebb.
+        </P>
+        <Figyelem>
+          <strong>Kisebb csomagra váltani a fordulónap közelében érdemes.</strong> A kisebb keret
+          azonnal életbe lép, a már kifizetett hónapból viszont nem jár vissza semmi. Nagyobb
+          csomagra váltva ugyanez fordítva, a javadra játszik: a nagyobb keretet azonnal
+          megkapod, és csak a fordulónapon fizetsz érte.
+        </Figyelem>
+        <P>
+          A lemondás a <strong>kifizetett időszak végéig</strong> hagyja használni a rendszert, és
+          a fordulónapig <strong>visszavonható</strong> — szintén a portálon. Amíg a lemondás él,
+          a Beállítások kiírja, meddig fut még az előfizetés.
         </P>
       </Fejezet>
 

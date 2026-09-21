@@ -839,6 +839,15 @@ function ElofizetesKartya({
  * ⚠️ Amit felsorolunk, azt **szándékosan szűken** tartjuk. A portál tartalmát a
  * Stripe fiókbeállítása dönti el, nem ez a fájl; egy bő ígéret itt pont az a
  * fajta állítás volna, amit a kód nem tart be.
+ *
+ * ⚠️ **Egy kivétel, tudatosan: az „Előfizetés frissítése" felirat.** A mérés azt
+ * mutatta, hogy a gomb önmagában nem elég — a Stripe lapján a csomagváltás egy
+ * olyan felirat mögött van, amit a felhasználó nem feltétlenül társít hozzá.
+ * Ezért megnevezzük. Az ára: ez az egy mondat **a Stripe feliratától függ**, és
+ * két dolog teheti valótlanná — ha a Stripe átnevezi a gombot, vagy ha a
+ * portál-konfigurációban valaha kikapcsolnánk a csomagváltást
+ * (`subscription_update.enabled`). Ha bármelyik megtörténik, ez a szöveg és az
+ * útmutató 6. fejezete együtt javítandó.
  */
 function PortalSor({
   mehet,
@@ -865,9 +874,19 @@ function PortalSor({
         {fut ? 'Átirányítás…' : 'Számlázási portál'}
       </button>
       <p className="mt-2 text-sm text-slate-500">
-        {korabbi
-          ? 'A korábbi számláid és a számlázási adataid a Stripe portálján érhetők el.'
-          : 'Csomagváltás, lemondás, kártyacsere és a számláid — mind a Stripe oldalán, ahol a bankkártyaadat is van. Amit ott módosítasz, az pár másodpercen belül itt is látszik.'}
+        {korabbi ? (
+          'A korábbi számláid és a számlázási adataid a Stripe portálján érhetők el.'
+        ) : (
+          <>
+            Csomagváltás, lemondás, kártyacsere és a számláid — mind a Stripe oldalán, ahol a
+            bankkártyaadat is van. A csomagváltás ott az{' '}
+            <strong className="font-medium text-slate-700">„Előfizetés frissítése"</strong> gomb
+            mögött van. Amit módosítasz, az pár másodpercen belül itt is látszik.{' '}
+            <Link to="/utmutato#keret" className="text-blue-700 hover:underline">
+              Mi változik váltáskor?
+            </Link>
+          </>
+        )}
       </p>
     </div>
   );
