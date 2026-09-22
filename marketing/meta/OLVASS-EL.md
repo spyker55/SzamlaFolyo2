@@ -10,17 +10,22 @@ jogi mondat, csak drágább: a látogató a céloldalon veszi észre.
 
 ---
 
-## ⚠️ Mielőtt egyetlen forintot elköltesz — négy mért tény
+## ⚠️ Mielőtt egyetlen forintot elköltesz — három mért tény
 
-### 1. Az oldal ma nyílt ki, és ezt neked kell egyszer leellenőrizned
+### 1. A tölcsér él — és ez nem feltevés
 
 A Vercel két kapcsolója **2026-09-22 06:18 UTC-kor** billent át („az oldal kikerült a
 fejlesztés alól", „a nyilvános regisztráció kinyitva"), az éles telepítés pedig
-**11:20-kor** készült el, tehát utána — a kiadott csomag már a nyitott állapotot viszi.
+**11:20-kor** készült el, tehát utána.
 
-Amit innen **nem** tudok megmérni: a Supabase szerveroldali `disable_signup` kapuját.
-Ha az még zárva van, a látogató kitölti az űrlapot, és egy hibaüzenetet kap — fizetett
-kattintás után. **Egy valódi próbaregisztráció a kampány indítása előtt kötelező.**
+Ennél fontosabb, hogy a nyilvános út **végig is ment aznap**: 06:34-kor létrejött egy új
+fiók, 06:35-kor megerősítve, 07:11-kor belépve, és ugyanazon a napon egy új cég is
+megalakult a rendszerben. A hirdetésből érkező látogató tehát nem fut falba — a
+regisztráció, a levélküldés és a cégalapítás mind járható.
+
+Amit érdemes tudni: a próbaidő céghez kötött (14 nap / 50 dokumentum / 3 felhasználó),
+és ma **két** cég van a rendszerben. Az első hirdetésből érkező regisztrációk lesznek az
+első idegen felhasználók — érdemes az első napokban figyelni, hol akadnak el.
 
 ### 2. Nincs Meta-pixel az oldalon, és nem is tehető rá következmény nélkül
 
@@ -54,14 +59,6 @@ Tehát **a Vercel Analyticsben nem fogod látni, melyik hirdetés hozta a látog
 ott csak annyi látszik, hogy hányan jártak a `/` és a `/regisztracio` címen. Az
 attribúció a Meta oldalán marad. Ezt nem hibának írom le: a szűrő azért van, hogy a
 meghívó-token és a jelszó-visszaállító token ne hagyhassa el a böngészőt.
-
-### 4. A Supabase-projekt még ingyenes csomagon van
-
-Egy kampány pont azt hozza, amit az ingyenes csomag nem szeret: forgalmat egy olyan
-projekten, amit a platform egy hét tétlenség után felfüggeszt, és aminek nincs
-automatikus mentése. A terv ezt az elejétől az indulási ellenőrzőlistán tartja — az
-első fizető ügyfél előtt a Pro-ra emelés (a `Leltarium` szervezetbe átvive, ~10
-USD/hó) esedékes. A hirdetés ezt előrehozza.
 
 ---
 
@@ -341,6 +338,9 @@ Ezeket **nem** mértem: nincs mögöttük lefutott kampány. Kezdőértéknek ad
 | hányan jutottak el a `/` és a `/regisztracio` címre | Vercel Analytics (kampányonként **nem** bontható — lásd fent) |
 | hány fiók és cég jött létre, naponta | az adatbázis (`auth.users`, `companies`) |
 | hány próbafiók lett fizető | Stripe |
+
+A kiszolgáló oldala készen áll a forgalomra: a projekt fizetős csomagon fut (Micro
+compute), az éles Stripe-fizetés, a webhook és a számlázási portál végigmérve működik.
 
 A kampány alatt a napi regisztrációszám a valódi mérce. Ha az nem mozdul, miközben a
 céloldal-megtekintések mennek, a probléma a nyitólapon van, nem a hirdetésben.
