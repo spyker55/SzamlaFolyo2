@@ -7,7 +7,7 @@ import { varoMeghivo, type VaroMeghivo } from '../lib/meghivo.ts';
 import { ervenyes, formaz } from '@uzleti/adoszam.ts';
 import { hatralevoNap } from '@uzleti/meghivo.ts';
 import { szerepCimke } from '@uzleti/enumok.ts';
-import { SzerzodesPipak } from '../komponensek/SzerzodesPipak.tsx';
+import { FeltetelekPipa } from '../komponensek/FeltetelekPipa.tsx';
 import { JOGI_VERZIO } from '../oldalak/jogi/adatok.ts';
 
 /**
@@ -47,16 +47,24 @@ import { JOGI_VERZIO } from '../oldalak/jogi/adatok.ts';
  * elfogadásról **semmit nem tároltunk** — se időpontot, se verziót, se az
  * eljáró felhasználót —, miközben az ÁSZF azt ígéri, hogy nyilvántartjuk.
  *
- * Azóta: két pipa (`SzerzodesPipak`), és a `ceg_letrehozas()` a verzióval
- * együtt `terms_acceptances` sort ír. A `JOGI_VERZIO` betűsort a szerver
+ * Azóta a nyilatkozat **itt** áll, és a `ceg_letrehozas()` a verzióval együtt
+ * `terms_acceptances` sort ír. A `JOGI_VERZIO` betűsort a szerver
  * **ellenőrzi** a `legal_versions` táblából — egy elavult böngésző így magyar
  * hibaüzenetet kap, nem egy hamis bizonyítékot hagy maga után.
+ *
+ * ⚠️ **Egy pipa, nem kettő — és ez tudatos döntés.** Egy ideig itt állt egy
+ * második, külön nyilatkozat a két szokatlan kikötésről (automatikus
+ * fájltörlés, felelősségkorlát), a Ptk. 6:78. §-ára hivatkozva. A
+ * figyelemfelhívás szövege viszont — benne a felelősségkizárás kötelező
+ * kivételeivel, az „emberi életet, testi épséget" fordulattal — egy
+ * regisztrációs képernyőn **fenyegetően hatott**, holott az a mondat épp a
+ * felhasználó védelmében áll ott. A kikötések ezért az ÁSZF-ben maradnak, ahol
+ * a helyük van, és a felület egyetlen, szokásos elfogadást kér.
  */
 export function CegLetrehozas() {
   const [nev, setNev] = useState('');
   const [adoszam, setAdoszam] = useState('');
   const [feltetelek, setFeltetelek] = useState(false);
-  const [kikotesek, setKikotesek] = useState(false);
   const [hiba, setHiba] = useState<string | null>(null);
   const [kuld, setKuld] = useState(false);
 
@@ -102,7 +110,6 @@ export function CegLetrehozas() {
       nev: nev.trim(),
       adoszam: formaz(adoszam) ?? adoszam.trim(),
       aszf_verzio: JOGI_VERZIO,
-      kulon_kikotesek: kikotesek,
     });
 
     if (error !== null) {
@@ -161,18 +168,13 @@ export function CegLetrehozas() {
           </p>
         </div>
 
-        <SzerzodesPipak
-          feltetelek={feltetelek}
-          feltetelekValtozott={setFeltetelek}
-          kikotesek={kikotesek}
-          kikotesekValtozott={setKikotesek}
-        />
+        {/*
+          A szerződés az ÁSZF 1. pontja szerint ITT jön létre, nem a
+          regisztrációval — tehát a nyilatkozatnak is itt a helye.
+        */}
+        <FeltetelekPipa elfogadva={feltetelek} valtozott={setFeltetelek} />
 
-        <button
-          type="submit"
-          className="btn btn-primary w-full"
-          disabled={kuld || !feltetelek || !kikotesek}
-        >
+        <button type="submit" className="btn btn-primary w-full" disabled={kuld || !feltetelek}>
           {kuld ? 'Egy pillanat…' : 'Létrehozás'}
         </button>
       </form>

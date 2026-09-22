@@ -30,18 +30,21 @@
 -- bizonyíték viszont attól még kell. Ugyanaz a megfontolás, amiért a
 -- `company_members` is tartja a tag címét.
 --
--- # A Ptk. 6:78. § külön kérése
+-- # Ahol a nyilatkozat áll
 --
--- A szokásos gyakorlattól lényegesen eltérő kikötés csak akkor válik a
--- szerződés részévé, ha a másik felet **külön tájékoztatták** róla, és azt
--- **kifejezetten elfogadta**. Az ÁSZF eddig ezt önmagáról állította (13. pont:
--- „az Előfizető elismeri, hogy külön tájékoztatást kapott") — egy önmagára
--- hivatkozó kijelentés viszont nem bizonyíték.
+-- Az ÁSZF 1. pontja szerint a szerződés **a cég létrehozásával** jön létre, a
+-- pipa viszont eddig a regisztrációs képernyőn állt. A nyilatkozat ezért
+-- átkerült a cégalapító képernyőre — oda, ahol a szerződés köttetik —, és a
+-- regisztráció pipája megmarad annak, ami: a saját személyes adatok
+-- kezeléséről szóló tájékoztatás tudomásulvétele.
 --
--- A két kikötést maga az ÁSZF nevezi meg: a **felelősség összegszerű korlátja**
--- (13.) és az **eredeti fájlok automatikus törlése** (10.). A cégalapító
--- képernyőn ezek külön, látható figyelemfelhívást és **külön pipát** kapnak, és
--- az elfogadásuk ide, saját oszlopba kerül.
+-- ⚠️ **Egy nyilatkozat, nem kettő.** Egy ideig egy második pipa is itt volt, a
+-- Ptk. 6:78. §-ára hivatkozva, a két szokatlan kikötés (automatikus
+-- fájltörlés, felelősségkorlát) külön elfogadására. A figyelemfelhívás
+-- szövege viszont egy regisztrációs képernyőn **fenyegetően hatott** — a
+-- felelősségkizárás kötelező kivételei („emberi életet, testi épséget")
+-- éppen a felhasználó védelmében állnak ott, olvasóként mégis az ellenkezője
+-- jön át. A kikötések ezért az ÁSZF-ben maradnak, ahol a helyük van.
 --
 -- # Miért van verziótábla
 --
@@ -84,8 +87,6 @@ create table if not exists public.terms_acceptances (
   user_id uuid references auth.users(id) on delete set null,
   user_email text,
   version text not null references public.legal_versions(version),
-  -- A Ptk. 6:78. § szerinti, kifejezett elfogadás a két megnevezett kikötésre.
-  unusual_terms_ack boolean not null,
   accepted_at timestamptz not null default now()
 );
 
@@ -119,12 +120,7 @@ revoke all on table public.terms_acceptances from anon, authenticated;
 --
 -- A 3. lépés nem elhagyható: amíg megvan, a rés megvan.
 
-create or replace function public.ceg_letrehozas(
-  nev text,
-  adoszam text,
-  aszf_verzio text,
-  kulon_kikotesek boolean
-)
+create or replace function public.ceg_letrehozas(nev text, adoszam text, aszf_verzio text)
 returns uuid
 language plpgsql
 security definer
@@ -150,13 +146,6 @@ begin
     raise exception 'Ismeretlen ÁSZF-változat: %. Töltsd újra az oldalt.', aszf_verzio;
   end if;
 
-  -- Kapu, nem csak feljegyzés. Enélkül a `true` érték a sorban a **szerver**
-  -- állítása volna a felhasználóról — pont az a fajta önmagára hivatkozó
-  -- bizonyíték, amit ez a migráció megszüntetni hivatott.
-  if kulon_kikotesek is not true then
-    raise exception 'A külön kiemelt kikötések elfogadása nélkül a szerződés nem jön létre.';
-  end if;
-
   select lower(u.email) into cim from auth.users u where u.id = felhasznalo;
 
   insert into public.companies (name, tax_number, trial_ends_at)
@@ -168,9 +157,8 @@ begin
 
   -- A szerződés az ÁSZF 1. pontja szerint **itt** jön létre, nem a
   -- regisztrációval. Tehát itt is kell nyomot hagynia.
-  insert into public.terms_acceptances
-    (company_id, user_id, user_email, version, unusual_terms_ack)
-  values (uj_ceg, felhasznalo, cim, aszf_verzio, kulon_kikotesek);
+  insert into public.terms_acceptances (company_id, user_id, user_email, version)
+  values (uj_ceg, felhasznalo, cim, aszf_verzio);
 
   -- A cég születése az audit-nyom első eseménye. A `company_id` itt
   -- szándékosan ki van írva: a `belso.tolti_company_id()` trigger csak akkor
@@ -187,5 +175,5 @@ $$;
 -- Ez a jogosztás **nem no-op**, szemben a 20260922000100-zal: a négyparaméteres
 -- alak új függvény, saját ACL-lel. A Supabase minden új `public` függvényre ad
 -- nevesített EXECUTE-ot, ezért a `revoke` is nevesítve szól.
-revoke all on function public.ceg_letrehozas(text, text, text, boolean) from public, anon;
-grant execute on function public.ceg_letrehozas(text, text, text, boolean) to authenticated;
+revoke all on function public.ceg_letrehozas(text, text, text) from public, anon;
+grant execute on function public.ceg_letrehozas(text, text, text) to authenticated;

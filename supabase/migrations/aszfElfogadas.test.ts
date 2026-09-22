@@ -15,8 +15,8 @@ import { JOGI_VERZIO } from '../../src/oldalak/jogi/adatok.ts';
  * **csendes** volna:
  *
  * 1. a `ceg_letrehozas()` ír `terms_acceptances` sort;
- * 2. a `kulon_kikotesek` paraméter **kapu**, nem feljegyzés — enélkül a sorba
- *    írt `true` a szerver saját állítása volna a felhasználóról;
+ * 2. a kliens által küldött verziót a szerver **megvizsgálja** a
+ *    `legal_versions` táblából — amit a böngésző állít, azt nem hisszük el;
  * 3. a `JOGI_VERZIO` szerepel a `legal_versions` táblában — különben minden
  *    cégalapítás elhasal, és ezt nem élesben akarjuk megtudni.
  *
@@ -96,18 +96,6 @@ describe('az ÁSZF elfogadása rögzül', () => {
     ).toContain('insert into public.terms_acceptances');
   });
 
-  it('a külön kikötések elfogadása kapu, nem csak feljegyzés', () => {
-    const talalat = utolsoTorzs(NEV);
-
-    expect(
-      talalat?.torzs,
-      `A(z) ${talalat?.fajl} fájlban a ${NEV} nem utasítja el a hívást, ha a ` +
-        '`kulon_kikotesek` nem igaz. Enélkül a `terms_acceptances` sorba írt érték ' +
-        'a szerver saját állítása volna a felhasználóról — a Ptk. 6:78. § szerinti ' +
-        'kifejezett elfogadásnak épp ez volna az ellentéte.',
-    ).toMatch(/kulon_kikotesek is not true/);
-  });
-
   it('az ismeretlen ÁSZF-változatot elutasítja', () => {
     const talalat = utolsoTorzs(NEV);
 
@@ -137,7 +125,7 @@ describe('az ÁSZF elfogadása rögzül', () => {
     ).toContain(`'${JOGI_VERZIO}'`);
   });
 
-  it('a cégalapító képernyő át is adja a verziót és a második pipát', () => {
+  it('a cégalapító képernyő átadja a verziót, és kéri az elfogadást', () => {
     const kepernyo = readFileSync(
       new URL('../../src/kepernyok/CegLetrehozas.tsx', import.meta.url).pathname,
       'utf8',
@@ -151,13 +139,14 @@ describe('az ÁSZF elfogadása rögzül', () => {
 
     expect(
       kepernyo,
-      'A `kulon_kikotesek` nem megy át a hívásban.',
-    ).toContain('kulon_kikotesek');
+      'A cégalapító képernyőn nincs ott a feltételek elfogadása. Az ÁSZF 1. pontja ' +
+        'szerint a szerződés ITT jön létre — a nyilatkozatnak is itt a helye, nem ' +
+        'két képernyővel korábban, a regisztrációnál.',
+    ).toContain('<FeltetelekPipa');
 
     expect(
       kepernyo,
-      'A Létrehozás gomb a két pipától függetlenül is nyomható — akkor viszont a ' +
-        'szerver utasítja el, és a felhasználó egy értelmezhetetlen hibát kap.',
-    ).toMatch(/disabled=\{kuld \|\| !feltetelek \|\| !kikotesek\}/);
+      'A Létrehozás gomb a pipától függetlenül is nyomható.',
+    ).toMatch(/disabled=\{kuld \|\| !feltetelek\}/);
   });
 });

@@ -208,12 +208,11 @@ export function Aszf() {
           eljárt.
         </P>
         <P>
-          <strong>A külön kiemelt kikötések.</strong> A cég létrehozásakor a felület két
-          kikötésről <strong>külön, olvasható figyelemfelhívást</strong> ad, és azok
-          elfogadásához külön nyilatkozat szükséges: az{' '}
+          <strong>Két kikötésre érdemes külön odafigyelni</strong>, mert eltérnek attól, amit egy
+          előfizetéses szolgáltatásnál megszokni lehet: az{' '}
           <strong>eredeti fájlok automatikus törlése</strong> (10. pont) és a{' '}
-          <strong>felelősség összegszerű korlátja</strong> (13. pont). Ezek nélkül a cég nem jön
-          létre. A külön elfogadás tényét a Szolgáltató a fenti adatokkal együtt rögzíti.
+          <strong>felelősség összegszerű korlátja</strong> (13. pont). Mindkettő teljes szövege
+          ezen az oldalon olvasható, a szerződés megkötése — vagyis a cég létrehozása — előtt.
         </P>
       </Szakasz>
 
@@ -849,13 +848,12 @@ export function Aszf() {
           hozzá el sem jutott levélről tudomást szerez.
         </P>
         <P>
-          A jelen pont a Szolgáltatás díjához mért, a felek által a szerződéskötéskor ismert
-          kockázatmegosztást rögzíti. Erről a korlátozásról — csakúgy, mint a 10. pont szerinti
-          automatikus fájltörlésről — a Szolgáltató{' '}
-          <strong>a cég létrehozásának képernyőjén, a szerződés megkötése előtt, külön
-          figyelemfelhívást</strong> ad, és azok elfogadásához az általános elfogadáson felül{' '}
-          <strong>külön nyilatkozat</strong> szükséges. Enélkül a cég — és vele a szerződés — nem
-          jön létre. A külön elfogadás tényét a Szolgáltató az 1. pont szerint rögzíti.
+          A jelen pont a Szolgáltatás díjához mért kockázatmegosztást rögzíti. Ez a korlátozás
+          — csakúgy, mint a 10. pont szerinti automatikus fájltörlés — eltér attól, amit egy
+          előfizetéses szolgáltatásnál megszokni lehet, ezért az 1. pont ezt a két kikötést{' '}
+          <strong>külön is kiemeli</strong>. Mindkettő teljes szövege ezen az oldalon
+          olvasható, a szerződés megkötése előtt, és az ÁSZF elfogadását a Szolgáltató az 1.
+          pont szerint rögzíti.
         </P>
       </Szakasz>
 
