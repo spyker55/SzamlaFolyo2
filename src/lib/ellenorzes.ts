@@ -35,6 +35,14 @@ export type Kiolvasas = {
   id: string;
   fields: Record<string, unknown> | null;
   confidence: Record<string, number> | null;
+  /**
+   * Ki olvasta ki: a saját XML-értelmezőnk (`xml/…`) vagy a modell.
+   *
+   * A `kiolvasoForras()` fordítja emberi mondatra. Az oszlop a kezdetektől
+   * megvolt, a felület viszont 2026-09-22-ig nem mutatta — pedig ez dönti el,
+   * hogy az ellenőrzőnek olvasatot vagy átvett értéket kell néznie.
+   */
+  model: string | null;
 };
 
 export type Betoltott = {
@@ -68,7 +76,7 @@ export async function betolt(id: string): Promise<Betoltott | null> {
   // összevont (`combined`) ágat írja ebbe az oszlopba.
   const { data: kiolvasasok } = await supabase
     .from('document_extractions')
-    .select('id, fields, confidence')
+    .select('id, fields, confidence, model')
     .eq('document_id', id)
     .order('created_at', { ascending: false })
     .limit(1);

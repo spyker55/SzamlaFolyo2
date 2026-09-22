@@ -181,9 +181,17 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  *
  * ⚠️ Egy mondatot menet közben **kivettem**, mert megmérve nem volt igaz: hogy
  * az Ellenőrzés képernyő megmutatná, a saját értelmezőnk vagy a modell
- * olvasta-e ki a bizonylatot. A `document_extractions.model` oszlop tudja, a
- * felület viszont **nem jeleníti meg**. Egy jogi szövegbe írt, kód nélküli
+ * olvasta-e ki a bizonylatot. A `document_extractions.model` oszlop tudta, a
+ * felület viszont nem jelenítette meg. Egy jogi szövegbe írt, kód nélküli
  * ígéret pontosan az a hibaosztály, amit ez a projekt végig irtott.
+ *
+ * **2026-09-22: a kód utolérte a szöveget**, és most a szöveg mondja ki, amit a
+ * kód csinál — nem fordítva. A `kiolvasoForras.ts` fordítja a `model` oszlopot
+ * emberi mondatra, és két helyen látszik: az Ellenőrzés képernyő tetején egy
+ * semleges sávban, a Beérkező listájában pedig a bizonylat sorában.
+ * **Mindkét ágon** kiírjuk, nem csak az egyiken: egy jelzés, ami csak a saját
+ * értelmezőnél jelenne meg, a hiányával állítana — és a hiányból olvasott
+ * állítás ebben a projektben mindig rosszul sült el.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -655,9 +663,12 @@ export function Adatkezeles() {
           <li>
             Ez <strong>szándékos tervezés</strong>, nem hiányosság: egy ismeretlen alakú irat így
             nem akad el a feldolgozásban, hanem feldolgozásra kerül. De mivel adatvédelmi
-            különbséget jelent, kimondjuk. ⚠️ A felület ma <strong>nem jelzi külön</strong>, hogy
-            egy adott bizonylatot a saját értelmezőnk olvasott-e ki vagy a modell; aki ezt tudni
-            szeretné egy konkrét iratról, a {szolgaltato.email} címen kérdezheti meg.
+            különbséget jelent, kimondjuk — és <strong>bizonylatonként meg is mutatjuk</strong>.
+            Az Ellenőrzés képernyő tetején egy sor nevezi meg, hogy az adatok a saját
+            értelmezőnktől (a felismert e-számla alakjának nevével együtt) vagy a modelltől
+            származnak-e, és ugyanez áll a Beérkező listájában, a bizonylat sorában. Ahol nincs
+            kiírva, ott a bizonylat még nem futott le. Ha egy konkrét iratról ezen felül is
+            kérdésed van, a {szolgaltato.email} címen megkérdezheted.
           </li>
           <li>
             A kiolvasott adat ezután vagy ellenőrzésre vár, vagy — ha a cég ezt bekapcsolta és a

@@ -10,6 +10,7 @@ import { sav as savBol, type Sav } from '@uzleti/konfidencia.ts';
 import { CIMKEK, type Mezo as MezoNev } from '@uzleti/sema.ts';
 import { DOKUMENTUM_TIPUSOK, tipusCimke } from '@uzleti/enumok.ts';
 import { oldalak } from '@uzleti/export/oszlopok.ts';
+import { kiolvasoForras } from '@uzleti/kiolvasoForras.ts';
 import {
   bontastUrlapra,
   ellenorzottMezok,
@@ -205,7 +206,7 @@ export function Ellenorzes() {
     );
   }
 
-  const { bizonylat, fajl, fajlUrl, hatravan } = adat;
+  const { bizonylat, fajl, fajlUrl, hatravan, kiolvasas } = adat;
   const kepE = (fajl?.mime_type ?? '').startsWith('image/');
 
   // Tartomány csak akkor van, ha a fájlt szétszedtük — egyetlen bizonylat
@@ -226,6 +227,8 @@ export function Ellenorzes() {
           Vissza a Beérkezőbe
         </Link>
       </div>
+
+      <KiolvasoSav model={kiolvasas?.model ?? null} />
 
       {/*
         Az automatikusan jóváhagyott bizonylat. A jelvény mellett ott az indok
@@ -505,5 +508,39 @@ export function Ellenorzes() {
         </form>
       </div>
     </AppElrendezes>
+  );
+}
+
+/**
+ * „Ki olvasta ki ezt a bizonylatot?"
+ *
+ * # Miért nem riasztás, és miért nem hagyható el
+ *
+ * Egyik ág sem baj: a strukturált átvétel jó hír, a modellolvasat a normál
+ * működés. Ezért **semleges** sáv, nem `alert` — a figyelmeztető színeket a
+ * `nehezen_olvashato` és a szétszedetlen köteg viszi, azoknak ott is kell
+ * maradniuk.
+ *
+ * ⚠️ De **mindkét ágon látszik**, nem csak az egyiken. Egy olyan jelzés, ami
+ * csak az egyik esetben jelenik meg, a hiányával állít — és ebben a projektben
+ * pont az ilyen néma állítás dőlt el rosszul a legtöbbször. Az ellenőrzőnek a
+ * modellágon is tudnia kell, hogy olvasatot néz, nem átvételt.
+ *
+ * Kiolvasás-sor nélkül (`ismeretlen`) a sáv **nem jelenik meg**: nincs mit
+ * mondani, és egy „nem tudjuk" doboz az ellenőrzés tetején csak zaj volna.
+ * Ide egy `ellenorzesre_var` bizonylat úgysem jut el sor nélkül.
+ */
+function KiolvasoSav({ model }: { model: string | null }) {
+  const jel = kiolvasoForras(model);
+
+  if (jel.forras === 'ismeretlen') {
+    return null;
+  }
+
+  return (
+    <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <span className="badge badge-semleges mr-2">{jel.rovid}</span>
+      <span className="text-xs text-slate-500">{jel.mondat}</span>
+    </div>
   );
 }

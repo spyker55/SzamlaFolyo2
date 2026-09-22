@@ -290,6 +290,18 @@ export function Utmutato() {
           <strong>a jelöletlen mezőket is</strong> érdemes végigfutni — különösen a neveket.
         </Figyelem>
         <P>
+          <strong>A képernyő tetején az is ott van, ki olvasta ki a bizonylatot</strong> — és ez
+          megváltoztatja, mennyire kell gyanakodnod. Ha a fájlban strukturált e-számla volt (UBL,
+          Factur-X/ZUGFeRD, NAV Online Számla vagy a régebbi APEH-alak), akkor a mezők a
+          szállító rendszerének <strong>kiírt értékei</strong>: átvettük őket, nem olvastuk le
+          semmiről. Minden más esetben — papír, szkennelt kép, és a fel nem ismert alakú XML is —
+          a modell olvasta ki, tehát minden mező olvasat. A különbség a neveknél a legnagyobb:
+          átvett névnél nincs mit félreolvasni, olvasott névnél van. Ugyanez a jelzés ott áll a
+          Beérkező listájában is, a bizonylat sorában; ahol nincs kiírva, ott a bizonylat még nem
+          futott le. A számtani ellenőrzések mindkét úton futnak: egy rosszul kiállított
+          e-számla ugyanúgy megbukik rajtuk.
+        </P>
+        <P>
           <strong>Az ÁFA-bontás</strong> külön szerkeszthető: kulcsonként a nettó és az ÁFA. Ez
           megy az exportba kulcsonkénti oszlopokban, tehát itt érdemes rendbe tenni, nem a
           táblázatban utólag.

@@ -10,6 +10,7 @@ import { allapotCimke, tipusCimke, type DokumentumAllapot } from '@uzleti/enumok
 import { formaz } from '@uzleti/osszeg.ts';
 import { datumIdo } from '@uzleti/ido.ts';
 import { oldalak } from '@uzleti/export/oszlopok.ts';
+import { kiolvasoForras } from '@uzleti/kiolvasoForras.ts';
 
 type Sor = {
   id: string;
@@ -25,7 +26,88 @@ type Sor = {
   oldal_tol: number | null;
   oldal_ig: number | null;
   files: { original_filename: string | null; source: string } | null;
+  /**
+   * A bizonylat kiolvasás-sorai — ebből a **legutolsó** `model`-je mondja meg,
+   * a saját értelmezőnk vagy a modell olvasta-e ki.
+   *
+   * ⚠️ Egynél több sor több okból lehet: újrapróbálás után, és a kötegszétszedő
+   * futás is ide köt (`document_id` = a szülő bizonylat, `credits: 0`). A
+   * legfrissebb a valódi kiolvasás — a szétszedés mindig megelőzi.
+   */
+  // Hiányozhat: a tartalék lekérdezés (lásd `lista()`) nem kéri le.
+  document_extractions?: { model: string | null; created_at: string }[] | null;
 };
+
+/** A listához kért oszlopok — a kiolvasás-beágyazás nélkül. */
+const OSZLOPOK =
+  'id, status, doc_type, supplier_name, doc_number, gross_amount, currency, error, ' +
+  'created_at, oldal_tol, oldal_ig, files(original_filename, source)';
+
+const ALLAPOTOK = ['feltoltve', 'feldolgozas_alatt', 'ellenorzesre_var', 'hiba', 'duplikatum'];
+
+/**
+ * A Beérkező listája — **a kiolvasás-jelzés soha nem viheti el a listát.**
+ *
+ * A `document_extractions` beágyazása egy kényelmi jel forrása (ki olvasta ki
+ * a bizonylatot); a lista maga viszont ennek a képernyőnek a lényege. Ha a
+ * beágyazás bármiért elutasításra kerülne, a `data` `null` lenne, és a
+ * felhasználó **üres Beérkezőt** látna — nem hibát, hanem azt, hogy „nincs
+ * bizonylatod". Ez a lehető legrosszabb kimenetel, és pontosan az a hibaosztály,
+ * ami miatt a duplikátumsor „eredetire ugró linkje" annak idején kimaradt: egy
+ * második lekérdezés hibája nem viheti a teljes listát.
+ *
+ * ⚠️ A beágyazás feloldása **nem mérhető ebből a környezetből** (a proxy tiltja
+ * a `*.supabase.co`-t). Amit mérni lehetett: a `document_extractions`-ből
+ * pontosan **egy** idegen kulcs mutat a `documents`-re (a `company_id` a
+ * `companies`-re, a `file_id` a `files`-ra megy), tehát a kapcsolat
+ * egyértelmű — a PostgREST ebből oldja fel a beágyazást. A tartalék ág attól
+ * még itt van: a mérés hiányát nem feltételezéssel pótoljuk.
+ */
+async function lista() {
+  const bovitett = await supabase
+    .from('documents')
+    .select(`${OSZLOPOK}, document_extractions(model, created_at)`)
+    .in('status', ALLAPOTOK)
+    .order('created_at', { ascending: false });
+
+  if (bovitett.error === null) {
+    return bovitett;
+  }
+
+  console.error('kiolvasas-beagyazas', bovitett.error.message);
+
+  return await supabase
+    .from('documents')
+    .select(OSZLOPOK)
+    .in('status', ALLAPOTOK)
+    .order('created_at', { ascending: false });
+}
+
+/**
+ * Ki olvasta ki: a saját XML-értelmezőnk vagy a modell.
+ *
+ * ⚠️ **Mindkét ág ki van írva**, nem csak az egyik: egy jelzés, ami csak az
+ * egyik esetben jelenik meg, a hiányával állít — és ebben a projektben pont az
+ * ilyen néma állítás dőlt el rosszul a legtöbbször. Listában ez az a nézet,
+ * amiből kiderül, hogy egy szállító e-számlái rendre a modellhez esnek: vagyis
+ * strukturált adat van a kézben, és mégis olvasat lesz belőle.
+ *
+ * Kiolvasás-sor nélkül (feltöltve, feldolgozás alatt, duplikátum) nincs mit
+ * mondani — a jelzés ilyenkor egyszerűen nincs ott.
+ */
+function ForrasJelzes({ sor }: { sor: Sor }) {
+  const sorok = [...(sor.document_extractions ?? [])].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
+  );
+
+  const jel = kiolvasoForras(sorok[0]?.model ?? null);
+
+  if (jel.forras === 'ismeretlen') {
+    return null;
+  }
+
+  return <> · {jel.rovid}</>;
+}
 
 /** Az állapotjelvény stílusa. A kiemelés a bajt jelöli, nem a rendben lévőt. */
 function jelvenyStilus(allapot: DokumentumAllapot): string {
@@ -77,13 +159,7 @@ export function Beerkezo() {
   const bemenetRef = useRef<HTMLInputElement>(null);
 
   const betoltes = useCallback(async () => {
-    const { data } = await supabase
-      .from('documents')
-      .select(
-        'id, status, doc_type, supplier_name, doc_number, gross_amount, currency, error, created_at, oldal_tol, oldal_ig, files(original_filename, source)',
-      )
-      .in('status', ['feltoltve', 'feldolgozas_alatt', 'ellenorzesre_var', 'hiba', 'duplikatum'])
-      .order('created_at', { ascending: false });
+    const { data } = await lista();
 
     // A beágyazott `files` sok-az-egyhez kapcsolat: a PostgREST objektumot ad
     // vissza, a supabase-js generált típusok nélkül tömböt tippel. Mindkettőt
@@ -304,6 +380,7 @@ export function Beerkezo() {
                       {oldalak(sor.oldal_tol, sor.oldal_ig) !== null && (
                         <> · {oldalak(sor.oldal_tol, sor.oldal_ig)}. oldal</>
                       )}
+                      <ForrasJelzes sor={sor} />
                     </div>
                   </td>
                   <td className="td">{tipusCimke(sor.doc_type)}</td>

@@ -92,6 +92,46 @@ describe('a támogatott XML-alakok mindhárom helyen ugyanazok', () => {
   });
 });
 
+describe('a kiolvasás forrása a felületen is látszik', () => {
+  /**
+   * Ez a kör legkényesebb állítása, mert **a szöveg a kódra hivatkozik**.
+   *
+   * Az Adatkezelési tájékoztató 3. pontja 2026-09-22-ig azt mondta, hogy a
+   * felület nem jelzi, saját értelmező vagy modell olvasta-e ki a bizonylatot.
+   * Most az ellenkezőjét mondja — és ez csak addig igaz, amíg a két képernyő
+   * tényleg meg is mutatja. Ha valaki kiveszi a jelzést, a jogi szöveg némán
+   * hamissá válna: pontosan az a hibaosztály, amiért ez az egész teszt van.
+   */
+  const ellenorzes = olvas('../kepernyok/Ellenorzes.tsx');
+  const beerkezo = olvas('../kepernyok/Beerkezo.tsx');
+
+  it('egyáltalán elolvasta a két képernyőt', () => {
+    expect(ellenorzes.length).toBeGreaterThan(3000);
+    expect(beerkezo.length).toBeGreaterThan(3000);
+  });
+
+  it('mindkét képernyő kiírja, ki olvasta ki a bizonylatot', () => {
+    for (const [nev, szoveg] of Object.entries({ ellenorzes, beerkezo })) {
+      expect(
+        szoveg,
+        `A(z) ${nev} képernyő nem hívja a \`kiolvasoForras()\`-t. Az Adatkezelési ` +
+          'tájékoztató 3. pontja viszont azt ígéri, hogy mindkét helyen látszik, a saját ' +
+          'értelmezőnk vagy a modell olvasta-e ki a bizonylatot. Vagy a jelzés kerüljön ' +
+          'vissza, vagy a tájékoztató mondja megint azt, ami igaz.',
+      ).toContain('kiolvasoForras');
+    }
+  });
+
+  it('a tájékoztató nem állítja újra, hogy a felület nem jelzi', () => {
+    expect(
+      adatkezeles,
+      'Visszatért az a mondat, hogy a felület „nem jelzi külön", melyik út olvasta ki a ' +
+        'bizonylatot. 2026-09-22 óta jelzi — ha a jelzés mégis kikerült volna, a fenti ' +
+        'teszt is bukna, és akkor a kódot kell visszatenni, nem ezt a mondatot.',
+    ).not.toContain('nem jelzi külön');
+  });
+});
+
 describe('a felülvizsgálat után nem térhetnek vissza a valótlan mondatok', () => {
   /**
    * Anti-vakság: ha az olvasás elromlana, minden `not.toContain` **üresen
