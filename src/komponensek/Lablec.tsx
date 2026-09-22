@@ -30,16 +30,28 @@ export const LABLEC_LINKEK = [
 /**
  * A linkek maguk, keret nélkül.
  *
+ * ⚠️ Az `ujLapon` csak a **belépés előtti** képernyőkön igaz
+ * (`AuthElrendezes`). Ott a lapon egy félig kitöltött űrlap áll, és egy
+ * jogi szöveg elolvasása nem viheti el a begépelt adatokat — ugyanaz az érv,
+ * mint a `FeltetelekPipa` linkjeinél. Máshol a lábléc marad, ami: a saját
+ * lapján nyíló, megszokott navigáció.
+ *
  * A keretet (a `<nav>`-ot és a tipográfiát) a hívó adja: a nyitólap láblécében
  * félkövér, a belépett felületen halvány apróbetű. A **lista** viszont közös —
  * az a része, ami elromolhat.
  */
-export function LablecLinkek({ osztaly }: { osztaly?: string }) {
+export function LablecLinkek({ osztaly, ujLapon = false }: { osztaly?: string; ujLapon?: boolean }) {
   return (
     <>
       {LABLEC_LINKEK.map((elem) => (
-        <Link key={elem.ut} to={elem.ut} className={osztaly}>
+        <Link
+          key={elem.ut}
+          to={elem.ut}
+          className={osztaly}
+          {...(ujLapon ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
+        >
           {elem.cimke}
+          {ujLapon && <span className="sr-only"> (új lapon nyílik)</span>}
         </Link>
       ))}
     </>

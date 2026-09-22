@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase.ts';
 import { AuthElrendezes } from '../../komponensek/Elrendezes.tsx';
+import { FeltetelekPipa } from '../../komponensek/FeltetelekPipa.tsx';
 import { kapcsolatEmail, regisztracioNyitva } from '../../lib/kornyezet.ts';
 import { magyarAuthHiba } from '../../lib/authHiba.ts';
 
@@ -145,26 +146,7 @@ export function Regisztracio() {
           beleértve: az ÁSZF a regisztráció ELŐTT olvasható, különben fiók
           kellene ahhoz, amihez a fiók feltétele kötődik.
         */}
-        <label className="flex items-start gap-2 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            className="mt-0.5 rounded border-slate-300"
-            required
-            checked={feltetelek}
-            onChange={(e) => setFeltetelek(e.target.checked)}
-          />
-          <span>
-            Elfogadom az{' '}
-            <Link to="/aszf" className="text-blue-700 hover:underline">
-              ÁSZF-et
-            </Link>{' '}
-            és az{' '}
-            <Link to="/adatkezeles" className="text-blue-700 hover:underline">
-              Adatkezelési tájékoztatót
-            </Link>
-            .
-          </span>
-        </label>
+        <FeltetelekPipa elfogadva={feltetelek} valtozott={setFeltetelek} />
 
         <button type="submit" className="btn btn-primary w-full" disabled={kuld || !feltetelek}>
           {kuld ? 'Egy pillanat…' : 'Fiók létrehozása'}

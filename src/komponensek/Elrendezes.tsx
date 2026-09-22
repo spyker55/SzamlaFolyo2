@@ -140,8 +140,15 @@ export function AuthElrendezes({ children }: { children: ReactNode }) {
 
       <div className="card card-pad w-full max-w-sm">{children}</div>
 
+      {/*
+        `ujLapon`: ezen a képernyőn a felhasználó épp egy űrlapot tölt ki. Ha a
+        lábléc jogi linkje ugyanitt nyílna meg, a jogi oldal fejléce a
+        főoldalra vinné vissza, és a begépelt adatok elvesznének — a
+        `FeltetelekPipa` linkjeit pontosan ezért nyitjuk új lapon. Két út
+        vezet ugyanoda; ha csak az egyiket javítjuk, a hiba fele megmarad.
+      */}
       <nav className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-400">
-        <LablecLinkek osztaly="hover:underline" />
+        <LablecLinkek osztaly="hover:underline" ujLapon />
       </nav>
     </div>
   );

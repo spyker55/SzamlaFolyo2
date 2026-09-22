@@ -11,6 +11,7 @@ import {
 } from '../../lib/meghivo.ts';
 import { hatralevoNap } from '@uzleti/meghivo.ts';
 import { szerepCimke } from '@uzleti/enumok.ts';
+import { FeltetelekPipa } from '../../komponensek/FeltetelekPipa.tsx';
 
 /**
  * A meghívó elfogadása.
@@ -207,26 +208,7 @@ function Belepes({ cim, token }: { cim: string; token: string }) {
           <p className="mt-1 text-xs text-slate-400">Legalább 8 karakter.</p>
         </div>
 
-        <label className="flex items-start gap-2 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            className="mt-0.5 rounded border-slate-300"
-            required
-            checked={feltetelek}
-            onChange={(e) => setFeltetelek(e.target.checked)}
-          />
-          <span>
-            Elfogadom az{' '}
-            <Link to="/aszf" className="text-blue-700 hover:underline">
-              ÁSZF-et
-            </Link>{' '}
-            és az{' '}
-            <Link to="/adatkezeles" className="text-blue-700 hover:underline">
-              Adatkezelési tájékoztatót
-            </Link>
-            .
-          </span>
-        </label>
+        <FeltetelekPipa elfogadva={feltetelek} valtozott={setFeltetelek} />
 
         <button type="submit" className="btn btn-primary w-full" disabled={kuld || !feltetelek}>
           {kuld ? 'Egy pillanat…' : 'Fiókot készítek'}
