@@ -125,6 +125,16 @@ export function Utmutato() {
             XML-ből olvassuk ki: neked ugyanúgy egy PDF-et kell feltöltened.
           </li>
           <li>
+            ⚠️ <strong>Ha egy XML nem a négy ismert alak valamelyike</strong>, nem utasítjuk el:
+            ugyanúgy feldolgozzuk, mint egy PDF-et — vagyis <strong>a modell olvassa ki</strong>.
+            A keretedbe ugyanannyi, a tartalma viszont így elhagyja a szervert. A
+            részletek az{' '}
+            <Link to="/adatkezeles" className="underline">
+              Adatkezelési tájékoztató 3. pontjában
+            </Link>{' '}
+            állnak.
+          </li>
+          <li>
             Méret: legfeljebb <strong>{Math.round(szamlafolyo.feltoltes.maxBajt / 1024 / 1024)} MB</strong>{' '}
             fájlonként.
           </li>
@@ -237,7 +247,10 @@ export function Utmutato() {
         <P>
           Ez a rendszer szíve. Bal oldalon az eredeti bizonylat, jobb oldalon a kiolvasott
           adatok. A feladatod nem az, hogy mindent begépelj, hanem hogy{' '}
-          <strong>megnézd, amit megjelöltünk</strong>.
+          <strong>megnézd, amit megjelöltünk</strong> — azzal a megszorítással, hogy a{' '}
+          <em>jelöletlen</em> mező sem garancia. Azt jelenti, hogy nincs okunk gyanakodni, nem
+          azt, hogy biztosan jó. A végösszeget és a bizonylatszámot érdemes akkor is ránézésre
+          összevetni az eredetivel.
         </P>
         <P>
           <strong>A mezők színe azt mondja meg, mennyire bízunk az adatban:</strong>
@@ -403,9 +416,15 @@ export function Utmutato() {
         <P>
           A Stripe lapján a csomagváltás az <strong>„Előfizetés frissítése"</strong> gomb mögött
           van — ott lehet másik csomagot választani. Ugyanezen a lapon áll a lemondás, a
-          bankkártya cseréje és a korábbi számláid letöltése. Amit ott módosítasz, az pár
-          másodpercen belül a Beállításokon is látszik.
+          bankkártya cseréje és a korábbi <strong>fizetési bizonylatok</strong> letöltése. Amit
+          ott módosítasz, az pár másodpercen belül a Beállításokon is látszik.
         </P>
+        <Figyelem>
+          <strong>A Stripe-nál letölthető bizonylat nem a számlád.</strong> Az a fizetési
+          szolgáltató saját dokumentuma a tranzakcióról. A <em>számlát</em> mi állítjuk ki, magyar
+          számlázóprogrammal, és e-mailben küldjük a megadott címedre — azt tedd a könyvelésbe,
+          ne a Stripe-ét.
+        </Figyelem>
         <P>
           <strong>A csomagváltás nem indítja újra a számlázási ciklust</strong>, és nem terhelünk
           érte azonnal semmit: a fordulónap marad, ahol volt, és külön számlát sem kapsz róla. A{' '}
@@ -601,8 +620,11 @@ export function Utmutato() {
           >
             {kapcsolatEmail}
           </a>
-          . Ha egy bizonylattal van baj, a bizonylatszám és a feltöltés ideje sokat segít — a
-          fájlt <strong>ne</strong> küldd el levélben, az a rendszerben úgyis megvan.
+          . Ha egy bizonylattal van baj, a bizonylatszám és a feltöltés ideje sokat segít.{' '}
+          <strong>Az eredeti fájlt ne küldd el</strong> — amíg a rendszerben van, magunk is
+          megnézzük. ⚠️ Egy kivétel: az eredetik az <strong>export után törlődnek</strong>{' '}
+          (a {pont('archivum')}. pont szerint), tehát egy már exportált bizonylat fájlja lehet,
+          hogy nálunk sincs meg. Ha ilyenről kérdezel, és nálad megvan, mellékeld.
         </P>
       </Fejezet>
     </JogiOldal>

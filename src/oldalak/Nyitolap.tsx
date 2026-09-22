@@ -308,9 +308,9 @@ function Hero() {
                 Töltsd fel a számlát vagy a nyugtát — vagy küldd tovább e-mailben. A
                 SzámlaFolyó kiolvassa.
               </strong>{' '}
-              Minden bizonylatot <strong className="font-bold text-slate-800">te hagysz
-              jóvá</strong> — de a rendszer megjelöli, amiben bizonytalan, tehát elsősorban
-              azzal van dolgod. Export, és kész. Nem funkciókat halmozunk, hanem a legkisebb,
+              <strong className="font-bold text-slate-800">Alapértelmezés szerint minden
+              bizonylatot te hagysz jóvá</strong> — a rendszer megjelöli, amiben bizonytalan,
+              tehát elsősorban azzal van dolgod. Export, és kész. Nem funkciókat halmozunk, hanem a legkisebb,
               leggyorsabb munkafolyamatot adjuk.
             </p>
 
@@ -536,7 +536,7 @@ function Folyamat() {
     {
       cim: 'Ellenőrzés',
       szoveg:
-        'Minden bizonylatot te hagysz jóvá — de csak azzal van dolgod, amit megjelöltünk: a bizonytalan és az ellentmondásos mezőkkel.',
+        'Alapértelmezés szerint minden bizonylat rád vár: gépi jóváhagyás csak akkor van, ha te kapcsolod be. A megjelölt mezőkkel — a bizonytalanokkal és az ellentmondásosakkal — van elsősorban dolgod, de a jelöletlen sem garancia: azt jelenti, nincs okunk gyanakodni.',
       ikon: <IkonPajzs className="h-8 w-8" />,
     },
     {
@@ -897,9 +897,11 @@ function Arak() {
           </p>
           <p>
             Egy dokumentum a fair-use szabály szerint:{' '}
-            <strong className="text-vaszon">{szabaly()}</strong> Egy számla vagy nyugta így egy
-            dokumentum marad; egy vastag, összefűzött köteg többnek számít — de a köteg szétszedése
-            nem kerül külön kreditbe.
+            <strong className="text-vaszon">{szabaly()}</strong> Egy szokásos, egy–három oldalas
+            számla vagy nyugta így <strong className="text-vaszon">egy</strong> dokumentum; egy
+            hosszú, sok tételsoros számla az oldalszáma szerint több — és egy vastag,
+            összefűzött köteg annyi, ahány bizonylat van benne. A köteg szétszedése nem kerül
+            külön kreditbe.
           </p>
         </div>
       </div>

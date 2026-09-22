@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { JogiOldal, Lista, P, Szakasz, Tablazat } from './JogiOldal.tsx';
-import { szolgaltato } from './adatok.ts';
+import { bekeltetoTestulet, szolgaltato } from './adatok.ts';
 import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
 import { oldalakbol, szabaly } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
@@ -89,6 +89,47 @@ import { formaz } from '@uzleti/osszeg.ts';
  * A keretszabály **nem** változott, és ez a lényeg: a hibrid bizonylat
  * ugyanúgy egy dokumentum, akár az XML-jéből, akár a PDF-jéből olvastuk ki.
  * Csak a modellköltségünk tűnik el — az Előfizető számlája nem.
+ *
+ * # 2026. szeptember 22. — jogi felülvizsgálat, második kör
+ *
+ * A véleményező tizennégy pontot adott vissza, és a legfontosabbat **méréssel
+ * kellett eldönteni**, nem olvasással:
+ *
+ * - **9. pont — a csomagváltás.** Az ÁSZF azt írta, hogy „időarányos
+ *   elszámolás nem történik", az útmutató az ellenkezőjét. A Stripe portál
+ *   konfigurációja **mindkét fiókban** (sandbox és éles)
+ *   `subscription_update.proration_behavior: "create_prorations"` és
+ *   `billing_cycle_anchor: "unchanged"` — vagyis **az útmutató mondott igazat**,
+ *   és ez a szöveg volt a hibás. (Egy korábbi tervjegyzet a `"none"`-t
+ *   idézte; az a **lemondás** mezője, nem a csomagváltásé.)
+ * - **1. pont — az egyéni vállalkozó.** „Nem a regisztráló természetes
+ *   személlyel" — egyéni vállalkozónál épp ő az. A pont most szétválasztja a
+ *   két esetet.
+ * - **1. és 13. pont — az elfogadás bizonyítéka.** A szöveg azt állította,
+ *   hogy nyilvántartjuk az elfogadás időpontját, és hogy az Előfizető „külön
+ *   tájékoztatást kapott" a szokatlan kikötésekről. **Egyik sem volt igaz**:
+ *   az adatbázisban semmi nem tárolta, a figyelemfelhívás pedig csak az ÁSZF
+ *   önmagáról tett kijelentése volt. Azóta a cég létrehozásának képernyőjén
+ *   két külön pipa áll, és a `terms_acceptances` tábla rögzíti a verziót, az
+ *   időpontot, az eljáró felhasználót és a céget
+ *   (`20260922000200_aszf_elfogadas.sql`).
+ * - **6. pont — a próbaidő kezdete.** „A regisztrációt követően" állt itt, a
+ *   `ceg_letrehozas()` viszont a **cég létrehozásakor** állítja be a
+ *   `trial_ends_at`-ot. Aki egy hetet várt a cégalapítással, egy héttel
+ *   rövidebb próbaidőt kapott, mint amit a szöveg ígért.
+ * - **3. és 8. pont — az XML.** A formátumlista két alakot sorolt fel, a kód
+ *   négyet ismer; és a fel nem ismert XML **modellhez kerülése** eddig nem
+ *   látszott adatvédelmi kérdésként. Mindkettőre őr áll:
+ *   `src/oldalak/jogiSzovegek.test.ts` a kód `ERTELMEZOK` tömbjéből olvas.
+ * - **2., 10., 12., 14. pont:** a békéltető testület illetékessége (2024-től
+ *   regionális — Heves a miskolci testülethez tartozik), a megszűnés utáni
+ *   törlés harminc napos határideje, az elmaradt haszon kizárására is álló
+ *   kötelező kivételek, a közreműködőkért való felelősség, és a 15. pont
+ *   elcsúszott hivatkozása (17. → 16.).
+ *
+ * ⚠️ Változatlanul áll: **ezek a szövegek ügyvédi felülvizsgálaton nem estek
+ * át.** A mostani kör egy szakmai vélemény pontjait vezette át, mérésekkel
+ * alátámasztva — az nem ugyanaz.
  */
 export function Aszf() {
   const mb = Math.round(szamlafolyo.feltoltes.maxBajt / (1024 * 1024));
@@ -111,10 +152,22 @@ export function Aszf() {
         <P>
           <strong>Ki a szerződő fél.</strong> A szerződés a Szolgáltató és{' '}
           <strong>az a vállalkozás</strong> között jön létre, amelynek nevében és adószámával a
-          cég a rendszerben létrejön — nem a regisztráló természetes személlyel. A céget létrehozó
-          felhasználó a cégalapítással kijelenti, hogy e vállalkozás képviseletére jogosult, vagy
-          a szerződés megkötésére felhatalmazással rendelkezik.
+          cég a rendszerben létrejön. Hogy ez kit jelent, az a vállalkozás formájától függ, és a
+          kettőt érdemes nem összemosni:
         </P>
+        <Lista>
+          <li>
+            <strong>Egyéni vállalkozó</strong> esetén a szerződő fél maga a regisztráló{' '}
+            <em>természetes személy</em>, a vállalkozói minőségében eljárva. Nála tehát nincs
+            „mögöttes" jogi személy: a fiókot nyitó ember és az Előfizető ugyanaz.
+          </li>
+          <li>
+            <strong>Gazdasági társaság</strong> vagy más jogi személy esetén a szerződő fél a
+            társaság, nem a regisztráló magánszemély. A céget létrehozó felhasználó a cég
+            létrehozásával kijelenti, hogy e vállalkozás képviseletére jogosult, vagy a
+            szerződés megkötésére felhatalmazással rendelkezik.
+          </li>
+        </Lista>
         <P>
           <strong>Mikor jön létre.</strong> A regisztráció önmagában fiókot hoz létre; a
           szerződés a <strong>cég létrehozásával</strong> jön létre, amikor a felhasználó a jelen
@@ -142,9 +195,25 @@ export function Aszf() {
         <P>
           <strong>A szerződés nyelve magyar.</strong> A szerződést a Szolgáltató nem iktatja
           külön okiratként, az utóbb nem kereshető elő; a jelen ÁSZF mindenkor hatályos szövege
-          azonban ezen az oldalon elérhető, onnan menthető és kinyomtatható, és a Szolgáltató
-          nyilvántartja, hogy az Előfizető <strong>melyik időpontban</strong> fogadta el. A
-          hatálybalépés napja a lap tetején szerepel.
+          azonban ezen az oldalon elérhető, onnan menthető és kinyomtatható. A szerződés a
+          felek között elektronikus úton, írásba foglalás nélkül jön létre.
+        </P>
+        <P>
+          <strong>Amit a Szolgáltató az elfogadásról megőriz.</strong> Nem csupán az időpontot:
+          az időpont önmagában nem mutatná meg, <em>melyik szöveget</em> fogadta el az
+          Előfizető. A rendszer ezért a cég létrehozásakor rögzíti{' '}
+          <strong>az elfogadott ÁSZF-változat azonosítóját</strong> (a lap tetején szereplő
+          hatálybalépési nap), az <strong>elfogadás időpontját</strong>, az{' '}
+          <strong>eljáró felhasználót</strong> és a <strong>céget</strong>, amelynek nevében
+          eljárt.
+        </P>
+        <P>
+          <strong>A külön kiemelt kikötések.</strong> A cég létrehozásakor a felület két
+          kikötésről <strong>külön, olvasható figyelemfelhívást</strong> ad, és azok
+          elfogadásához külön nyilatkozat szükséges: az{' '}
+          <strong>eredeti fájlok automatikus törlése</strong> (10. pont) és a{' '}
+          <strong>felelősség összegszerű korlátja</strong> (13. pont). Ezek nélkül a cég nem jön
+          létre. A külön elfogadás tényét a Szolgáltató a fenti adatokkal együtt rögzíti.
         </P>
       </Szakasz>
 
@@ -170,8 +239,14 @@ export function Aszf() {
             jogosultnak minősül
           </strong>{' '}
           — a hatályos fogyasztóvédelmi törvény bizonyos kis- és középvállalkozásokat is e körbe
-          von —, e jogát a jelen ÁSZF nem korlátozza; az illetékes békéltető testület a
-          Szolgáltató székhelye szerinti kereskedelmi és iparkamara mellett működik.
+          von, önmagában a kis- és középvállalkozói minőség azonban nem elég hozzá —, e jogát a
+          jelen ÁSZF nem korlátozza. Az illetékes testület a{' '}
+          <strong>{bekeltetoTestulet.nev}</strong> ({bekeltetoTestulet.szekhely}), amelynek
+          illetékességi területe {bekeltetoTestulet.illetekesseg}. Elérhetőségei az{' '}
+          <Link to="/impresszum" className="underline">
+            Impresszumban
+          </Link>{' '}
+          szerepelnek.
         </P>
       </Szakasz>
 
@@ -200,8 +275,10 @@ export function Aszf() {
           <li>az eredeti fájlokat az export mellé ZIP-ben letöltheti.</li>
         </Lista>
         <P>
-          Feltölthető fájltípusok: PDF, JPG, PNG, WEBP, valamint e-számla XML (UBL,
-          Factur-X/ZUGFeRD CII). Egy fájl mérete legfeljebb {mb} MB.
+          Feltölthető fájltípusok: PDF, JPG, PNG, WEBP, valamint e-számla XML. A rendszer
+          saját értelmezővel <strong>négy XML-alakot</strong> ismer fel: UBL,
+          Factur-X/ZUGFeRD (CII), NAV Online Számla, valamint a régebbi APEH 2005 számla
+          adatexport. Egy fájl mérete legfeljebb {mb} MB.
         </P>
         <P>
           <strong>
@@ -286,8 +363,11 @@ export function Aszf() {
 
       <Szakasz cim="6. Próbaidő">
         <P>
-          A regisztrációt követően {szamlafolyo.proba.napok} napos, bankkártya megadása nélküli
-          próbaidő jár, amely alatt legfeljebb {szamlafolyo.proba.dokumentumok} dokumentum
+          <strong>A cég létrehozásától</strong> számított {szamlafolyo.proba.napok} napos,
+          bankkártya megadása nélküli próbaidő jár — nem a regisztrációtól, mert a szerződés is a
+          cég létrehozásával jön létre (1. pont). Aki regisztrál, de csak később alapít céget, a
+          teljes próbaidőt akkor kapja meg. A próbaidő alatt legfeljebb{' '}
+          {szamlafolyo.proba.dokumentumok} dokumentum
           dolgozható fel, és legfeljebb {szamlafolyo.proba.felhasznalok} felhasználó vehető fel. A
           próbaidőt a kettő közül az zárja le, amelyik előbb elfogy. A próbaidő automatikusan
           megszűnik, fizetési kötelezettséget nem keletkeztet.
@@ -363,13 +443,24 @@ export function Aszf() {
           darabkeretre.
         </P>
         <P>
-          Ha a rendszer egy XML-t nem ismer fel — mert olyan formátumban készült, amit az
-          értelmezői nem kezelnek —, a bizonylat a szokásos gépi kiolvasás útjára kerül. Ez a
-          keret szempontjából nem jelent különbséget. Ugyanez vonatkozik a{' '}
-          <strong>hibrid e-számlára</strong> (Factur-X, ZUGFeRD), amelynél a PDF mellé az
-          e-számla XML is be van ágyazva: a Szolgáltatás ilyenkor a beágyazott XML-t dolgozza
-          fel, ha felismeri, egyébként a PDF-et. A keretbe mindkét esetben egy bizonylatként
-          számít.
+          ⚠️ <strong>Ha a rendszer egy XML-t nem ismer fel</strong> — mert olyan formátumban
+          készült, amit a fenti négy értelmező egyike sem kezel —, a bizonylat a{' '}
+          <strong>szokásos gépi kiolvasás útjára kerül</strong>. Ez a keret szempontjából nem
+          jelent különbséget, adatvédelmi szempontból viszont igen: ilyenkor az XML{' '}
+          <strong>tartalma is elhagyja a szervert</strong>, ugyanazon a két, név szerint
+          megnevezett közreműködőn át, mint egy PDF. A részleteket az{' '}
+          <Link to="/adatkezeles" className="underline">
+            Adatkezelési tájékoztató 3. pontja
+          </Link>{' '}
+          írja le. A Szolgáltatás ezt szándékosan teszi így: egy ismeretlen alakú irat így nem
+          akad el, hanem feldolgozásra kerül.
+        </P>
+        <P>
+          Ugyanez vonatkozik a <strong>hibrid e-számlára</strong> (Factur-X, ZUGFeRD), amelynél
+          a PDF mellé az e-számla XML is be van ágyazva: a Szolgáltatás ilyenkor a beágyazott
+          XML-t dolgozza fel, <strong>ha felismeri</strong> — és akkor semmi nem hagyja el a
+          szervert. Ha nem ismeri fel, a PDF megy a gépi kiolvasásra, a benne lévő melléklettel
+          együtt. A keretbe mindkét esetben egy bizonylatként számít.
         </P>
         <P>
           A keret kimerülése után a feldolgozás <strong>alapértelmezés szerint megáll</strong>. Az
@@ -435,13 +526,26 @@ export function Aszf() {
         </Lista>
         <P>
           <strong>Csomagváltás.</strong> Az Előfizető a számlázási felületen bármikor válthat
-          csomagot. A váltás <strong>azonnal hatályos</strong>, a számlázási időszak fordulónapja
-          viszont nem változik, és időarányos elszámolás nem történik: a különbözet a következő
-          fordulónapon jelentkezik.{' '}
-          <strong>Kisebb csomagra váltásnál a keret is azonnal csökken</strong> — ha az
-          Előfizető az adott időszakban már többet használt fel, mint az új csomag kerete, a
-          feldolgozás a kereten felüli feldolgozásra vonatkozó szabályok szerint folytatódik vagy
-          áll meg.
+          csomagot. A váltás <strong>azonnal hatályos</strong>: a csomaghoz tartozó darabkeret és
+          fejszám a váltás pillanatától az új csomagé. A{' '}
+          <strong>számlázási időszak fordulónapja nem változik</strong> — a váltás nem indítja
+          újra a ciklust.
+        </P>
+        <P>
+          <strong>Az elszámolás napra arányos, és mindkét irányban működik.</strong> A váltásért
+          a Szolgáltató azonnal nem terhel semmit és külön számlát sem állít ki; a különbözet a{' '}
+          <strong>következő fordulónapon kiállított számlán</strong> jelenik meg, külön
+          tételsorként. Nagyobb csomagra váltásnál a hátralévő napokra eső díjkülönbözet
+          terhelésként, kisebb csomagra váltásnál a már kifizetett, de fel nem használt rész{' '}
+          <strong>jóváírásként</strong>. Aki a cikluson belül visszavált, annál a két tétel
+          kiejti egymást.
+        </P>
+        <P>
+          ⚠️ <strong>Kisebb csomagra váltásnál a keret azonnal csökken</strong>, a jóváírás
+          viszont csak a fordulónapon jelentkezik. Ha az Előfizető az adott időszakban már
+          többet használt fel, mint az új csomag kerete, a feldolgozás a kereten felüli
+          feldolgozásra vonatkozó szabályok szerint folytatódik vagy áll meg — a pénz tehát
+          visszajár, a keret viszont nem.
         </P>
         <P>
           <strong>A próbaidő lejárta</strong> után a Szolgáltatás előfizetés nélkül nem dolgoz
@@ -508,9 +612,13 @@ export function Aszf() {
           magának kell megőriznie.
         </P>
         <P>
-          A szerződés megszűnése után a Szolgáltató az Előfizető adatait ésszerű időn belül törli.
-          Az Előfizető a szerződés fennállása alatt bármikor exportálhatja az adatait; a
-          megszűnést megelőző adatmentés az Előfizető feladata.
+          <strong>A szerződés megszűnése után a Szolgáltató az Előfizető adatait a
+          megszűnéstől számított harminc napon belül törli.</strong> Ez a határidő szándékosan
+          egyezik a 16. pont szerinti adatkiadási ablakkal: aki szolgáltatóváltás miatt kéri az
+          adatai kiadását, azt e harminc napon belül megkapja, és a törlés csak utána történik
+          meg. Ha ilyen kérés nem érkezik, a harmincadik napon a törlés magától lefut. Az
+          Előfizető a szerződés fennállása alatt bármikor exportálhatja az adatait; a megszűnést
+          megelőző adatmentés az Előfizető feladata.
         </P>
         <P>
           <strong>A fiók törlése végleges.</strong> Ha a törléssel a cégnek nem marad
@@ -723,13 +831,31 @@ export function Aszf() {
           <strong>szándékosan okozott</strong>, valamint az emberi életet, testi épséget vagy
           egészséget megkárosító szerződésszegés esetét kivéve — összesen legfeljebb a káresemény
           bekövetkeztét megelőző hat hónapban ténylegesen megfizetett szolgáltatási díj összegéig
-          terjed. A Szolgáltató nem felel az elmaradt haszonért.
+          terjed. <strong>Ugyanezekkel a kivételekkel</strong> — vagyis a negyedik eset, a
+          szándékosan okozott, valamint az emberi életet, testi épséget vagy egészséget
+          megkárosító szerződésszegés kivételével — a Szolgáltató nem felel az elmaradt
+          haszonért sem. A kötelező kivételek tehát a korlátozás{' '}
+          <strong>mindkét</strong> alakjára állnak; a Szolgáltató ezeket a felelősségeket nem
+          zárja ki és nem korlátozza.
+        </P>
+        <P>
+          <strong>A Szolgáltató közreműködőiért felel.</strong> Az 5. pont szerinti
+          adatfeldolgozók és egyéb közreműködők a Szolgáltató teljesítési segédei: az ő
+          magatartásukért a Szolgáltató úgy felel, mintha maga járt volna el. Kimentésre csak
+          olyan, ellenőrzési körén kívül eső, előre nem látható körülmény ad alapot, amelyet
+          elhárítani sem lehetett — egy közreműködő kiesése önmagában nem ilyen. Ugyanez áll az
+          e-mailes beküldési útvonalra: az azon át érkező iratok feldolgozásáért a Szolgáltató
+          ugyanúgy felel, mint a felületen feltöltöttekért, azt viszont nem vállalja, hogy egy
+          hozzá el sem jutott levélről tudomást szerez.
         </P>
         <P>
           A jelen pont a Szolgáltatás díjához mért, a felek által a szerződéskötéskor ismert
-          kockázatmegosztást rögzíti. Az Előfizető a szerződéskötéssel elismeri, hogy erről a
-          korlátozásról — csakúgy, mint a 10. pont szerinti automatikus fájltörlésről —{' '}
-          <strong>külön tájékoztatást kapott</strong>, és azt kifejezetten elfogadja.
+          kockázatmegosztást rögzíti. Erről a korlátozásról — csakúgy, mint a 10. pont szerinti
+          automatikus fájltörlésről — a Szolgáltató{' '}
+          <strong>a cég létrehozásának képernyőjén, a szerződés megkötése előtt, külön
+          figyelemfelhívást</strong> ad, és azok elfogadásához az általános elfogadáson felül{' '}
+          <strong>külön nyilatkozat</strong> szükséges. Enélkül a cég — és vele a szerződés — nem
+          jön létre. A külön elfogadás tényét a Szolgáltató az 1. pont szerint rögzíti.
         </P>
       </Szakasz>
 
@@ -757,7 +883,7 @@ export function Aszf() {
           <strong>a módosítás hatálybalépésének napján</strong> hatályosul — nem kell megvárnia a
           számlázási időszak végét —, és a Szolgáltató a már kifizetett, de fel nem használt
           időszakra eső díjat <strong>időarányosan visszatéríti</strong>. A megszűnésig az
-          Előfizető a 17. pont szerint mentheti ki az adatait. Enélkül a felmondás joga csak
+          Előfizető a 16. pont szerint mentheti ki az adatait. Enélkül a felmondás joga csak
           látszólagos volna: a változást elutasító Előfizető a hatálybalépés után is a módosított
           feltételek szerint fizetne.
         </P>
@@ -788,13 +914,30 @@ export function Aszf() {
           </li>
         </Lista>
         <P>
+          ⚠️ <strong>Amit a felületi export ma nem visz el.</strong> A fenti három művelet a{' '}
+          <em>jóváhagyott</em> tételekre és az eredeti fájlokra szól. Nem szerepel bennük a még
+          jóváhagyásra váró vagy hibára futott bizonylat kiolvasott adata, a feltöltött e-számla
+          XML nyers szövege, a cég beállításai (megőrzési idő, beküldési cím, plafon), a
+          tevékenységnapló és a beküldött levelek nyilvántartása. Ezeket a Szolgáltatás ma nem
+          teszi egy kattintással letölthetővé, és ezt jobb kimondani, mint egy „mindent
+          exportálhatsz" ígéretet tenni.
+        </P>
+        <P>
           <strong>Szolgáltatóváltás esetén</strong> a Szolgáltató — az Előfizető kérésére, a
           szerződés megszűnésétől számított <strong>harminc napon belül</strong> — díjmentesen
-          biztosítja az Előfizető adatainak kiadását a fenti formátumokban, és ésszerű mértékű
-          segítséget nyújt azok értelmezéséhez. Ha az Előfizető ilyen kérést terjeszt elő, a
-          Szolgáltató az adatokat a kiadásig nem törli.{' '}
-          <strong>Kérés hiányában a törlés a 10–11. pont szerint történik</strong>, ezért az
-          Előfizetőnek érdemes a kimentést még a megszűnés előtt elvégeznie.
+          biztosítja az Előfizető adatainak kiadását, és ésszerű mértékű segítséget nyújt azok
+          értelmezéséhez. <strong>Ez a kötelezettség az előző bekezdésben felsorolt, felületről
+          ma nem exportálható adatokra is kiterjed:</strong> azokat a Szolgáltató kérésre,
+          géppel olvasható, szerkezetében dokumentált formátumban adja ki. A harminc napos
+          határidő <strong>az adat-visszanyerés legrövidebb ideje</strong>, nem a leghosszabb: ha
+          az Előfizető az átállásához hosszabb időt kér, a Szolgáltató azt nem tagadja meg
+          pusztán a határidőre hivatkozva.
+        </P>
+        <P>
+          Ha az Előfizető ilyen kérést terjeszt elő, a Szolgáltató az adatokat a kiadásig nem
+          törli. <strong>Kérés hiányában a törlés a 10. pont szerinti harminc napos határidővel
+          történik</strong>, ezért az Előfizetőnek érdemes a kimentést még a megszűnés előtt
+          elvégeznie.
         </P>
         <P>
           A Szolgáltató a váltás megkönnyítése érdekében nyílt, széles körben olvasható

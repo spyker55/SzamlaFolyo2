@@ -7,6 +7,8 @@ import { varoMeghivo, type VaroMeghivo } from '../lib/meghivo.ts';
 import { ervenyes, formaz } from '@uzleti/adoszam.ts';
 import { hatralevoNap } from '@uzleti/meghivo.ts';
 import { szerepCimke } from '@uzleti/enumok.ts';
+import { SzerzodesPipak } from '../komponensek/SzerzodesPipak.tsx';
+import { JOGI_VERZIO } from '../oldalak/jogi/adatok.ts';
 
 /**
  * Cég létrehozása. Első belépéskor ez az egyetlen elérhető képernyő — nincs
@@ -36,10 +38,25 @@ import { szerepCimke } from '@uzleti/enumok.ts';
  * Az űrlap ezért **nem tűnik el** a kártya mellől: van, akit meghívtak, és
  * mégis a saját cégét akarja. A választást nem vesszük el — csak láthatóvá
  * tesszük, melyik ajtó csukódik be.
+ *
+ * # 2026. szeptember 22. — itt köttetik a szerződés, tehát itt is kell aláírni
+ *
+ * A jogi felülvizsgálat 8. pontja találta meg: az ÁSZF 1. pontja szerint a
+ * szerződés **a cég létrehozásával** jön létre, a nyilatkozat viszont a
+ * regisztrációs képernyőn állt, ezen a képernyőn pedig semmi. Ráadásul az
+ * elfogadásról **semmit nem tároltunk** — se időpontot, se verziót, se az
+ * eljáró felhasználót —, miközben az ÁSZF azt ígéri, hogy nyilvántartjuk.
+ *
+ * Azóta: két pipa (`SzerzodesPipak`), és a `ceg_letrehozas()` a verzióval
+ * együtt `terms_acceptances` sort ír. A `JOGI_VERZIO` betűsort a szerver
+ * **ellenőrzi** a `legal_versions` táblából — egy elavult böngésző így magyar
+ * hibaüzenetet kap, nem egy hamis bizonyítékot hagy maga után.
  */
 export function CegLetrehozas() {
   const [nev, setNev] = useState('');
   const [adoszam, setAdoszam] = useState('');
+  const [feltetelek, setFeltetelek] = useState(false);
+  const [kikotesek, setKikotesek] = useState(false);
   const [hiba, setHiba] = useState<string | null>(null);
   const [kuld, setKuld] = useState(false);
 
@@ -84,6 +101,8 @@ export function CegLetrehozas() {
     const { error } = await supabase.rpc('ceg_letrehozas', {
       nev: nev.trim(),
       adoszam: formaz(adoszam) ?? adoszam.trim(),
+      aszf_verzio: JOGI_VERZIO,
+      kulon_kikotesek: kikotesek,
     });
 
     if (error !== null) {
@@ -142,7 +161,18 @@ export function CegLetrehozas() {
           </p>
         </div>
 
-        <button type="submit" className="btn btn-primary w-full" disabled={kuld}>
+        <SzerzodesPipak
+          feltetelek={feltetelek}
+          feltetelekValtozott={setFeltetelek}
+          kikotesek={kikotesek}
+          kikotesekValtozott={setKikotesek}
+        />
+
+        <button
+          type="submit"
+          className="btn btn-primary w-full"
+          disabled={kuld || !feltetelek || !kikotesek}
+        >
           {kuld ? 'Egy pillanat…' : 'Létrehozás'}
         </button>
       </form>

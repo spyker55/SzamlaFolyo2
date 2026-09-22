@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Adatsor, JogiOldal, P, Szakasz } from './JogiOldal.tsx';
-import { adatfeldolgozok, szolgaltato } from './adatok.ts';
+import { Adatsor, JogiOldal, Lista, P, Szakasz } from './JogiOldal.tsx';
+import { adatfeldolgozok, bekeltetoTestulet, szolgaltato } from './adatok.ts';
 
 /**
  * Impresszum.
@@ -93,8 +93,10 @@ export function Impresszum() {
         </dl>
         <P>
           Az adatbázis és a bizonylatok fájljai az Európai Unión belül, frankfurti kiszolgálón
-          tárolódnak. A gépi kiolvasás és a fizetés viszont Unión kívüli közreműködőkkel jár; a
-          teljes felsorolás — székhellyel, feladattal és feldolgozási országgal — az{' '}
+          tárolódnak. <strong>Több közreműködő azonban az Unión kívül dolgozza fel az adatot:</strong>{' '}
+          a gépi kiolvasás, a fizetés, a levelezés és magának a weboldalnak a kiszolgálása is. A
+          teljes felsorolás — jogi személlyel, székhellyel, feladattal és feldolgozási országgal
+          — az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató 5. pontjában
           </Link>{' '}
@@ -115,9 +117,35 @@ export function Impresszum() {
             ügyfél vállalkozás
           </strong>
           : a fogyasztóvédelmi törvény fogyasztó-fogalma bizonyos kis- és középvállalkozásokat is
-          lefed. Ha az Előfizető e körbe tartozik, az illetékes békéltető testület a Szolgáltató
-          székhelye szerinti kereskedelmi és iparkamara mellett működik —{' '}
-          {szolgaltato.kamara}, {szolgaltato.kamaraCim}. Az adatvédelmi tárgyú panaszokról az{' '}
+          lefed — önmagában a KKV-minőség azonban nem elég hozzá. Ha az Előfizető e körbe
+          tartozik, az illetékes testület a <strong>{bekeltetoTestulet.nev}</strong>:
+        </P>
+        <Lista>
+          <li>Székhely: {bekeltetoTestulet.szekhely}</li>
+          <li>Levelezési cím: {bekeltetoTestulet.levelcim}</li>
+          <li>Telefon: {bekeltetoTestulet.telefon}</li>
+          <li>
+            Weboldal:{' '}
+            <a
+              className="underline"
+              href={`https://${bekeltetoTestulet.weboldal}`}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {bekeltetoTestulet.weboldal}
+            </a>
+          </li>
+          <li>Illetékességi területe: {bekeltetoTestulet.illetekesseg}</li>
+        </Lista>
+        <P>
+          ⚠️ A békéltető testületek 2024. január 1-je óta <strong>regionális</strong> alapon
+          működnek: az illetékesség nem a Szolgáltató székhelye szerinti kamarához igazodik.
+          Hatvan (Heves vármegye) a fenti, <strong>miskolci</strong> székhelyű testülethez
+          tartozik. A Szolgáltató kamarai tagsága ettől külön kérdés — az a fenti{' '}
+          {szolgaltato.kamara}.
+        </P>
+        <P>
+          Az adatvédelmi tárgyú panaszokról az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató 8. pontja
           </Link>{' '}

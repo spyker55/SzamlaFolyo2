@@ -148,6 +148,42 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  * adatfeldolgozási szerződésből derül ki. A tájékoztató ezért a garancia
  * **forrására** mutat — ezt kéri a felülvizsgálat 2. pontja is —, a szerződések
  * elfogadása és bizonyítékuk megőrzése viszont üzemeltetői feladat.
+ *
+ * # 2026. szeptember 22. — jogi felülvizsgálat, második kör
+ *
+ * Négy pont érintette ezt a szöveget, és mind ugyanabból a tőről fakadt: a
+ * tájékoztató **kevesebbet mondott, mint amennyi történik**.
+ *
+ * - **2. pont — a jogalapok.** Egyetlen sor fedte a „szerződő fél
+ *   képviselőjét", „szerződés teljesítése" jogalappal. Ez egyéni vállalkozónál
+ *   helyes, társaság képviselőjénél nem: a társaság szerződése nem az ő
+ *   szerződése. A sor **négyfelé vált**: cég előtti regisztráció, egyéni
+ *   vállalkozó, társasági képviselő, és az ÁSZF-elfogadás nyilvántartása.
+ * - **10. pont — a nyers válasz és a javítások.** Egy sorban ültek, pedig a
+ *   megőrzésük **eltér**: a nyers válasz {nyersNap} nap után kiürül, a javítási
+ *   előzmény a bizonylattal együtt marad. Külön sort kaptak, külön céllal.
+ * - **13. pont — a látogatásmérés.** A táblázatban **egyetlen sor sem** szólt
+ *   róla, tehát jogalapja sem volt megjelölve; a leírás pedig „oldalanként
+ *   összesített látogatásszámot" említett, holott a szolgáltató ennél többet
+ *   kezel (hivatkozó oldal, ország, eszköz, böngésző, nem tartós azonosító).
+ *   Most saját sora van, jogos érdek jogalappal és érdekmérlegeléssel.
+ * - **2. és 3. pont — az Unión kívüli feldolgozás.** Az 5. pont összefoglalója
+ *   azt mondta, hogy „Unión kívülre két dolog megy", miközben a **saját
+ *   táblázata négy sort** jelölt annak. Külön kimondva a Resend: a fogadás és a
+ *   küldés útvonala EU-régióban fut, az üzenettartalom **tárolása viszont az
+ *   Egyesült Államokban** — a régióválasztás az útvonalat szabályozza, nem a
+ *   tárolás helyét.
+ *
+ * Egy ötödik, ami a 3. ponthoz tartozik: **a fel nem ismert XML a modellhez
+ * kerül.** A szöveg addig úgy hangzott, mintha minden XML helyben maradna. A
+ * kód szándékosan ejti tovább az ismeretlen alakot (`felderites.ts`), és ez jó
+ * tervezés — de adatvédelmi különbséget jelent, tehát ki kell mondani.
+ *
+ * ⚠️ Egy mondatot menet közben **kivettem**, mert megmérve nem volt igaz: hogy
+ * az Ellenőrzés képernyő megmutatná, a saját értelmezőnk vagy a modell
+ * olvasta-e ki a bizonylatot. A `document_extractions.model` oszlop tudja, a
+ * felület viszont **nem jeleníti meg**. Egy jogi szövegbe írt, kód nélküli
+ * ígéret pontosan az a hibaosztály, amit ez a projekt végig irtott.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -224,10 +260,65 @@ export function Adatkezeles() {
         </P>
         <Tablazat fejlec={['Mit', 'Miért', 'Jogalap', 'Meddig']}>
           <tr className="trow">
-            <td className="td">A szerződő fél képviselőjének neve, e-mail címe, jelszava</td>
+            <td className="td">
+              <strong>Regisztráló</strong> e-mail címe és jelszava, még a cég létrehozása{' '}
+              <em>előtt</em>
+            </td>
+            <td className="td">
+              Fiók létrehozása, belépés. Ekkor még nincs szerződés (ÁSZF 1.): a fiók önmagában
+              nem köti a Szolgáltatót és nem jogosít a Szolgáltatás használatára
+            </td>
+            <td className="td">
+              Az érintett kérésére történő, szerződéskötést megelőző lépések megtétele
+            </td>
+            <td className="td">
+              A cég létrehozásáig; ha az elmarad, a fiók törléséig — a törlés a felületről
+              bármikor elvégezhető
+            </td>
+          </tr>
+          <tr className="trow">
+            <td className="td">
+              <strong>Egyéni vállalkozó</strong> Előfizető neve, e-mail címe, jelszava
+            </td>
             <td className="td">Fiók, belépés, értesítések</td>
-            <td className="td">Szerződés teljesítése</td>
+            <td className="td">
+              Szerződés teljesítése — nála az érintett és a szerződő fél <em>ugyanaz</em> a
+              személy, a vállalkozói minőségében eljárva
+            </td>
             <td className="td">A szerződés megszűnéséig</td>
+          </tr>
+          <tr className="trow">
+            <td className="td">
+              A szerződő <strong>társaság képviselőjének</strong> neve, e-mail címe, jelszava
+            </td>
+            <td className="td">
+              Fiók, belépés, értesítések. A szerződést a társaság kötötte, nem ő — ezért rá a
+              „szerződés teljesítése" jogalap nem illik
+            </td>
+            <td className="td">
+              Jogos érdek: a szerződés teljesítéséhez azonosítható kapcsolattartó kell mindkét
+              oldalon. Az érdekmérlegelés eredménye az, hogy a legszűkebb adatkört kezeljük, az
+              adat forrása maga az érintett, és a hozzáférését bármikor megszüntetheti
+            </td>
+            <td className="td">A képviselői hozzáférés megszűnéséig</td>
+          </tr>
+          <tr className="trow">
+            <td className="td">
+              <strong>Az ÁSZF elfogadásának nyilvántartása:</strong> az elfogadott változat
+              azonosítója, az időpont, az eljáró felhasználó és a cég
+            </td>
+            <td className="td">
+              Annak igazolása, hogy a szerződés létrejött, és <em>melyik szöveggel</em>. Az
+              időpont önmagában erre nem volna elég
+            </td>
+            <td className="td">
+              Jogos érdek: a szerződés létrejöttének és tartalmának bizonyíthatósága, valamint
+              az elszámoltathatóság
+            </td>
+            <td className="td">
+              A szerződés megszűnésétől számított elévülési időig, de legfeljebb a cég adatainak
+              törléséig
+            </td>
           </tr>
           <tr className="trow">
             <td className="td">
@@ -273,16 +364,39 @@ export function Adatkezeles() {
           </tr>
           <tr className="trow">
             <td className="td">
-              A modell <strong>nyers válasza</strong> és a jóváhagyáskor végzett{' '}
-              <strong>javítások</strong>
+              A modell <strong>nyers válasza</strong> (a bizonylatról kiolvasott mezők abban az
+              alakban, ahogy a modell adta)
             </td>
             <td className="td">
-              Annak ellenőrzése, hogy a gépi kiolvasás helyesen működik-e — vagyis a
-              Szolgáltatás szerződésszerű teljesítésének mérése. Saját termékfejlesztésre,
-              elemzésre és modelltanításra <strong>nem</strong> használjuk
+              Annak ellenőrzése, hogy a gépi kiolvasás helyesen működött-e az adott
+              bizonylaton, és hogy egy vitatott tétel utólag rekonstruálható legyen
             </td>
             <td className="td">Az Előfizető utasítása (adatfeldolgozás)</td>
-            <td className="td">{nyersNap} nap, azután a nyers válasz kiürül</td>
+            <td className="td">
+              <strong>{nyersNap} nap</strong>, azután a válasz automatikusan kiürül. A
+              kiolvasás <em>sora</em> megmarad — abból számoljuk a keretet —, de a bizonylat
+              tartalmát hordozó válasz nem
+            </td>
+          </tr>
+          <tr className="trow">
+            <td className="td">
+              A jóváhagyáskor végzett <strong>javítások</strong> (mely mezőt mire írta át az
+              ember)
+            </td>
+            <td className="td">
+              Kétféle célt szolgál, és egyik sem a mi termékfejlesztésünk: (1) a cégen belüli
+              visszakövethetőség — ki min változtatott —, és (2) annak mérése, mennyire
+              megbízható a gépi kiolvasás <em>ennél az Előfizetőnél</em>, ami a gépi jóváhagyás
+              küszöbeinek helyességéről az egyetlen visszajelzés (6. pont). Saját célú
+              elemzésre, profilalkotásra, prompt- vagy modellfejlesztésre, illetve
+              modelltanításra <strong>nem</strong> használjuk fel
+            </td>
+            <td className="td">Az Előfizető utasítása (adatfeldolgozás)</td>
+            <td className="td">
+              A szerződés megszűnéséig. ⚠️ A javítási előzmény <em>nem</em> ürül ki a nyers
+              válasszal együtt: a javított és a javítás előtti érték a bizonylat mellett marad,
+              amíg maga a bizonylat
+            </td>
           </tr>
           <tr className="trow">
             <td className="td">
@@ -341,6 +455,25 @@ export function Adatkezeles() {
             <td className="td">A szolgáltató biztonsági célú megőrzési ideje szerint</td>
           </tr>
           <tr className="trow">
+            <td className="td">
+              <strong>Látogatásmérés a nyilvános oldalakon:</strong> a megnyitott oldal címe, a
+              hivatkozó oldal, az ország, az eszköz, az operációs rendszer és a böngésző típusa,
+              az időpont, valamint a kérésből képzett, <strong>nem tartós</strong> azonosító
+            </td>
+            <td className="td">
+              Annak mérése, hányan találnak ide és mit néznek meg, mielőtt fiókot nyitnának.
+              Bejelentkezés mögötti képernyőről adat el sem indul
+            </td>
+            <td className="td">
+              Jogos érdek: a nyilvános oldalak fejlesztése. Az érdekmérlegelés eredménye az,
+              hogy a mérés a látogató eszközén semmit nem tárol és onnan semmit nem olvas ki,
+              nem épít belőle több látogatást összefűző tartós azonosítót, más webhelyekre nem
+              követ, és az adatot kizárólag összesítve használjuk. Az érintett a 8. pont szerint
+              tiltakozhat
+            </td>
+            <td className="td">A mérést végző szolgáltató saját megőrzési ideje szerint</td>
+          </tr>
+          <tr className="trow">
             <td className="td">Munkamenet-adat a böngésző saját tárolójában</td>
             <td className="td">Bejelentkezett állapot fenntartása</td>
             <td className="td">A szolgáltatáshoz feltétlenül szükséges</td>
@@ -348,10 +481,11 @@ export function Adatkezeles() {
           </tr>
         </Tablazat>
         <P>
-          <strong>Kötelező-e megadni?</strong> A táblázat első négy sorában szereplő adatok a
-          szerződés megkötéséhez és teljesítéséhez szükségesek: megadásuk nélkül fiók és cég nem
-          hozható létre, tehát a Szolgáltatás nem vehető igénybe. Minden más adat a használatból
-          keletkezik.
+          <strong>Kötelező-e megadni?</strong> A <em>fiókadatok</em> (e-mail cím, jelszó), a{' '}
+          <em>cégadatok</em> (cégnév, adószám) és az <em>ÁSZF elfogadása</em> a szerződés
+          megkötéséhez és teljesítéséhez szükségesek: megadásuk nélkül fiók és cég nem hozható
+          létre, tehát a Szolgáltatás nem vehető igénybe. A <em>fizetési adatok</em> a fizetős
+          előfizetéshez kellenek, a próbaidőhöz nem. Minden más adat a használatból keletkezik.
         </P>
         <P>
           ⚠️ <strong>A tájékoztató tudomásulvétele nem hozzájárulás.</strong> A regisztrációkor
@@ -413,9 +547,19 @@ export function Adatkezeles() {
             kiszolgálót.
           </li>
           <li>
-            <strong>Mit látunk belőle:</strong> oldalanként összesített látogatásszámot. A mérés
-            nem tesz sütit, nem tárol adatot a látogató eszközén, és nem épít belőle tartós
-            azonosítót, amivel egy személy visszakereshető volna.
+            <strong>Mit kezel, és mit látunk belőle.</strong> A kettő nem ugyanaz, és jobb
+            kimondani. A mérés a fenti táblázat szerinti adatokat továbbítja: a megnyitott
+            oldal címe, a hivatkozó oldal, az ország, az eszköz, az operációs rendszer és a
+            böngésző típusa, az időpont, és a kérésből képzett, <strong>nem tartós</strong>{' '}
+            azonosító — ez utóbbi az egyes megnyitások összetartozását szolgálja, nem egy
+            személy visszakeresését. <em>Mi</em> ebből összesített számokat látunk, egyedi
+            látogatót nem.
+          </li>
+          <li>
+            <strong>Amit nem tesz:</strong> nem tesz sütit, nem tárol adatot a látogató eszközén
+            és nem is olvas ki onnan, nem épít több látogatást összefűző tartós azonosítót, és
+            más webhelyeken nem követ senkit. A webcímet nem a mérőkód állítja össze, hanem mi:
+            a lekérdezés és a horgony (a <code>#</code> utáni rész) <strong>nem kerül bele</strong>.
           </li>
         </Lista>
       </Szakasz>
@@ -429,12 +573,24 @@ export function Adatkezeles() {
             <strong>Európai Unión belül, frankfurti kiszolgálón</strong> tárolódik.
           </li>
           <li>
-            <strong>Az e-mailes beküldésnél</strong> a levelet a Resend fogadja EU-régióban, és
-            webhookon adja át nekünk. A levélből a <strong>melléklet tartalmát</strong> vesszük
-            át; a levél szövegéből semmit nem tárolunk. A feladó címét és a tárgyat megőrizzük,
-            de kizárólag azért, hogy a cég látni tudja, mi történt az odaküldött levéllel — egy
-            csendben eldobott számla rosszabb, mint egy elutasított. Ha a címzett cím
-            ismeretlen, a levélről <strong>semmit nem tárolunk.</strong>
+            <strong>Az e-mailes beküldésnél</strong> a levelet a Resend fogadja, és webhookon
+            adja át nekünk. A levélből a <strong>melléklet tartalmát</strong> vesszük át; a
+            levél szövegéből <em>mi</em> semmit nem tárolunk. A feladó címét és a tárgyat
+            megőrizzük, de kizárólag azért, hogy a cég látni tudja, mi történt az odaküldött
+            levéllel — egy csendben eldobott számla rosszabb, mint egy elutasított. Ha a
+            címzett cím ismeretlen, a levélről <strong>semmit nem tárolunk.</strong>
+          </li>
+          <li>
+            ⚠️ <strong>Abból, hogy mi nem tároljuk a levél szövegét, nem következik, hogy a
+            levélküldő sem kezeli.</strong> A beküldő címre érkező levél — a{' '}
+            <strong>teljes szövegével és mellékletével együtt</strong> — először a Resend
+            rendszerébe érkezik. A fogadás és a küldés útvonala EU-régióban (Írország) fut, a
+            szolgáltató saját tájékoztatása szerint viszont az üzenettartalmat és a naplókat az{' '}
+            <strong>Egyesült Államokban tárolja</strong>: a régió megválasztása az útvonalat
+            szabályozza, nem a tárolás helyét. Ez tehát Unión kívüli adattovábbítás, a saját
+            megőrzési idejük szerint — az 5. pont táblázata így is tünteti fel. Aki ezt el
+            akarja kerülni, ne használja az e-mailes beküldést: a böngészőből feltöltött
+            bizonylat végig az Unión belül marad.
           </li>
           <li>
             A kiolvasáshoz a bizonylat tartalma — a PDF vagy a kép — <strong>elhagyja a
@@ -480,11 +636,28 @@ export function Adatkezeles() {
             válasz {nyersNap} nap után automatikusan kiürül.
           </li>
           <li>
-            Az e-számla XML feldolgozása <strong>modellhívás nélkül</strong> történik: az ilyen
-            irat tartalma nem hagyja el a szervert. Ez a <strong>hibrid e-számlára</strong>{' '}
-            (Factur-X, ZUGFeRD) is vonatkozik, amelynél az XML a PDF mellékleteként érkezik: ha
-            a rendszer felismeri a beágyazott XML-t, a bizonylat — a PDF-fel együtt — el sem
-            indul a modellhez.
+            <strong>A felismert e-számla XML feldolgozása modellhívás nélkül történik:</strong>{' '}
+            az ilyen irat tartalma nem hagyja el a szervert. A rendszer négy XML-alakot ismer
+            fel saját értelmezővel: UBL, Factur-X/ZUGFeRD (CII), NAV Online Számla, és a
+            régebbi APEH 2005 számla adatexport. Ez a <strong>hibrid e-számlára</strong> is
+            vonatkozik, amelynél az XML a PDF mellékleteként érkezik: ha a rendszer felismeri a
+            beágyazott XML-t, a bizonylat — a PDF-fel együtt — el sem indul a modellhez.
+          </li>
+          <li>
+            ⚠️ <strong>A fel nem ismert XML viszont a modellhez kerül — ez az egyetlen hely,
+            ahol az „az XML nem hagyja el a szervert" szabály nem áll.</strong> Ha egy XML a
+            fenti négy alak egyikébe sem illik, a rendszer nem utasítja el, hanem a szokásos
+            gépi kiolvasás útjára engedi: a <strong>tartalma ugyanúgy elhagyja a szervert</strong>,
+            mint egy PDF-é, ugyanazon a két megnevezett közreműködőn át, ugyanazokkal a fenti
+            kikötésekkel. Ugyanez áll a hibrid e-számlára, ha a beágyazott XML-t nem ismerjük
+            fel: olyankor a PDF megy ki, a benne lévő melléklettel együtt.
+          </li>
+          <li>
+            Ez <strong>szándékos tervezés</strong>, nem hiányosság: egy ismeretlen alakú irat így
+            nem akad el a feldolgozásban, hanem feldolgozásra kerül. De mivel adatvédelmi
+            különbséget jelent, kimondjuk. ⚠️ A felület ma <strong>nem jelzi külön</strong>, hogy
+            egy adott bizonylatot a saját értelmezőnk olvasott-e ki vagy a modell; aki ezt tudni
+            szeretné egy konkrét iratról, a {szolgaltato.email} címen kérdezheti meg.
           </li>
           <li>
             A kiolvasott adat ezután vagy ellenőrzésre vár, vagy — ha a cég ezt bekapcsolta és a
@@ -531,12 +704,19 @@ export function Adatkezeles() {
           </li>
           <li>
             <strong>Kiolvasott és jóváhagyott adatok, fiókadatok:</strong> a szerződés
-            megszűnéséig — a törlés menetét lentebb írjuk le.
+            megszűnéséig, illetve ha az Előfizető nem maga törli a fiókját, a megszűnéstől
+            számított <strong>harminc napon belül</strong>. Ez a határidő szándékosan egyezik az{' '}
+            <Link to="/aszf" className="underline">
+              ÁSZF 16. pontja
+            </Link>{' '}
+            szerinti adatkiadási ablakkal: aki szolgáltatóváltás miatt kéri az adatai kiadását,
+            azt előbb megkapja, és a törlés csak utána fut le. A törlés menetét lentebb írjuk le.
           </li>
           <li>
             <strong>Belépési kísérletek adatai (IP-cím):</strong> ezeket a felhasználókezelést
-            végző Supabase kezeli a saját, biztonsági célú megőrzési ideje szerint; a
-            Szolgáltatónak ezekre önálló megőrzési ideje nincs.
+            végző Supabase kezeli, a saját biztonsági célú megőrzési ideje szerint; a
+            Szolgáltatónak ezekre önálló megőrzési ideje nincs, és a Szolgáltatás felületén
+            ezek az adatok nem jelennek meg.
           </li>
           <li>
             <strong>Számlázási adatok:</strong> a Szolgáltatóra irányadó adójogi iratmegőrzési
@@ -573,11 +753,13 @@ export function Adatkezeles() {
             sem érhető el többé, és a Szolgáltató sem tudja visszaállítani.
           </li>
           <li>
-            <strong>A biztonsági mentésekből kifutással.</strong> Az adatbázisról a
-            tárhelyszolgáltató üzemfolytonossági célú mentéseket készít, amelyek a mentési
-            rendszer saját, rövid megőrzési ideje alatt még tartalmazhatják a törölt adatot.
-            Ezeket a mentéseket <strong>kizárólag helyreállításra</strong> használjuk, egyedi
-            visszakeresésre nem, és a megőrzési idő leteltével maguktól elévülnek.
+            <strong>A biztonsági mentésekből kifutással, legfeljebb hét nap alatt.</strong> Az
+            adatbázisról a tárhelyszolgáltató üzemfolytonossági célú mentéseket készíthet,
+            amelyek a törlés után még tartalmazhatják az adatot. Ennek a megőrzési ideje a
+            tárhelyszolgáltató csomagjától függ, és <strong>a hét napot nem haladja meg</strong>{' '}
+            — a hetedik nap után a törölt adat a mentésekből is kifut. Ezeket a mentéseket{' '}
+            <strong>kizárólag teljes helyreállításra</strong> használjuk, egyedi visszakeresésre
+            soha: egyetlen törölt sort nem tudunk és nem is fogunk belőlük kikeresni.
           </li>
           <li>
             <strong>A közreműködőknél a saját feltételeik szerint.</strong> A levélküldő
@@ -650,9 +832,31 @@ export function Adatkezeles() {
         </Tablazat>
         <P>
           <strong>Az adatbázis és a bizonylatok fájljai az Európai Unión belül maradnak</strong>{' '}
-          (Frankfurt). Unión kívülre két dolog megy: a <strong>gépi kiolvasás</strong> és a{' '}
-          <strong>fizetés</strong>. Az előfizetési díjról kiállított számlát magyarországi
-          szolgáltató készíti.
+          (Frankfurt) — ez a Szolgáltatás <em>saját</em> tárolására vonatkozik, és csak arra.
+          Ebből nem következik, hogy minden adat az Unión belül marad: a fenti táblázat
+          négy sora Unión kívüli feldolgozást jelöl, és érdemes külön kimondani, melyik mit:
+        </P>
+        <Lista>
+          <li>
+            <strong>A gépi kiolvasás</strong> — a papír- és szkennelt bizonylat tartalma megy ki,
+            az OpenRouteren át a Google végpontjaihoz (3. pont).
+          </li>
+          <li>
+            <strong>A fizetés</strong> — a fizető neve, számlázási címe és kártyaadata a
+            Stripe-hoz.
+          </li>
+          <li>
+            <strong>A levelezés</strong> — a beküldő címre érkező levél teljes szövege és
+            melléklete, valamint a kimenő levelek: a Resend útvonala EU-régióban fut, a{' '}
+            <strong>tárolás és a naplózás viszont az Egyesült Államokban</strong>.
+          </li>
+          <li>
+            <strong>A weboldal kiszolgálása és a látogatásmérése</strong> — a Vercelhez. Bizonylat
+            nem megy át rajta, a látogató kérésének adatai igen.
+          </li>
+        </Lista>
+        <P>
+          Az előfizetési díjról kiállított számlát magyarországi szolgáltató készíti.
         </P>
         <P>
           <strong>A kiolvasás láncát a rendszer kódból is lezárja.</strong> A kérés megnevezi,
@@ -682,8 +886,21 @@ export function Adatkezeles() {
           adat az Uniót, az utóbbi azt, hogy egyáltalán miért kezeljük.
         </P>
         <P>
-          A Szolgáltató bankkártyaadatot nem lát és nem tárol: azt a Stripe kezeli a saját
-          felületén.
+          <strong>A lánc nem mindenhol közvetlen, és ezt is kimondjuk.</strong> A Szolgáltatónak
+          a <strong>Google-lel nincs saját szerződése</strong>: a modell végpontjait az
+          OpenRouter veszi igénybe, a Google tehát <em>al-adatfeldolgozó</em>. A ránk vonatkozó
+          garancia ennek megfelelően az OpenRouter feltételeiből ered, és a táblázat is oda
+          mutat — egy olyan szerződésre hivatkozni, aminek nem vagyunk részesei, többet ártana,
+          mint amennyit használ.
+        </P>
+        <P>
+          <strong>A Stripe szerepe sem egyféle.</strong> Az előfizetés kezelésében a Szolgáltató
+          megbízásából jár el, a fizetési művelet lebonyolításában, a visszaélések szűrésében és
+          a rá vonatkozó pénzügyi jogszabályok teljesítésében viszont{' '}
+          <strong>saját jogon, önálló adatkezelőként</strong> — ezekre az ő saját adatvédelmi
+          tájékoztatója irányadó, nem a jelen tájékoztató. A Szolgáltató{' '}
+          <strong>teljes bankkártyaadatot nem lát és nem tárol</strong>; a fizető nevét és
+          számlázási címét viszont igen, mert abból állítja ki a magyar számlát.
         </P>
         <P>
           <strong>Ha a fenti kör változik</strong> — új közreműködő lép be, vagy másik

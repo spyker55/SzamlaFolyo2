@@ -37,7 +37,47 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. szeptember 20.';
+export const hatalyos = '2026. szeptember 22.';
+
+/**
+ * Ugyanaz a nap, **gépnek olvasható alakban** — és ez nem kényelmi másolat.
+ *
+ * Ezt a betűsort küldi a böngésző a `ceg_letrehozas()`-nak, ez kerül a
+ * `terms_acceptances.version` oszlopba, és a szerver **ellenőrzi**, hogy
+ * szerepel-e a `legal_versions` táblában. Vagyis aki itt új dátumot ír, annak
+ * a `supabase/migrations/` alatt is fel kell vennie egy sort — enélkül a
+ * cégalapítás magyar hibaüzenettel áll meg, nem csendben hibázik.
+ *
+ * ⚠️ **Egy verzió nem vonható vissza.** A `legal_versions` sorai azt mondják
+ * meg, milyen szövegek léteztek; a régi sorokat a meglévő elfogadások
+ * hivatkozzák. Törölni tehát nem szabad, csak hozzáírni.
+ */
+export const JOGI_VERZIO = '2026-09-22';
+
+/**
+ * Az illetékes békéltető testület.
+ *
+ * # Miért nem a székhely szerinti kamara
+ *
+ * A szövegek eddig azt mondták, hogy „az illetékes békéltető testület a
+ * Szolgáltató székhelye szerinti kereskedelmi és iparkamara mellett működik",
+ * és a Heves vármegyei kamarát nevezték meg. **2024. január 1-je óta ez nem
+ * igaz**: a békéltető testületek regionális alapon működnek, és Heves vármegye
+ * a Borsod-Abaúj-Zemplén vármegyei, **miskolci** székhelyű testülethez
+ * tartozik — a testület illetékességi területe Borsod-Abaúj-Zemplén, Heves és
+ * Nógrád vármegye.
+ *
+ * A kamarai tagság (HKIK, Eger) ettől külön kérdés, és változatlanul igaz:
+ * az Impresszum azt a saját helyén tartja.
+ */
+export const bekeltetoTestulet = {
+  nev: 'Borsod-Abaúj-Zemplén Vármegyei Békéltető Testület',
+  szekhely: '3525 Miskolc, Szentpáli u. 1.',
+  levelcim: '3501 Miskolc, Pf. 376.',
+  telefon: '+36 46 501-090',
+  weboldal: 'bekeltetes.borsodmegye.hu',
+  illetekesseg: 'Borsod-Abaúj-Zemplén, Heves és Nógrád vármegye',
+} as const;
 
 /**
  * Az adatfeldolgozók — az Adatkezelési tájékoztató 5. pontjának melléklete.
@@ -118,7 +158,11 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     jogiSzemely: 'Vercel Inc.',
     szekhely: '440 N. Barranca Ave #4133, Covina, CA 91723, Amerikai Egyesült Államok',
     mit: 'A weboldal kiszolgálása és a nyilvános oldalak látogatásmérése',
-    adatkor: 'A böngésző kérésének adatai; bizonylat nem megy át rajta',
+    adatkor:
+      'A kiszolgáláshoz a böngésző kérésének adatai (IP-cím, böngészőazonosító). ' +
+      'A látogatásmérésből: a megnyitott nyilvános oldal címe, a hivatkozó oldal, ' +
+      'az ország, az eszköz és a böngésző típusa, valamint a kérésből képzett, ' +
+      'nem tartós azonosító. Bizonylat nem megy át rajta',
     hol: 'Amerikai Egyesült Államok (a kiszolgálás európai élhálózatról)',
     unionBelul: false,
     garanciaUrl: 'https://vercel.com/legal/dpa',
@@ -131,25 +175,38 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     adatkor: 'A bizonylat tartalma, valamint a saját cég neve és adószáma',
     hol: 'Amerikai Egyesült Államok',
     unionBelul: false,
-    garanciaUrl: 'https://openrouter.ai/privacy',
+    garanciaUrl: 'https://openrouter.ai/terms',
   },
   {
-    ki: 'Google',
-    jogiSzemely: 'Google LLC (Google AI Studio, illetve Google Cloud Vertex AI)',
+    ki: 'Google (al-adatfeldolgozó)',
+    jogiSzemely: 'Google LLC — a Google AI Studio, illetve a Google Cloud Vertex AI végpontjai',
     szekhely: null,
-    mit: 'A bizonylat gépi kiolvasása',
+    mit: 'A bizonylat gépi kiolvasása, az OpenRouter megbízásából',
     adatkor: 'A bizonylat tartalma, valamint a saját cég neve és adószáma',
     hol: 'Amerikai Egyesült Államok',
     unionBelul: false,
-    garanciaUrl: 'https://cloud.google.com/terms/data-processing-addendum',
+    // ⚠️ Itt **nem** a Google Cloud saját adatfeldolgozási mellékletére mutatunk,
+    // mert azt nem mi fogadtuk el: a Szolgáltatónak nincs szerződése a
+    // Google-lel. A lánc az OpenRouteren át vezet — ő veszi igénybe a Google
+    // végpontjait al-adatfeldolgozóként —, tehát a ránk vonatkozó garancia is
+    // az ő feltételeiből ered. Egy olyan szerződésre hivatkozni, aminek nem
+    // vagyunk részesei, pontosan az a hibaosztály, amit ez a lista irt.
+    garanciaUrl: 'https://openrouter.ai/terms',
   },
   {
     ki: 'Resend',
     jogiSzemely: 'Plus Five Five, Inc.',
     szekhely: null,
     mit: 'A cég beküldő címére érkező levelek fogadása és a rendszer leveleinek kiküldése',
-    adatkor: 'A levelek feladója, tárgya és melléklete; a kimenő levelek címzettje',
-    hol: 'Európai Unió (Írország) / Amerikai Egyesült Államok',
+    adatkor:
+      'A levelek feladója, tárgya, TELJES SZÖVEGE és melléklete; a kimenő levelek ' +
+      'címzettje és tartalma. Abból, hogy a Szolgáltató a levél szövegét nem tárolja, ' +
+      'nem következik, hogy a levélküldő sem kezeli',
+    // A fogadás és a küldés útvonala EU-régióban (Írország) fut, a szolgáltató
+    // saját leírása szerint viszont az üzenettartalmat és a naplókat az
+    // Egyesült Államokban tárolja. A régióválasztás az útvonalat szabályozza,
+    // nem a tárolás helyét — a tájékoztatóban a gyengébb állítás a helyes.
+    hol: 'Az útvonal: Európai Unió (Írország). A tárolás és a naplózás: Amerikai Egyesült Államok',
     unionBelul: false,
     garanciaUrl: 'https://resend.com/legal/dpa',
   },
@@ -158,7 +215,10 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     jogiSzemely: 'Stripe Payments Europe, Limited (Írország) / Stripe, Inc. (USA)',
     szekhely: null,
     mit: 'Bankkártyás fizetés, előfizetés-kezelés',
-    adatkor: 'A fizető neve, számlázási és kártyaadatai — ezeket a Szolgáltató nem látja',
+    adatkor:
+      'A fizető neve, számlázási címe és bankkártyaadatai. A TELJES KÁRTYAADATOT a ' +
+      'Szolgáltató nem látja és nem tárolja; a nevet és a számlázási címet viszont ' +
+      'igen — abból állítja ki a magyar számlát',
     hol: 'Írország / Amerikai Egyesült Államok',
     unionBelul: false,
     garanciaUrl: 'https://stripe.com/legal/dpa',

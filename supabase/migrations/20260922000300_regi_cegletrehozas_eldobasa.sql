@@ -1,0 +1,26 @@
+-- A kétparaméteres `ceg_letrehozas` eldobása — a 20260922000200 harmadik lépése.
+--
+-- # Miért külön migráció
+--
+-- Mert két, egymást kizáró dolgot kellett egyszerre teljesíteni: a régi alak
+-- **nem maradhat meg** (amíg létezik, a kliens megkerülheti vele az ÁSZF
+-- elfogadásának rögzítését), és a cégalapítás **egy pillanatra sem állhat meg**
+-- (a `VITE_` csomag fordításkor készül, a telepítés percekig tart).
+--
+-- A megoldás a szétválasztás: a 20260922000200 létrehozta az új, négyparaméteres
+-- alakot, és a régit meghagyta; a kód kiadása után az élő csomag már az újat
+-- hívja; ez a migráció zárja be az ajtót a régi mögött.
+--
+-- ⚠️ **Ez a fájl csak a kód kiadása UTÁN futtatható.** Ha egy friss adatbázison
+-- a lánc egyben játszódik le, az is rendben van: ott nincs régi csomag, amit
+-- ki kellene szolgálni.
+--
+-- # Amit a `drop` nem old meg
+--
+-- Semmit nem mond arról, hogy a **meglévő** cégek elfogadása hiányzik. A
+-- 2026-09-22 előtt létrehozott cégekhez nincs `terms_acceptances` sor, és
+-- visszamenőleg nem is gyártunk hozzájuk: egy utólag beírt sor
+-- megkülönböztethetetlen volna egy valóban megfigyelttől, és épp az a
+-- bizonyító ereje veszne el, amiért az egész tábla készült.
+
+drop function if exists public.ceg_letrehozas(text, text);
