@@ -33,8 +33,9 @@ type Sor = {
    * ⚠️ Egynél több sor több okból lehet: újrapróbálás után, és a kötegszétszedő
    * futás is ide köt (`document_id` = a szülő bizonylat, `credits: 0`). A
    * legfrissebb a valódi kiolvasás — a szétszedés mindig megelőzi.
+   *
+   * Elhagyható, mert a tartalék lekérdezés (lásd `lista()`) nem kéri le.
    */
-  // Hiányozhat: a tartalék lekérdezés (lásd `lista()`) nem kéri le.
   document_extractions?: { model: string | null; created_at: string }[] | null;
 };
 
