@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase.ts';
+import { magyarAuthHiba } from '../../lib/authHiba.ts';
 import { AuthElrendezes } from '../../komponensek/Elrendezes.tsx';
 
 /**
@@ -105,8 +106,19 @@ export function JelszoBeallitas() {
     setKuld(false);
 
     if (error !== null) {
+      // ⚠️ Ez a képernyő eddig **minden** hibát lejárt linknek mondott. A
+      // szivárgásellenőrzés bekapcsolása után ez félrevezetővé vált: egy
+      // elutasított gyenge jelszóra is azt kapta a felhasználó, hogy kérjen új
+      // linket — és az új link sem segített volna rajta.
+      const magyarul = magyarAuthHiba(error);
+
+      if (magyarul === null) {
+        console.error('Ismeretlen hiba a jelszó beállításakor:', error);
+      }
+
       setHiba(
-        'Nem sikerült beállítani a jelszót. Lehet, hogy a link lejárt — kérj újat a bejelentkezésnél.',
+        magyarul ??
+          'Nem sikerült beállítani a jelszót. Lehet, hogy a link lejárt — kérj újat a bejelentkezésnél.',
       );
       return;
     }

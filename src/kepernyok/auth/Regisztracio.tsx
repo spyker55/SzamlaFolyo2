@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase.ts';
 import { AuthElrendezes } from '../../komponensek/Elrendezes.tsx';
 import { kapcsolatEmail, regisztracioNyitva } from '../../lib/kornyezet.ts';
+import { magyarAuthHiba } from '../../lib/authHiba.ts';
 
 /**
  * Nyilvános regisztráció.
@@ -59,7 +60,19 @@ export function Regisztracio() {
         return;
       }
 
-      setHiba(error.message);
+      // A nyers `error.message` angol platformszöveg. Egy magyar termék
+      // nyilvános regisztrációján ez ugyanaz a hibaosztály, mint a fent
+      // elfogott `signup_disabled` volt — csak halkabb.
+      const magyarul = magyarAuthHiba(error);
+
+      if (magyarul === null) {
+        console.error('Ismeretlen regisztrációs hiba:', error);
+      }
+
+      setHiba(
+        magyarul ??
+          `Nem sikerült a regisztráció. Próbáld újra, és ha nem megy, írj: ${kapcsolatEmail}`,
+      );
       return;
     }
 
