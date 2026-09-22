@@ -184,7 +184,8 @@ begin
 end;
 $$;
 
--- A `drop` az ACL-t is elvitte, tehát ez itt nem no-op, mint a
--- 20260922000100-ban volt: a jogokat valóban ki kell osztani újra.
+-- Ez a jogosztás **nem no-op**, szemben a 20260922000100-zal: a négyparaméteres
+-- alak új függvény, saját ACL-lel. A Supabase minden új `public` függvényre ad
+-- nevesített EXECUTE-ot, ezért a `revoke` is nevesítve szól.
 revoke all on function public.ceg_letrehozas(text, text, text, boolean) from public, anon;
 grant execute on function public.ceg_letrehozas(text, text, text, boolean) to authenticated;
