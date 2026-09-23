@@ -4927,3 +4927,23 @@ teszt pedig megkapta a két valós helyzetet, ami a megmaradt őröket igényli
 (fordított sorrendben visszaérő kérések; szinte egyszerre érkező
 `visibilitychange` + `focus`). Azóta mind az öt szabály külön-külön piros, ha
 kivesszük.
+
+## ✅ A dátummezők nem vágódnak le az ellenőrző képernyőn (2026-09-23)
+
+A tulajdonos 27 colos monitoron „2026. 09. 1”-et és „éééé. hh. n”-et látott a
+kelt / teljesítés / határidő mezőkben. A monitor mérete itt nem számít: az
+oldal legfeljebb `max-w-6xl` (1152 px), abból a menü után a fél kártya, abból
+a három oszlop – **mérve 119 px** egy dátumra, 1280 és 2560 px széles ablakban
+egyaránt.
+
+Mérve (Chromium, magyar nyelv, a buildelt CSS-sel): 120 px-en pontosan a
+képernyőképen látott levágás, 130 px-en a szöveg a naptárikonba ér, **140 px-től
+tiszta**. A rács ezért nem fix három oszlop, hanem `auto-fit` +
+`minmax(10rem, 1fr)` (160 px: 20 px tartalék más böngészőkre). Fél kártyában
+2 + 1 (186 px-es mezők), egy oszlopos elrendezésben és telefonon változatlan.
+
+Az osztálynév egy konstansban áll (`src/lib/datumRacs.ts`), betű szerint, mert
+a Tailwind a forrásból generál; a teszt a mért minimumot, az `auto-fit`-et és
+azt őrzi, hogy a képernyő tényleg ezt használja – mindhárom külön-külön piros,
+ha elrontjuk. Az Export dátumszűrői teljes szélességű kártyában ülnek,
+asztali nézetben ~270 px-esek; ott nem volt baj.

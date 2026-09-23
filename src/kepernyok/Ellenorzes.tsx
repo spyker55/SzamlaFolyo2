@@ -5,6 +5,7 @@ import { Jelmagyarazat, Mezo, Valaszto } from '../komponensek/Mezo.tsx';
 import { AfaBontasSzerkeszto } from '../komponensek/AfaBontasSzerkeszto.tsx';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
 import { betolt, jovahagy, kovetkezoId, type Betoltott } from '../lib/ellenorzes.ts';
+import { DATUM_RACS } from '../lib/datumRacs.ts';
 import { bukottak } from '@uzleti/validatorok.ts';
 import { sav as savBol, type Sav } from '@uzleti/konfidencia.ts';
 import { CIMKEK, type Mezo as MezoNev } from '@uzleti/sema.ts';
@@ -384,7 +385,8 @@ export function Ellenorzes() {
             inputRef={jeloltRef('doc_number')}
           />
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          {/* A dátumok nem fix három oszlopban: fél kártyában levágódtak (`datumRacs.ts`). */}
+          <div className={DATUM_RACS}>
             {(['issue_date', 'fulfillment_date', 'due_date'] as const).map((mezo) => (
               <Mezo
                 key={mezo}
