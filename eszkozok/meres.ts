@@ -54,8 +54,15 @@ export class KapcsoloHiba extends ProbaHiba {}
  * megállít: az nem mérési eredmény.
  */
 export class FutasHiba extends ProbaHiba {
-  constructor(readonly bukott: BukottFutas) {
+  // ⚠️ Kiírt mező, nem `constructor(readonly bukott…)`: a script a Node saját
+  // TypeScript-futtatásával indul (csak típustörlés), ami a paramétertulajdonságot
+  // nem ismeri – 2026-09-23-án pont ezen állt meg. A Vitest lefordítja, tehát a
+  // tesztkör ezt nem látta; a `kiolvasasProba.test.ts` azóta Node-dal indítja.
+  readonly bukott: BukottFutas;
+
+  constructor(bukott: BukottFutas) {
     super(`A modellhívás nem sikerült: ${bukott.hiba}`);
+    this.bukott = bukott;
   }
 }
 

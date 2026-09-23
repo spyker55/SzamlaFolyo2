@@ -169,6 +169,70 @@ export async function duplikatumotElvet(dokumentumId: string): Promise<{ ok: boo
   return error === null ? { ok: true } : { ok: false, hiba: error.message };
 }
 
+/**
+ * Egy végleg elbukott bizonylat kézi újraindítása.
+ *
+ * 2026-09-23-ig a `hiba` állapotú sor zsákutca volt a Beérkezőben: se
+ * újrapróbálni, se eltüntetni nem lehetett. A leggyakoribb oka pedig
+ * átmeneti – a modell szolgáltatójának túlterhelése (429) –, amin egy
+ * későbbi próba átmegy.
+ *
+ * ⚠️ **A kísérletszámláló nullázódik**, és ez nem kényelem: a cron csak a
+ * `maxProbalkozas` alatti sorokat veszi fel. Nullázás nélkül, ha az alábbi
+ * közvetlen indítás nem megy át, a sor örökre `feltoltve` állna, és senki
+ * nem venné fel. Így ugyanaz a háló viszi, mint egy friss feltöltést (azonnali
+ * második kísérlet, cron). A hibás kísérlet keretet nem fogyaszt.
+ *
+ * A `status` feltétel a lekérdezésben van: egy közben másképp alakult sort
+ * (például egy másik felhasználó már elvetette) nem indít újra.
+ */
+export async function hibasatUjraindit(dokumentumId: string): Promise<{ ok: boolean; hiba?: string }> {
+  const { data, error } = await supabase
+    .from('documents')
+    .update({ status: 'feltoltve', attempts: 0, error: null, claimed_at: null })
+    .eq('id', dokumentumId)
+    .eq('status', 'hiba')
+    .select('id')
+    .maybeSingle();
+
+  if (error !== null) {
+    return { ok: false, hiba: error.message };
+  }
+
+  if (data === null) {
+    return { ok: false, hiba: 'Ez a bizonylat közben már nem hibás állapotú.' };
+  }
+
+  void supabase.functions
+    .invoke('kiolvas', { body: { dokumentum_id: dokumentumId } })
+    .catch((hiba: unknown) => {
+      console.error(
+        'Az újraindítás közvetlen hívása nem sikerült – a bizonylat a következő percfordulón indul.',
+        hiba,
+      );
+    });
+
+  return { ok: true };
+}
+
+/**
+ * Egy végleg elbukott bizonylat elvetése.
+ *
+ * A fájlhoz itt nem nyúlunk: egy köteg darabjai közös fájlon osztoznak, és a
+ * testvérek még használhatják. Ha ez volt a fájl utolsó bizonylata, a fájl
+ * gazdátlan marad, és a napi selejtezés egy nap múlva elviszi
+ * (`20260923000900_gazdatlan_fajlok.sql`).
+ */
+export async function hibasatElvet(dokumentumId: string): Promise<{ ok: boolean; hiba?: string }> {
+  const { error } = await supabase
+    .from('documents')
+    .delete()
+    .eq('id', dokumentumId)
+    .eq('status', 'hiba');
+
+  return error === null ? { ok: true } : { ok: false, hiba: error.message };
+}
+
 /** SHA-256 hexa alakban. A böngésző beépített kriptója adja, nincs hozzá könyvtár. */
 async function ujjlenyomat(puffer: ArrayBuffer): Promise<string> {
   const kivonat = await crypto.subtle.digest('SHA-256', puffer);

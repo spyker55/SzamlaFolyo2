@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.ts';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
-import { duplikatumotElvet, feltolt } from '../lib/feltoltes.ts';
+import { duplikatumotElvet, feltolt, hibasatElvet, hibasatUjraindit } from '../lib/feltoltes.ts';
 import { frissitesiUtem, frissitoHurok } from '../lib/frissitesiUtem.ts';
 import { kiolvasasJelzes, type HibaJelzes } from '../lib/kiolvasasJelzes.ts';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
@@ -151,7 +151,8 @@ export function Beerkezo() {
   const [feltoltFolyik, setFeltoltFolyik] = useState(false);
   const [huzas, setHuzas] = useState(false);
   const [keret, setKeret] = useState<Keret | null>(null);
-  // Melyik duplikátumsor elvetése fut éppen — a gomb addig nem nyomható újra.
+  // Melyik sor művelete (duplikátum elvetése, hibás sor újraindítása vagy
+  // elvetése) fut éppen — a gombok addig nem nyomhatók újra.
   const [elvetes, setElvetes] = useState<string | null>(null);
   const bemenetRef = useRef<HTMLInputElement>(null);
 
@@ -251,6 +252,28 @@ export function Beerkezo() {
 
     if (!eredmeny.ok) {
       setHibak([eredmeny.hiba ?? 'A sort nem sikerült elvetni.']);
+    }
+
+    setElvetes(null);
+    await betoltes();
+  }
+
+  async function hibasMuvelet(id: string, muvelet: 'ujra' | 'elvet') {
+    if (
+      muvelet === 'elvet' &&
+      !window.confirm(
+        'Elveted ezt a bizonylatot? A sor eltűnik a Beérkezőből. Ha ez volt a fájl egyetlen bizonylata, az eredeti fájl egy nap múlva törlődik.',
+      )
+    ) {
+      return;
+    }
+
+    setElvetes(id);
+
+    const eredmeny = muvelet === 'ujra' ? await hibasatUjraindit(id) : await hibasatElvet(id);
+
+    if (!eredmeny.ok) {
+      setHibak([eredmeny.hiba ?? 'A műveletet nem sikerült végrehajtani.']);
     }
 
     setElvetes(null);
@@ -417,6 +440,31 @@ export function Beerkezo() {
                       >
                         {elvetes === sor.id ? 'Elvetés…' : 'Elvetem'}
                       </button>
+                    )}
+                    {/*
+                      A végleg elbukott sor sem zsákutca (2026-09-23): a
+                      leggyakoribb oka átmeneti (a szolgáltató 429-e), tehát
+                      egy későbbi próba átmehet; ha nem kell, elvethető.
+                    */}
+                    {sor.status === 'hiba' && szerkeszthet && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          disabled={elvetes !== null}
+                          onClick={() => void hibasMuvelet(sor.id, 'ujra')}
+                        >
+                          {elvetes === sor.id ? 'Folyamatban…' : 'Újrapróbálom'}
+                        </button>{' '}
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          disabled={elvetes !== null}
+                          onClick={() => void hibasMuvelet(sor.id, 'elvet')}
+                        >
+                          Elvetem
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

@@ -5198,3 +5198,44 @@ Hét szándékos törés, mindegyik piros (mindig küld `reasoning`-et; a
 `kiolvas()` nem adja tovább; élesben is korlátoz; az elbukott futás megállítja
 a mérést; a hiányzó kulcs „mérési eredmény"; az elbukott futás pénze kimarad
 az összegből; nincs felső határ a gondolkodási keretre).
+
+## ✅ A hibás bizonylat nem zsákutca, a gazdátlan fájl nem marad örökre, és a mérőscript Node-dal is indul (2026-09-23)
+
+**1. A `hiba` sor a Beérkezőben.** A tulajdonos jelezte: egy végleg elbukott
+bizonylat ott maradt, és „nem lehet eltüntetni sehogy". Így volt – a felület
+a duplikátumnál kínált elvetést, a hibás sornál semmit. Most két gomb van
+(csak szerkesztőnek): **Újrapróbálom** és **Elvetem** (megerősítéssel).
+
+- Az újrapróbálás a sort visszateszi a sorba **nullázott kísérletszámmal**, és
+  azonnal indít. A nullázás nem kényelem: a cron csak a `maxProbalkozas` alatti
+  sorokat veszi fel, tehát nélküle egy elbukott böngészős indítás után a sor
+  örökre `feltoltve` állna. A hibás kísérlet keretet nem fogyaszt.
+- Mindkét művelet `status = 'hiba'` feltétellel fut: egy közben másképp
+  alakult sort nem indít újra és nem töröl.
+
+**2. A gazdátlan fájlok selejtezése** (`20260923000900_gazdatlan_fajlok.sql`).
+Az elvetés mellé ez kellett: a `belso.selejtezheto()` eddig csak olyan fájlt
+adott ki, amin **van** bizonylat (az eredeti migráció szavaival: „A gazdátlan
+fájlok takarítása külön kérdés."). Egy bizonylat nélküli fájl tehát soha nem
+törlődött volna – az elvetésből és egy félbemaradt feltöltésből is keletkezhet
+ilyen. Most gazdátlan az a fájl, amelyre egyetlen bizonylat sem mutat, és egy
+napnál régebbi (az egy nap a feltöltés közbeni pillanatot védi); csak a napi
+futásban, az exportos szűkített alakban nem.
+
+Élesben mérve, visszagörgetett blokkban: előtte 0 fájl selejtezhető; egy
+kétnapos és egy friss gazdátlan próbasorral a lista pontosan a kétnapost adta,
+a szűkített alak 0-t, és a próba nem hagyott nyomot. Az élő függvénytörzs md5-je
+betűre egyezik a repóval (`6de59193…`).
+
+**3. A mérőscript nem indult el a tulajdonos gépén.** Mindhárom mérés
+`ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX`-szal állt meg: a `FutasHiba`
+`constructor(readonly bukott…)` paramétertulajdonságát a Node saját
+TypeScript-futtatása (csak típustörlés) nem ismeri, a Vitest viszont
+lefordítja – a tesztkör ezért zöld volt. Most kiírt mező, és egy új teszt
+(`kiolvasasProba.test.ts`) a scriptet **valódi Node-folyamatként** indítja,
+kulcs nélkül: a teljes importlánc betöltődik, hálózatot nem ér. A régi alakkal
+piros.
+
+Szándékos törések (mind piros): nem nulláz; újraindítás, illetve elvetés
+státuszfeltétel nélkül; elvetés rákérdezés nélkül; nincs gazdátlan ág; nincs
+egynapos türelem; paramétertulajdonság a mérőscriptben.
