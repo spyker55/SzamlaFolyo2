@@ -29,7 +29,11 @@ type Futas = {
   gondolkodasToken: number | null;
   koltseg: number | null;
   idoMs: number;
-  eredmeny: { mezok: Record<string, string | null> };
+  eredmeny: {
+    mezok: Record<string, string | null>;
+    nehezenOlvashato?: boolean;
+    tobbIratGyanu?: boolean;
+  };
 };
 
 type Bukott = {
@@ -65,8 +69,15 @@ const ELLENORZOTT: [string, string][] = [
   ['payment_method', 'Fizetési mód'],
 ];
 
-/** A próbaszámla ismert adatai, a mezők tárolt alakjához igazítva. */
-export function probaszamlaElvart(): Record<string, string> {
+/**
+ * A próbaszámla ismert adatai, a mezők tárolt alakjához igazítva.
+ *
+ * ⚠️ A `fizetendo` **üres**: a séma szerint csak akkor kell, ha eltér a
+ * bruttótól („Ha nem tér el, hagyd ki." – `sema.ts`), és a próbaszámlán nem
+ * tér el. Az első összevetés (2026-09-23) itt 203 200-at várt, és mindhárom
+ * beállítást hibásnak mutatta – pedig a modell pontosan azt tette, amit kértünk.
+ */
+export function probaszamlaElvart(): Record<string, string | null> {
   const adat = JSON.parse(
     readFileSync(new URL('../tesztadat/harom-szamla-rendes.json', import.meta.url), 'utf8'),
   ) as { szamlak: Record<string, unknown>[] };
@@ -85,14 +96,18 @@ export function probaszamlaElvart(): Record<string, string> {
     net_amount: String(sz['net_amount']),
     vat_amount: String(sz['vat_amount']),
     gross_amount: String(sz['gross_amount']),
-    fizetendo: String(sz['gross_amount']),
+    fizetendo: null,
     currency: String(sz['currency']),
     payment_method: String(sz['payment_method']),
   };
 }
 
-/** Összegnél a szám dönt (`203200.00` = `203200`), máshol a szöveg, kis-nagybetű nélkül. */
-function egyezik(kapott: string | null | undefined, elvart: string): boolean {
+/**
+ * Összegnél a szám dönt (`203200.00` = `203200`), máshol a szöveg, kis-nagybetű
+ * nélkül. `null` elvárás: a mezőnek üresnek kell lennie.
+ */
+function egyezik(kapott: string | null | undefined, elvart: string | null): boolean {
+  if (elvart === null) return kapott === null || kapott === undefined || kapott === '';
   if (kapott === null || kapott === undefined) return false;
   const k = Number(kapott);
   const e = Number(elvart);
@@ -119,7 +134,10 @@ function pad(s: string, n: number): string {
 }
 
 /** Az összevetés szövege. `elvart`: a helyes értékek, vagy `null`, ha nem ismertek. */
-export function osszevet(meresek: { nev: string; m: MeresJson }[], elvart: Record<string, string> | null): string {
+export function osszevet(
+  meresek: { nev: string; m: MeresJson }[],
+  elvart: Record<string, string | null> | null,
+): string {
   const SZ = 26;
   const OSZ = 24;
   const sor = (cim: string, ertekek: string[]) => pad(cim, SZ) + ertekek.map((e) => pad(e, OSZ)).join('');
@@ -170,6 +188,21 @@ export function osszevet(meresek: { nev: string; m: MeresJson }[], elvart: Recor
     ),
   );
 
+  // A két zászló: a nehéz (szkennelt, kézírásos) számláknál ezen látszik, ha a
+  // korlátozott gondolkodás elnézi, hogy a papír nehezen olvasható.
+  sorok.push(
+    sor(
+      'zászló: nehezen olvasható',
+      meresek.map((x) => `${x.m.futasok.filter((f) => f.eredmeny.nehezenOlvashato === true).length}/${x.m.futasok.length}`),
+    ),
+  );
+  sorok.push(
+    sor(
+      'zászló: több irat gyanúja',
+      meresek.map((x) => `${x.m.futasok.filter((f) => f.eredmeny.tobbIratGyanu === true).length}/${x.m.futasok.length}`),
+    ),
+  );
+
   sorok.push('');
 
   if (elvart !== null) {
@@ -179,7 +212,7 @@ export function osszevet(meresek: { nev: string; m: MeresJson }[], elvart: Recor
         sor(
           `  ${cimke}`,
           meresek.map((x) => {
-            const jo = x.m.futasok.filter((f) => egyezik(f.eredmeny.mezok[mezo], elvart[mezo]!)).length;
+            const jo = x.m.futasok.filter((f) => egyezik(f.eredmeny.mezok[mezo], elvart[mezo] ?? null)).length;
             return `${jo}/${x.m.futasok.length}${jo < x.m.futasok.length ? '  ✗' : ''}`;
           }),
         ),
@@ -192,12 +225,12 @@ export function osszevet(meresek: { nev: string; m: MeresJson }[], elvart: Recor
       for (const [mezo, cimke] of ELLENORZOTT) {
         const rosszak = x.m.futasok
           .map((f) => f.eredmeny.mezok[mezo])
-          .filter((v) => !egyezik(v, elvart[mezo]!));
+          .filter((v) => !egyezik(v, elvart[mezo] ?? null));
         if (rosszak.length > 0) {
           const db = new Map<string, number>();
           for (const r of rosszak) db.set(String(r), (db.get(String(r)) ?? 0) + 1);
           hibasak.push(
-            `  ${x.nev} · ${cimke}: ${[...db].map(([v, n]) => `„${v}" ×${n}`).join(', ')} (helyes: „${elvart[mezo]}")`,
+            `  ${x.nev} · ${cimke}: ${[...db].map(([v, n]) => `„${v}" ×${n}`).join(', ')} (helyes: ${elvart[mezo] === null ? 'üres' : `„${elvart[mezo]}"`})`,
           );
         }
       }
@@ -218,6 +251,17 @@ export function osszevet(meresek: { nev: string; m: MeresJson }[], elvart: Recor
       );
     }
   }
+
+  // Az egyéb hibák szövege – ezek a mi üzeneteink, nem a számla adatai.
+  const egyeb: string[] = [];
+  for (const x of meresek) {
+    for (const b of bukottak(x.m)) {
+      if (!b.hiba.includes('(429)') && !/MAX_TOKENS|length/.test(b.leallas ?? '')) {
+        egyeb.push(`  ${x.nev}: ${b.hiba}${b.leallas === null ? '' : ` [${b.leallas}]`} (${b.idoMs} ms)`);
+      }
+    }
+  }
+  if (egyeb.length > 0) sorok.push('', 'EGYÉB HIBÁK', ...egyeb);
 
   return sorok.join('\n');
 }

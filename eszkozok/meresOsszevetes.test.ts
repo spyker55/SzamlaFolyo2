@@ -13,7 +13,7 @@ function futas(gondolkodas: number, felulir: Record<string, string> = {}) {
     gondolkodasToken: gondolkodas,
     koltseg: 0.005,
     idoMs: 8000,
-    eredmeny: { mezok: { ...ELVART, gross_amount: '203200.00', ...felulir } },
+    eredmeny: { mezok: { ...ELVART, gross_amount: '203200.00', ...felulir }, nehezenOlvashato: false, tobbIratGyanu: false },
   };
 }
 
@@ -24,6 +24,7 @@ const ALAP: MeresJson = {
   bukottFutasok: [
     { hiba: 'A kiolvasó szolgáltatás átmenetileg túlterhelt (429).', leallas: null, koltseg: null, idoMs: 3000 },
     { hiba: 'A modell üres választ adott.', leallas: 'length / MAX_TOKENS', koltseg: 0.017, idoMs: 39000 },
+    { hiba: 'A modell nem a kért függvénnyel válaszolt.', leallas: 'stop', koltseg: 0.001, idoMs: 2000 },
   ],
 };
 const LOW: MeresJson = {
@@ -36,7 +37,7 @@ describe('a mérések összevetése', () => {
   const szoveg = osszevet([{ nev: 'alap', m: ALAP }, { nev: 'low', m: LOW }], ELVART);
 
   it('a bukott futásokat okuk szerint számolja', () => {
-    expect(szoveg).toMatch(/futás \/ siker \/ bukott\s+4 \/ 2 \/ 2\s+2 \/ 2 \/ 0/);
+    expect(szoveg).toMatch(/futás \/ siker \/ bukott\s+5 \/ 2 \/ 3\s+2 \/ 2 \/ 0/);
     expect(szoveg).toMatch(/ebből 429\s+1\s+0/);
     expect(szoveg).toMatch(/ebből keret végéig\s+1\s+0/);
   });
@@ -52,7 +53,21 @@ describe('a mérések összevetése', () => {
   });
 
   it('a bukott futás pénze is benne van a költségben', () => {
-    expect(szoveg).toMatch(/költség össz\. \(USD\)\s+0\.0270/);
+    expect(szoveg).toMatch(/költség össz\. \(USD\)\s+0\.0280/);
+  });
+
+  it('a fizetendő üresen helyes, ha nem tér el a bruttótól (a séma így kéri)', () => {
+    expect(ELVART['fizetendo']).toBeNull();
+    expect(szoveg).toMatch(/Fizetendő\s+2\/2\s+2\/2/);
+
+    const kitoltott = osszevet([{ nev: 'x', m: { ...LOW, futasok: [futas(200, { fizetendo: '203200' })] } }], ELVART);
+    expect(kitoltott).toMatch(/Fizetendő\s+0\/1 {2}✗/);
+  });
+
+  it('az egyéb hibák szövegét kiírja, a zászlókat megszámolja', () => {
+    expect(szoveg).toContain('EGYÉB HIBÁK');
+    expect(szoveg).toContain('alap: A modell nem a kért függvénnyel válaszolt. [stop] (2000 ms)');
+    expect(szoveg).toMatch(/zászló: nehezen olvasható\s+0\/2\s+0\/2/);
   });
 
   it('valódi számlánál nem ír ki mezőértéket', () => {

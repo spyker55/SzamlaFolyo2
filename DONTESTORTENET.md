@@ -5239,3 +5239,39 @@ piros.
 Szándékos törések (mind piros): nem nulláz; újraindítás, illetve elvetés
 státuszfeltétel nélkül; elvetés rákérdezés nélkül; nincs gazdátlan ág; nincs
 egynapos türelem; paramétertulajdonság a mérőscriptben.
+
+## 📏 A gondolkodás korlátozásának első mérése (2026-09-23, próbaszámlán)
+
+A tulajdonos gépén, `tesztadat/egy-szamla-rendes.pdf`, beállításonként 10
+futás (`eszkozok/meres-osszevetes.ts`):
+
+| | alap (mint élesben) | `effort: low` | `max_tokens: 1024` |
+|---|---|---|---|
+| siker / bukott | 8 / 2 | 7 / 3 | 9 / 1 |
+| ebből 429 | 2 | 2 | 1 |
+| keret végéig | 0 | 0 | 0 |
+| egyéb hiba | 0 | 1 | 0 |
+| gondolkodás (medián, min–max) | 483 (355–783) | **0** | **0** |
+| kimenet | 857 (774–1160) | 374 (mind) | 374 (mind) |
+| idő (medián) | 8,4 s | **4,3 s** | 26,4 s |
+| költség / sikeres futás | ~$0,0060 | **~$0,0039** | ~$0,0039 |
+| helyes mező | 15/15 minden futásban | 15/15 | 15/15 |
+
+Amit ebből tudunk – és amit nem:
+
+- **A beállítás hat.** Mindkét alakra a gondolkodás 0 token lett (a
+  tokenkeretes alakra is – a Gemini ezt láthatóan nem keretként, hanem
+  kikapcsolásként kezeli). Ahol nincs gondolkodás, nincs mi elszaladjon.
+- **A próbaszámlán a pontosság nem romlott**: mind a 15 mező minden sikeres
+  futásban helyes. (Az első összevetés a „Fizetendő"-t hibásnak mutatta – az
+  összevető várt rosszat: a séma szerint üres, ha nem tér el a bruttótól.)
+- **Az 1024-es oszlop ideje nem a beállításé.** A kimenete betűre ugyanakkora,
+  mint a `low`-é (374 token, 0 gondolkodás), mégis 26 s a medián – ez a
+  szolgáltató aznapi terhelése, nem a modell munkája. Ugyanez okból a `low`
+  4,3 s-a is csak egy mérés.
+- **A 429 gyakori**: 30 hívásból 5 (~17%). Ez a BYOK melletti érv.
+- ⚠️ **Egy tiszta, digitális próbaszámla nem a nehéz eset.** A modellválasztás
+  indoka (`config/szamlafolyo.ts`) épp az volt, hogy a nehezen olvasható,
+  kézírásos papíron a 3.8 Flash bekapcsolja a `nehezen_olvashato` zászlót.
+  Hogy gondolkodás nélkül is bekapcsolja-e, azt ez a mérés nem mondja meg –
+  ahhoz egy-két nehéz, valódi számla kell, alap és `low` mellett.
