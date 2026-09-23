@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { szamlafolyo } from './szamlafolyo.ts';
 
@@ -19,9 +19,35 @@ import { szamlafolyo } from './szamlafolyo.ts';
  * A teszt ezért **a migráció szövegét olvassa**, nem a szándékot.
  */
 
-const MIGRACIO = 'supabase/migrations/20260920000400_adattakaritas.sql';
+/**
+ * A takarító függvény **legutolsó** definíciója, fájlsorrendben.
+ *
+ * Eredetileg egy rögzített fájlt olvasott (`20260920000400_adattakaritas.sql`).
+ * A 2026-09-23-i bővítés (`20260923000400`) újraírta a függvényt — egy
+ * rögzített útvonal ettől kezdve a **régi** törzset mérte volna, és zölden
+ * hallgatott volna az élővel való eltérésről.
+ */
+const MAPPA = 'supabase/migrations/';
 
-const sql = readFileSync(MIGRACIO, 'utf8');
+function legutolsoDefinicio(): { fajl: string; sql: string } {
+  let talalt: { fajl: string; sql: string } | null = null;
+
+  for (const fajl of readdirSync(MAPPA).filter((f) => f.endsWith('.sql')).sort()) {
+    const szoveg = readFileSync(MAPPA + fajl, 'utf8');
+
+    for (const m of szoveg.matchAll(
+      /create\s+or\s+replace\s+function\s+belso\.adattakaritas\(\)[\s\S]*?as\s+\$\$([\s\S]*?)\$\$;/gi,
+    )) {
+      talalt = { fajl, sql: m[1] ?? '' };
+    }
+  }
+
+  expect(talalt, 'Nem találtam a belso.adattakaritas() definícióját a migrációkban.').not.toBeNull();
+
+  return talalt ?? { fajl: '?', sql: '' };
+}
+
+const { fajl: MIGRACIO, sql } = legutolsoDefinicio();
 
 /** A `<nev> constant integer := <szám>;` deklarációk a takarító függvényből. */
 function sqlNapok(): Map<string, number> {
@@ -37,12 +63,30 @@ function sqlNapok(): Map<string, number> {
 }
 
 describe('megőrzési idők: a config és a takarító cron együtt mozog', () => {
+  it('a legutolsó definíciót olvassa', () => {
+    expect(MIGRACIO >= '20260923000400', `A teszt egy régebbi definíciót olvas: ${MIGRACIO}`).toBe(true);
+  });
+
+  it('az inaktív fiók törlése csak a cég nélküli fiókot érinti', () => {
+    // Ha a `not exists` feltétel kiesne, a napi takarítás MINDEN fél éve nem
+    // belépett felhasználót törölne — a cégben dolgozókat is.
+    expect(sql).toMatch(
+      /delete\s+from\s+auth\.users\s+u\s+where\s+not\s+exists\s*\(\s*select\s+1\s+from\s+public\.company_members\s+m\s+where\s+m\.user_id\s*=\s*u\.id\s*\)/i,
+    );
+  });
+
+  it('az ÁSZF-bizonyítékot csak megszűnt szerződésnél törli', () => {
+    expect(sql).toMatch(/contract_ended_at\s+is\s+not\s+null/i);
+  });
+
   const napok = sqlNapok();
 
   const parok: readonly [string, string, number][] = [
     ['meghivoNap', 'meghivo_nap', szamlafolyo.megorzes.meghivoNap],
     ['levelNaploNap', 'level_nap', szamlafolyo.megorzes.levelNaploNap],
     ['nyersValaszNap', 'nyers_nap', szamlafolyo.megorzes.nyersValaszNap],
+    ['inaktivFiokNap', 'inaktiv_fiok_nap', szamlafolyo.megorzes.inaktivFiokNap],
+    ['aszfBizonyitekEv', 'aszf_bizonyitek_ev', szamlafolyo.megorzes.aszfBizonyitekEv],
   ];
 
   for (const [configNev, sqlNev, ertek] of parok) {
@@ -59,7 +103,13 @@ describe('megőrzési idők: a config és a takarító cron együtt mozog', () =
   it('a takarítás mindhárom adatkört érinti', () => {
     // „Találunk-e egyáltalán valamit": ha egy adatkör kiesik a függvényből, a
     // tájékoztató attól még ígérné a törlését.
-    for (const tabla of ['company_invites', 'inbound_emails', 'document_extractions']) {
+    for (const tabla of [
+      'company_invites',
+      'inbound_emails',
+      'document_extractions',
+      'auth.users',
+      'terms_acceptances',
+    ]) {
       expect(sql.includes(tabla), `A takarításból hiányzik: ${tabla}`).toBe(true);
     }
   });

@@ -197,12 +197,139 @@ describe('a felülvizsgálat után nem térhetnek vissza a valótlan mondatok', 
     }
   });
 
-  it('13. pont: a látogatásmérésnek van sora a jogalap-táblázatban', () => {
+  it('13. pont (2026-09-23 óta): látogatásmérés nincs, és a szöveg sem ígéri', () => {
+    // A mérés kikerült, mert a mérőkód a localStorage-ot olvasta (harmadik kör).
+    // Ha valaki visszahozza, a jogalapot (hozzájárulás) kell előbb rendezni —
+    // ez az őr ott akad meg, ahol a csomag vagy a komponens visszakerül.
+    const app = olvas('../App.tsx');
+    const csomag = readFileSync(GYOKER + '../../package.json', 'utf8');
+
+    expect(app, 'Az App.tsx megint betölti a Vercel Analyticset.').not.toContain('@vercel/analytics');
+    expect(csomag, 'A package.json megint tartalmazza a @vercel/analytics csomagot.').not.toContain(
+      '@vercel/analytics',
+    );
+    expect(adatkezeles).not.toContain('Látogatásmérés azonban van');
+  });
+});
+
+/**
+ * # A harmadik kör (2026-09-23, ügyvéd)
+ *
+ * Minden állítás egy konkrét pontra mutat. A mondatok, amik itt tiltva vannak,
+ * **élesben álltak** — nem elképzelt hibák.
+ */
+describe('a harmadik felülvizsgálat után sem térhetnek vissza', () => {
+  it('1. pont: a böngészős feltöltés nem „marad végig az Unión belül"', () => {
+    // A docblokk története idézi a régi mondatot; a látható szövegben nem állhat.
     expect(
-      adatkezeles,
-      'Az Adatkezelési tájékoztató 2. pontjának táblázatából eltűnt a látogatásmérés sora. ' +
-        'Mérés van (Vercel Web Analytics, a nyilvános oldalakon), tehát jogalapot is kell ' +
-        'megjelölni — ma jogos érdek, érdekmérlegeléssel.',
-    ).toContain('Látogatásmérés a nyilvános oldalakon');
+      adatkezeles.slice(adatkezeles.indexOf('export function Adatkezeles')),
+      'Visszatért a „végig az Unión belül marad" ígéret. Nem igaz: a modellhez (USA) ' +
+        'kerül, és a tárhelyszolgáltató szerződő fele szingapúri. A böngészős feltöltés ' +
+        'csak a Resendet kerüli el.',
+    ).not.toContain('végig az Unión belül marad');
+  });
+
+  it('1. pont: a tájékoztató nem állítja, hogy a bizonylatot senkinek nem adjuk tovább', () => {
+    expect(adatkezeles).not.toMatch(/nem elemzi más célra, nem adja\s+tovább/);
+    expect(adatkezeles).toContain('kizárólag az 5. pontban ismertetett közreműködőknek');
+  });
+
+  it('2. pont: az XML-mondat csak a felismert XML-re szól, és nincs „ingyenes" átértelmezés', () => {
+    expect(aszf).not.toContain('Az e-számla XML feldolgozása modellhívás nélkül történik.');
+    expect(aszf).toContain('felismert e-számla XML feldolgozása modellhívás');
+    expect(aszf).not.toContain('„ingyenes" vagy „modellhívás nélkül"');
+  });
+
+  it('3. pont: a szolgáltatóváltás három külön szakasz', () => {
+    for (const szakasz of ['Átállási időszak', 'A szerződés megszűnése', 'Adat-visszanyerési időszak']) {
+      expect(aszf, `Az ÁSZF 16. pontjából hiányzik: „${szakasz}"`).toContain(szakasz);
+    }
+    expect(aszf).not.toContain('az adat-visszanyerés legrövidebb ideje');
+  });
+
+  it('3. pont: az Útmutató adatformátum-leírása ugyanazokat a szakaszokat sorolja, mint az SQL', () => {
+    const sql = readFileSync(GYOKER + '../../eszkozok/adatkiadas/adatkiadas.sql', 'utf8');
+    // A fő objektum kulcsai pontosan két szóközzel kezdődnek; a `darabszamok`
+    // belső kulcsai hattal — azokat nem akarjuk szakasznak számolni.
+    const sqlSzakaszok = new Set([...sql.matchAll(/^ {2}'([a-z_]+)',/gm)].map((m) => m[1] ?? ''));
+    const utmutatoSzakaszok = new Set(
+      [...utmutato.matchAll(/^ {2}\['([a-z_]+)', '/gm)].map((m) => m[1] ?? ''),
+    );
+
+    expect(sqlSzakaszok.size, 'Az SQL-ből nem olvasott ki szakaszokat.').toBeGreaterThan(10);
+    expect([...utmutatoSzakaszok].sort()).toEqual([...sqlSzakaszok].sort());
+  });
+
+  it('4. pont: nincs „nem tart fenn másolatot", és a saját számla adójogi', () => {
+    expect(aszf).not.toContain('nem tart fenn másolatot');
+    expect(aszf).not.toContain('a számviteli előírások szerinti ideig megőrzi');
+    expect(aszf).toContain('legfeljebb hét napig');
+    expect(adatkezeles).not.toContain('és a Szolgáltató sem tudja visszaállítani');
+  });
+
+  it('4. pont: nincs olyan törlés, ami „magától lefut", ha nincs mögötte kód', () => {
+    expect(
+      aszf,
+      'Visszatért a „magától lefut" törlés. Megszűnés utáni automatikus cégtörlés NINCS a ' +
+        'kódban — a Szolgáltató végzi, az eszkozok/torles/OLVASS-EL.md szerint.',
+    ).not.toContain('a törlés magától lefut');
+  });
+
+  it('5. pont: az elfogadás bizonyítéka nem szűnik meg a cég törlésével', () => {
+    expect(adatkezeles).not.toContain('de legfeljebb a cég adatainak');
+    expect(aszf).toContain('a cég törlése után is megőrzi');
+  });
+
+  it('7. pont: a békéltetésnél az általános szabály áll elöl', () => {
+    for (const [nev, szoveg] of Object.entries({ aszf, impresszum })) {
+      expect(szoveg, `${nev}: hiányzik az általános illetékességi szabály.`).toContain(
+        'Melyik testület illetékes.',
+      );
+    }
+    expect(impresszum).not.toContain('Hatvan (Heves vármegye) a fenti');
+  });
+
+  it('9. pont: a belépési naplónál nincs „saját megőrzési ideje szerint"', () => {
+    expect(adatkezeles).not.toContain('biztonsági célú megőrzési ideje szerint');
+  });
+
+  it('9. pont: az incidens a jogosulatlan hozzáférést és a megváltoztatást is lefedi', () => {
+    expect(adatkezeles).toContain('megváltoztatását');
+    expect(adatkezeles).toContain('jogosulatlan hozzáférést');
+    expect(adatkezeles).toContain('hetvenkét órán belül');
+  });
+
+  it('10. pont: nincs „kiejti egymást"', () => {
+    expect(aszf).not.toContain('kiejti egymást');
+    expect(utmutato).not.toContain('kiejtik egymást');
+  });
+
+  it('10. pont: a szöveg ígéri, hogy a visszaváltás nem számláz utólag — és a kód tartja', () => {
+    const keret = readFileSync(GYOKER + '../../shared/uzleti/keret.ts', 'utf8');
+    const webhook = readFileSync(
+      GYOKER + '../../supabase/functions/stripe-webhook/index.ts',
+      'utf8',
+    );
+
+    expect(aszf).toContain('A váltás előtt felhasznált keretből utólag nem keletkezik');
+    expect(
+      keret,
+      'Az ÁSZF 9. pontja ígéri, hogy a visszaváltás nem számláz utólag, de a keret.ts ' +
+        'nem használja a hatalyosKeret()-et. Vagy a kód kerüljön vissza, vagy a mondat.',
+    ).toMatch(/keret:\s*hatalyosKeret\(/);
+    expect(webhook).toMatch(/keret:\s*hatalyosKeret\(/);
+  });
+
+  it('kisebb javítások: nincs „cégalapítás" az ÁSZF-ben, és a 13. pont a tájékoztatóra mutat', () => {
+    // A docblokk története ezt a szót idézheti; a látható szöveg nem.
+    const lathato = aszf.slice(aszf.indexOf('export function Aszf'));
+
+    expect(lathato).not.toMatch(/cégalapít/i);
+    expect(lathato).not.toContain('Az 5. pont szerinti');
+  });
+
+  it('kisebb javítások: a fiókadatokat nem küldjük, de a bizonylat tartalmazhat neveket', () => {
+    expect(adatkezeles).not.toContain('Felhasználói nevet, e-mail címet, jelszót nem küldünk.');
+    expect(adatkezeles).toContain('A fiók adatait');
   });
 });

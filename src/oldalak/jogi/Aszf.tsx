@@ -127,9 +127,46 @@ import { formaz } from '@uzleti/osszeg.ts';
  *   kötelező kivételek, a közreműködőkért való felelősség, és a 15. pont
  *   elcsúszott hivatkozása (17. → 16.).
  *
- * ⚠️ Változatlanul áll: **ezek a szövegek ügyvédi felülvizsgálaton nem estek
- * át.** A mostani kör egy szakmai vélemény pontjait vezette át, mérésekkel
- * alátámasztva — az nem ugyanaz.
+ * # 2026. szeptember 23. — harmadik kör, ügyvédtől
+ *
+ * Ezt a kört a tulajdonos szerint **ügyvéd** végezte, és kifejezetten nem
+ * mondta késznek a szöveget. Tíz pontjából ötnél a szöveg mögött **a kód volt
+ * rossz vagy hiányzott**, és ott a kód változott előbb:
+ *
+ * - **9. pont — a visszaváltás.** Mérve: aki a nagyobb keretén belül dolgozott,
+ *   aztán kisebbre váltott, annak a ciklus végén a *teljes* felhasználását
+ *   mérte a rendszer az *új* kerethez, és utólag túlhasználatot számlázott.
+ *   Javítva (`hatalyosKeret()`, `20260923000300_keret_fedezet.sql`); a pont
+ *   most kimondja, hogy ilyen díj nem keletkezik. A „két tétel kiejti
+ *   egymást" mondat kikerült: nem igaz általánosan. A megszűnéskori
+ *   jóváírásról a tulajdonos döntött: nem jár vissza.
+ * - **10. pont — a törlés.** „Ha ilyen kérés nem érkezik, a harmincadik napon a
+ *   törlés magától lefut" — **semmi nem futott le**: nincs olyan cron vagy
+ *   függvény, ami a megszűnés után céget törölne. A pont most azt mondja, ami
+ *   igaz: a lemondás nem szünteti meg a szerződést, és a három megszűnési
+ *   módnak más-más a törlési rendje. A Szolgáltató általi törlés és a
+ *   mentésből való helyreállítás utáni újratörlés eljárása:
+ *   `eszkozok/torles/OLVASS-EL.md`. A mentések hétnapos kifutása is itt áll
+ *   már, nem csak a tájékoztatóban.
+ * - **1. pont — az elfogadás bizonyítéka.** A cég törlése eddig a
+ *   bizonyítékot is vitte (`on delete cascade`). Most öt évig marad
+ *   (`20260923000400`), és minden kiadott változat teljes szövege a
+ *   `jogi-archivum/` alatt, lenyomattal a `legal_versions`-ben.
+ * - **16. pont — a szolgáltatóváltás.** A Data Act idővonala: átállási
+ *   időszak, a szerződés megszűnése, adat-visszanyerési időszak, törlés —
+ *   három külön szakasz, nem egy összemosott „harminc nap". Az
+ *   adatformátumok leírása nyilvános lett (Útmutató, „Adatformátumok").
+ * - **1–2., 6. pont:** „cégalapítás" helyett „céges munkaterület létrehozása";
+ *   **2. pont:** a békéltetésnél előbb az általános illetékességi szabály;
+ *   **3. és 8. pont:** csak a *felismert* XML megy modellhívás nélkül, és
+ *   kikerült az „ingyenes" szó utólagos átértelmezése; **13. pont:** a
+ *   hivatkozás az Adatkezelési tájékoztató 5. pontjára mutat.
+ *
+ * ⚠️ **A 6. pontjára (Ptk. 6:78. §, külön elfogadás) a tulajdonos döntése
+ * az, hogy marad egy pipa** — a 2026-09-22-i visszajelzés szerint a külön
+ * nyilatkozat fenyegetően hatott. Az 1. és 13. pont ezért azt mondja, ami
+ * igaz: a két kikötés ki van emelve, külön elfogadás nincs. Ezt az ügyvédnek
+ * jelezni kell, mert ő mást javasolt.
  */
 export function Aszf() {
   const mb = Math.round(szamlafolyo.feltoltes.maxBajt / (1024 * 1024));
@@ -170,7 +207,9 @@ export function Aszf() {
         </Lista>
         <P>
           <strong>Mikor jön létre.</strong> A regisztráció önmagában fiókot hoz létre; a
-          szerződés a <strong>cég létrehozásával</strong> jön létre, amikor a felhasználó a jelen
+          szerződés a <strong>céges munkaterület létrehozásával</strong> (a továbbiakban röviden: a
+          cég létrehozása) jön létre — ez a rendszerben egy munkaterület megnyitása, nem gazdasági
+          társaság alapítása —, amikor a felhasználó a jelen
           ÁSZF-et és az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztatót
@@ -179,8 +218,8 @@ export function Aszf() {
           a csomag kiválasztásával és a fizetés teljesítésével jön létre, a 7. és 9. pont szerint.
         </P>
         <P>
-          <strong>A megrendelés lépései és az adatok javítása.</strong> A cégalapítás és a
-          csomagválasztás előtt a megadott adatok a képernyőn láthatók és az elküldés előtt
+          <strong>A megrendelés lépései és az adatok javítása.</strong> A céges munkaterület
+          létrehozása és a csomagválasztás előtt a megadott adatok a képernyőn láthatók és az elküldés előtt
           szabadon javíthatók; az adószámot a rendszer ellenőrzi, és hibás adószámmal a cég nem
           jön létre. A cég létrejöttéről és az előfizetés megrendeléséről a Szolgáltató
           elektronikus visszaigazolást ad.
@@ -204,8 +243,18 @@ export function Aszf() {
           Előfizető. A rendszer ezért a cég létrehozásakor rögzíti{' '}
           <strong>az elfogadott ÁSZF-változat azonosítóját</strong> (a lap tetején szereplő
           hatálybalépési nap), az <strong>elfogadás időpontját</strong>, az{' '}
-          <strong>eljáró felhasználót</strong> és a <strong>céget</strong>, amelynek nevében
-          eljárt.
+          <strong>eljáró felhasználót</strong> és a <strong>céget</strong> — a nevével és az
+          adószámával —, amelynek nevében eljárt.
+        </P>
+        <P>
+          Ezt a nyilvántartást a Szolgáltató{' '}
+          <strong>a cég törlése után is megőrzi</strong>, a szerződés megszűnésétől számított öt
+          évig (a Polgári Törvénykönyv általános elévülési ideje), mert egy utólagos elszámolási
+          vitában ez bizonyítja, mi volt a szerződés tartalma. Csak az elfogadás nyoma marad meg;
+          a cég bizonylatai és egyéb adatai nem. Minden kiadott ÁSZF-változat{' '}
+          <strong>teljes, utólag nem módosított szövegét</strong> is megőrzi, hogy egy korábban
+          elfogadott változat később is bemutatható legyen — a mindenkori weboldal ugyanis mindig
+          csak a hatályos szöveget mutatja.
         </P>
         <P>
           <strong>Két kikötésre érdemes külön odafigyelni</strong>, mert eltérnek attól, amit egy
@@ -220,8 +269,8 @@ export function Aszf() {
         <P>
           A Szolgáltatást kizárólag a Polgári Törvénykönyv szerinti vállalkozások — gazdasági
           társaságok, egyéni vállalkozók és egyéb, önálló foglalkozásuk vagy gazdasági
-          tevékenységük körében eljáró személyek — vehetik igénybe. A felhasználó a
-          cégalapítással kijelenti, hogy vállalkozásként, gazdasági tevékenysége körében jár el.
+          tevékenységük körében eljáró személyek — vehetik igénybe. A felhasználó a céges
+          munkaterület létrehozásával kijelenti, hogy vállalkozásként, gazdasági tevékenysége körében jár el.
         </P>
         <P>
           Ezt a rendszer is számon kéri: cég létrehozásához érvényes magyar adószám szükséges.{' '}
@@ -239,9 +288,16 @@ export function Aszf() {
           </strong>{' '}
           — a hatályos fogyasztóvédelmi törvény bizonyos kis- és középvállalkozásokat is e körbe
           von, önmagában a kis- és középvállalkozói minőség azonban nem elég hozzá —, e jogát a
-          jelen ÁSZF nem korlátozza. Az illetékes testület a{' '}
-          <strong>{bekeltetoTestulet.nev}</strong> ({bekeltetoTestulet.szekhely}), amelynek
-          illetékességi területe {bekeltetoTestulet.illetekesseg}. Elérhetőségei az{' '}
+          jelen ÁSZF nem korlátozza.
+        </P>
+        <P>
+          <strong>Melyik testület illetékes.</strong> Főszabály szerint az a békéltető testület,
+          amelynek illetékességi területén a fogyasztónak minősülő Előfizető lakóhelye vagy
+          tartózkodási helye — nem természetes személy esetén a székhelye — található. Nem
+          minden ügyfélre ugyanaz a testület illetékes, és ez nem a Szolgáltató székhelyétől
+          függ. A Borsod-Abaúj-Zemplén, Heves és Nógrád vármegyei illetékességi területen a{' '}
+          <strong>{bekeltetoTestulet.nev}</strong> ({bekeltetoTestulet.szekhely}) jár el;
+          elérhetőségei az{' '}
           <Link to="/impresszum" className="underline">
             Impresszumban
           </Link>{' '}
@@ -299,7 +355,8 @@ export function Aszf() {
         <P>
           A kiolvasást a Szolgáltató által választott, külső mesterséges intelligencia
           modellszolgáltató végzi. Ennek adatvédelmi vonatkozásait az Adatkezelési tájékoztató
-          tartalmazza. Az e-számla XML feldolgozása modellhívás nélkül történik.
+          tartalmazza. A támogatott formátumú, felismert e-számla XML feldolgozása modellhívás
+          nélkül történik; az egyéb esetekre a 8. pont irányadó.
         </P>
       </Szakasz>
 
@@ -364,8 +421,8 @@ export function Aszf() {
         <P>
           <strong>A cég létrehozásától</strong> számított {szamlafolyo.proba.napok} napos,
           bankkártya megadása nélküli próbaidő jár — nem a regisztrációtól, mert a szerződés is a
-          cég létrehozásával jön létre (1. pont). Aki regisztrál, de csak később alapít céget, a
-          teljes próbaidőt akkor kapja meg. A próbaidő alatt legfeljebb{' '}
+          cég létrehozásával jön létre (1. pont). Aki regisztrál, de csak később hoz létre céges
+          munkaterületet, a teljes próbaidőt akkor kapja meg. A próbaidő alatt legfeljebb{' '}
           {szamlafolyo.proba.dokumentumok} dokumentum
           dolgozható fel, és legfeljebb {szamlafolyo.proba.felhasznalok} felhasználó vehető fel. A
           próbaidőt a kettő közül az zárja le, amelyik előbb elfogy. A próbaidő automatikusan
@@ -437,9 +494,7 @@ export function Aszf() {
           modellhívás nélkül, saját értelmezővel olvassa ki — ez gyorsabb és a Szolgáltatónak
           nincs mesterséges intelligencia költsége —, de a keret szempontjából{' '}
           <strong>ugyanannyi, mint bármelyik másik bizonylat</strong>, és túlhasználati díja is
-          ugyanúgy lehet. Ahol a Szolgáltatás kommunikációja az XML-ről azt írja, hogy
-          „ingyenes" vagy „modellhívás nélkül", az a <em>modellköltségre</em> vonatkozik, nem a
-          darabkeretre.
+          ugyanúgy lehet.
         </P>
         <P>
           ⚠️ <strong>Ha a rendszer egy XML-t nem ismer fel</strong> — mert olyan formátumban
@@ -508,7 +563,8 @@ export function Aszf() {
             <strong>a kifizetett időszak végén</strong> lép hatályba: addig a Szolgáltatás és a
             keret változatlanul használható. Ezt követően a Szolgáltatás csomag nélküli állapotba
             kerül: új dokumentum feldolgozására nincs lehetőség, a meglévő adatok és exportok
-            viszont elérhetők maradnak, és kimenthetők.
+            viszont elérhetők maradnak, és kimenthetők. <strong>A lemondás a szerződést nem
+            szünteti meg</strong> — a szerződés megszűnéséről a 10. pont szól.
           </li>
           <li>
             <strong>Egy felhasználó fiókjának törlése.</strong> Ha a cégben más felhasználó is
@@ -536,15 +592,36 @@ export function Aszf() {
           <strong>következő fordulónapon kiállított számlán</strong> jelenik meg, külön
           tételsorként. Nagyobb csomagra váltásnál a hátralévő napokra eső díjkülönbözet
           terhelésként, kisebb csomagra váltásnál a már kifizetett, de fel nem használt rész{' '}
-          <strong>jóváírásként</strong>. Aki a cikluson belül visszavált, annál a két tétel
-          kiejti egymást.
+          <strong>jóváírásként</strong>. Minden váltás a saját napjától számít: aki a cikluson
+          belül nagyobb csomagra vált, majd vissza, annak a nagyobb csomagban töltött napokra a
+          magasabb díj időarányos része megmarad — az oda-vissza váltás tehát nem feltétlenül
+          díjmentes.
         </P>
         <P>
           ⚠️ <strong>Kisebb csomagra váltásnál a keret azonnal csökken</strong>, a jóváírás
           viszont csak a fordulónapon jelentkezik. Ha az Előfizető az adott időszakban már
-          többet használt fel, mint az új csomag kerete, a feldolgozás a kereten felüli
-          feldolgozásra vonatkozó szabályok szerint folytatódik vagy áll meg — a pénz tehát
-          visszajár, a keret viszont nem.
+          többet használt fel, mint az új csomag kerete, a váltás utáni feldolgozás a kereten
+          felüli feldolgozásra vonatkozó szabályok szerint folytatódik vagy áll meg.
+        </P>
+        <P>
+          <strong>A váltás előtt felhasznált keretből utólag nem keletkezik túlhasználati díj.</strong>{' '}
+          Kisebb csomagra váltáskor a váltás pillanatáig, a korábbi csomag keretén belül
+          feldolgozott dokumentumok a korábbi csomag keretéig fedezettek maradnak: a ciklus
+          végén ezek után túlhasználati díjat a Szolgáltató nem számít fel. Túlhasználatnak csak
+          az minősül, ami a feldolgozás idején érvényes keret fölé esett.
+        </P>
+        <P>
+          <strong>Ha az előfizetés a váltás után megszűnik.</strong> Lemondáskor — ami a
+          kifizetett időszak végén lép hatályba — a még el nem számolt különbözetet a fizetési
+          szolgáltató az időszak végén rendezi: a terhelést kiszámlázza, a jóváírást pedig az
+          Előfizető fizetési szolgáltatónál vezetett egyenlegén írja jóvá.{' '}
+          <strong>
+            Ha az előfizetés ezután nem folytatódik, a fel nem használt jóváírás nem kerül
+            visszatérítésre.
+          </strong>{' '}
+          A teljes céges környezet azonnali törlésekor (lent) a még el nem számolt különbözet
+          egyik irányban sem kerül elszámolásra. A kiállított számla minden esetben a ténylegesen
+          elszámolt összeget követi.
         </P>
         <P>
           <strong>A próbaidő lejárta</strong> után a Szolgáltatás előfizetés nélkül nem dolgoz
@@ -611,22 +688,54 @@ export function Aszf() {
           magának kell megőriznie.
         </P>
         <P>
-          <strong>A szerződés megszűnése után a Szolgáltató az Előfizető adatait a
-          megszűnéstől számított harminc napon belül törli.</strong> Ez a határidő szándékosan
-          egyezik a 16. pont szerinti adatkiadási ablakkal: aki szolgáltatóváltás miatt kéri az
-          adatai kiadását, azt e harminc napon belül megkapja, és a törlés csak utána történik
-          meg. Ha ilyen kérés nem érkezik, a harmincadik napon a törlés magától lefut. Az
-          Előfizető a szerződés fennállása alatt bármikor exportálhatja az adatait; a megszűnést
-          megelőző adatmentés az Előfizető feladata.
+          <strong>Mikor szűnik meg a szerződés, és mi lesz az adatokkal.</strong> Az előfizetés
+          lemondása a szerződést <strong>nem</strong> szünteti meg (9. pont): a céges
+          munkaterület csomag nélkül megmarad, az adatok elérhetők és exportálhatók. A szerződés
+          három módon szűnik meg, és mindháromnak más a törlési rendje:
+        </P>
+        <Lista>
+          <li>
+            <strong>Az Előfizető törli a céges munkaterületet</strong> a felületről. Az adatok
+            ekkor <strong>azonnal</strong> törlődnek, az alábbiak szerint; a törlés előtti
+            kimentés az Előfizető feladata.
+          </li>
+          <li>
+            <strong>A Szolgáltató felmondja a szerződést</strong> (9. pont). A felmondási idő
+            alatt az adatok kimenthetők; a megszűnés után a Szolgáltató az adatokat{' '}
+            <strong>harminc napon belül</strong> törli.
+          </li>
+          <li>
+            <strong>Szolgáltatóváltás</strong> (16. pont). Az adatok az ott leírt
+            adat-visszanyerési időszak végén törlődnek. Ha a Szolgáltató felmondása alatt az
+            Előfizető szolgáltatóváltást kér, a 16. pont idővonala az irányadó.
+          </li>
+        </Lista>
+        <P>
+          A második és a harmadik esetben a törlést a Szolgáltató hajtja végre, a céges
+          munkaterület felületi törlésével azonos terjedelemben.
         </P>
         <P>
           <strong>A fiók törlése végleges.</strong> Ha a törléssel a cégnek nem marad
-          felhasználója, a Szolgáltató a törléssel egyidejűleg lemondja az előfizetést, és
-          véglegesen törli a cég bizonylatait, a kiolvasott adatokat, az exportokat és a
-          feltöltött fájlokat. A törlés nem vonható vissza, és a törölt adatokról a Szolgáltató
-          nem tart fenn másolatot. A már kiállított számlák ez alól kivételt képeznek: azokat a
-          Szolgáltató a számviteli előírások szerinti ideig megőrzi. A törlés az Előfizetőt
-          terhelő jogszabályi megőrzési kötelezettséget nem érinti.
+          felhasználója, a Szolgáltató a törléssel egyidejűleg lemondja az előfizetést, és törli
+          a cég bizonylatait, a kiolvasott adatokat, az exportokat és a feltöltött fájlokat. A
+          törlés <strong>az aktív rendszerből azonnali</strong>, és az Előfizető vagy a
+          felhasználó által nem vonható vissza.
+        </P>
+        <P>
+          <strong>A biztonsági mentések.</strong> A tárhelyszolgáltató az adatbázisról
+          üzemfolytonossági célú mentéseket készít, amelyek a törölt adatot a törlés után{' '}
+          <strong>legfeljebb hét napig</strong> még tartalmazhatják; utána az a mentésekből is
+          kifut. A Szolgáltató ezeket a mentéseket kizárólag a teljes rendszer helyreállítására
+          használja, egyes adatok visszakeresésére soha. Ha helyreállításra kerül sor, a mentés
+          óta törölt ügyféladatok törlését a Szolgáltató{' '}
+          <strong>a rendszer újbóli megnyitása előtt megismétli</strong>, így egy helyreállítás
+          nem teszi újra elérhetővé a már törölt adatokat.
+        </P>
+        <P>
+          <strong>Ami a törlés után megmarad.</strong> A már kiállított számlákat a Szolgáltató
+          az adójogi iratmegőrzési kötelezettsége szerinti ideig megőrzi; az ÁSZF elfogadásának
+          nyilvántartását pedig az 1. pont szerint, öt évig. A törlés az Előfizetőt terhelő
+          jogszabályi megőrzési kötelezettséget nem érinti.
         </P>
       </Szakasz>
 
@@ -838,8 +947,11 @@ export function Aszf() {
           zárja ki és nem korlátozza.
         </P>
         <P>
-          <strong>A Szolgáltató közreműködőiért felel.</strong> Az 5. pont szerinti
-          adatfeldolgozók és egyéb közreműködők a Szolgáltató teljesítési segédei: az ő
+          <strong>A Szolgáltató közreműködőiért felel.</strong> Az{' '}
+          <Link to="/adatkezeles" className="underline">
+            Adatkezelési tájékoztató 5. pontjában
+          </Link>{' '}
+          felsorolt adatfeldolgozók és egyéb közreműködők a Szolgáltató teljesítési segédei: az ő
           magatartásukért a Szolgáltató úgy felel, mintha maga járt volna el. Kimentésre csak
           olyan, ellenőrzési körén kívül eső, előre nem látható körülmény ad alapot, amelyet
           elhárítani sem lehetett — egy közreműködő kiesése önmagában nem ilyen. Ugyanez áll az
@@ -921,26 +1033,63 @@ export function Aszf() {
           exportálhatsz" ígéretet tenni.
         </P>
         <P>
-          <strong>Szolgáltatóváltás esetén</strong> a Szolgáltató — az Előfizető kérésére, a
-          szerződés megszűnésétől számított <strong>harminc napon belül</strong> — díjmentesen
-          biztosítja az Előfizető adatainak kiadását, és ésszerű mértékű segítséget nyújt azok
-          értelmezéséhez. <strong>Ez a kötelezettség az előző bekezdésben felsorolt, felületről
-          ma nem exportálható adatokra is kiterjed:</strong> azokat a Szolgáltató kérésre,
-          géppel olvasható, szerkezetében dokumentált formátumban adja ki. A harminc napos
-          határidő <strong>az adat-visszanyerés legrövidebb ideje</strong>, nem a leghosszabb: ha
-          az Előfizető az átállásához hosszabb időt kér, a Szolgáltató azt nem tagadja meg
-          pusztán a határidőre hivatkozva.
+          <strong>Szolgáltatóváltás.</strong> A Szolgáltatás az adatszolgáltatásokról szóló
+          (EU) 2023/2854 rendelet (Data Act) szerinti adatfeldolgozási szolgáltatás, ezért a
+          Szolgáltató a más szolgáltatóra vagy saját rendszerre való átállást (a továbbiakban:
+          szolgáltatóváltás) a rendelet VI. fejezete szerint biztosítja,{' '}
+          <strong>díjmentesen</strong>. Az Előfizető a szolgáltatóváltást a{' '}
+          <a className="underline" href={`mailto:${szolgaltato.email}`}>
+            {szolgaltato.email}
+          </a>{' '}
+          címre küldött kéréssel bármikor kezdeményezheti; ehhez a Szolgáltató felmondási időt
+          nem köt ki. A folyamat három, egymást követő szakaszból áll:
+        </P>
+        <Lista>
+          <li>
+            <strong>1. Átállási időszak — a kérés beérkezésétől számított harminc nap.</strong>{' '}
+            Ezalatt a szerződés hatályban marad. A Szolgáltató ezen időszakon belül díjmentesen
+            kiadja az Előfizető adatait — a fent felsorolt, a felületről ma nem exportálható
+            adatokat is —, géppel olvasható, a{' '}
+            <Link to="/utmutato#adatformatumok" className="underline">
+              Használati útmutató „Adatformátumok" fejezetében
+            </Link>{' '}
+            leírt szerkezetben, és ésszerű mértékű segítséget nyújt az átálláshoz. Ha az
+            előfizetés az átállási időszak alatt lejár vagy megszűnik, a hozzáférés és az adatok
+            exportja az időszak végéig díjmentesen megmarad; új bizonylat feldolgozása a 9. pont
+            szerint előfizetéshez kötött. Az Előfizető az átállási időszakot egy alkalommal, az
+            általa megfelelőnek tartott időtartammal meghosszabbíthatja. Ha az átállás harminc
+            nap alatt technikailag nem teljesíthető, a Szolgáltató ezt a kérés beérkezésétől
+            számított tizennégy munkanapon belül, indokolással jelzi, és legfeljebb hét hónapos
+            átállási időszakot jelöl meg.
+          </li>
+          <li>
+            <strong>2. A szerződés megszűnése.</strong> A szerződés az átállás sikeres
+            lezárultával megszűnik; ezt a Szolgáltató e-mailben visszaigazolja.
+          </li>
+          <li>
+            <strong>
+              3. Adat-visszanyerési időszak — az átállási időszak végétől számított legalább
+              harminc nap.
+            </strong>{' '}
+            Ezalatt az adatok változatlanul megmaradnak és letölthetők, a kiadott állomány
+            ismételten kérhető, és a Szolgáltató semmit nem töröl. Az időszak végén a Szolgáltató
+            az Előfizető adatait és a cég fájljait a 10. pont szerint véglegesen törli.
+          </li>
+        </Lista>
+        <P>
+          <strong>Ha az Előfizető nem szolgáltatót vált, csak megszünteti a jogviszonyt</strong>,
+          azt a céges munkaterület felületi törlésével teszi meg (10. pont). Ez azonnali és
+          végleges, ezért az adatok kimentését előtte kell elvégezni.
         </P>
         <P>
-          Ha az Előfizető ilyen kérést terjeszt elő, a Szolgáltató az adatokat a kiadásig nem
-          törli. <strong>Kérés hiányában a törlés a 10. pont szerinti harminc napos határidővel
-          történik</strong>, ezért az Előfizetőnek érdemes a kimentést még a megszűnés előtt
-          elvégeznie.
-        </P>
-        <P>
-          A Szolgáltató a váltás megkönnyítése érdekében nyílt, széles körben olvasható
-          formátumokat használ, és az exportfájlok szerkezetéről kérésre leírást ad. A
-          Szolgáltatás nem tartalmaz olyan technikai akadályt, amely a váltást gátolná.
+          <strong>Az adatformátumok nyilvánosak.</strong> A Szolgáltató nyílt, széles körben
+          olvasható formátumokat használ (XLSX, CSV, JSON), és az exportok, valamint a teljes
+          adatkiadás szerkezetét — mezőnként, a használt szabványokkal — a{' '}
+          <Link to="/utmutato#adatformatumok" className="underline">
+            Használati útmutató
+          </Link>{' '}
+          bárki számára elérhetően leírja. A Szolgáltatás nem tartalmaz olyan technikai
+          akadályt, amely a váltást gátolná.
         </P>
       </Szakasz>
 

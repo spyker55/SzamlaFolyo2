@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { szamlafolyo } from '../../../config/szamlafolyo.ts';
-import { csomagKulcsbol } from '../../../shared/uzleti/keret.ts';
+import { csomagKulcsbol, hatalyosKeret, type KeretFedezet } from '../../../shared/uzleti/keret.ts';
 import { tulhasznalatSzamol } from '../../../shared/uzleti/tulhasznalat.ts';
 import { stripeAlairastEllenoriz } from '../../../shared/uzleti/stripe/alairas.ts';
 import { esemenytErtelmez, type Dontes } from '../../../shared/uzleti/stripe/esemeny.ts';
@@ -172,6 +172,8 @@ type Nyersanyag = {
   stripe_lookup_key: string | null;
   stripe_status: string | null;
   felhasznalt: number;
+  /** Az időszak csomagváltásai. Hiányzik, ha az RPC még a régi. */
+  fedezetek?: KeretFedezet[] | null;
   rogzitve: { id: string; stripe_tetel: string | null } | null;
 };
 
@@ -267,8 +269,10 @@ async function tulhasznalast(
 
   const csomag = szamlafolyo.csomagok[csomagKulcs];
 
+  // A lezárult időszakban lehetett csomagváltás: a váltás előtt a régi keret
+  // terhére elvégzett munka nem esik utólag túlhasználatba (`hatalyosKeret()`).
   const szamitott = tulhasznalatSzamol({
-    keret: csomag.dokumentumok,
+    keret: hatalyosKeret(csomag.dokumentumok, ny.fedezetek),
     darabAr: csomag.extraFt,
     felhasznalt: Number(ny.felhasznalt) || 0,
     plafonFt: ny.overage_limit_ft,

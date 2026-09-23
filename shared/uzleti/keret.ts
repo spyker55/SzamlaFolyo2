@@ -64,6 +64,24 @@ export type CegAllapot = {
   overage_enabled: boolean;
   /** A túlhasználat forintban mért plafonja. `null` = az alapérték. */
   overage_limit_ft: number | null;
+  /**
+   * Az időszak csomagváltásainak nyoma (`keret_fedezetek`) — lásd a
+   * `hatalyosKeret()`-et. **Hiányozhat**: egy régebbi RPC nem adja vissza, és
+   * akkor nincs fedezet, vagyis a régi viselkedés marad.
+   */
+  fedezetek?: readonly KeretFedezet[] | null;
+};
+
+/**
+ * Egy csomagváltás pillanata: mennyi fogyott addig az időszakban, és melyik
+ * csomag keretének terhére. Az adatbázis rögzíti a váltáskor
+ * (`20260923000300_keret_fedezet.sql`), nem a kliens.
+ */
+export type KeretFedezet = {
+  /** A váltás ELŐTTI csomag Stripe `lookup_key`-e. */
+  kulcs: string | null;
+  /** Az időszakban a váltás pillanatáig felhasznált kredit. */
+  felhasznalt: number;
 };
 
 export type Allapot = 'proba' | 'elofizetes' | 'lejart';
@@ -159,6 +177,50 @@ export function csomagKulcsbol(lookupKulcs: string | null): CsomagKulcs | null {
   return null;
 }
 
+/**
+ * Az a keret, amihez a túlhasználatot mérni kell — csomagváltás után is.
+ *
+ * # Miért nem elég a mostani csomag kerete
+ *
+ * Mert a ciklus végi számlázás a **teljes időszak** felhasználását méri, a
+ * csomag viszont a ciklus közben is változhat. Aki a Pro keretén (500) belül
+ * feldolgozott 300 bizonylatot, aztán Startra (50) váltott, annál a mostani
+ * keret szerint 250 esne túlhasználatba — utólag, olyan munkáért, ami
+ * elvégzésekor szabályosan a keretén belül volt. 2026-09-23-ig pontosan így
+ * működött (a jogi felülvizsgálat harmadik körének 10. pontja nyomán mérve).
+ *
+ * # A szabály
+ *
+ * Minden váltásnál az addig felhasznált rész **a régi keretig fedezve
+ * marad**: `min(felhasznált a váltáskor, régi keret)`. A hatályos keret a
+ * mostani csomag kerete és a fedezetek közül a legnagyobb.
+ *
+ * ⚠️ **Ez új helyet soha nem ad**, és ezért biztonságos a keretszámolás
+ * (AI-költség) oldalán is: a fedezet sosem nagyobb a már felhasznált
+ * mennyiségnél, tehát ha a fedezet a döntő, a keret már elfogyott, és minden
+ * további bizonylat túlhasználat — engedéllyel és plafonnal, ahogy eddig.
+ * Csak a múltat nem számlázzuk újra.
+ *
+ * Ismeretlen régi csomagnál a teljes addigi felhasználás fedezett marad: ez a
+ * felhasználó javára tévedés, és a fenti okból új költséget ez sem nyit.
+ */
+export function hatalyosKeret(
+  csomagKeret: number,
+  fedezetek: readonly KeretFedezet[] | null | undefined,
+): number {
+  let keret = csomagKeret;
+
+  for (const f of fedezetek ?? []) {
+    const hasznalt = Math.max(0, Math.trunc(Number(f.felhasznalt)) || 0);
+    const regi = csomagKulcsbol(f.kulcs);
+    const regiKeret = regi === null ? hasznalt : szamlafolyo.csomagok[regi].dokumentumok;
+
+    keret = Math.max(keret, Math.min(hasznalt, regiKeret));
+  }
+
+  return keret;
+}
+
 /** A legkisebb csomag — ez a tartalék ismeretlen árazonosítóra. */
 function legkisebb(): CsomagKulcs {
   return (Object.keys(szamlafolyo.csomagok) as CsomagKulcs[]).reduce((a, b) =>
@@ -222,8 +284,12 @@ function elofizetesre(ceg: CegAllapot, felhasznalt: number): Keret {
   const maradek = Math.max(0, csomag.dokumentumok - felhasznalt);
   const elfogyott = felhasznalt >= csomag.dokumentumok;
 
+  // A kijelzett keret és az `elfogyott` a mostani csomagé; a túlhasználat
+  // viszont a hatályos kerethez mér, különben egy visszaváltás a már elvégzett
+  // munkát is túlhasználatba ejtené. (A kettő az `elfogyott`-ban nem tér el:
+  // a fedezet sosem nagyobb a felhasználtnál — lásd `hatalyosKeret()`.)
   const tulhasznalat = tulhasznalatSzamol({
-    keret: csomag.dokumentumok,
+    keret: hatalyosKeret(csomag.dokumentumok, ceg.fedezetek),
     darabAr: csomag.extraFt,
     felhasznalt,
     plafonFt: ceg.overage_limit_ft,

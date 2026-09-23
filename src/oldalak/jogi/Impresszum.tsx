@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Adatsor, JogiOldal, Lista, P, Szakasz } from './JogiOldal.tsx';
-import { adatfeldolgozok, bekeltetoTestulet, szolgaltato } from './adatok.ts';
+import { adatfeldolgozok, bekeltetoTestulet, NINCS_SZEKHELY, szolgaltato } from './adatok.ts';
 
 /**
  * Impresszum.
@@ -71,12 +71,8 @@ export function Impresszum() {
           {tarhely.map((a) => (
             <Adatsor key={a.ki} cimke={a.ki}>
               {a.jogiSzemely ?? a.ki}
-              {a.szekhely !== null && (
-                <>
-                  <br />
-                  {a.szekhely}
-                </>
-              )}
+              <br />
+              {a.szekhely ?? NINCS_SZEKHELY}
               <br />
               {a.mit} — {a.hol}
               <br />
@@ -93,10 +89,11 @@ export function Impresszum() {
         </dl>
         <P>
           Az adatbázis és a bizonylatok fájljai az Európai Unión belül, frankfurti kiszolgálón
-          tárolódnak. <strong>Több közreműködő azonban az Unión kívül dolgozza fel az adatot:</strong>{' '}
-          a gépi kiolvasás, a fizetés, a levelezés és magának a weboldalnak a kiszolgálása is. A
-          teljes felsorolás — jogi személlyel, székhellyel, feladattal és feldolgozási országgal
-          — az{' '}
+          tárolódnak. <strong>Több közreműködő azonban az Unión kívül dolgozza fel az adatot, vagy
+          fér hozzá:</strong> a tárhelyszolgáltató szerződő fele szingapúri, és Unión kívül
+          történik a gépi kiolvasás, a fizetés, a levelezés és magának a weboldalnak a
+          kiszolgálása is. A teljes felsorolás — jogi személlyel, székhellyel (ahol a szerződés
+          megadja), feladattal, feldolgozási országgal és a továbbítás alapjával — az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató 5. pontjában
           </Link>{' '}
@@ -117,8 +114,15 @@ export function Impresszum() {
             ügyfél vállalkozás
           </strong>
           : a fogyasztóvédelmi törvény fogyasztó-fogalma bizonyos kis- és középvállalkozásokat is
-          lefed — önmagában a KKV-minőség azonban nem elég hozzá. Ha az Előfizető e körbe
-          tartozik, az illetékes testület a <strong>{bekeltetoTestulet.nev}</strong>:
+          lefed — önmagában a KKV-minőség azonban nem elég hozzá.
+        </P>
+        <P>
+          <strong>Melyik testület illetékes.</strong> Főszabály szerint az a békéltető testület,
+          amelynek illetékességi területén a fogyasztónak minősülő ügyfél lakóhelye vagy
+          tartózkodási helye — nem természetes személy esetén a székhelye — található. Nem
+          minden ügyfélre ugyanaz a testület illetékes, és ez nem a Szolgáltató székhelyétől
+          függ. A <strong>Borsod-Abaúj-Zemplén, Heves és Nógrád</strong> vármegyei
+          illetékességi területen a <strong>{bekeltetoTestulet.nev}</strong> jár el:
         </P>
         <Lista>
           <li>Székhely: {bekeltetoTestulet.szekhely}</li>
@@ -139,10 +143,9 @@ export function Impresszum() {
         </Lista>
         <P>
           ⚠️ A békéltető testületek 2024. január 1-je óta <strong>regionális</strong> alapon
-          működnek: az illetékesség nem a Szolgáltató székhelye szerinti kamarához igazodik.
-          Hatvan (Heves vármegye) a fenti, <strong>miskolci</strong> székhelyű testülethez
-          tartozik. A Szolgáltató kamarai tagsága ettől külön kérdés — az a fenti{' '}
-          {szolgaltato.kamara}.
+          működnek, és az illetékesség az ügyfél lakóhelyéhez, tartózkodási helyéhez vagy
+          székhelyéhez igazodik — nem a Szolgáltatóéhoz, és nem a Szolgáltató kamarai
+          tagságához. Az utóbbi külön kérdés: az a fenti {szolgaltato.kamara}.
         </P>
         <P>
           Az adatvédelmi tárgyú panaszokról az{' '}

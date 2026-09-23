@@ -118,13 +118,26 @@ describe('torlesDontes — amit a felhasználó elveszít', () => {
     expect(szoveg).toContain('nincs bizonylata');
   });
 
-  /** A számviteli megőrzés nem apróbetű: a törlés előtt kell kimondani. */
-  it('mindig kimondja, hogy a kiállított számlák megmaradnak', () => {
+  /**
+   * Ami megmarad, az nem apróbetű: a törlés előtt kell kimondani.
+   *
+   * 2026-09-23 óta **két** dolog marad meg (a számlák és az ÁSZF-elfogadás
+   * nyoma), a számláké pedig **adójogi**, nem számviteli megőrzés — a
+   * Szolgáltató egyéni vállalkozó. És a képernyő nem állíthatja, hogy nincs
+   * másolat: a mentések hét nap alatt futnak ki (jogi felülvizsgálat, 4. pont).
+   */
+  it('kimondja, mi marad meg, és hogy a mentésekből kifut', () => {
     const d = torlesDontes(tenyek({ bizonylatok: 5 }), MOST);
 
     if (d.fajta !== 'ceggel') throw new Error('teljes törlést vártunk');
 
-    expect(d.kovetkezmenyek.join(' ')).toContain('számviteli megőrzési idő');
+    const szoveg = d.kovetkezmenyek.join(' ');
+
+    expect(szoveg).toContain('adójogi iratmegőrzési idő');
+    expect(szoveg).toContain('ÁSZF elfogadásának nyilvántartása');
+    expect(szoveg).toContain('hét nap');
+    expect(szoveg).not.toContain('számviteli megőrzési idő');
+    expect(szoveg).not.toContain('nem tartunk fenn másolatot');
   });
 });
 

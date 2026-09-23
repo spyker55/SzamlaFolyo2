@@ -368,6 +368,27 @@ export const szamlafolyo = {
      * megőrzésére kilencven nap után már nincs indok.
      */
     nyersValaszNap: 90,
+
+    /*
+     * # Két újabb megőrzési szabály (2026. szeptember 23.)
+     *
+     * A jogi felülvizsgálat harmadik köre kérte mindkettőt, és mindkettőt a
+     * napi takarítás hajtja végre (`20260923000400_megorzes_bizonyitek_inaktiv.sql`)
+     * — a szám itt nem ígéret, hanem lefut.
+     */
+
+    /**
+     * A **cég nélküli** fiók ennyi nap belépés nélkül törlődik (belépés
+     * hiányában a regisztráció napjától számítva). Cég nélkül a fiók semmire
+     * nem jó; fél év alatt, aki vissza akart jönni, visszajött.
+     */
+    inaktivFiokNap: 180,
+    /**
+     * Az ÁSZF-elfogadás bizonyítéka a cég törlése után ennyi **évig** marad
+     * meg — a Ptk. általános elévülési ideje (6:22. §). Csak az elfogadás
+     * nyoma: melyik szöveg, mikor, ki, melyik cég nevében.
+     */
+    aszfBizonyitekEv: 5,
   },
 
   /*

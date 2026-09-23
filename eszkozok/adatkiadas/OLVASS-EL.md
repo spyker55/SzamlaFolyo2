@@ -1,12 +1,12 @@
 # Adatkiadás — eljárás és a kiadott szerkezet leírása
 
-Ez a mappa az **ÁSZF 16. pontja** szerinti kötelezettség teljesítéséhez való:
+Ez a mappa az **ÁSZF 16. pontja** szerinti kötelezettség teljesítéséhez való. 2026-09-23
+óta a pont a Data Act VI. fejezete szerinti idővonalat írja le:
 
-> „Szolgáltatóváltás esetén a Szolgáltató — az Előfizető kérésére, a szerződés
-> megszűnésétől számított harminc napon belül — díjmentesen biztosítja az Előfizető
-> adatainak kiadását… **Ez a kötelezettség a felületről ma nem exportálható adatokra is
-> kiterjed:** azokat a Szolgáltató kérésre, géppel olvasható, szerkezetében dokumentált
-> formátumban adja ki."
+> „**1. Átállási időszak — a kérés beérkezésétől számított harminc nap.** … A Szolgáltató
+> ezen időszakon belül díjmentesen kiadja az Előfizető adatait — a … felületről ma nem
+> exportálható adatokat is —, géppel olvasható, a Használati útmutató „Adatformátumok"
+> fejezetében leírt szerkezetben …"
 
 A „géppel olvasható" részt az `adatkiadas.sql` teljesíti, a „szerkezetében dokumentált"
 részt **ez a fájl**. A kettő együtt jár: a JSON kulcsnevei önmagukban nem dokumentáció.
@@ -34,9 +34,16 @@ részt **ez a fájl**. A kettő együtt jár: a JSON kulcsnevei önmagukban nem 
      adja ZIP-ben, amíg a megőrzési idő alatt megvannak — a `fajlok` szakasz
      `file_deleted_at` mezője mutatja, melyik eredeti törlődött már,
    - hogy a beküldő cím és a meghívó jelek szándékosan kimaradtak (lásd lent).
-8. **A határidő harminc nap**, és az ÁSZF szerint ez a legrövidebb, nem a leghosszabb idő:
-   ha az átálláshoz többet kérnek, az nem tagadható meg a határidőre hivatkozva.
-9. Amíg a kérés teljesítése folyik, **az adatokat nem töröljük** (ÁSZF 16.).
+8. **A határidő: a kérés beérkezésétől számított harminc nap** (átállási időszak). Az
+   Előfizető ezt egyszer meghosszabbíthatja. Ha technikailag nem teljesíthető, **tizennégy
+   munkanapon belül** jelezni kell, indokolással, és legfeljebb hét hónapot megjelölni.
+9. Az átállás sikeres lezárultát **e-mailben vissza kell igazolni** — ezzel szűnik meg a
+   szerződés (ÁSZF 16., 2. lépés).
+10. Utána legalább **harminc nap adat-visszanyerési időszak** jön az átállási időszak végétől:
+    semmit nem törlünk, a kiadás ismételten kérhető. Csak ennek végén jön a törlés, az
+    `eszkozok/torles/OLVASS-EL.md` 1. szakasza szerint.
+11. A nyilvános formátumleírás a Használati útmutató „Adatformátumok" fejezete. Ha ebben a
+    fájlban szakasz változik, ott is változnia kell — a `jogiSzovegek.test.ts` méri.
 
 ---
 

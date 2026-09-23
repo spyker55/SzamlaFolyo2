@@ -6,6 +6,7 @@ import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { allapotCimke, szerepCimke, SZEREPEK } from '@uzleti/enumok.ts';
+import { FEJLECEK, KULCSOK, SZAM_OSZLOPOK } from '@uzleti/export/oszlopok.ts';
 
 /**
  * Használati útmutató.
@@ -447,16 +448,19 @@ export function Utmutato() {
           A pénzt a <strong>következő havi számla</strong> rendezi, napra arányosan, és{' '}
           <strong>mindkét irányban</strong>. Nagyobb csomagra váltva a hátralévő napok
           különbözete külön soron jelenik meg rajta; kisebbre váltva a már kifizetett, de fel nem
-          használt rész <strong>jóváírásként jön vissza</strong> — szintén külön soron. Aki
-          meggondolja magát és visszavált, annál a sorok kiejtik egymást: a váltogatás nem kerül
-          semmibe.
+          használt rész <strong>jóváírásként jön vissza</strong> — szintén külön soron. Minden
+          váltás a saját napjától számít: aki nagyobbra vált, majd vissza, annak a nagyobb
+          csomagban töltött napok díjkülönbözete megmarad.
         </P>
         <Figyelem>
           <strong>Kisebb csomagra váltva a keret azonnal szűkül.</strong> Ha a hónapban addigra
           már több bizonylatot dolgoztál fel, mint amennyi az új csomagba fér, a váltás
           pillanatában kereten kívülre kerülsz — onnantól a következő fordulónapig várnak a
-          bizonylatok, hacsak be nem kapcsolod a túlhasználatot. A pénzzel nincs baj: a
-          különbözet jóváíródik. Az idővel van: a keret nem.
+          bizonylatok, hacsak be nem kapcsolod a túlhasználatot. A váltás{' '}
+          <strong>előtt</strong> feldolgozott bizonylatokért viszont utólag nem számolunk fel
+          túlhasználatot: azok a régi csomag keretéig fedezve maradnak. A különbözet a következő
+          számlán jóváíródik — ⚠️ de ha közben az előfizetést le is mondod, a fel nem használt
+          jóváírás nem jár vissza.
         </Figyelem>
         <P>
           A lemondás a <strong>kifizetett időszak végéig</strong> hagyja használni a rendszert, és
@@ -558,15 +562,22 @@ export function Utmutato() {
             A <strong>kiolvasáshoz</strong> a papír- és a szkennelt bizonylat tartalma elhagyja a
             szervert: két, név szerint megnevezett közreműködőn át jut el a modellhez (OpenRouter,
             majd a Google). A kérés kiköti, hogy a tartalmat ne tárolják és ne tanítsanak vele, és
-            <strong> nincs tartalék útvonal</strong> meg nem nevezett szolgáltatóhoz. Az e-számla
-            XML-je fel sem megy: azt a rendszer helyben olvassa ki — és ez a hibrid e-számlára
-            is áll, ahol az XML a PDF-be van ágyazva.
+            <strong> nincs tartalék útvonal</strong> meg nem nevezett szolgáltatóhoz. A{' '}
+            <strong>felismert</strong> e-számla XML-je fel sem megy: azt a rendszer helyben
+            olvassa ki — és ez a hibrid e-számlára is áll, ahol az XML a PDF-be van ágyazva. Az
+            az XML viszont, amit a rendszer nem ismer fel, a modellhez kerül, mint egy PDF.
           </li>
           <li>
             A <strong>fiók és a cég törlése</strong> a Beállításokból indítható, és
             visszafordíthatatlan. Az egyedüli tulajdonos addig nem törölhet, amíg más is
             dolgozik a cégben — előbb át kell adni a tulajdonosi szerepet vagy el kell távolítani
-            a tagokat.
+            a tagokat. A törlés után az ÁSZF elfogadásának nyoma (melyik változatot, mikor, ki
+            fogadta el) {szamlafolyo.megorzes.aszfBizonyitekEv} évig megmarad.
+          </li>
+          <li>
+            Az a fiók, amelyhez nem tartozik cég, és{' '}
+            {szamlafolyo.megorzes.inaktivFiokNap} napja nem lépett be senki,{' '}
+            <strong>magától törlődik</strong>.
           </li>
         </Lista>
         <P>
@@ -579,6 +590,86 @@ export function Utmutato() {
             ÁSZF-ben
           </Link>
           . Ez az útmutató azoknál nem mond sem többet, sem mást.
+        </P>
+      </Fejezet>
+
+      <Fejezet id="adatformatumok">
+        <P>
+          Ez a fejezet az adatszolgáltatásokról szóló (EU) 2023/2854 rendelet (Data Act) 26.
+          cikke szerinti tájékoztatás: <strong>milyen formátumban és szerkezetben</strong>{' '}
+          vihető el minden adat, ha másik szolgáltatóra vagy saját rendszerre állnál át. A
+          váltás menetét és határidőit az{' '}
+          <Link to="/aszf" className="text-blue-700 underline hover:text-blue-900">
+            ÁSZF 16. pontja
+          </Link>{' '}
+          írja le; a váltás díjmentes.
+        </P>
+        <Tablazat fejlec={['Mi', 'Formátum', 'Hogyan']}>
+          <Sor
+            allapot="Jóváhagyott tételek"
+            mit="XLSX (Office Open XML, ISO/IEC 29500), CSV vagy JSON (RFC 8259)"
+            dolog="Az Export képernyőről, bármikor, bármennyiszer, időszakra és ügyfélre szűrve."
+          />
+          <Sor
+            allapot="Eredeti fájlok"
+            mit="ZIP, benne a feltöltött fájlok eredeti alakjukban (PDF, JPG, PNG, WEBP, XML)"
+            dolog="Az export mellé, amíg a megőrzési idő alatt a szerveren vannak."
+          />
+          <Sor
+            allapot="Minden más adat"
+            mit="Egyetlen JSON-állomány, UTF-8"
+            dolog="Kérésre, e-mailben: a teljes adatkiadás (lent). Szolgáltatóváltásnál díjmentes."
+          />
+        </Tablazat>
+        <P>
+          <strong>A három exportformátum ugyanazokat az oszlopokat viszi</strong>, ugyanabban a
+          sorrendben. A dátum mindenhol <code>ÉÉÉÉ-HH-NN</code> (ISO 8601), budapesti nap
+          szerint. A <strong>CSV</strong> UTF-8 kódolású (bájtsorrend-jellel), a mezőelválasztó
+          pontosvessző, a tizedesjel vessző, a sorvég CRLF — így nyitja meg helyesen a magyar
+          Excel. Az <strong>XLSX</strong> a számokat számként tárolja. A <strong>JSON</strong>{' '}
+          a számot számként, a hiányzó értéket <code>null</code>-ként adja, és a táblázatos
+          oszlopok mellett a bizonylat teljes ÁFA-bontását is tartalmazza (
+          <code>afa_bontas</code>), kategóriakóddal.
+        </P>
+        <Tablazat fejlec={['JSON-kulcs', 'Fejléc (XLSX, CSV)', 'Típus']}>
+          {KULCSOK.map((kulcs) => (
+            <tr key={kulcs} className="trow">
+              <td className="td">
+                <code>{kulcs}</code>
+              </td>
+              <td className="td">{FEJLECEK[kulcs]}</td>
+              <td className="td">
+                {SZAM_OSZLOPOK.includes(kulcs)
+                  ? 'szám'
+                  : DATUM_OSZLOPOK.includes(kulcs)
+                    ? 'dátum'
+                    : 'szöveg'}
+              </td>
+            </tr>
+          ))}
+        </Tablazat>
+        <P>
+          <strong>A teljes adatkiadás</strong> azt is tartalmazza, amit a felületi export nem:
+          a még jóváhagyásra váró és a hibára futott bizonylatokat, a kiolvasási futásokat (a
+          modell nyers válaszával, amíg az megvan), a javítások naplóját, a cég beállításait, a
+          tevékenységnaplót és a beküldött levelek nyilvántartását. Egyetlen JSON-objektum,
+          ezekkel a szakaszokkal:
+        </P>
+        <Tablazat fejlec={['Szakasz', 'Mit tartalmaz']}>
+          {ADATKIADAS_SZAKASZOK.map(([nev, mit]) => (
+            <tr key={nev} className="trow">
+              <td className="td">
+                <code>{nev}</code>
+              </td>
+              <td className="td">{mit}</td>
+            </tr>
+          ))}
+        </Tablazat>
+        <P>
+          Minden időbélyeg UTC, ISO 8601 alakban; az összegek forintban, a modellhívás
+          költsége (<code>cost</code>) dollárban. Két dolog szándékosan kimarad, mert{' '}
+          <strong>élő kulcs</strong>: a cég titkos beküldő címe és a meghívók jelei — aki
+          ismeri őket, a cég nevében tudna eljárni. A helyükön magyarázó szöveg áll.
         </P>
       </Fejezet>
 
@@ -683,6 +774,11 @@ const FEJEZETEK = [
   },
   { id: 'szerepek', cimke: 'Ki mit tehet' },
   { id: 'adatok', cimke: 'Az adataitok', hosszu: 'Az adataitok: hol vannak és meddig' },
+  {
+    id: 'adatformatumok',
+    cimke: 'Adatformátumok',
+    hosszu: 'Adatformátumok és szolgáltatóváltás',
+  },
   { id: 'mi-van-ha', cimke: 'Mi van, ha…' },
   { id: 'kerdes', cimke: 'Ha valami nem világos' },
 ] as const;
@@ -749,6 +845,34 @@ function Fejezet({ id, children }: { id: FejezetId; children: ReactNode }) {
     </section>
   );
 }
+
+/** Az export dátumoszlopai — a típusoszlop ebből mondja, hogy „dátum". */
+const DATUM_OSZLOPOK: readonly string[] = ['kelt', 'teljesites', 'fizetesi_hatarido', 'beerkezes'];
+
+/**
+ * A teljes adatkiadás szakaszai (`eszkozok/adatkiadas/adatkiadas.sql`).
+ *
+ * ⚠️ **Ez a lista nyilvános ígéret** (Data Act 26. cikk: a formátumok és az
+ * adatszerkezet online leírása). A `src/oldalak/jogiSzovegek.test.ts` méri,
+ * hogy pontosan ugyanazokat a szakaszokat sorolja fel, amiket az SQL előállít
+ * — egy új szakasz a lekérdezésben itt is meg kell jelenjen.
+ */
+const ADATKIADAS_SZAKASZOK: readonly (readonly [string, string])[] = [
+  ['kiadas', 'A kiadás fejléce: mikor készült, melyik cégről, a szerkezet verziója'],
+  ['ceg', 'A cég törzsadatai és minden beállítása, az előfizetés állapota'],
+  ['tagok', 'A cég felhasználói és szerepkörük'],
+  ['meghivok', 'A kiküldött meghívók: cím, szerep, kiküldés, lejárat, elfogadás'],
+  ['fajlok', 'A feltöltött fájlok nyilvántartása: név, típus, méret, lenyomat, törlés ideje'],
+  ['bizonylatok', 'Minden bizonylat, állapottól függetlenül, a kiolvasott mezőkkel'],
+  ['kiolvasasok', 'Minden kiolvasási futás: ki olvasta ki, nyers válasz, költség, kredit'],
+  ['javitasok', 'Mit írt át ember a gépi kiolvasás után: mező, régi és új érték'],
+  ['exportok', 'Az elkészült exportok: formátum, szűrők, tételszám'],
+  ['tulhasznalat', 'A kereten felüli felhasználás elszámolása időszakonként'],
+  ['beerkezo_levelek', 'A beküldő címre érkezett levelek nyilvántartása (a levél szövege nélkül)'],
+  ['naplo', 'A teljes tevékenységnapló'],
+  ['aszf_elfogadasok', 'Ki, mikor, az ÁSZF melyik változatát fogadta el'],
+  ['darabszamok', 'Soronkénti darabszám szakaszonként, a teljesség ellenőrzéséhez'],
+];
 
 /** Háromoszlopos táblázatsor — a három nagy táblázat ugyanazt az alakot viszi. */
 function Sor({ allapot, mit, dolog }: { allapot: string; mit: string; dolog: string }) {

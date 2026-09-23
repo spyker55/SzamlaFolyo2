@@ -2,7 +2,13 @@ import { describe, expect, test } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { keretAllapot, keretMondat, FUTO_ALLAPOTOK, type CegAllapot } from './keret.ts';
+import {
+  keretAllapot,
+  keretMondat,
+  hatalyosKeret,
+  FUTO_ALLAPOTOK,
+  type CegAllapot,
+} from './keret.ts';
 import { szamlafolyo } from '../../config/szamlafolyo.ts';
 
 const MOST = new Date('2026-09-14T10:00:00Z');
@@ -272,6 +278,107 @@ describe('előfizetés', () => {
 
     expect(k.allapot).toBe('lejart');
     expect(k.mehet).toBe(false);
+  });
+});
+
+/**
+ * # A visszaváltás (2026-09-23)
+ *
+ * A jogi felülvizsgálat harmadik köre kérdezte meg, és a válasz **mérve rossz
+ * volt**: aki a nagyobb csomag keretén belül dolgozott, aztán kisebbre váltott,
+ * annak a fordulón a ciklus *teljes* felhasználását mérte a rendszer az *új*,
+ * kisebb kerethez. A váltás előtt szabályosan elvégzett munka utólag
+ * túlhasználatba esett — bekapcsolt túlhasználatnál pénzért.
+ *
+ * A javítás: a váltás pillanatában rögzítjük, mennyi fogyott addig
+ * (`keret_fedezetek`), és az a régi keretig **fedezve marad**. Új keretet ez
+ * nem ad — a fedezet sosem nagyobb a már felhasználtnál —, csak a múltat nem
+ * számlázza újra.
+ */
+describe('visszaváltás: a már elvégzett munka nem esik utólag túlhasználatba', () => {
+  const pro = szamlafolyo.csomagok.nagy;
+  const start = szamlafolyo.csomagok.kicsi;
+
+  test('Pro → Start 300 feldolgozott bizonylat után: nincs utólagos túlhasználat', () => {
+    const k = keretAllapot(
+      elofizeto({
+        overage_enabled: true,
+        overage_limit_ft: 1_000_000,
+        fedezetek: [{ kulcs: pro.lookupKulcs, felhasznalt: 300 }],
+      }),
+      300,
+      MOST,
+    );
+
+    expect(
+      k.tulhasznalat?.darab,
+      'A váltás előtt a Pro keretén belül feldolgozott 300 bizonylatból ' +
+        `${k.tulhasznalat?.darab ?? '?'} esett túlhasználatba a Start ${start.dokumentumok}-as ` +
+        'keretéhez mérve. Ez utólagos díj szabályosan elvégzett munkáért.',
+    ).toBe(0);
+  });
+
+  test('a váltás UTÁNI munka viszont túlhasználat, ha a keret már elfogyott', () => {
+    const k = keretAllapot(
+      elofizeto({
+        overage_enabled: true,
+        overage_limit_ft: 1_000_000,
+        fedezetek: [{ kulcs: pro.lookupKulcs, felhasznalt: 300 }],
+      }),
+      312,
+      MOST,
+    );
+
+    expect(k.tulhasznalat?.darab).toBe(12);
+    // A fedezet nem ad új helyet: a keret továbbra is elfogyott.
+    expect(k.maradek).toBe(0);
+    expect(k.tulhasznalatban).toBe(true);
+  });
+
+  test('ha a váltáskor még az új kereten belül volt, a fedezet nem számít', () => {
+    const k = keretAllapot(
+      elofizeto({ fedezetek: [{ kulcs: pro.lookupKulcs, felhasznalt: 10 }] }),
+      30,
+      MOST,
+    );
+
+    expect(k.maradek).toBe(start.dokumentumok - 30);
+    expect(k.mehet).toBe(true);
+  });
+
+  test('a fedezet a régi keretnél nem nagyobb: a régi csomag túlhasználata megmarad', () => {
+    // A Pro keretén (500) felül már 20 túlhasználat volt, aztán Startra váltott.
+    expect(hatalyosKeret(start.dokumentumok, [{ kulcs: pro.lookupKulcs, felhasznalt: 520 }])).toBe(
+      pro.dokumentumok,
+    );
+  });
+
+  test('felfelé váltás nem változtat semmin', () => {
+    expect(hatalyosKeret(pro.dokumentumok, [{ kulcs: start.lookupKulcs, felhasznalt: 40 }])).toBe(
+      pro.dokumentumok,
+    );
+  });
+
+  test('több váltásnál a legnagyobb fedezet számít', () => {
+    const flow = szamlafolyo.csomagok.kozepes;
+
+    expect(
+      hatalyosKeret(start.dokumentumok, [
+        { kulcs: pro.lookupKulcs, felhasznalt: 300 },
+        { kulcs: flow.lookupKulcs, felhasznalt: 350 },
+      ]),
+    ).toBe(300);
+  });
+
+  test('ismeretlen régi csomagnál a felhasznált rész fedezve marad — ez sem ad új helyet', () => {
+    expect(hatalyosKeret(start.dokumentumok, [{ kulcs: 'eltunt_kulcs', felhasznalt: 90 }])).toBe(
+      90,
+    );
+  });
+
+  test('hiányzó fedezetlista (régi RPC) = nincs fedezet', () => {
+    expect(hatalyosKeret(start.dokumentumok, undefined)).toBe(start.dokumentumok);
+    expect(hatalyosKeret(start.dokumentumok, null)).toBe(start.dokumentumok);
   });
 });
 

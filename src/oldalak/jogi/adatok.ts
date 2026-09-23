@@ -37,7 +37,7 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. szeptember 22.';
+export const hatalyos = '2026. szeptember 23.';
 
 /**
  * Ugyanaz a nap, **gépnek olvasható alakban** — és ez nem kényelmi másolat.
@@ -51,8 +51,15 @@ export const hatalyos = '2026. szeptember 22.';
  * ⚠️ **Egy verzió nem vonható vissza.** A `legal_versions` sorai azt mondják
  * meg, milyen szövegek léteztek; a régi sorokat a meglévő elfogadások
  * hivatkozzák. Törölni tehát nem szabad, csak hozzáírni.
+ *
+ * ⚠️ **És a szöveg sem írható át verzióváltás nélkül** (2026-09-23 óta). Minden
+ * kiadott változat teljes, renderelt szövege a `jogi-archivum/<verzió>/`
+ * alatt él, a lenyomata a `legal_versions` sorában — és az
+ * `archivum.test.tsx` pirosra vált, ha a mai szöveg eltér a mai verzió
+ * archívumától. Új szöveg = új dátum itt, új sor a migrációban, és
+ * `npx vite-node eszkozok/jogiArchivum.ts`.
  */
-export const JOGI_VERZIO = '2026-09-22';
+export const JOGI_VERZIO = '2026-09-23';
 
 /**
  * Az illetékes békéltető testület.
@@ -69,6 +76,15 @@ export const JOGI_VERZIO = '2026-09-22';
  *
  * A kamarai tagság (HKIK, Eger) ettől külön kérdés, és változatlanul igaz:
  * az Impresszum azt a saját helyén tartja.
+ *
+ * # 2026. szeptember 23. — nem minden ügyfélnek ez az illetékes
+ *
+ * A jogi felülvizsgálat harmadik köre jelezte: a szöveg úgy szólt, mintha
+ * *minden* ügyfélre ez a testület volna illetékes. Nem az: az illetékesség a
+ * fogyasztónak minősülő ügyfél lakóhelyéhez, tartózkodási helyéhez, illetve
+ * székhelyéhez igazodik (Fgytv. 20. §), nem a Szolgáltatóéhoz. Ez a testület
+ * **a saját illetékességi területén** az illetékes — a szövegek ezért előbb
+ * az általános szabályt mondják, és csak utána ezt a testületet.
  */
 export const bekeltetoTestulet = {
   nev: 'Borsod-Abaúj-Zemplén Vármegyei Békéltető Testület',
@@ -122,6 +138,26 @@ export const bekeltetoTestulet = {
  * kizárható-e. A kettő nem ugyanaz: a Resend fiókja EU-régióban áll, a cég
  * mégis amerikai — egy adatkezelési tájékoztatóban a gyengébb állítás a
  * helyes állítás.
+ *
+ * # 2026. szeptember 23. — a szerződések felől, nem a nyilvános cégadatok felől
+ *
+ * A tulajdonos 2026-09-22-én elmentette a szolgáltatók adatfeldolgozási
+ * szerződéseit (Drive: „DPA 2026 09 22"). A szerződő fél, a cím és a
+ * továbbítás alapja **ezekből** jön — és két helyen ki is javította a
+ * táblázatot:
+ *
+ * - ⚠️ **Supabase.** A szerződő fél a **Supabase Pte. Ltd** (Szingapúr), és a
+ *   szerződés általános szerződési feltételekkel (SCC) számol Unión kívüli
+ *   továbbítással. A tárolás attól még Frankfurtban van — de az `unionBelul:
+ *   true` („az Unión kívüli hozzáférés kizárható") **nem volt igaz**. Most
+ *   `false`. Ugyanez a hibaosztály, mint a Resendnél: a régió a tárolás
+ *   helyét mondja meg, nem azt, ki férhet hozzá.
+ * - **Stripe.** A szerződés szerint az EGT-s fiók szerződő fele a Stripe
+ *   Payments Europe, Limited, és az adatot a **Stripe, LLC**-hez (USA)
+ *   továbbítja — nem a „Stripe, Inc."-hez, ahogy eddig itt állt.
+ *
+ * Ahol a szerződés **nem ad meg** címet (Stripe, Google), ott a `szekhely`
+ * továbbra is `null` — és a felület ezt ki is mondja, nem hallgat róla.
  */
 export type Adatfeldolgozo = {
   /** A szolgáltatás neve, ahogy a felhasználó ismeri. */
@@ -140,32 +176,40 @@ export type Adatfeldolgozo = {
   unionBelul: boolean;
   /** Hol olvasható a szolgáltató adatvédelmi kötelezettségvállalása. */
   garanciaUrl: string;
+  /**
+   * Az Unión kívüli továbbítás alapja, **a szolgáltató adatfeldolgozási
+   * szerződéséből kiolvasva** (a 2026-09-22-én mentett példányokból). `null`,
+   * ha nincs Unión kívüli továbbítás.
+   */
+  tovabbitasAlapja: string | null;
 };
 
 export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
   {
     ki: 'Supabase',
-    jogiSzemely: 'Supabase, Inc. (USA) / Supabase Pte. Ltd. (Szingapúr)',
-    szekhely: null,
+    jogiSzemely: 'Supabase Pte. Ltd (Szingapúr)',
+    szekhely: '65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513, Szingapúr',
     mit: 'Adatbázis, fájltárolás, felhasználókezelés',
     adatkor: 'Minden tárolt adat: fiókadatok, bizonylatok és a belőlük kiolvasott mezők',
-    hol: 'Európai Unió (Frankfurt)',
-    unionBelul: true,
+    hol:
+      'Tárolás: Európai Unió (Frankfurt). A szerződő fél szingapúri, ezért az Unión ' +
+      'kívüli hozzáférés nem zárható ki',
+    unionBelul: false,
     garanciaUrl: 'https://supabase.com/legal/customer-resources/data-processing-addendum',
+    tovabbitasAlapja: 'Általános szerződési feltételek (az Európai Bizottság 2021/914/EU határozata)',
   },
   {
     ki: 'Vercel',
     jogiSzemely: 'Vercel Inc.',
     szekhely: '440 N. Barranca Ave #4133, Covina, CA 91723, Amerikai Egyesült Államok',
-    mit: 'A weboldal kiszolgálása és a nyilvános oldalak látogatásmérése',
+    mit: 'A weboldal kiszolgálása',
     adatkor:
       'A kiszolgáláshoz a böngésző kérésének adatai (IP-cím, böngészőazonosító). ' +
-      'A látogatásmérésből: a megnyitott nyilvános oldal címe, a hivatkozó oldal, ' +
-      'az ország, az eszköz és a böngésző típusa, valamint a kérésből képzett, ' +
-      'nem tartós azonosító. Bizonylat nem megy át rajta',
+      'Bizonylat nem megy át rajta',
     hol: 'Amerikai Egyesült Államok (a kiszolgálás európai élhálózatról)',
     unionBelul: false,
     garanciaUrl: 'https://vercel.com/legal/dpa',
+    tovabbitasAlapja: 'Általános szerződési feltételek (2021/914/EU)',
   },
   {
     ki: 'OpenRouter',
@@ -176,6 +220,7 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     hol: 'Amerikai Egyesült Államok',
     unionBelul: false,
     garanciaUrl: 'https://openrouter.ai/terms',
+    tovabbitasAlapja: 'Általános szerződési feltételek (2021/914/EU, 2. modul)',
   },
   {
     ki: 'Google (al-adatfeldolgozó)',
@@ -192,11 +237,14 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     // az ő feltételeiből ered. Egy olyan szerződésre hivatkozni, aminek nem
     // vagyunk részesei, pontosan az a hibaosztály, amit ez a lista irt.
     garanciaUrl: 'https://openrouter.ai/terms',
+    tovabbitasAlapja:
+      'Az OpenRouter adatfeldolgozási szerződése, amely az al-adatfeldolgozóra ugyanazokat ' +
+      'a kötelezettségeket telepíti',
   },
   {
     ki: 'Resend',
     jogiSzemely: 'Plus Five Five, Inc.',
-    szekhely: null,
+    szekhely: '2261 Market Street #5039, San Francisco, CA 94114, Amerikai Egyesült Államok',
     mit: 'A cég beküldő címére érkező levelek fogadása és a rendszer leveleinek kiküldése',
     adatkor:
       'A levelek feladója, tárgya, TELJES SZÖVEGE és melléklete; a kimenő levelek ' +
@@ -209,10 +257,15 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     hol: 'Az útvonal: Európai Unió (Írország). A tárolás és a naplózás: Amerikai Egyesült Államok',
     unionBelul: false,
     garanciaUrl: 'https://resend.com/legal/dpa',
+    tovabbitasAlapja:
+      'EU–USA adatvédelmi keret (a szolgáltató tanúsítvánnyal rendelkezik), mellette ' +
+      'általános szerződési feltételek (2021/914/EU)',
   },
   {
     ki: 'Stripe',
-    jogiSzemely: 'Stripe Payments Europe, Limited (Írország) / Stripe, Inc. (USA)',
+    jogiSzemely:
+      'Stripe Payments Europe, Limited (Írország) — a szerződő fél; az adatot a Stripe, LLC ' +
+      '(Amerikai Egyesült Államok) részére továbbítja',
     szekhely: null,
     mit: 'Bankkártyás fizetés, előfizetés-kezelés',
     adatkor:
@@ -222,6 +275,9 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     hol: 'Írország / Amerikai Egyesült Államok',
     unionBelul: false,
     garanciaUrl: 'https://stripe.com/legal/dpa',
+    tovabbitasAlapja:
+      'A Stripe adattovábbítási melléklete (Data Transfers Addendum): EU–USA adatvédelmi ' +
+      'keret, illetve általános szerződési feltételek (2021/914/EU)',
   },
   {
     ki: 'Billingo',
@@ -232,5 +288,17 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     hol: 'Európai Unió (Magyarország)',
     unionBelul: true,
     garanciaUrl: 'https://www.billingo.hu/adatkezelesi-tajekoztato',
+    tovabbitasAlapja: null,
   },
 ];
+
+/**
+ * Amit a tájékoztató a hiányzó székhely helyére ír. Nem üres hely: a „név
+ * szerint, székhellyel" ígéret mellett a néma hiány elírásnak látszana.
+ */
+export const NINCS_SZEKHELY =
+  'A székhelyet a szolgáltató adatfeldolgozási szerződése nem tartalmazza; a ' +
+  'kapcsolattartás az adatvédelmi feltételeiben megadott címen történik.';
+
+/** Hány közreműködőnél van Unión kívüli feldolgozás — a szöveg ezt a számot mondja. */
+export const unionKivuliDarab = adatfeldolgozok.filter((a) => !a.unionBelul).length;

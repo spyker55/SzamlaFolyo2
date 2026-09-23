@@ -7,9 +7,7 @@ import {
   useLocation,
   useNavigationType,
 } from 'react-router-dom';
-import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider, useAuth } from './lib/auth.tsx';
-import { esemenytSzur } from './lib/analitika.ts';
 import { horgonyraUgrik, tetejereUgrik } from './lib/gorgetes.ts';
 import { Belepve, Ceggel, Vendeg } from './komponensek/Vedett.tsx';
 import { Bejelentkezes } from './kepernyok/auth/Bejelentkezes.tsx';
@@ -48,24 +46,27 @@ import { Impresszum } from './oldalak/jogi/Impresszum.tsx';
  * A jogi oldalak bejelentkezés nélkül is elérhetők: az ÁSZF-et a regisztráció
  * *előtt* kell tudni elolvasni, különben fiók kellene ahhoz, amihez a fiók
  * feltétele kötődik.
+ *
+ * # 2026. szeptember 23. — nincs látogatásmérés
+ *
+ * Itt állt a Vercel Web Analytics, a `lib/analitika.ts` fehérlistájával. A
+ * jogi felülvizsgálat harmadik köre kérte, hogy a „semmit nem olvas ki az
+ * eszközről" állítást a tényleges kóddal támasszuk alá — és a visszaolvasott,
+ * **aznap frissült** mérőkód (v0.1.3) minden oldalmegnyitáskor kiolvasta a
+ * `localStorage` `__va_attribution` kulcsát. Az állítás, amin a hozzájárulás
+ * nélküli mérés indoka állt, így hamissá vált — ráadásul nem a mi
+ * telepítésünktől, hanem a szolgáltató oldalán.
+ *
+ * A mérés ezért kikerült, nem a szöveg gyengült. ⚠️ Aki visszahozná: a
+ * mérőkódot a Vercel szolgálja ki, és **a mi kiadásunk nélkül is változhat** —
+ * vagyis a „mit olvas ki" kérdésre adott válasz csak a visszaolvasás napjára
+ * igaz, és a jogalapot (hozzájárulás) ehhez kell igazítani, nem fordítva.
  */
 export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <GorgetesVisszaall />
-        {/*
-          Látogatásmérés — de **csak a nyilvános tölcsérre**. A szűrőt a
-          `lib/analitika.ts` adja, fehérlistával: ami nincs nevesítve benne,
-          arról esemény el sem indul. Így a bejelentkezés mögötti képernyők, a
-          meghívó tokenje és a jelszó-visszaállítás kimaradnak — az indoklás
-          ott, a modul fejlécében áll, az Adatkezelési tájékoztató 2. pontja
-          pedig ugyanezt ígéri a látogatónak.
-
-          A script a **saját domainünkről** (`/_vercel/insights/script.js`)
-          tölt be, tehát a böngésző nem keres meg tőle idegen kiszolgálót.
-        */}
-        <Analytics beforeSend={esemenytSzur} />
         <Routes>
           {/* Nyilvános */}
           <Route path="/" element={<Kezdolap />} />

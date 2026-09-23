@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { JogiOldal, Lista, P, Szakasz, Tablazat } from './JogiOldal.tsx';
-import { adatfeldolgozok, szolgaltato } from './adatok.ts';
+import { adatfeldolgozok, NINCS_SZEKHELY, szolgaltato, unionKivuliDarab } from './adatok.ts';
 import { szamlafolyo } from '@config/szamlafolyo.ts';
 
 /**
@@ -192,6 +192,29 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  * **Mindkét ágon** kiírjuk, nem csak az egyiken: egy jelzés, ami csak a saját
  * értelmezőnél jelenne meg, a hiányával állítana — és a hiányból olvasott
  * állítás ebben a projektben mindig rosszul sült el.
+ *
+ * # 2026. szeptember 23. — harmadik kör, ügyvédtől
+ *
+ * Három állítás itt **mérve volt hamis**, és mindháromnál a valóság
+ * változott vagy a mondat, nem a hangsúly:
+ *
+ * - **„A böngészőből feltöltött bizonylat végig az Unión belül marad."** Nem
+ *   marad: a modellhez kerül (USA), és a DPA-k szerint a tárhelyszolgáltató
+ *   szerződő fele is szingapúri (Supabase Pte. Ltd, SCC). A mondat most azt
+ *   mondja, ami igaz: a böngészős feltöltés a Resendet kerüli el, semmi mást.
+ * - **„A látogatásmérés … onnan semmit nem olvas ki."** A visszaolvasott, aznap
+ *   frissült mérőkód (v0.1.3) minden oldalmegnyitáskor olvasta a
+ *   `localStorage` `__va_attribution` kulcsát. A tulajdonos döntése: a mérés
+ *   **kikapcsolva**, a szöveg azt mondja, ami volt és ami van.
+ * - **A Supabase `unionBelul: true`-ja** — lásd `adatok.ts`.
+ *
+ * Ami a kódban is változott: az ÁSZF-elfogadás bizonyítéka öt évig túléli a
+ * cég törlését, a cég nélküli fiók 180 nap után magától törlődik
+ * (`20260923000400`), és a „szolgáltató saját megőrzési ideje szerint"
+ * fordulat helyére a belépési naplóknál konkrét szám került (hét nap, a
+ * Supabase Pro csomagjának naplómegőrzése — dokumentációból, nem mérve). Az
+ * incidensszakasz szétvált: adatfeldolgozóként 48 óra az Előfizető felé,
+ * adatkezelőként a kockázatértékelés és a 72 órás hatósági bejelentés.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -200,6 +223,8 @@ export function Adatkezeles() {
   const meghivoNap = szamlafolyo.megorzes.meghivoNap;
   const levelNap = szamlafolyo.megorzes.levelNaploNap;
   const nyersNap = szamlafolyo.megorzes.nyersValaszNap;
+  const inaktivNap = szamlafolyo.megorzes.inaktivFiokNap;
+  const aszfEv = szamlafolyo.megorzes.aszfBizonyitekEv;
 
   return (
     <JogiOldal cim="Adatkezelési tájékoztató">
@@ -230,8 +255,10 @@ export function Adatkezeles() {
             Szolgáltató pedig adatfeldolgozó. A bizonylatokon szereplő adatok — köztük személyes
             adatok, ha a partner egyéni vállalkozó vagy magánszemély — az Előfizető birtokában
             lévő iratokból származnak. A Szolgáltató ezeket kizárólag a Szolgáltatás nyújtása
-            érdekében, az Előfizető utasításai szerint kezeli: nem elemzi más célra, nem adja
-            tovább, és a szerződés megszűnésekor törli.
+            érdekében, az Előfizető utasításai szerint kezeli: nem elemzi más célra, harmadik
+            félnek <strong>kizárólag az 5. pontban ismertetett közreműködőknek</strong>, a
+            Szolgáltatás teljesítéséhez szükséges körben továbbítja, és a szerződés
+            megszűnésekor a 4. pont szerint törli.
           </li>
           <li>
             <strong>
@@ -270,18 +297,27 @@ export function Adatkezeles() {
           <tr className="trow">
             <td className="td">
               <strong>Regisztráló</strong> e-mail címe és jelszava, még a cég létrehozása{' '}
-              <em>előtt</em>
+              <em>előtt</em> — és minden olyan fiók adata, amelyhez éppen nem tartozik cég
+              (például aki kilépett a cégéből)
             </td>
             <td className="td">
               Fiók létrehozása, belépés. Ekkor még nincs szerződés (ÁSZF 1.): a fiók önmagában
               nem köti a Szolgáltatót és nem jogosít a Szolgáltatás használatára
             </td>
             <td className="td">
-              Az érintett kérésére történő, szerződéskötést megelőző lépések megtétele
+              A jogalap attól függ, <em>kinek a nevében</em> készül a szerződés.{' '}
+              <strong>Aki egyéni vállalkozóként, a saját nevében</strong> kíván szerződni, annál
+              az érintett kérésére történő, szerződéskötést megelőző lépések megtétele — ő lesz
+              a szerződő fél. <strong>Aki egy társaság leendő képviselőjeként</strong>
+              regisztrál, annál jogos érdek: a társasággal kötendő szerződés előkészítése, mert
+              nem ő maga lesz a szerződő fél. Az érdekmérlegelés eredménye az, hogy csak a
+              belépéshez elengedhetetlen két adatot kezeljük, és a fiók bármikor törölhető
             </td>
             <td className="td">
-              A cég létrehozásáig; ha az elmarad, a fiók törléséig — a törlés a felületről
-              bármikor elvégezhető
+              A cég létrehozásáig. Ha az elmarad, a fiók törléséig — a törlés a felületről
+              bármikor elvégezhető —, de a cég nélküli fiókot{' '}
+              <strong>{inaktivNap} nap belépés nélkül</strong> (belépés hiányában a
+              regisztrációtól számítva) a rendszer magától törli
             </td>
           </tr>
           <tr className="trow">
@@ -313,7 +349,8 @@ export function Adatkezeles() {
           <tr className="trow">
             <td className="td">
               <strong>Az ÁSZF elfogadásának nyilvántartása:</strong> az elfogadott változat
-              azonosítója, az időpont, az eljáró felhasználó és a cég
+              azonosítója, az időpont, az eljáró felhasználó (e-mail-címmel) és a cég (névvel,
+              adószámmal); mellette az elfogadott változat teljes, utólag nem módosított szövege
             </td>
             <td className="td">
               Annak igazolása, hogy a szerződés létrejött, és <em>melyik szöveggel</em>. Az
@@ -324,8 +361,10 @@ export function Adatkezeles() {
               az elszámoltathatóság
             </td>
             <td className="td">
-              A szerződés megszűnésétől számított elévülési időig, de legfeljebb a cég adatainak
-              törléséig
+              A szerződés megszűnésétől számított <strong>{aszfEv} évig</strong> (a Polgári
+              Törvénykönyv általános elévülési ideje) — <em>a cég adatainak törlése után is</em>,
+              mert a bizonyítékra épp egy későbbi vitában lehet szükség. Ez szűk kivétel: csak az
+              elfogadás nyoma marad meg, a cég egyéb adatai nem. Utána a rendszer magától törli
             </td>
           </tr>
           <tr className="trow">
@@ -437,11 +476,15 @@ export function Adatkezeles() {
             <td className="td">A megkeresés megválaszolása, a panasz kivizsgálása</td>
             <td className="td">
               Jogos érdek: a megkeresésre válaszolni kell, és a válasz utólag visszakereshető
-              legyen. Panasz esetén jogi kötelezettség
+              legyen. <strong>Panasznál</strong> kettéválik: ha a panaszos a fogyasztóvédelmi
+              törvény szerint fogyasztónak minősül, a panasz és a válasz megőrzése jogi
+              kötelezettség; minden más — vállalkozói — panasznál jogos érdek (a panasz
+              kivizsgálhatósága és egy esetleges igény elbírálása)
             </td>
             <td className="td">
-              A megkeresés lezárásától számított egy év; panasz esetén a fogyasztóvédelmi,
-              illetve elévülési szabályok szerinti ideig
+              A megkeresés lezárásától számított egy év. Panasznál: fogyasztónak minősülő
+              panaszosnál a fogyasztóvédelmi törvényben előírt ideig, egyébként a panasz
+              lezárásától számított öt évig (az általános elévülési idő)
             </td>
           </tr>
           <tr className="trow">
@@ -460,26 +503,10 @@ export function Adatkezeles() {
             </td>
             <td className="td">Próbálgatásos támadás elleni védelem</td>
             <td className="td">Jogos érdek: a fiókok biztonsága</td>
-            <td className="td">A szolgáltató biztonsági célú megőrzési ideje szerint</td>
-          </tr>
-          <tr className="trow">
             <td className="td">
-              <strong>Látogatásmérés a nyilvános oldalakon:</strong> a megnyitott oldal címe, a
-              hivatkozó oldal, az ország, az eszköz, az operációs rendszer és a böngésző típusa,
-              az időpont, valamint a kérésből képzett, <strong>nem tartós</strong> azonosító
+              <strong>Hét nap</strong> — ennyi ideig őrzi a Supabase a projekt naplóit a
+              Szolgáltató csomagjában. Az adatbázisban a Szolgáltató belépési naplót nem tárol
             </td>
-            <td className="td">
-              Annak mérése, hányan találnak ide és mit néznek meg, mielőtt fiókot nyitnának.
-              Bejelentkezés mögötti képernyőről adat el sem indul
-            </td>
-            <td className="td">
-              Jogos érdek: a nyilvános oldalak fejlesztése. Az érdekmérlegelés eredménye az,
-              hogy a mérés a látogató eszközén semmit nem tárol és onnan semmit nem olvas ki,
-              nem épít belőle több látogatást összefűző tartós azonosítót, más webhelyekre nem
-              követ, és az adatot kizárólag összesítve használjuk. Az érintett a 8. pont szerint
-              tiltakozhat
-            </td>
-            <td className="td">A mérést végző szolgáltató saját megőrzési ideje szerint</td>
           </tr>
           <tr className="trow">
             <td className="td">Munkamenet-adat a böngésző saját tárolójában</td>
@@ -502,74 +529,27 @@ export function Adatkezeles() {
           jogos érdeken alapuló kezelések ellen az érintett a 8. pont szerint tiltakozhat.
         </P>
         <P>
-          <strong>Sütiket mérésre vagy hirdetésre nem használunk.</strong> Hirdetési kódrészlet
-          nincs, profilalkotás nincs, és más webhelyeken sem követünk senkit.
+          <strong>Látogatásmérés nincs, sütit mérésre vagy hirdetésre nem használunk.</strong>{' '}
+          Hirdetési kódrészlet nincs, profilalkotás nincs, és más webhelyeken sem követünk
+          senkit. A nyilvános oldalakon 2026. szeptember 20. és 23. között látogatásmérés futott
+          (Vercel Web Analytics); 2026. szeptember 23-án kikapcsoltuk, mert a mérőkód a
+          látogató böngészőjének tárolójából is olvasott, és ezzel a hozzájárulás nélküli
+          mérés indoka megdőlt.
         </P>
         <P>
           <strong>Miért nem fogadja süti-ablak a látogatót.</strong> Az eszközön történő
           tárolásra és az onnan való adatkiolvasásra vonatkozó szabály nem attól függ, hogy a
-          tárolás süti-e vagy a böngésző más tárolója — a kettőt ugyanaz a mérce érinti. Ezért
-          nem arra hivatkozunk, hogy „nem süti", hanem arra, mire használjuk:
-        </P>
-        <Lista>
-          <li>
-            <strong>A bejelentkezett állapot</strong> a böngésző saját tárolójában él. Ez a
-            felhasználó által kifejezetten kért szolgáltatás nyújtásához{' '}
-            <strong>feltétlenül szükséges</strong>: enélkül minden oldalváltásnál újra be kellene
-            lépni. Az ilyen tároláshoz nem kell hozzájárulás.
-          </li>
-          <li>
-            <strong>A látogatásmérés</strong> — amiről a következő bekezdés szól — a mérőkód
-            visszaolvasott kódja szerint{' '}
-            <strong>nem tárol semmit a látogató eszközén</strong>: sem sütit, sem más
-            bejegyzést. Ha nincs se tárolás, se kiolvasás az eszközről, nincs az a művelet sem,
-            amihez hozzá kellene járulni.
-          </li>
-        </Lista>
-        <P>
-          Ezért nem fogadja süti-ablak a látogatót. ⚠️ Ha a mérés egyszer olyan eszköztárolást
-          kezdene használni, ami nem feltétlenül szükséges, ez a mondat <em>elsőként</em>{' '}
-          változik — és vele a gyakorlat is.
+          tárolás süti-e vagy a böngésző más tárolója — a kettőt ugyanaz a mérce érinti. Az
+          oldal egyetlen ilyen tárolást használ: <strong>a bejelentkezett állapotot</strong>, a
+          böngésző saját tárolójában. Ez a felhasználó által kifejezetten kért szolgáltatás
+          nyújtásához <strong>feltétlenül szükséges</strong> — enélkül minden oldalváltásnál újra
+          be kellene lépni —, és az ilyen tároláshoz nem kell hozzájárulás.
         </P>
         <P>
-          <strong>Látogatásmérés azonban van — de kizárólag a nyilvános oldalakon.</strong> Azt
-          szeretnénk tudni, hányan találnak ide és mit néznek meg, mielőtt fiókot nyitnának. Hogy
-          ez pontosan mit jelent:
+          ⚠️ Ha a weboldal egyszer olyan eszköztárolást vagy kiolvasást kezdene használni, ami
+          nem feltétlenül szükséges — például újra látogatásmérést —, az csak hozzájárulással
+          indulhat, és ez a bekezdés <em>előtte</em> változik.
         </P>
-        <Lista>
-          <li>
-            <strong>Hol fut:</strong> a nyitólapon, a Használati útmutatón, ezen a
-            tájékoztatón, az ÁSZF-en, az Impresszumon, valamint a bejelentkező, a
-            regisztrációs és az elfelejtett jelszó űrlapon. Sehol máshol.
-          </li>
-          <li>
-            <strong>Hol nem fut:</strong> a bejelentkezés mögötti képernyőkön. Bizonylat
-            webcíme, meghívó-link és jelszó-visszaállító cím <strong>soha</strong> nem kerül a
-            mérésbe — ezt nem utólagos szűrés végzi, hanem egy engedélyezett címekből álló
-            lista: ami nincs rajta, arról adat el sem indul.
-          </li>
-          <li>
-            <strong>Ki méri:</strong> a tárhelyszolgáltató, a Vercel — vagyis nem új
-            adatfeldolgozó, hanem az, aki az oldalt amúgy is kiszolgálja (5. pont). A mérőkód a
-            saját domainünkről töltődik be, tehát a böngésző nem keres meg tőle idegen
-            kiszolgálót.
-          </li>
-          <li>
-            <strong>Mit kezel, és mit látunk belőle.</strong> A kettő nem ugyanaz, és jobb
-            kimondani. A mérés a fenti táblázat szerinti adatokat továbbítja: a megnyitott
-            oldal címe, a hivatkozó oldal, az ország, az eszköz, az operációs rendszer és a
-            böngésző típusa, az időpont, és a kérésből képzett, <strong>nem tartós</strong>{' '}
-            azonosító — ez utóbbi az egyes megnyitások összetartozását szolgálja, nem egy
-            személy visszakeresését. <em>Mi</em> ebből összesített számokat látunk, egyedi
-            látogatót nem.
-          </li>
-          <li>
-            <strong>Amit nem tesz:</strong> nem tesz sütit, nem tárol adatot a látogató eszközén
-            és nem is olvas ki onnan, nem épít több látogatást összefűző tartós azonosítót, és
-            más webhelyeken nem követ senkit. A webcímet nem a mérőkód állítja össze, hanem mi:
-            a lekérdezés és a horgony (a <code>#</code> utáni rész) <strong>nem kerül bele</strong>.
-          </li>
-        </Lista>
       </Szakasz>
 
       <Szakasz cim="3. Mi történik egy beérkezett bizonylattal">
@@ -598,7 +578,10 @@ export function Adatkezeles() {
             szabályozza, nem a tárolás helyét. Ez tehát Unión kívüli adattovábbítás, a saját
             megőrzési idejük szerint — az 5. pont táblázata így is tünteti fel. Aki ezt el
             akarja kerülni, ne használja az e-mailes beküldést: a böngészőből feltöltött
-            bizonylat végig az Unión belül marad.
+            bizonylat <strong>a Resendet nem érinti</strong>. ⚠️ Ez nem jelenti azt, hogy az
+            Unión belül marad: ha a bizonylatot a modell olvassa ki, a tartalma a következő
+            bekezdés szerint az Unión kívülre kerül, és a tárhelyszolgáltatónál is van Unión
+            kívüli hozzáférés (5. pont).
           </li>
           <li>
             A kiolvasáshoz a bizonylat tartalma — a PDF vagy a kép — <strong>elhagyja a
@@ -607,7 +590,10 @@ export function Adatkezeles() {
             <strong>Google</strong> modellje végzi (jelenleg: <code>{modell}</code>). Mindkettő
             szerepel az 5. pont táblázatában, székhellyel és feldolgozási országgal. A modellnek
             a bizonylat mellett a saját cég nevét és adószámát küldjük el, hogy tudja, melyik
-            oldalon állunk. <strong>Felhasználói nevet, e-mail címet, jelszót nem küldünk.</strong>
+            oldalon állunk. <strong>A fiók adatait — a felhasználók nevét, e-mail-címét,
+            jelszavát — nem küldjük el.</strong> A bizonylat maga viszont tartalmazhat neveket és
+            e-mail-címeket (például a kiállító elérhetőségét): ezek a bizonylat tartalmaként
+            ugyanúgy eljutnak a modellhez.
           </li>
           <li>
             <strong>A címzettek köre kódból zárt.</strong> A kérés felsorolja, mely szolgáltatók
@@ -714,20 +700,30 @@ export function Adatkezeles() {
             számított <strong>{meghivoNap} nap</strong>. Az élő meghívó a lejáratáig marad.
           </li>
           <li>
-            <strong>Kiolvasott és jóváhagyott adatok, fiókadatok:</strong> a szerződés
-            megszűnéséig, illetve ha az Előfizető nem maga törli a fiókját, a megszűnéstől
-            számított <strong>harminc napon belül</strong>. Ez a határidő szándékosan egyezik az{' '}
+            <strong>Kiolvasott és jóváhagyott adatok, a cég adatai:</strong> a szerződés
+            megszűnéséig. Az előfizetés lemondása a szerződést nem szünteti meg. A megszűnés
+            módjától függ, mikor törlődnek (
             <Link to="/aszf" className="underline">
-              ÁSZF 16. pontja
-            </Link>{' '}
-            szerinti adatkiadási ablakkal: aki szolgáltatóváltás miatt kéri az adatai kiadását,
-            azt előbb megkapja, és a törlés csak utána fut le. A törlés menetét lentebb írjuk le.
+              ÁSZF 10. és 16. pont
+            </Link>
+            ): ha az Előfizető maga törli a céges munkaterületet, azonnal; ha a Szolgáltató mond
+            fel, a megszűnéstől számított harminc napon belül; szolgáltatóváltásnál az
+            adat-visszanyerési időszak végén.
+          </li>
+          <li>
+            <strong>Cég nélküli fiók</strong> (aki regisztrált, de céget nem hozott létre, vagy
+            kilépett a cégéből): <strong>{inaktivNap} nap belépés nélkül</strong> — belépés
+            hiányában a regisztrációtól számítva — a rendszer magától törli.
+          </li>
+          <li>
+            <strong>Az ÁSZF elfogadásának nyilvántartása:</strong> a szerződés megszűnésétől
+            számított <strong>{aszfEv} év</strong>, a cég törlése után is (2. pont).
           </li>
           <li>
             <strong>Belépési kísérletek adatai (IP-cím):</strong> ezeket a felhasználókezelést
-            végző Supabase kezeli, a saját biztonsági célú megőrzési ideje szerint; a
-            Szolgáltatónak ezekre önálló megőrzési ideje nincs, és a Szolgáltatás felületén
-            ezek az adatok nem jelennek meg.
+            végző Supabase naplózza, és a Szolgáltató csomagjában <strong>hét napig</strong>{' '}
+            őrzi. A Szolgáltató ezekről külön nyilvántartást nem vezet, és a Szolgáltatás
+            felületén nem jelennek meg.
           </li>
           <li>
             <strong>Számlázási adatok:</strong> a Szolgáltatóra irányadó adójogi iratmegőrzési
@@ -761,7 +757,8 @@ export function Adatkezeles() {
           <li>
             <strong>Az aktív rendszerből azonnal.</strong> A törlés pillanatában az adat eltűnik
             az adatbázisból és a fájltárolóból; a Szolgáltatás felületén és az API-n keresztül
-            sem érhető el többé, és a Szolgáltató sem tudja visszaállítani.
+            sem érhető el többé. A felhasználó által indított törlés{' '}
+            <strong>nem vonható vissza</strong>: egyedi visszaállításra nincs lehetőség.
           </li>
           <li>
             <strong>A biztonsági mentésekből kifutással, legfeljebb hét nap alatt.</strong> Az
@@ -770,7 +767,10 @@ export function Adatkezeles() {
             tárhelyszolgáltató csomagjától függ, és <strong>a hét napot nem haladja meg</strong>{' '}
             — a hetedik nap után a törölt adat a mentésekből is kifut. Ezeket a mentéseket{' '}
             <strong>kizárólag teljes helyreállításra</strong> használjuk, egyedi visszakeresésre
-            soha: egyetlen törölt sort nem tudunk és nem is fogunk belőlük kikeresni.
+            soha. Egy teljes helyreállítás technikailag visszahozná a mentés óta törölt adatot
+            is — ezért ilyenkor a mentés óta törölt ügyféladatok törlését{' '}
+            <strong>a rendszer újbóli megnyitása előtt megismételjük</strong>, és a helyreállítás
+            nem teszi újra elérhetővé őket.
           </li>
           <li>
             <strong>A közreműködőknél a saját feltételeik szerint.</strong> A levélküldő
@@ -781,12 +781,12 @@ export function Adatkezeles() {
           </li>
         </Lista>
         <P>
-          Két dolog marad meg szándékosan, és mindkettőnek jogszabályi oka van. A{' '}
-          <strong>már kiállított számlák</strong> a fenti adójogi megőrzési idő végéig
-          megmaradnak — ezt nem mi választjuk, és törlési kérésre sem szüntethető meg. A cégben
-          maradó felhasználóknál pedig, ha csak egy felhasználó lép ki, a cég adatai
-          értelemszerűen megmaradnak: azok az adatkezelő Előfizetőhöz tartoznak, nem a kilépő
-          felhasználóhoz.
+          Három dolog marad meg szándékosan. A <strong>már kiállított számlák</strong> a fenti
+          adójogi megőrzési idő végéig megmaradnak — ezt nem mi választjuk, és törlési kérésre
+          sem szüntethető meg. Az <strong>ÁSZF elfogadásának nyilvántartása</strong>{' '}
+          {aszfEv} évig marad meg, a 2. pont szerinti szűk körben. A cégben maradó
+          felhasználóknál pedig, ha csak egy felhasználó lép ki, a cég adatai értelemszerűen
+          megmaradnak: azok az adatkezelő Előfizetőhöz tartoznak, nem a kilépő felhasználóhoz.
         </P>
         <P>
           A bizonylatok saját, jogszabályi megőrzéséről az Előfizetőnek kell gondoskodnia; a
@@ -819,12 +819,8 @@ export function Adatkezeles() {
                     <span className="text-slate-500">{a.jogiSzemely}</span>
                   </>
                 )}
-                {a.szekhely !== null && (
-                  <>
-                    <br />
-                    <span className="text-slate-500">{a.szekhely}</span>
-                  </>
-                )}
+                <br />
+                <span className="text-slate-500">{a.szekhely ?? NINCS_SZEKHELY}</span>
                 <br />
                 <a
                   className="underline"
@@ -837,17 +833,33 @@ export function Adatkezeles() {
               </td>
               <td className="td">{a.mit}</td>
               <td className="td">{a.adatkor}</td>
-              <td className="td">{a.hol}</td>
+              <td className="td">
+                {a.hol}
+                {a.tovabbitasAlapja !== null && (
+                  <>
+                    <br />
+                    <span className="text-slate-500">
+                      A továbbítás alapja: {a.tovabbitasAlapja}
+                    </span>
+                  </>
+                )}
+              </td>
             </tr>
           ))}
         </Tablazat>
         <P>
-          <strong>Az adatbázis és a bizonylatok fájljai az Európai Unión belül maradnak</strong>{' '}
-          (Frankfurt) — ez a Szolgáltatás <em>saját</em> tárolására vonatkozik, és csak arra.
-          Ebből nem következik, hogy minden adat az Unión belül marad: a fenti táblázat
-          négy sora Unión kívüli feldolgozást jelöl, és érdemes külön kimondani, melyik mit:
+          <strong>Az adatbázis és a bizonylatok fájljai az Európai Unión belül tárolódnak</strong>{' '}
+          (Frankfurt) — ez a tárolás <em>helyére</em> vonatkozik, és csak arra. Ebből nem
+          következik, hogy az adat az Unión belül marad: a fenti táblázat{' '}
+          {unionKivuliDarab} sora Unión kívüli feldolgozást vagy hozzáférést jelöl, és érdemes
+          külön kimondani, melyik mit:
         </P>
         <Lista>
+          <li>
+            <strong>A tárolás</strong> — a tárhelyszolgáltató (Supabase) szerződő fele
+            szingapúri társaság, ezért a Frankfurtban tárolt adatokhoz Unión kívüli hozzáférés
+            nem zárható ki; ennek alapja általános szerződési feltételek.
+          </li>
           <li>
             <strong>A gépi kiolvasás</strong> — a papír- és szkennelt bizonylat tartalma megy ki,
             az OpenRouteren át a Google végpontjaihoz (3. pont).
@@ -862,8 +874,8 @@ export function Adatkezeles() {
             <strong>tárolás és a naplózás viszont az Egyesült Államokban</strong>.
           </li>
           <li>
-            <strong>A weboldal kiszolgálása és a látogatásmérése</strong> — a Vercelhez. Bizonylat
-            nem megy át rajta, a látogató kérésének adatai igen.
+            <strong>A weboldal kiszolgálása</strong> — a Vercelhez. Bizonylat nem megy át rajta,
+            a látogató kérésének adatai igen.
           </li>
         </Lista>
         <P>
@@ -878,16 +890,15 @@ export function Adatkezeles() {
           változóból nem billenthető át.
         </P>
         <P>
-          <strong>Az Unión kívüli továbbítás garanciái.</strong> Minden fenti közreműködővel
-          adatfeldolgozási szerződés áll fenn, amely tartalmazza a harmadik országba történő
-          továbbítás garanciáit — az Európai Bizottság megfelelőségi határozatát (ideértve az
-          EU–USA adatvédelmi keretet), illetve ahol az nem alkalmazható, az Európai Bizottság
-          által elfogadott általános szerződési feltételeket.{' '}
-          <strong>
-            Hogy az egyes közreműködőknél melyik mechanizmus érvényesül, az a nevük mellett
-            hivatkozott adatvédelmi feltételeikből ismerhető meg
-          </strong>
-          ; ezek mindenkori szövegét a Szolgáltató fogadta el. Az Előfizető kérésére a
+          <strong>Az Unión kívüli továbbítás garanciái.</strong> Minden fenti közreműködővel —
+          a Google kivételével, lásd lent — adatfeldolgozási szerződés áll fenn, amely
+          tartalmazza a harmadik országba történő továbbítás garanciáit.{' '}
+          <strong>Hogy melyik közreműködőnél melyik garancia érvényesül</strong> — az Európai
+          Bizottság által elfogadott általános szerződési feltételek, illetve az EU–USA
+          adatvédelmi keret —, azt a táblázat „Hol dolgozza fel" oszlopa soronként megmondja,
+          a Szolgáltató által elfogadott szerződések alapján. A szerződő fél adatai szintén az
+          elfogadott szerződésekből származnak; ahol a szerződés székhelyet nem ad meg, ott ezt a
+          táblázat kimondja. Az Előfizető kérésére a
           Szolgáltató az őt érintő garanciákról írásban is tájékoztatást ad a{' '}
           <a className="underline" href={`mailto:${szolgaltato.email}`}>
             {szolgaltato.email}
@@ -967,11 +978,9 @@ export function Adatkezeles() {
         <Lista>
           <li>A kapcsolat titkosított (HTTPS), a jelszavak visszafejthetetlen formában tárolódnak.</li>
           <li>
-            A betűtípusokat és minden más eszközt — a nyilvános oldalak látogatásmérőjét is —{' '}
-            <strong>az oldal saját címéről</strong> szolgáljuk ki: a böngésző az oldal
-            megnyitásakor nem keres meg idegen kiszolgálót. Külső betűszolgáltatót és hirdetési
-            kódot nem használunk, a mérés pedig csak a 2. pontban felsorolt nyilvános oldalakra
-            terjed ki — a bejelentkezés mögé nem.
+            A betűtípusokat és minden más eszközt <strong>az oldal saját címéről</strong>{' '}
+            szolgáljuk ki: a böngésző az oldal megnyitásakor nem keres meg idegen kiszolgálót.
+            Külső betűszolgáltatót, látogatásmérőt és hirdetési kódot nem használunk.
           </li>
           <li>
             A cégek adatai el vannak különítve egymástól, és ezt az{' '}
@@ -1019,13 +1028,29 @@ export function Adatkezeles() {
           </li>
         </Lista>
         <P>
-          <strong>Adatvédelmi incidens esetén</strong> — ha az adatok jogosulatlanul
-          nyilvánosságra kerülnek, elvesznek vagy megsemmisülnek — a Szolgáltató indokolatlan
-          késedelem nélkül, de legkésőbb az észleléstől számított negyvennyolc órán belül értesíti
-          az érintett Előfizetőt, és megad minden rendelkezésére álló információt. A bizonylatok
-          tekintetében a hatóság felé történő bejelentés az adatkezelő Előfizető feladata; a
-          Szolgáltató ehhez segítséget nyújt.
+          <strong>Adatvédelmi incidens</strong> minden olyan biztonsági esemény, amely az adatok
+          véletlen vagy jogellenes megsemmisítését, elvesztését, megváltoztatását, jogosulatlan
+          közlését vagy az azokhoz való jogosulatlan hozzáférést eredményezi. Ilyenkor a
+          Szolgáltató kötelezettségei attól függnek, milyen szerepben kezeli az érintett adatot
+          (1. pont):
         </P>
+        <Lista>
+          <li>
+            <strong>A bizonylatokra nézve adatfeldolgozó.</strong> Indokolatlan késedelem
+            nélkül, de legkésőbb az észleléstől számított <strong>negyvennyolc órán belül</strong>{' '}
+            értesíti az érintett Előfizetőt, és megad minden rendelkezésére álló információt. A
+            hatóság felé történő bejelentés és az érintettek tájékoztatása ilyenkor az
+            adatkezelő Előfizető feladata; a Szolgáltató ehhez segítséget nyújt.
+          </li>
+          <li>
+            <strong>A fiókadatokra nézve adatkezelő.</strong> Az incidenst kivizsgálja, és
+            felméri, milyen kockázattal jár az érintettekre. Ha a kockázat nem zárható ki, az
+            incidenst a tudomásszerzéstől számított <strong>hetvenkét órán belül</strong>{' '}
+            bejelenti a Nemzeti Adatvédelmi és Információszabadság Hatóságnak; ha a kockázat
+            magas, az érintetteket is haladéktalanul tájékoztatja. Minden incidenst — azt is,
+            amelyet nem kell bejelenteni — nyilvántartásba vesz.
+          </li>
+        </Lista>
       </Szakasz>
 
       <Szakasz cim="8. Az érintett jogai">

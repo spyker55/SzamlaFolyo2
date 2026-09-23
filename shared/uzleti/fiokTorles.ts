@@ -161,16 +161,24 @@ function kovetkezmenyek(t: TorlesTenyek, most: Date): string[] {
           'beállításai szűnnek meg.',
   );
 
+  // „Nem tartunk fenn másolatot" állt itt — az üzemfolytonossági mentések
+  // miatt ez nem volt igaz (ÁSZF 10., Adatkezelés 4.; a 2026-09-23-i jogi
+  // felülvizsgálat 4. pontja). A mentés egyedi visszaállításra nem használható,
+  // és hét nap alatt kifut — ezt mondjuk ki, nem a pillanatszerű eltűnést.
   sorok.push(
-    'A törlés **nem vonható vissza**, és a törölt adatokról nem tartunk fenn másolatot. ' +
-      'Ha kellenek az adataid, előbb készíts exportot.',
+    'A törlés **nem vonható vissza**. Az adatok az aktív rendszerből azonnal eltűnnek; ' +
+      'a biztonsági mentésekből legfeljebb hét nap alatt futnak ki, és onnan egyenként ' +
+      'nem állíthatók vissza. Ha kellenek az adataid, előbb készíts exportot.',
   );
 
-  // Ez nem apróbetű, hanem a törvény: a már kiállított számlákat meg **kell**
-  // őriznünk. Jobb itt kimondani, mint egy törlés után magyarázni.
+  // Ez nem apróbetű: két dolog szándékosan megmarad, és jobb itt kimondani,
+  // mint egy törlés után magyarázni. A számlákat jogszabály miatt (adójogi
+  // iratmegőrzés — a Szolgáltató egyéni vállalkozó, nem a számviteli törvény
+  // alá tartozik), az ÁSZF-elfogadás nyomát egy későbbi vita bizonyítékaként.
   sorok.push(
-    'Egy dolog marad meg: a már kiállított számlák, a számviteli megőrzési idő végéig. ' +
-      'Ezt jogszabály írja elő, törlési kérésre sem szüntethető meg.',
+    'Két dolog marad meg: a már kiállított számlák, az adójogi iratmegőrzési idő végéig — ' +
+      'ezt jogszabály írja elő —, és az ÁSZF elfogadásának nyilvántartása (melyik ' +
+      'változatot, mikor, ki fogadta el, melyik cég nevében), öt évig.',
   );
 
   return sorok;

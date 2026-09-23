@@ -178,6 +178,13 @@ Deno.serve(async (keres: Request): Promise<Response> => {
 
       return valasz({ hiba: 'A cég adatainak törlése nem sikerült. Próbáld újra.' }, 500);
     }
+
+    // A helyreállítási eljárás nyoma (`eszkozok/torles/OLVASS-EL.md`). Egy
+    // mentésből visszaállított adatbázisban ez a cég újra megjelenne, és a
+    // naplón kívül semmi nem őrzi, hogy törölni kell: az adatbázis a mentés
+    // állapotára áll vissza, vele minden benne tárolt nyom. **Csak azonosító**,
+    // személyes adat nélkül — a napló nem lehet egy második adattár.
+    console.log(JSON.stringify({ esemeny: 'ceg_torolve', ceg: ceg.id }));
   }
 
   // A meghívósorokon a cím **sima szöveg**, nem idegen kulcs — azt semmilyen
@@ -209,6 +216,9 @@ Deno.serve(async (keres: Request): Promise<Response> => {
       500,
     );
   }
+
+  // Ugyanaz a nyom a fiókról — lásd a cégtörlésnél.
+  console.log(JSON.stringify({ esemeny: 'fiok_torolve', felhasznalo }));
 
   return valasz({ rendben: true, fajta: dontes.fajta }, 200);
 });
