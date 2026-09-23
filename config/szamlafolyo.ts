@@ -186,6 +186,20 @@ export const szamlafolyo = {
     // fájl megy, és a modell végiglapozza – annak az idejét élesben még nem
     // mértük, ott a kiolvasás 90 s-a marad, amíg nincs szám.
     szovegIdokorlatMp: 30,
+    // Ennyi testvérbizonylat indul **azonnal és párhuzamosan** a szétszedés
+    // után; a többi a percenkénti cronra vár, mint eddig.
+    //
+    // Mérve, 2026-09-23 (háromszámlás köteg): a testvérek 0–60 s-ot vártak a
+    // cronra, és a cron **egymás után** dolgozta fel őket – a harmadik számla
+    // így ~60 s-mal a szétszedés után indult. Azonnal indítva mind a három
+    // egyszerre fut.
+    //
+    // A plafon nem mérés, hanem óvatosság: egy 30 darabos köteg ne küldjön
+    // egyszerre 29 modellhívást (az OpenRouter közös keretén ma is volt egy
+    // 429-es visszautasítás). A böngészős többfájlos feltöltés és az e-mail
+    // mellékletei ma is párhuzamosan indulnak, korlát nélkül – ez a szám annál
+    // szigorúbb, nem lazább.
+    azonnaliInditasMax: 10,
   },
 
   kiolvasas: {

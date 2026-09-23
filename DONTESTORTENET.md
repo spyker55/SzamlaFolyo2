@@ -5072,3 +5072,33 @@ Négy szándékos törés, mindegyik a saját tesztjén piros: a szétszedő nem
 a rövid korlátot; a hívás figyelmen kívül hagyja; a rövid korlát átszivárog a
 kiolvasásra; az időzítő a fejlécnél leáll (álórával, a valódi `fetch`-hez
 hasonlóan a jelre megszakadó kéréssel és törzzsel).
+
+## ✅ A szétszedett testvérbizonylatok azonnal és párhuzamosan indulnak (2026-09-23)
+
+A háromszámlás köteg második élő próbáján a szétszedés maga gyors volt – **3,3 s,
+1807 → 157 token (100 gondolkodás), $0,002**, az első élő mérés szövegréteges
+fájlon. A lassúság utána jött: a két testvérbizonylat `feltoltve` sorként a
+percenkénti cronra várt, és a cron **egymás után** dolgozta fel őket (a
+`for … await feldolgoz` egyetlen hívásban). A harmadik számla így ~60 s-mal a
+szétszedés után indult, és csak azután, hogy a második (egy elszaladt, 39 s-os
+kísérlettel) végzett.
+
+Most a szétszedés a testvérek beszúrása és a saját tartomány beírása után
+**mindegyiket azonnal elindítja** ugyanazon az SQL-indítón, mint az e-mail és
+az azonnali újrapróbálás (`kiolvasast_indit`, vault-kulcs + pg_net), mindegyik
+saját `kiolvas`-futást kap. A claim atomi, a cronnal való ütközés ártalmatlan,
+az elbukott indítást a cron felveszi.
+
+Plafon: legfeljebb 10 indul azonnal (`koteg.azonnaliInditasMax`), a többi a
+cronra vár, mint eddig. Ez nem mérés, hanem óvatosság egy 30 darabos köteg
+ellen.
+
+⚠️ A keretellenőrzés nem atomi (lekérdez, aztán dönt), tehát párhuzamos
+testvérek egyszerre is átjuthatnak rajta. Ez **nem új**: a böngészős többfájlos
+feltöltés és az e-mail mellékletei ma is párhuzamosan indulnak, korlát nélkül.
+A kár korlátos (legfeljebb a párhuzamos darabok száma mínusz egy bizonylat), és
+ha a túlhasználat be van kapcsolva, ezek túlhasználatként számlázódnak.
+
+Őr: `testverInditas.test.ts` (forrásszintű, mert a `Deno.serve` Node alatt nem
+fut); négy szándékos törés – nincs indítás, a tartomány előtt indít, egymás
+után indít, a plafon eléri a darabszám-féket – mindegyik piros.

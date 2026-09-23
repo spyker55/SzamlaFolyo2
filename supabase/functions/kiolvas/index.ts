@@ -738,17 +738,22 @@ async function esetlegSzetszed(
 
   // A többi bizonylat új sorként születik, `feltoltve` állapotban — onnantól
   // ugyanaz a sor viszi őket, mint bármely feltöltést: keretellenőrzés, claim,
-  // kiolvasás, kapuk. A cron egy percen belül felveszi őket.
+  // kiolvasás, kapuk. Lent azonnal el is indítjuk őket (`testvereketIndit`).
+  let testverek: string[] = [];
+
   if (tobbi.length > 0) {
-    const { error: beszurasiHiba } = await db.from('documents').insert(
-      tobbi.map((h) => ({
-        company_id: dokumentum.company_id,
-        file_id: dokumentum.file_id,
-        oldal_tol: h.oldal_tol,
-        oldal_ig: h.oldal_ig,
-        status: 'feltoltve',
-      })),
-    );
+    const { data: beszurt, error: beszurasiHiba } = await db
+      .from('documents')
+      .insert(
+        tobbi.map((h) => ({
+          company_id: dokumentum.company_id,
+          file_id: dokumentum.file_id,
+          oldal_tol: h.oldal_tol,
+          oldal_ig: h.oldal_ig,
+          status: 'feltoltve',
+        })),
+      )
+      .select('id');
 
     if (beszurasiHiba !== null) {
       // Ha a testvérsorok nem jöttek létre, **nem** szűkítjük ezt a sort az
@@ -757,6 +762,8 @@ async function esetlegSzetszed(
       console.error('szetszedes-beszuras', beszurasiHiba.message);
       return null;
     }
+
+    testverek = (beszurt ?? []).map((sor) => sor.id as string);
   }
 
   if (elso === undefined) {
@@ -778,7 +785,42 @@ async function esetlegSzetszed(
     .update({ oldal_tol: elso.oldal_tol, oldal_ig: elso.oldal_ig })
     .eq('id', dokumentum.id);
 
+  await testvereketIndit(db, testverek.slice(0, szamlafolyo.koteg.azonnaliInditasMax));
+
   return elso;
+}
+
+/**
+ * A szétszedésből született testvérbizonylatok azonnali, párhuzamos indítása.
+ *
+ * 2026-09-23-ig a testvérek a percenkénti cronra vártak (0–60 s), és a cron
+ * **egymás után** dolgozta fel őket: egy háromszámlás kötegnél a harmadik
+ * számla ~60 s-mal a szétszedés után indult. Most mindegyik saját `kiolvas`-
+ * futást kap, ugyanazon az SQL-indítón át, mint az e-mail és az azonnali
+ * újrapróbálás (`kiolvasast_indit`, vault-kulcs + pg_net).
+ *
+ * Ami nem romolhat el tőle: az indító csak `feltoltve` sort indít, a claim
+ * atomi (a cronnal ütköző második hívó üres kézzel távozik), és ha az indítás
+ * nem megy át, a cron felveszi, mint eddig. A plafon fölötti testvérek
+ * (`koteg.azonnaliInditasMax`) is a cronra várnak.
+ *
+ * Az indítás itt **a saját tartomány beírása után** jön: ha a futás közben
+ * elhasalna, a testvérek akkor is a saját oldalaikat olvassák, ez a sor pedig
+ * a sajátját – lásd a fenti figyelmeztetést.
+ */
+async function testvereketIndit(db: SupabaseClient, azonositok: string[]): Promise<void> {
+  await Promise.all(
+    azonositok.map(async (id) => {
+      const { error } = await db.rpc('kiolvasast_indit', { dokumentum: id });
+
+      if (error !== null) {
+        console.error(
+          'A testvérbizonylat azonnali indítása nem sikerült – a percforduló veszi fel:',
+          error.message,
+        );
+      }
+    }),
+  );
 }
 
 /** Az előzmény-lekérdezéshez elég a szállító adószáma és a bizonylat azonosítói. */
