@@ -200,6 +200,11 @@ export const szamlafolyo = {
     // mellékletei ma is párhuzamosan indulnak, korlát nélkül – ez a szám annál
     // szigorúbb, nem lazább.
     azonnaliInditasMax: 10,
+    // Ennyit vár a szétszedés, mielőtt egy gyors, átmeneti hiba (429, 5xx,
+    // hálózat) után egyszer újrapróbál – lásd `atmenetiHibanUjra()`. Mérve csak
+    // annyi, hogy 18 s múlva ugyanaz a kérés átment; a 2,5 s egy felhasználót
+    // alig késleltet, és egy pillanatnyi torlódáson átsegíthet.
+    ujraprobalasVarakozasMs: 2500,
   },
 
   kiolvasas: {

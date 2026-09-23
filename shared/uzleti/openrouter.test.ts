@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   argumentumok,
+  atmenetiHibanUjra,
   hasznalatOlvas,
   kiolvas,
   KIOLVASAS_MAX_TOKEN,
@@ -374,5 +375,104 @@ describe('az időkorlát a teljes hívásra vonatkozik', () => {
     expect(h.allapot).toBe('hiba');
     expect(h.hiba).toBeInstanceOf(KiolvasasHiba);
     expect((h.hiba as Error).message).toBe('A kiolvasás túllépte az időkorlátot (90 s).');
+  });
+});
+
+describe('átmeneti hiba: mi az, és egyszer újra', () => {
+  // 2026-09-23, élesben: a szétszedő kérése 429-et kapott (*„temporarily
+  // rate-limited upstream"*), és egyetlen kudarc után a fájl végleg egyben
+  // maradt. Ugyanaz a kérés 18 s múlva átment.
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  const PDF = { tartalom: new Uint8Array([37, 80, 68, 70]), mime: 'application/pdf', fajlnev: 't.pdf', apiKulcs: 't' };
+
+  async function hibaStatusszal(statusz: number) {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: statusz })));
+    return (await kiolvas(PDF).catch((h: unknown) => h)) as KiolvasasHiba;
+  }
+
+  it('a 429 és az 5xx átmeneti, a többi 4xx nem', async () => {
+    expect((await hibaStatusszal(429)).atmeneti).toBe(true);
+    expect((await hibaStatusszal(500)).atmeneti).toBe(true);
+    expect((await hibaStatusszal(503)).atmeneti).toBe(true);
+    expect((await hibaStatusszal(400)).atmeneti).toBe(false);
+    expect((await hibaStatusszal(401)).atmeneti).toBe(false);
+  });
+
+  it('a hálózati hiba átmeneti', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      throw new TypeError('fetch failed');
+    }));
+    const hiba = (await kiolvas(PDF).catch((h: unknown) => h)) as KiolvasasHiba;
+    expect(hiba.atmeneti).toBe(true);
+  });
+
+  it('az üres válasz nem átmeneti – az a modell viselkedése, nem a szállításé', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(URES_VALASZ), { status: 200 })));
+    const hiba = (await kiolvas(PDF).catch((h: unknown) => h)) as KiolvasasHiba;
+    expect(hiba.message).toBe('A modell üres választ adott.');
+    expect(hiba.atmeneti).toBe(false);
+  });
+
+  it('az időtúllépés nem átmeneti – a türelmi idő már elfogyott', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (_u: string, o: RequestInit) =>
+          new Promise<Response>((_k, h) => {
+            o.signal?.addEventListener('abort', () => h(new DOMException('aborted', 'AbortError')));
+          }),
+      ),
+    );
+    const igeret = kiolvas(PDF).catch((h: unknown) => h);
+    await vi.advanceTimersByTimeAsync(szamlafolyo.modell.idokorlatMp * 1000);
+    expect(((await igeret) as KiolvasasHiba).atmeneti).toBe(false);
+  });
+
+  it('átmeneti hibára a várakozás után pontosan egyszer újra, és a második eredménye jön vissza', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    let hivas = 0;
+    const igeret = atmenetiHibanUjra(async () => {
+      hivas += 1;
+      if (hivas === 1) throw new KiolvasasHiba('429', null, true);
+      return 'kész';
+    }, 2500);
+
+    await vi.advanceTimersByTimeAsync(2499);
+    expect(hivas).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await igeret).toBe('kész');
+    expect(hivas).toBe(2);
+    expect(console.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('nem átmeneti hibára nem próbál újra', async () => {
+    let hivas = 0;
+    const hiba = await atmenetiHibanUjra(async () => {
+      hivas += 1;
+      throw new KiolvasasHiba('A modell üres választ adott.');
+    }, 0).catch((h: unknown) => h);
+
+    expect(hivas).toBe(1);
+    expect((hiba as Error).message).toBe('A modell üres választ adott.');
+  });
+
+  it('a második kudarc után feladja – nincs harmadik kör', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    let hivas = 0;
+    const hiba = await atmenetiHibanUjra(async () => {
+      hivas += 1;
+      throw new KiolvasasHiba(`429 #${hivas}`, null, true);
+    }, 0).catch((h: unknown) => h);
+
+    expect(hivas).toBe(2);
+    expect((hiba as Error).message).toBe('429 #2');
   });
 });

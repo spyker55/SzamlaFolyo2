@@ -109,10 +109,50 @@ export type ValaszNyom = {
 export class KiolvasasHiba extends Error {
   /** A modell válaszának nyoma, ha a hiba a válasz **után** keletkezett. */
   readonly nyom: ValaszNyom | null;
+  /**
+   * **Gyors, átmeneti** hiba: érdemes azonnal újrapróbálni (429, 5xx,
+   * hálózati hiba). Lásd `atmenetiHibanUjra()`.
+   *
+   * Az időtúllépés **nem** ilyen – az már elhasználta a türelmi időt, és egy
+   * újabb kör megduplázná a várakozást –, és az üres vagy értelmezhetetlen
+   * válasz sem: az a modell viselkedése (például az elszaladt gondolkodás),
+   * amire egy azonnali újrahívás csak újra fizet.
+   */
+  readonly atmeneti: boolean;
 
-  constructor(uzenet: string, nyom: ValaszNyom | null = null) {
+  constructor(uzenet: string, nyom: ValaszNyom | null = null, atmeneti = false) {
     super(uzenet);
     this.nyom = nyom;
+    this.atmeneti = atmeneti;
+  }
+}
+
+/**
+ * Egyetlen újrapróbálás gyors, átmeneti hibára (`KiolvasasHiba.atmeneti`),
+ * rövid várakozás után. Minden más hiba – és a második kudarc – változatlanul
+ * továbbmegy.
+ *
+ * # Miért kell – mérve, 2026-09-23
+ *
+ * A Google-t az OpenRouter közös kereten éri el, és aznap ~22 modellhívásból
+ * kettő 429-et kapott (*„temporarily rate-limited upstream"*). A kiolvasásnak
+ * saját újrapróbálása van (kísérletszám, `kiolvasast_indit`), a
+ * kötegszétszedésnek nincs: egyetlen 429 után a tartalék út visz tovább, és a
+ * fájl **végleg** egyben marad – utólag senki nem szedi szét. Az első 429 után
+ * ugyanaz a fájl 18 s múlva már átment; hogy a rövid várakozás elég-e, azt ez
+ * nem bizonyítja, csak az esélyt javítja.
+ */
+export async function atmenetiHibanUjra<T>(hivas: () => Promise<T>, varakozasMs: number): Promise<T> {
+  try {
+    return await hivas();
+  } catch (hiba) {
+    if (!(hiba instanceof KiolvasasHiba) || !hiba.atmeneti) throw hiba;
+
+    // Naplóba kerül, különben egy sikeres második kísérlet nyomtalan volna.
+    console.warn(JSON.stringify({ esemeny: 'atmeneti_hiba_ujra', hiba: hiba.message.slice(0, 160) }));
+
+    await new Promise((kesz) => setTimeout(kesz, varakozasMs));
+    return await hivas();
   }
 }
 
@@ -380,12 +420,16 @@ async function hivas(keres: HivasKeres): Promise<{
     } catch (hiba) {
       throw vezerlo.signal.aborted
         ? idotullepes()
-        : new KiolvasasHiba('Nem sikerült elérni a kiolvasó szolgáltatást.');
+        : new KiolvasasHiba('Nem sikerült elérni a kiolvasó szolgáltatást.', null, true);
     }
 
     if (!valasz.ok) {
       const szoveg = await valasz.text().catch(() => '');
-      throw new KiolvasasHiba(`A kiolvasó szolgáltatás hibát adott (${valasz.status}). ${szoveg.slice(0, 300)}`);
+      throw new KiolvasasHiba(
+        `A kiolvasó szolgáltatás hibát adott (${valasz.status}). ${szoveg.slice(0, 300)}`,
+        null,
+        valasz.status === 429 || valasz.status >= 500,
+      );
     }
 
     try {

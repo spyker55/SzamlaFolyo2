@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { szamlafolyo } from '../../../config/szamlafolyo.ts';
 import { bizonylatOldalszama, feldolgoz as lancotFuttat } from '../../../shared/uzleti/lanc.ts';
-import { kiolvas, KiolvasasHiba, szetszed } from '../../../shared/uzleti/openrouter.ts';
+import { atmenetiHibanUjra, kiolvas, KiolvasasHiba, szetszed } from '../../../shared/uzleti/openrouter.ts';
 import { hatarokErtelmez, type Hatar } from '../../../shared/uzleti/koteg.ts';
 import { xmlbolKiolvas } from '../../../shared/uzleti/xml/beolvasas.ts';
 import { szolgaltatasSzerep } from '../../../shared/uzleti/token.ts';
@@ -679,7 +679,9 @@ async function esetlegSzetszed(
 
   let valasz: Awaited<ReturnType<typeof szetszed>>;
   try {
-    valasz = await szetszed({
+    // Egy 429 vagy 5xx után egyszer újra – a szétszedésnek nincs más
+    // újrapróbálása, és kudarc után a fájl végleg egyben marad.
+    valasz = await atmenetiHibanUjra(() => szetszed({
       tartalom: bajtok,
       mime: fajl.mime_type ?? 'application/pdf',
       fajlnev: fajl.original_filename ?? 'koteg.pdf',
@@ -694,7 +696,7 @@ async function esetlegSzetszed(
           ? felderites.oldalSzovegek
           : null,
       apiKulcs: Deno.env.get('OPENROUTER_API_KEY') ?? '',
-    });
+    }), szamlafolyo.koteg.ujraprobalasVarakozasMs);
   } catch (hiba) {
     // A szétszedés elakadása **nem** állítja meg a feldolgozást: a bizonylat
     // ugyanúgy kiolvasható egyben, ahogy eddig. Egy kiegészítő lépés soha ne

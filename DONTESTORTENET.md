@@ -5102,3 +5102,30 @@ ha a túlhasználat be van kapcsolva, ezek túlhasználatként számlázódnak.
 Őr: `testverInditas.test.ts` (forrásszintű, mert a `Deno.serve` Node alatt nem
 fut); négy szándékos törés – nincs indítás, a tartomány előtt indít, egymás
 után indít, a plafon eléri a darabszám-féket – mindegyik piros.
+
+## ✅ A szétszedés egy 429 vagy 5xx után egyszer újrapróbál (2026-09-23)
+
+A párhuzamos indítás első élő próbáján (`kiolvas` v28, bájtra azonos a
+`968e40a`-val) a szétszedő kérés **429-et kapott** (*„google/gemini-3.8-flash is
+temporarily rate-limited upstream"*), és a fájl a tartalék úton egyben maradt –
+**végleg**, mert a szétszedésnek nincs más újrapróbálása. Aznap ~22
+modellhívásból ez volt a második 429; az első után ugyanaz a fájl 18 s múlva
+átment.
+
+Most a `KiolvasasHiba` megmondja, **átmeneti-e** (`atmeneti`): igen a 429-re,
+az 5xx-re és a hálózati hibára; nem az időtúllépésre (a türelmi idő már
+elfogyott, egy újabb kör megduplázná a várakozást) és nem az üres vagy
+értelmezhetetlen válaszra (az a modell viselkedése – az elszaladt gondolkodás –,
+amire egy azonnali újrahívás csak újra fizet). Az `atmenetiHibanUjra()`
+átmeneti hibára 2,5 s múlva **egyszer** újrapróbál, és ezt naplózza
+(`atmeneti_hiba_ujra`); minden más hiba és a második kudarc változatlanul
+továbbmegy a tartalék útra.
+
+Hogy a 2,5 s elég-e, azt a mérés nem bizonyítja (18 s múlva ment át); az
+esélyt javítja, és egy felhasználót alig késleltet. A tartós megoldás a 429-re
+a saját Google-kulcs az OpenRouterben (BYOK) – az viszont az adatkezelési láncot
+és a jogi szövegeket is érinti, ezért külön döntés.
+
+Hét szándékos törés, mindegyik a saját tesztjén piros: a 429 / a hálózati hiba
+nem átmeneti; az időtúllépés átmeneti; mindenre újrapróbál; nem vár; harmadik
+kört is fut; a szétszedés nem használja.

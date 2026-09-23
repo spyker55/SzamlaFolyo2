@@ -53,3 +53,15 @@ describe('a testvérbizonylatok indítása', () => {
     expect(szamlafolyo.koteg.azonnaliInditasMax).toBeLessThan(szamlafolyo.koteg.maxDarab);
   });
 });
+
+describe('a szétszedés átmeneti hibára egyszer újrapróbál', () => {
+  it('a szetszed() hívás az atmenetiHibanUjra-n át megy, a configbeli várakozással', () => {
+    const hivas = FORRAS.slice(FORRAS.indexOf('valasz = await atmenetiHibanUjra(() => szetszed({'));
+    expect(FORRAS).toContain('valasz = await atmenetiHibanUjra(() => szetszed({');
+    expect(hivas.slice(0, hivas.indexOf('} catch'))).toContain(
+      '}), szamlafolyo.koteg.ujraprobalasVarakozasMs);',
+    );
+    expect(szamlafolyo.koteg.ujraprobalasVarakozasMs).toBeGreaterThan(0);
+    expect(szamlafolyo.koteg.ujraprobalasVarakozasMs).toBeLessThanOrEqual(5000);
+  });
+});
