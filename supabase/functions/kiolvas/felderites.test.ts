@@ -4,6 +4,7 @@ import { PDFDocument } from 'pdf-lib';
 import { felderit, naplo, SZOVEG_KUSZOB } from './felderites.ts';
 import { xmltFelolvas } from '../../../shared/uzleti/xml/parser.ts';
 import { ertelmez } from '../../../shared/uzleti/xml/xmlKiolvaso.ts';
+import { bukottak } from '../../../shared/uzleti/validatorok.ts';
 
 /**
  * A **hibrid e-számla** felderítésének mérése — telepítés előtt.
@@ -206,6 +207,58 @@ describe('felderítés: szövegréteg oldalanként (Chromiumban nyomtatott PDF)'
     expect(f.oldalszam).toBe(1);
     expect(f.szovegHossz).toBeLessThan(SZOVEG_KUSZOB);
     expect(f.hiba).toBeNull();
+  });
+});
+
+describe('a rendes háromszámlás próbafájl tényleg ellentmondásmentes', () => {
+  // A 2026-09-23-i `harom-szamla.pdf` szándékosan hibás volt, és mérve ez a
+  // modell gondolkodását nagyjából megduplázta (921–1396 vs. 303–891 token), az
+  // elszaladását megháromszorozta. A sebességmérés erre a fájlra épül: ha
+  // egyszer ellentmondás csúszik bele, újra a modell zavarát mérnénk.
+  const ADAT = JSON.parse(readFileSync('tesztadat/harom-szamla-rendes.json', 'utf8')) as {
+    szamlak: (Record<string, unknown> & {
+      tetelek: { netto: number }[];
+      net_amount: number;
+      vat_amount: number;
+      gross_amount: number;
+    })[];
+  };
+  const ft = (n: number) => `${n.toLocaleString('hu-HU').replace(/\s/g, ' ')} Ft`;
+
+  it('a saját validátorunk egyetlen mezőn sem jelez', () => {
+    for (const { tetelek: _t, ...mezok } of ADAT.szamlak) {
+      expect(bukottak({ ...mezok, fizetendo: mezok.gross_amount })).toEqual({});
+    }
+  });
+
+  it('a tételek kiadják az összesent', () => {
+    for (const sz of ADAT.szamlak) {
+      const netto = sz.tetelek.reduce((o, t) => o + t.netto, 0);
+      const afa = sz.tetelek.reduce((o, t) => o + Math.round(t.netto * 0.27), 0);
+      expect([netto, afa, netto + afa]).toEqual([sz.net_amount, sz.vat_amount, sz.gross_amount]);
+    }
+  });
+
+  it('a PDF oldalai pontosan ezt hordozzák, oldalanként egy számlát', async () => {
+    const f = await felderit(
+      new Uint8Array(readFileSync('tesztadat/harom-szamla-rendes.pdf')),
+      'application/pdf',
+    );
+
+    expect(f.jelleg).toBe('szovegreteg');
+    expect(f.oldalSzovegek).toHaveLength(ADAT.szamlak.length);
+
+    ADAT.szamlak.forEach((sz, i) => {
+      const oldal = f.oldalSzovegek![i]!;
+      for (const masik of ADAT.szamlak) {
+        if (masik === sz) expect(oldal).toContain(String(masik['doc_number']));
+        else expect(oldal).not.toContain(String(masik['doc_number']));
+      }
+      expect(oldal).toContain(String(sz['supplier_tax_number']));
+      expect(oldal).toContain(String(sz['customer_tax_number']));
+      expect(oldal).toContain(`Fizetendő: ${ft(sz.gross_amount)}`);
+      expect(oldal).toContain(`Összesen ${ft(sz.net_amount)} ${ft(sz.vat_amount)} ${ft(sz.gross_amount)}`);
+    });
   });
 });
 

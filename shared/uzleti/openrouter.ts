@@ -119,12 +119,37 @@ export class KiolvasasHiba extends Error {
    * amire egy azonnali újrahívás csak újra fizet.
    */
   readonly atmeneti: boolean;
+  /**
+   * A szolgáltató nyers hibaszövege – **csak az audit-sorba és a naplóba**.
+   * Az `message` a felhasználó elé kerül (`documents.error`), ez nem: angol,
+   * és a 429-nél az OpenRouter saját ajánlatát is hozza („add your own
+   * key…").
+   */
+  readonly reszlet: string | null;
 
-  constructor(uzenet: string, nyom: ValaszNyom | null = null, atmeneti = false) {
+  constructor(uzenet: string, nyom: ValaszNyom | null = null, atmeneti = false, reszlet: string | null = null) {
     super(uzenet);
     this.nyom = nyom;
     this.atmeneti = atmeneti;
+    this.reszlet = reszlet;
   }
+}
+
+/** A szolgáltatói hibakód magyar, felhasználónak szóló alakja. */
+export function szolgaltatoiHibaUzenet(kod: number): string {
+  if (kod === 429) return 'A kiolvasó szolgáltatás átmenetileg túlterhelt (429).';
+  if (kod >= 500) return `A kiolvasó szolgáltatás átmeneti hibát adott (${kod}).`;
+  return `A kiolvasó szolgáltatás hibát adott (${Number.isFinite(kod) ? kod : '?'}).`;
+}
+
+/** A szolgáltatói hiba: magyar üzenet, nyers részlet, átmeneti-e. */
+function szolgaltatoiHiba(kod: number, szoveg: string, nyom: ValaszNyom | null = null): KiolvasasHiba {
+  return new KiolvasasHiba(
+    szolgaltatoiHibaUzenet(kod),
+    nyom,
+    kod === 429 || kod >= 500,
+    szoveg.slice(0, 300) || null,
+  );
 }
 
 /**
@@ -425,11 +450,7 @@ async function hivas(keres: HivasKeres): Promise<{
 
     if (!valasz.ok) {
       const szoveg = await valasz.text().catch(() => '');
-      throw new KiolvasasHiba(
-        `A kiolvasó szolgáltatás hibát adott (${valasz.status}). ${szoveg.slice(0, 300)}`,
-        null,
-        valasz.status === 429 || valasz.status >= 500,
-      );
+      throw szolgaltatoiHiba(valasz.status, szoveg);
     }
 
     try {
@@ -452,7 +473,7 @@ async function hivas(keres: HivasKeres): Promise<{
   } catch (hiba) {
     // A válasz megjött, csak nem használható: a nyomot a hibához csatoljuk,
     // hogy a hívó el tudja menteni.
-    if (hiba instanceof KiolvasasHiba) throw new KiolvasasHiba(hiba.message, nyom);
+    if (hiba instanceof KiolvasasHiba) throw new KiolvasasHiba(hiba.message, nyom, hiba.atmeneti, hiba.reszlet);
     throw hiba;
   }
 
@@ -496,9 +517,26 @@ function elsoValasztas(valasz: Record<string, unknown>): Record<string, unknown>
  * (se függvényhívás, se szöveg — a 2026-09-23-i Vertex-eset) a szolgáltató
  * átmeneti hibája, a **szöveges** válasz viszont azt jelenti, hogy a modell
  * nem követte a kikényszerített hívást.
+ *
+ * ⚠️ **A 200-as válasz is hordozhat szolgáltatói hibát.** Mérve, 2026-09-23:
+ * három „üres válasz" valójában a választás `error` mezőjébe csomagolt **429**
+ * volt (`finish_reason: "error"`, `{"code":429,"message":"… temporarily
+ * rate-limited upstream …"}`, 0 token, $0). Mivel ezt nem néztük, a
+ * felhasználó „A modell üres választ adott." szöveget látott, a szétszedés pedig
+ * nem próbált újra. Most ez ugyanazt a hibát adja, mint egy HTTP-429, és
+ * ugyanúgy átmeneti.
  */
 export function argumentumok(valasz: Record<string, unknown>): Record<string, unknown> {
   const elso = elsoValasztas(valasz);
+  const beagyazottHiba = elso?.['error'] as Record<string, unknown> | undefined;
+
+  if (beagyazottHiba !== null && typeof beagyazottHiba === 'object') {
+    const kod = Number(beagyazottHiba['code']);
+    const szoveg = typeof beagyazottHiba['message'] === 'string' ? beagyazottHiba['message'] : '';
+
+    throw szolgaltatoiHiba(kod, szoveg);
+  }
+
   const uzenet = elso?.['message'] as Record<string, unknown> | undefined;
   const hivasok = uzenet?.['tool_calls'];
   const hivas = Array.isArray(hivasok) ? hivasok[0] : null;

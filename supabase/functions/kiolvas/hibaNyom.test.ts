@@ -37,3 +37,17 @@ describe('a kiolvasás hibaága', () => {
     expect(CATCH).toMatch(/if \(ujra && dokumentum\.attempts === 1\) \{\s*await azonnalUjra\(db, dokumentum\.id\);/);
   });
 });
+
+describe('a szolgáltató nyers hibaszövege nem kerül a felhasználó elé', () => {
+  // 2026-09-23: a 429 szövege angol, és az OpenRouter saját ajánlatát hozza
+  // („add your own key…"). Az audit-sorba és a naplóba kell, a Beérkezőbe nem.
+  it('az audit-sor és a napló a részletes szöveget kapja', () => {
+    expect(CATCH).toContain('error: reszletes,');
+    expect(CATCH).toContain('hiba: reszletes,');
+  });
+
+  it('a dokumentum sora csak a magyar üzenetet', () => {
+    expect(CATCH).toContain(".update({ status: ujra ? 'feltoltve' : 'hiba', error: uzenet, claimed_at: null })");
+    expect(CATCH).not.toMatch(/from\('documents'\)[\s\S]*error: reszletes/);
+  });
+});

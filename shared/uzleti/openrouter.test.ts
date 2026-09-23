@@ -476,3 +476,85 @@ describe('átmeneti hiba: mi az, és egyszer újra', () => {
     expect((hiba as Error).message).toBe('429 #2');
   });
 });
+
+describe('a 200-as válaszba csomagolt szolgáltatói hiba', () => {
+  // Élesből, 2026-09-23 14:02:49 (a generációs azonosító rövidítve).
+  const CSOMAGOLT_429 = {
+    id: 'gen-1790172164-teszt',
+    model: 'google/gemini-3.8-flash',
+    provider: 'Google',
+    choices: [
+      {
+        error: {
+          code: 429,
+          message:
+            'google/gemini-3.8-flash is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations',
+          metadata: { error_type: 'rate_limit_exceeded' },
+        },
+        index: 0,
+        logprobs: null,
+        finish_reason: 'error',
+        native_finish_reason: null,
+        message: { role: 'assistant', content: '', refusal: null, reasoning: null },
+      },
+    ],
+    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, cost: 0 },
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('nem „üres válasz", hanem a szolgáltató 429-e: magyar üzenet, a nyers szöveg külön', () => {
+    let hiba: unknown;
+    try {
+      argumentumok(CSOMAGOLT_429);
+    } catch (h) {
+      hiba = h;
+    }
+    expect((hiba as KiolvasasHiba).message).toBe('A kiolvasó szolgáltatás átmenetileg túlterhelt (429).');
+    expect((hiba as KiolvasasHiba).reszlet).toMatch(/^google\/gemini-3\.8-flash is temporarily rate-limited upstream/);
+  });
+
+  it('a felhasználónak szóló üzenetben nincs a szolgáltató angol szövege', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"error":{"message":"add your own key"}}', { status: 429 })));
+    const hiba = (await kiolvas({
+      tartalom: new Uint8Array([37, 80, 68, 70]),
+      mime: 'application/pdf',
+      fajlnev: 't.pdf',
+      apiKulcs: 't',
+    }).catch((h: unknown) => h)) as KiolvasasHiba;
+
+    expect(hiba.message).toBe('A kiolvasó szolgáltatás átmenetileg túlterhelt (429).');
+    expect(hiba.message).not.toContain('own key');
+    expect(hiba.reszlet).toContain('add your own key');
+  });
+
+  it('a teljes hívásból is átmenetiként jön ki, a nyommal együtt', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(CSOMAGOLT_429), { status: 200 })));
+    const hiba = (await kiolvas({
+      tartalom: new Uint8Array([37, 80, 68, 70]),
+      mime: 'application/pdf',
+      fajlnev: 't.pdf',
+      apiKulcs: 't',
+    }).catch((h: unknown) => h)) as KiolvasasHiba;
+
+    expect(hiba).toBeInstanceOf(KiolvasasHiba);
+    expect(hiba.atmeneti).toBe(true);
+    expect(hiba.nyom?.generacioId).toBe('gen-1790172164-teszt');
+    expect(hiba.message).toContain('(429)');
+    expect(hiba.reszlet).toContain('rate-limited upstream');
+  });
+
+  it('a csomagolt 4xx nem átmeneti', () => {
+    const rossz = structuredClone(CSOMAGOLT_429);
+    rossz.choices[0]!.error.code = 400;
+    let hiba: unknown;
+    try {
+      argumentumok(rossz);
+    } catch (h) {
+      hiba = h;
+    }
+    expect((hiba as KiolvasasHiba).atmeneti).toBe(false);
+  });
+});

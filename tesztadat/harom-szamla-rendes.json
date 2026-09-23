@@ -1,0 +1,61 @@
+{
+  "leiras": "Három kitalált, de ellentmondásmentes számla, oldalanként egy. Az összegek kiadják egymást, az adószámok ellenőrző számjegye stimmel. Forrás: eszkozok/tesztadat-harom-szamla.mjs.",
+  "szamlak": [
+    {
+      "doc_number": "SZ-2026/0101",
+      "issue_date": "2026-09-15",
+      "fulfillment_date": "2026-09-14",
+      "due_date": "2026-09-30",
+      "supplier_name": "Árvíztűrő Tükörfúrógép Kft.",
+      "supplier_tax_number": "12345676-2-10",
+      "customer_name": "Őrült Ügyvitel Bt.",
+      "customer_tax_number": "87654323-2-08",
+      "payment_method": "átutalás",
+      "currency": "HUF",
+      "tetelek": [
+        { "megnevezes": "Könyvelési szolgáltatás (szeptember)", "netto": 100000 },
+        { "megnevezes": "Bérszámfejtés – 3 fő", "netto": 60000 }
+      ],
+      "net_amount": 160000,
+      "vat_amount": 43200,
+      "gross_amount": 203200
+    },
+    {
+      "doc_number": "SZ-2026/0102",
+      "issue_date": "2026-09-16",
+      "fulfillment_date": "2026-09-15",
+      "due_date": "2026-10-01",
+      "supplier_name": "Árvíztűrő Tükörfúrógép Kft.",
+      "supplier_tax_number": "12345676-2-10",
+      "customer_name": "Őrült Ügyvitel Bt.",
+      "customer_tax_number": "87654323-2-08",
+      "payment_method": "átutalás",
+      "currency": "HUF",
+      "tetelek": [
+        { "megnevezes": "Könyvelési szolgáltatás (október előleg)", "netto": 100000 },
+        { "megnevezes": "Adóbevallás elkészítése", "netto": 45000 }
+      ],
+      "net_amount": 145000,
+      "vat_amount": 39150,
+      "gross_amount": 184150
+    },
+    {
+      "doc_number": "SZ-2026/0103",
+      "issue_date": "2026-09-17",
+      "fulfillment_date": "2026-09-17",
+      "due_date": "2026-10-02",
+      "supplier_name": "Árvíztűrő Tükörfúrógép Kft.",
+      "supplier_tax_number": "12345676-2-10",
+      "customer_name": "Őrült Ügyvitel Bt.",
+      "customer_tax_number": "87654323-2-08",
+      "payment_method": "átutalás",
+      "currency": "HUF",
+      "tetelek": [
+        { "megnevezes": "Adótanácsadás – 4 óra", "netto": 80000 }
+      ],
+      "net_amount": 80000,
+      "vat_amount": 21600,
+      "gross_amount": 101600
+    }
+  ]
+}

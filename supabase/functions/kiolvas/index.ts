@@ -225,6 +225,10 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
   } catch (hiba) {
     const uzenet = hiba instanceof Error ? hiba.message : 'Ismeretlen hiba.';
     const nyom = hiba instanceof KiolvasasHiba ? hiba.nyom : null;
+    // A szolgáltató nyers szövege az audit-sorba és a naplóba megy, a
+    // felhasználó elé (`documents.error`) csak a magyar üzenet.
+    const reszletes =
+      hiba instanceof KiolvasasHiba && hiba.reszlet !== null ? `${uzenet} ${hiba.reszlet}` : uzenet;
 
     // A hibába futott kísérlet **nem fogyaszt keretet**: nem a felhasználó
     // hibája, és jórészt nem is került pénzbe. A sor viszont bekerül az
@@ -233,7 +237,7 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
       company_id: dokumentum.company_id,
       document_id: dokumentum.id,
       file_id: dokumentum.file_id,
-      error: uzenet,
+      error: reszletes,
       duration_ms: Date.now() - kezdet,
       // A hibáig megtett szakaszok is bekerülnek: egy időtúllépésnél ez mondja
       // meg, melyik lépésen akadt el, nem csak azt, hogy elakadt.
@@ -259,7 +263,7 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
         esemeny: 'kiolvasas_hiba',
         dokumentum: dokumentum.id,
         kiserlet: dokumentum.attempts,
-        hiba: uzenet,
+        hiba: reszletes,
         generacio: nyom?.generacioId ?? null,
         leallas: nyom?.leallasOka ?? null,
         kimenet_token: nyom?.kimenetToken ?? null,
@@ -701,7 +705,14 @@ async function esetlegSzetszed(
     // A szétszedés elakadása **nem** állítja meg a feldolgozást: a bizonylat
     // ugyanúgy kiolvasható egyben, ahogy eddig. Egy kiegészítő lépés soha ne
     // tudja elvinni az alapszolgáltatást.
-    console.error('szetszedes', hiba instanceof Error ? hiba.message : hiba);
+    console.error(
+      'szetszedes',
+      hiba instanceof KiolvasasHiba && hiba.reszlet !== null
+        ? `${hiba.message} ${hiba.reszlet}`
+        : hiba instanceof Error
+          ? hiba.message
+          : hiba,
+    );
     return null;
   }
 

@@ -5129,3 +5129,45 @@ a saját Google-kulcs az OpenRouterben (BYOK) – az viszont az adatkezelési l�
 Hét szándékos törés, mindegyik a saját tesztjén piros: a 429 / a hálózati hiba
 nem átmeneti; az időtúllépés átmeneti; mindenre újrapróbál; nem vár; harmadik
 kört is fut; a szétszedés nem használja.
+
+## ✅ A 200-as válaszba csomagolt 429, és egy próbafájl, ami a modellt zavarta (2026-09-23)
+
+A `harom-szamla-4.pdf` élő próbája (`kiolvas` v29) több percig tartott, és egy
+bizonylat „A modell üres választ adott." hibával állt meg. A nyers
+válaszborítékok két dolgot mutattak.
+
+**1. Az „üres válaszok" valójában 429-ek voltak.** Mindhárom
+`finish_reason: "error"`, 0 token, $0 – és a választás `error` mezőjében:
+`{"code":429,"message":"google/gemini-3.8-flash is temporarily rate-limited
+upstream…","metadata":{"error_type":"rate_limit_exceeded"}}`. Az OpenRouter a
+szolgáltató 429-ét itt **200-as HTTP-válaszban** adta vissza; a kód ezt nem
+nézte, ezért lett belőle „üres válasz", ezért nem volt átmeneti, és ezért
+látta a felhasználó a félrevezető szöveget. Aznap így **öt** 429 volt (kettő
+HTTP-ben, három csomagolva), nem kettő.
+
+Javítva: az `argumentumok()` előbb a választás `error` mezőjét nézi, és abból
+ugyanazt a hibát adja, mint egy HTTP-429 (átmeneti a 429 és az 5xx). A
+felhasználó elé magyar üzenet kerül („A kiolvasó szolgáltatás átmenetileg
+túlterhelt (429)."); a szolgáltató nyers, angol szövege – benne az OpenRouter
+saját ajánlatával, „add your own key…" – a `reszlet` mezőben csak az
+audit-sorba és a naplóba megy. Ez a HTTP-429-es utat is javította, ami eddig
+is angolul írt a Beérkezőbe.
+
+**2. A próbafájlom zavarta a modellt.** A `harom-szamla.pdf` szándékosan
+ellentmondásos (a fizetendő nem egyezik a tételekkel, az adószámok ellenőrző
+számjegye rossz). Mérve rajta a gondolkodás 921–1396 token volt (valódi
+számlákon 303–891), és tíz kísérletből háromszor elszaladt a keret végéig
+(valódiakon egyszer). Az aznapi sebességmérések tehát részben a modell
+zavarát mérték. Új fájl: `tesztadat/harom-szamla-rendes.pdf`, a JSON-jából
+generálva, és a teszt azt is őrzi, hogy a saját validátorunk egyetlen mezőn
+sem jelez rajta.
+
+Ami a próbán **működött**: a 30 s-os szétszedési korlát elsült; az azonnali
+újrapróbálás szétszedte a fájlt; a testvérek a szétszedés után azonnal és
+egyszerre indultak.
+
+Szándékos törések: csomagolt 429 ellenőrzés nélkül; a továbbdobás elveszti az
+átmeneti jelzőt, illetve a részletet; minden csomagolt hiba átmeneti; az angol
+szöveg az üzenetbe kerül; a dokumentum sora a részletes szöveget kapja; a
+próbafájlban rossz adószám, elcsúszott összeg, illetve a régi PDF – mind
+piros.
