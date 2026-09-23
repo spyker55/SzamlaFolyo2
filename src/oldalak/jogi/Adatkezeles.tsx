@@ -215,6 +215,18 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  * Supabase Pro csomagjának naplómegőrzése — dokumentációból, nem mérve). Az
  * incidensszakasz szétvált: adatfeldolgozóként 48 óra az Előfizető felé,
  * adatkezelőként a kockázatértékelés és a 72 órás hatósági bejelentés.
+ *
+ * # 2026. szeptember 23. — zárókör (2026-09-23-3)
+ *
+ * A 2. pontból kikerült a látogatásmérés múltja (szeptember 20–23., Vercel Web
+ * Analytics) és a „ha egyszer újra mérnénk" figyelmeztetés. A tulajdonos
+ * döntése: az a néhány nap tesztidőszak volt, előfizető nélkül (élesben mérve:
+ * egyetlen cég, a tulajdonosé), a tájékoztató a jelenről szól. A múlt a
+ * `jogi-archivum/2026-09-23-2/` alatt és itt, a fenti szakaszokban marad meg.
+ *
+ * ⚠️ A kikerült figyelmeztetés szabálya ettől még áll: ha a weboldal egyszer
+ * nem feltétlenül szükséges eszköztárolást kezdene használni, az csak
+ * hozzájárulással indulhat, és ezt a szakaszt előtte át kell írni.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -531,10 +543,7 @@ export function Adatkezeles() {
         <P>
           <strong>Látogatásmérés nincs, sütit mérésre vagy hirdetésre nem használunk.</strong>{' '}
           Hirdetési kódrészlet nincs, profilalkotás nincs, és más webhelyeken sem követünk
-          senkit. A nyilvános oldalakon 2026. szeptember 20. és 23. között látogatásmérés futott
-          (Vercel Web Analytics); 2026. szeptember 23-án kikapcsoltuk, mert a mérőkód a
-          látogató böngészőjének tárolójából is olvasott, és ezzel a hozzájárulás nélküli
-          mérés indoka megdőlt.
+          senkit.
         </P>
         <P>
           <strong>Miért nem fogadja süti-ablak a látogatót.</strong> Az eszközön történő
@@ -544,11 +553,6 @@ export function Adatkezeles() {
           böngésző saját tárolójában. Ez a felhasználó által kifejezetten kért szolgáltatás
           nyújtásához <strong>feltétlenül szükséges</strong> – enélkül minden oldalváltásnál újra
           be kellene lépni –, és az ilyen tároláshoz nem kell hozzájárulás.
-        </P>
-        <P>
-          ⚠️ Ha a weboldal egyszer olyan eszköztárolást vagy kiolvasást kezdene használni, ami
-          nem feltétlenül szükséges – például újra látogatásmérést –, az csak hozzájárulással
-          indulhat, és ez a bekezdés <em>előtte</em> változik.
         </P>
       </Szakasz>
 

@@ -167,6 +167,24 @@ import { formaz } from '@uzleti/osszeg.ts';
  * nyilatkozat fenyegetően hatott. Az 1. és 13. pont ezért azt mondja, ami
  * igaz: a két kikötés ki van emelve, külön elfogadás nincs. Ezt az ügyvédnek
  * jelezni kell, mert ő mást javasolt.
+ *
+ * # 2026. szeptember 23. — zárókör: hibás teljesítés és kártérítés (2026-09-23-3)
+ *
+ * A 9. pont a visszatérítés alóli kivételt **felróható** szolgáltatói okhoz
+ * kötötte, miközben a 13. pont az általános hibás teljesítési szabályokat
+ * vállalta. A kettő feltétele nem azonos: a szavatossági igény (kijavítás,
+ * arányos díjleszállítás) a hiba tényén áll, felróhatóságtól függetlenül; a
+ * kártérítés alól a Ptk. 6:142. § mércéje ment ki (ellenőrzési körön kívüli,
+ * előre nem látható, el nem hárítható körülmény) – és a „felróható" egyik sem,
+ * az a szerződésen kívüli felelősség szava. Két szabályt sugallt ott, ahol egy
+ * van.
+ *
+ * Most **egyetlen helyen** áll a szabály (13. pont, „A Szolgáltatás hibája"), a
+ * két igény feltételei külön kimondva, és a 9. és a 12. pont rá hivatkozik. Az
+ * egységesítés két további mondatot is érintett, mert ugyanezt a keveredést
+ * hordozták: a 13. pont adatvesztési sora („a neki felróható adatvesztésért")
+ * és a 12. pont „nem felel" fordulata, ami a díjleszállítást is kizárhatta
+ * volna – most csak a kártérítést zárja ki, a díjról a felek elszámolnak.
  */
 export function Aszf() {
   const mb = Math.round(szamlafolyo.feltoltes.maxBajt / (1024 * 1024));
@@ -638,10 +656,9 @@ export function Aszf() {
           <strong>Visszatérítés.</strong> A már kifizetett díj időarányos visszatérítésére az
           Előfizető saját döntéséből történő felmondás vagy törlés esetén nincs mód.{' '}
           <strong>
-            Ez a szabály nem vonatkozik arra, ha a Szolgáltatás a Szolgáltatónak felróható okból
-            marad el vagy válik tartósan használhatatlanná
+            Ez a szabály a Szolgáltató szerződésszegéséből eredő igényeket nem érinti
           </strong>{' '}
-          – ilyenkor az Előfizetőt a hibás teljesítés általános szabályai szerinti igények
+          – ha a Szolgáltatás elmarad vagy hibás, az Előfizetőt a 13. pont szerinti igények
           illetik meg, ideértve a díj arányos leszállítását is.
         </P>
         <P>
@@ -891,11 +908,12 @@ export function Aszf() {
           <strong>A közreműködők hibája nem általános mentesülés.</strong> A Szolgáltató által
           igénybe vett közreműködők (tárhely-, fizetési és modellszolgáltató) teljesítéséért a
           Szolgáltató úgy felel, mintha maga járt volna el – ez a szabály alól a jelen ÁSZF nem
-          tér el. A Szolgáltató kizárólag azokért a kimaradásokért nem felel, amelyek{' '}
-          <strong>rajta kívül álló, elháríthatatlan okból</strong> következnek be, és amelyeket
-          az elvárható gondosság mellett sem tudott megelőzni vagy elhárítani – ilyen az
+          tér el. A kimaradásokért a Szolgáltató a 13. pont szerint felel:{' '}
+          <strong>kártérítéssel</strong> csak azokért nem tartozik, amelyeket ellenőrzési körén
+          kívül eső, előre nem látható és el nem hárítható körülmény okoz – ilyen az
           internetkapcsolat általános hibája vagy a közreműködő előre nem látható, tartós
-          üzemzavara. Az ilyen kimaradás idejére eső díjról a felek elszámolnak.
+          üzemzavara. <strong>A díjat ez nem érinti:</strong> az ilyen kimaradás idejére eső
+          díjról a felek ilyenkor is elszámolnak.
         </P>
       </Szakasz>
 
@@ -912,14 +930,22 @@ export function Aszf() {
             felhasználás előtt nem ellenőrizte.
           </li>
           <li>
-            <strong>A Szolgáltatás hibája.</strong> Ha a rendszer nem úgy működik, ahogy a jelen
-            ÁSZF leírja – például elveszít egy feltöltött bizonylatot, vagy rosszul számolja a
-            keretet –, az <strong>hibás teljesítés</strong>, amelyért a Szolgáltató az általános
-            szabályok szerint felel.
+            <strong>A Szolgáltatás hibája.</strong> Ha a Szolgáltatás elmarad, vagy nem úgy
+            működik, ahogy a jelen ÁSZF leírja – például elveszít egy feltöltött bizonylatot,
+            vagy rosszul számolja a keretet –, az szerződésszegés, amelyért a Szolgáltató az
+            általános szabályok szerint felel. Ez két, egymástól független igényt alapoz meg,
+            eltérő feltételekkel. A <strong>szavatossági igények</strong> – a hiba kijavítása,
+            illetve a díj arányos leszállítása – a hibás teljesítés tényén alapulnak, és{' '}
+            <strong>nem függenek attól, hogy a hiba a Szolgáltatónak felróható-e</strong>. A{' '}
+            <strong>kártérítés</strong> alól a Szolgáltató akkor mentesül, ha bizonyítja, hogy a
+            szerződésszegést ellenőrzési körén kívül eső, a szerződéskötéskor előre nem látható
+            körülmény okozta, és nem volt elvárható, hogy azt elkerülje vagy a kárt elhárítsa; a
+            kártérítésre a lenti összegszerű korlát vonatkozik. A 9. pont (visszatérítés) és a
+            12. pont (kimaradások) ezt a szabályt alkalmazza, és nem tér el tőle.
           </li>
           <li>
-            <strong>Adatvesztés.</strong> A Szolgáltató a neki felróható adatvesztésért felel. Az
-            Előfizetőt terhelő bizonylatmegőrzést azonban a Szolgáltatás nem teljesíti (10.
+            <strong>Adatvesztés.</strong> Az adatvesztésért a Szolgáltató a Szolgáltatás
+            hibájára vonatkozó fenti szabály szerint felel. Az Előfizetőt terhelő bizonylatmegőrzést azonban a Szolgáltatás nem teljesíti (10.
             pont), ezért a Szolgáltató nem felel azért a kárért, amely abból ered, hogy az
             Előfizető a megőrzésről máshol nem gondoskodott.
           </li>

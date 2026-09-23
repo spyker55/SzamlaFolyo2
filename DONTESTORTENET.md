@@ -4947,3 +4947,30 @@ a Tailwind a forrásból generál; a teszt a mért minimumot, az `auto-fit`-et �
 azt őrzi, hogy a képernyő tényleg ezt használja – mindhárom külön-külön piros,
 ha elrontjuk. Az Export dátumszűrői teljes szélességű kártyában ülnek,
 asztali nézetben ~270 px-esek; ott nem volt baj.
+
+## ✅ Jogi zárókör: egy szabály a hibás teljesítésre, és a látogatásmérés múltja kikerült (2026-09-23, `2026-09-23-3`)
+
+A tulajdonos két kiegészítése, amivel a jogi rész lezárult.
+
+**1. Adatkezelés 2.** Kikerült a látogatásmérés múltja (szeptember 20–23.,
+Vercel Web Analytics) és a „ha egyszer újra mérnénk” figyelmeztetés. Az a
+néhány nap tesztidőszak volt, előfizető nélkül: élesben mérve egyetlen cég van,
+a tulajdonosé, és az a `terms_acceptances` előtt jött létre (09-20 vs. 09-22),
+ezért nincs elfogadási sora. A figyelmeztetés *szabálya* a kód docblockjában él
+tovább: nem feltétlenül szükséges eszköztárolás csak hozzájárulással, és a
+szakasz előtte változik.
+
+**2. ÁSZF 9., 12., 13.** A 9. pont a visszatérítés alóli kivételt *felróható*
+szolgáltatói okhoz kötötte, a 13. pedig az általános hibás teljesítési
+szabályokat vállalta – két szabály egy helyett, ráadásul rossz mércével. Most a
+13. pont mondja ki egyszer: a szavatossági igény (kijavítás, arányos
+díjleszállítás) felróhatóságtól független; a kártérítés alól a Ptk. 6:142. §
+szerinti kimentés ad mentességet, és arra vonatkozik az összegszerű korlát. A
+9. és a 12. pont erre hivatkozik. Ugyanezt a keveredést hordozta még két mondat,
+azok is igazodtak: az adatvesztés „neki felróható” fordulata, és a 12. pont
+„nem felel”-je, ami a díjleszállítást is kizárhatta volna.
+
+Új változat, mert tartalmi: `2026-09-23-3`, a hatálybalépés napja ugyanaz. Az
+archívum diffje a `-2`-höz képest pontosan ez az öt bekezdés; az impresszum
+lenyomata változatlan. A `legal_versions` sora **a push előtt** került élesbe
+(MCP), mert a böngésző ezt a verziót küldi a cégalapításkor.

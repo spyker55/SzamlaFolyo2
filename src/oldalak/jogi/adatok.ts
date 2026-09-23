@@ -65,9 +65,12 @@ export const hatalyos = '2026. szeptember 23.';
  * reggeli változat már ki van adva. Ilyenkor a betűsor `<dátum>-<sorszám>`, a
  * `hatalyos` pedig ugyanaz a nap marad, mert a hatálybalépés napja tényleg
  * az. Az első ilyen: `2026-09-23-2`, amelyben a gondolatjel hosszúról (—)
- * nagykötőjelre (–) változott, tartalmi változás nélkül.
+ * nagykötőjelre (–) változott, tartalmi változás nélkül. A `2026-09-23-3`
+ * már tartalmi: a hibás teljesítés és a kártérítés egységesítése (ÁSZF 9., 12.,
+ * 13.), és a látogatásmérés múltjának kivétele (Adatkezelés 2.). Előfizető
+ * ekkor még nem volt, a 15. pont szerinti előzetes értesítés senkit nem érint.
  */
-export const JOGI_VERZIO = '2026-09-23-2';
+export const JOGI_VERZIO = '2026-09-23-3';
 
 /**
  * Az illetékes békéltető testület.
