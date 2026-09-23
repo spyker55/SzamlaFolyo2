@@ -18,7 +18,8 @@ Resend (EU, eu-west-1)
     → letöltés                 Resend receiving API
     → típus a BÁJTOKBÓL        shared/uzleti/fajltipus.ts  ellenoriz()  ← a végső szó
     → tároló + files + documents
-  → a percenkénti cron (`szamlafolyo-sor`) felveszi a kiolvasásra
+    → kiolvasást indít         kiolvasast_indit()          ← SQL, a cron kulcsával
+  → ha az indítás elbukik, a percenkénti cron (`szamlafolyo-sor`) veszi fel
 ```
 
 ## ⚠️ Mit ad a webhook payloadja, és mit nem — mérve
@@ -129,10 +130,24 @@ egészségpróba: egy **rossz aláírású** kérés a végpontra **401**-et kel
 - **Nem küld választ a feladónak.** Egy visszapattanó levél minden hamisított
   feladójú levélszemétre a mi nevünkben menne ki (backscatter). A felhasználó a
   Beállítások képernyőn látja az elutasított leveleket.
-- **Nem indítja el a kiolvasást.** A percenkénti cron úgyis felveszi; egy levél
-  amúgy is perceket utazott, mire ideért.
 - **Nem tárolja a levél szövegét.** Csak a feladót, a tárgyat és azt, mi lett
   a levéllel.
+
+## A kiolvasás indítása (2026-09-23 óta)
+
+Eddig nem indította: a README szerint „egy levél amúgy is perceket utazott,
+mire ideért". **Mérve nem így van**: a Resend másodperceken belül szól, a
+bizonylat viszont utána 0–60 másodpercet várt a percfordulóra — a Beérkezőt néző
+felhasználó ezt érezte lassúnak.
+
+Most minden befogadott bizonylatra meghívja a `public.kiolvasast_indit()`
+SQL-függvényt, ami a **cron útját** járja (vault-kulcs + pg_net), csak a
+megnevezett dokumentumra. Miért nem közvetlenül: az Edge Functionbe injektált
+service-kulcs nem az a betűsor, amit a `kiolvas` `verify_jwt`-je bizonyítottan
+elfogad — a részletek a `20260923000700_kiolvasas_inditasa.sql` fejlécében.
+
+Ha az indítás elbukik, a levél feldolgozása ettől nem áll meg: a bizonylat
+`feltoltve` marad, a cron felveszi, a hiba a naplóba kerül.
 
 ## Nyitott tételek
 

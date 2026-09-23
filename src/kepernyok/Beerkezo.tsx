@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.ts';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
 import { duplikatumotElvet, feltolt } from '../lib/feltoltes.ts';
+import { frissitesiUtem } from '../lib/frissitesiUtem.ts';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
 import { keretMondat } from '@uzleti/keret.ts';
@@ -125,26 +126,6 @@ function jelvenyStilus(allapot: DokumentumAllapot): string {
   }
 }
 
-/**
- * A sor frissítésének üteme.
- *
- * Egy valódi PDF feldolgozása mérve **~10 másodperc** (9,0 s a lánc, ebből
- * jórészt a modellhívás, plusz ~1 s a függvény saját köre). Eddig 3
- * másodpercenként kérdeztünk, és ezzel az utolsó, akár 3 másodperc **tiszta
- * várakozás** volt: a bizonylat rég elkészült, csak a böngésző nem tudott róla.
- * Ez az a másodperc, amit a felhasználó a legjobban érez, mert pont akkor nézi
- * a képernyőt.
- *
- * ⚠️ A visszalassulás viszont nem óvatoskodás. A `dolgozikMeg` akkor is igaz
- * marad, ha egy bizonylat **beragad** — elfogyott keretnél a sor `feltoltve`
- * állapotban marad, és a cron sem viszi tovább. Egy nyitva felejtett fül
- * ilyenkor másodpercenként kérdezné az adatbázist, zárásig. A sűrű ütem ezért
- * csak addig tart, ameddig egy feldolgozás reálisan tart.
- */
-const SURU_POLL_MS = 1000;
-const RITKA_POLL_MS = 5000;
-const SURU_ABLAK_MS = 30_000;
-
 export function Beerkezo() {
   const { ceg } = useAuth();
   const szerkeszthet = useSzerkeszthet();
@@ -186,39 +167,49 @@ export function Beerkezo() {
     void keretetKer().then(setKeret);
   }, [sorok.length]);
 
-  // Amíg van feldolgozandó, frissítünk. A sort már nem a böngésző hajtja — azt
-  // az Edge Function és a pg_cron intézi —, de a felhasználónak látnia kell,
-  // ahogy halad.
+  // A lista frissítése, három sebességgel (`src/lib/frissitesiUtem.ts`). A
+  // sort már nem a böngésző hajtja — azt az Edge Function és a pg_cron
+  // intézi —, de a felhasználónak látnia kell, ahogy halad, és azt is, ha
+  // közben e-mailben érkezett új bizonylat.
   const dolgozikMeg = sorok.some((s) => s.status === 'feltoltve' || s.status === 'feldolgozas_alatt');
 
   useEffect(() => {
-    if (!dolgozikMeg) return;
-
     const kezdet = Date.now();
     let el = true;
     let idozito = 0;
 
-    function utemez() {
-      const suru = Date.now() - kezdet < SURU_ABLAK_MS;
+    // A `catch` nem kozmetika: egy elutasított betöltés (pillanatnyi hálózati
+    // hiba) enélkül **némán megállítaná** a frissítést, és a sor örökre
+    // „feldolgozás alatt" maradna a képernyőn. Egy frissítő ciklusnak túl kell
+    // élnie egy rossz körutat.
+    const frissit = () => betoltes().catch(() => undefined);
 
+    function utemez() {
       idozito = window.setTimeout(() => {
-        // A `catch` nem kozmetika: egy elutasított betöltés (pillanatnyi
-        // hálózati hiba) enélkül **némán megállítaná** a frissítést, és a sor
-        // örökre „feldolgozás alatt" maradna a képernyőn. Egy frissítő
-        // ciklusnak túl kell élnie egy rossz körutat.
-        void betoltes()
-          .catch(() => undefined)
-          .then(() => {
-            if (el) utemez();
-          });
-      }, suru ? SURU_POLL_MS : RITKA_POLL_MS);
+        // Rejtett fülön nem kérdezünk: egy háttérben felejtett fül ne terhelje
+        // az adatbázist. Visszaváltáskor a `lathatova` azonnal frissít.
+        if (document.visibilityState === 'hidden') {
+          if (el) utemez();
+          return;
+        }
+
+        void frissit().then(() => {
+          if (el) utemez();
+        });
+      }, frissitesiUtem(dolgozikMeg, Date.now() - kezdet));
     }
 
+    function lathatova() {
+      if (document.visibilityState === 'visible') void frissit();
+    }
+
+    document.addEventListener('visibilitychange', lathatova);
     utemez();
 
     return () => {
       el = false;
       window.clearTimeout(idozito);
+      document.removeEventListener('visibilitychange', lathatova);
     };
   }, [dolgozikMeg, betoltes]);
 

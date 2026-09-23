@@ -4808,3 +4808,53 @@ frontend már a `2026-09-23-2` verziót küldi, és a sora nélkül a cégalapí
 megállna. Élesben a három függvény md5-je egyezik a repóval. Az érintett Edge
 Functionök: `email-bekuldes`, `fiok-torles`, `kiolvas`, `meghivo-kuld` (a
 meghívólevél HTML-je), `stripe-webhook`.
+
+## ✅ Az e-mailben érkezett bizonylat magától megjelenik — és azonnal indul (2026-09-23)
+
+A tulajdonos tesztje: „a beküldött email lassan jelent meg a Beérkezőben". Mérve
+**nem a szerver volt lassú**: a levél befogadásától (`email-bekuldes`, 4 s) a kész
+bizonylatig ~5–10 s telt el. A lassúság két, egymásra rakódó hiányból jött.
+
+### 1. A képernyő nem nézett oda
+
+A Beérkező csak akkor kérdezte újra az adatbázist, ha a listán **már volt**
+feldolgozás alatt álló sor (egy korai `return` a hurok elején). Feltöltésnél
+ez nem tűnt fel — a sort a saját feltöltésed hozza létre —, az e-mailben érkező
+bizonylatról viszont a böngésző nem tud. Oldalfrissítés nélkül soha nem jelent
+meg.
+
+Most a hurok mindig fut, három sebességgel (`src/lib/frissitesiUtem.ts`): 1 s
+a feldolgozás első fél percében, 5 s utána, **15 s tétlenül**. Rejtett fülön
+egyik ütemben sem kérdez, visszaváltáskor azonnal frissít.
+
+### 2. A kiolvasás a percfordulót várta
+
+A böngészős feltöltés maga indítja a `kiolvas`-t; az e-mailes út nem, a
+bizonylat 0–60 s-ot várt a cronra. A tulajdonos tesztjében ez 3 s volt — mert
+a levél a percforduló előtt érkezett.
+
+Most az `email-bekuldes` minden befogadott bizonylatra meghívja a
+`public.kiolvasast_indit()` SQL-függvényt, ami **a cron útját járja**
+(vault-kulcs + pg_net), csak a megnevezett bizonylatra. Nem függvényből
+függvénybe: az Edge Functionbe injektált service-kulcs nem az a betűsor, amit a
+`kiolvas` `verify_jwt`-je bizonyítottan elfogad, és erre építeni azt jelentette
+volna, hogy élesben derül ki, átmegy-e.
+
+**Mérés visszagörgetéssel, élesítés előtt:** kész bizonylatra 0 kérés a pg_net
+sorában, `feltoltve` bizonylatra pontosan 1, helyes címmel, törzzsel és JWT-vel
+(`Bearer ey…`); jogok: `anon=false`, `authenticated=false`, `service_role=true`.
+Élesen a törzs md5-je egyezik a repóval.
+
+**Ami nem romolhat el tőle:** az indítás hibája nem állítja meg a levelet — a
+bizonylat `feltoltve` marad, a cron felveszi —, de naplóba kerül, mert egy
+csendben elbukó gyorsítást a tartalék út hónapokig eltakarhat (a böngészős út
+tanulsága, `feltoltes.ts`). A kettős indítás (ez + a cron) nem gond: a claim
+feltételes `UPDATE … WHERE status = 'feltoltve'`, atomikus.
+
+### Őrök
+
+`src/lib/frissitesiUtem.test.ts` (az ütem, és hogy a Beérkező tényleg ezt
+használja, korai `return` nélkül) és `supabase/functions/email-bekuldes/inditas.test.ts`
+(a hívás, a naplózott hiba, az SQL-függvény jogai). Szándékosan elrontva mind
+piros: a tétlen ütem „soha"-ra állítva, a korai `return` visszatéve, a hívás
+kivéve.

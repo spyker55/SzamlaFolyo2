@@ -358,21 +358,54 @@ async function mellekletet(
     return `A fájl sora nem íródott be: ${fajlHiba.message}`;
   }
 
-  const { error: dokumentumHiba } = await db.from('documents').insert({
-    company_id: cegId,
-    file_id: fajlId,
-    status: 'feltoltve',
-  });
+  const { data: dokumentum, error: dokumentumHiba } = await db
+    .from('documents')
+    .insert({
+      company_id: cegId,
+      file_id: fajlId,
+      status: 'feltoltve',
+    })
+    .select('id')
+    .single();
 
-  if (dokumentumHiba !== null) {
-    return `A bizonylat sora nem íródott be: ${dokumentumHiba.message}`;
+  if (dokumentumHiba !== null || dokumentum === null) {
+    return `A bizonylat sora nem íródott be: ${dokumentumHiba?.message ?? 'ismeretlen hiba'}`;
   }
 
-  // A kiolvasást **nem** indítjuk el innen: a percenkénti cron
-  // (`szamlafolyo-sor`) úgyis felveszi. Egy levél amúgy is perceket utazott,
-  // mire ideért — egy közvetlen hívás itt nem gyorsítana érdemben, cserébe
-  // egy újabb hibalehetőséget hozna a levélfeldolgozás útjába.
+  await kiolvasastIndit(db, dokumentum.id as string);
+
   return null;
+}
+
+/**
+ * A kiolvasás azonnali indítása — a percforduló kivárása helyett.
+ *
+ * Eddig itt az állt, hogy nem indítunk: „egy levél amúgy is perceket utazott,
+ * mire ideért". Mérve nem így van: a Resend másodperceken belül szól, és a
+ * bizonylat utána **0–60 másodpercet** várt a cronra (`szamlafolyo-sor`) —
+ * a Beérkezőt néző felhasználó pont ezt érezte lassúnak (2026-09-23).
+ *
+ * Nem közvetlenül hívjuk a `kiolvas`-t, hanem a `kiolvasast_indit()` SQL-
+ * függvényen át, ami a **cron útját** járja: ugyanaz a vault-kulcs, ugyanaz a
+ * pg_net. Az ide injektált service-kulcs nem az a betűsor, amit a `kiolvas`
+ * `verify_jwt`-je bizonyítottan elfogad (lásd a migráció fejlécét:
+ * `20260923000700_kiolvasas_inditasa.sql`).
+ *
+ * ⚠️ **A hiba nem állítja meg a levél feldolgozását**, és ez szándékos: a
+ * bizonylat ilyenkor `feltoltve` marad, és a cron felveszi — pontosan úgy,
+ * mint eddig. De nem is nyeljük el némán: a böngészős út tanulsága (a
+ * `feltoltes.ts` docblockja), hogy egy csendben elbukó gyorsítás hónapokig
+ * észrevétlen maradhat, mert a tartalék út eltakarja.
+ */
+async function kiolvasastIndit(db: SupabaseClient, dokumentumId: string): Promise<void> {
+  const { error } = await db.rpc('kiolvasast_indit', { dokumentum: dokumentumId });
+
+  if (error !== null) {
+    console.error(
+      'A kiolvasás azonnali indítása nem sikerült – a bizonylat a következő percfordulón indul:',
+      error.message,
+    );
+  }
 }
 
 /** A melléklet bájtjai. */
