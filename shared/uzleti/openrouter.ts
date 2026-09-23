@@ -116,6 +116,31 @@ export class KiolvasasHiba extends Error {
   }
 }
 
+/**
+ * A kiolvasás kimeneti tokenkerete – **a gondolkodással együtt**.
+ *
+ * # Miért 4096, és miért nem volt elég a 2048 – mérve, 2026-09-23
+ *
+ * A `max_tokens` a teljes kimenetet korlátozza, és abba a modell gondolkodása
+ * is beleszámít (lásd `hasznalatOlvas()`: a `reasoning_tokens` a
+ * `completion_tokens` része). Az addigi sikeres kiolvasásokban a kimenet
+ * legfeljebb **1194** token volt, ebből **891** gondolkodás – a válasz maga
+ * ~300. A 2048 ehhez képest 1,7-szeres tartalék volt.
+ *
+ * Aztán egy egyoldalas PDF-en a modell **1965 tokent gondolkodott**, és a
+ * keret elfogyott a válasz előtt: `finish_reason: length`, natívan
+ * `MAX_TOKENS`, tartalom és függvényhívás nélkül – egy kifizetett (~$0,01),
+ * eredménytelen hívás. Ugyanaz a fájl a következő kísérleten 548 token
+ * gondolkodással ment át: a gondolkodás hossza nem a bizonylattól függ, hanem
+ * időnként elszalad.
+ *
+ * A keret emelése **a rendes esetben semmibe nem kerül** – csak a ténylegesen
+ * legyártott tokent fizetjük –, az elszaladt esetben pedig egy drágább, de
+ * sikeres hívás lesz belőle kettő helyett. A 4096 a mért elszaladást a
+ * legnagyobb mért válasszal együtt másfélszeres tartalékkal fedi.
+ */
+export const KIOLVASAS_MAX_TOKEN = 4096;
+
 export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
   if (keres.apiKulcs === '') {
     throw new KiolvasasHiba('Nincs beállítva az OpenRouter API-kulcs.');
@@ -132,7 +157,7 @@ export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
     fuggvenyNev: FUGGVENY_NEV,
     fuggvenyLeiras: 'A bizonylatról leolvasott adatok rögzítése.',
     sema: toolSema(),
-    maxTokens: 2048,
+    maxTokens: KIOLVASAS_MAX_TOKEN,
     apiKulcs: keres.apiKulcs,
     hivoUrl: keres.hivoUrl,
   });

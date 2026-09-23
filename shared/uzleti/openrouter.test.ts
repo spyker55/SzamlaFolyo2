@@ -3,6 +3,7 @@ import {
   argumentumok,
   hasznalatOlvas,
   kiolvas,
+  KIOLVASAS_MAX_TOKEN,
   KiolvasasHiba,
   szolgaltatoiKikotes,
   valaszNyom,
@@ -237,5 +238,38 @@ describe('a teljes hívás: a nyom a hibával együtt utazik', () => {
 
     expect(hiba).toBeInstanceOf(KiolvasasHiba);
     expect((hiba as KiolvasasHiba).nyom).toBeNull();
+  });
+});
+
+describe('a kiolvasás tokenkerete', () => {
+  // Mérve, 2026-09-23: egy elszaladt gondolkodás 1965 token volt, és a 2048-as
+  // keretben nem maradt hely a válasznak (`finish_reason: length`). A
+  // legnagyobb mért válasz a gondolkodás nélkül 1194 − 891 = 303 token.
+  const MERT_ELSZALADT_GONDOLKODAS = 1965;
+  const MERT_LEGNAGYOBB_VALASZ = 1194 - 891;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('a mért elszaladt gondolkodás és a legnagyobb válasz együtt, másfélszeres tartalékkal elfér', () => {
+    expect(KIOLVASAS_MAX_TOKEN).toBeGreaterThanOrEqual(
+      1.5 * (MERT_ELSZALADT_GONDOLKODAS + MERT_LEGNAGYOBB_VALASZ),
+    );
+  });
+
+  it('a kérés tényleg ezt a keretet küldi', async () => {
+    const fetchHamis = vi.fn(async () => new Response(JSON.stringify(URES_VALASZ), { status: 200 }));
+    vi.stubGlobal('fetch', fetchHamis);
+
+    await kiolvas({
+      tartalom: new Uint8Array([37, 80, 68, 70]),
+      mime: 'application/pdf',
+      fajlnev: 'teszt.pdf',
+      apiKulcs: 'teszt',
+    }).catch(() => undefined);
+
+    const [, opciok] = fetchHamis.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(opciok.body as string).max_tokens).toBe(KIOLVASAS_MAX_TOKEN);
   });
 });

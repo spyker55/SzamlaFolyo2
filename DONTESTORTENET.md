@@ -5016,3 +5016,29 @@ szétesik (NFD), vagy ha a küszöb elcsúszik.
 
 ⚠️ **Élesben még nincs mérve**: a `kiolvas` újratelepítése után egy valódi
 PDF-es és egy Factur-X feltöltés `forras_naplo`-ja dönti el.
+
+## ✅ A kiolvasás tokenkerete 2048 → 4096: az elszaladt gondolkodás (2026-09-23)
+
+Az unpdf-váltás utáni élő próbán egy egyoldalas PDF első két kísérlete
+elbukott. Az első egy 429-es hiba volt: a Google átmenetileg korlátozta a
+modellt az OpenRouter közös keretén (*„temporarily rate-limited upstream”*),
+ez nem a mi hibánk. A második **a mi keretünkbe ütközött**: 1965 token
+gondolkodás a 2048-ból, `finish_reason: length` / `MAX_TOKENS`, válasz és
+függvényhívás nélkül, kifizetve (~$0,01). A harmadik kísérlet ugyanazon a
+fájlon 548 token gondolkodással ment át.
+
+Az addigi 14 kiolvasásból a sikeresek kimenete legfeljebb 1194 token volt
+(ebből 891 gondolkodás), tehát a 2048 papíron 1,7-szeres tartalék volt – a
+gondolkodás hossza viszont nem a bizonylattól függ, hanem időnként elszalad.
+
+A keret 4096 lett (`KIOLVASAS_MAX_TOKEN`). A rendes esetben ez semmibe nem
+kerül, mert csak a legyártott tokent fizetjük; az elszaladt esetben egy
+drágább, de sikeres hívás lesz belőle két fizetett kísérlet helyett. Két őr
+védi, mindkettő külön piros: a konstans fedi-e a mért elszaladást a
+legnagyobb válasszal együtt másfélszeres tartalékkal, és a kérés tényleg ezt
+küldi-e (`max_tokens`, álfetch-csel).
+
+⚠️ A kötegszétszedő 1024-es kerete ugyanígy ki van téve ennek, de ott a
+gondolkodás **nincs mérve**: a sikertelen szétszedés csak a függvénynaplóba
+kerül, és a bizonylat ilyenkor egyben olvasódik ki. Ha egyszer többbizonylatos
+fájl marad szétszedetlen, ez az első gyanúsított.
