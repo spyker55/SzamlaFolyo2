@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { useAuth, type Ceg } from '../lib/auth.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
@@ -8,6 +8,7 @@ import {
   beerkezettLevelek,
   bekuldesBarkitolMent,
   bekuldestMent,
+  cegbolKilepek,
   megorzesCimke,
   megorzesiNapok,
   megorzestMent,
@@ -30,6 +31,7 @@ import { datum } from '@uzleti/ido.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { bekuldesiCim } from '@uzleti/bekuldes.ts';
 import { allapotCimke, ferMegTag, kikuldesCimke, meghivoLink } from '@uzleti/meghivo.ts';
+import { kilepesDontes } from '@uzleti/kilepes.ts';
 import {
   allapota as meghivoAllapota,
   meghivok as meghivokatKer,
@@ -61,6 +63,7 @@ import {
 export function Beallitasok() {
   const { ceg, szerep, user, ujratolt } = useAuth();
   const admin = szerep === 'tulajdonos';
+  const navigate = useNavigate();
 
   const [keret, setKeret] = useState<Keret | null>(null);
   const [tagLista, setTagLista] = useState<Tag[]>([]);
@@ -596,6 +599,27 @@ export function Beallitasok() {
           )}
         </Kartya>
 
+        <KilepesKartya
+          cegNev={ceg?.name ?? null}
+          szerep={szerep}
+          tagok={tagLista}
+          sajatAzonosito={user?.id ?? null}
+          kilep={async () => {
+            const eredmeny = await cegbolKilepek();
+
+            if (!eredmeny.ok) {
+              setHiba(eredmeny.hiba ?? 'A kilépés nem sikerült.');
+              return;
+            }
+
+            // A cég eltűnt a fiók alól: a kontextust újra kell olvasni,
+            // különben a következő képernyő még a régit hinné. Utána a
+            // `Ceggel` őr viszi a cégalapításra.
+            await ujratolt();
+            navigate('/', { replace: true });
+          }}
+        />
+
         {/*
           A kijárat. **Nem kártyában** és nem gombként áll itt: ez az egyetlen
           visszafordíthatatlan művelet a rendszerben, tehát ne lehessen
@@ -610,6 +634,101 @@ export function Beallitasok() {
         </p>
       </div>
     </AppElrendezes>
+  );
+}
+
+/**
+ * Kilépés a cégből — a fiók megmarad.
+ *
+ * ⚠️ A döntést a `@uzleti/kilepes.ts` hozza, nem ez a képernyő. Ugyanazt a
+ * szabályt mondja ki a `cegbol_kilepek()` RPC is: ha a kettő széttartana, a
+ * felhasználó egy másik műveletre mondana igent, mint ami lefut.
+ *
+ * A megerősítés **két lépés, nem cégnév-begépelés**. Az a mérce a fióktörlésé,
+ * mert az visszafordíthatatlan; a kilépés nem az — aki kilép, holnap új
+ * meghívót kaphat ugyanarra a címre. Egy aránytalan akadály csak azt tanítaná
+ * meg, hogy a figyelmeztetéseket át kell kattintani.
+ */
+function KilepesKartya({
+  cegNev,
+  szerep,
+  tagok,
+  sajatAzonosito,
+  kilep,
+}: {
+  cegNev: string | null;
+  szerep: Szerep | null;
+  tagok: Tag[];
+  sajatAzonosito: string | null;
+  kilep: () => Promise<void>;
+}) {
+  const [megerosit, megerositAllit] = useState(false);
+  const [kuld, kuldAllit] = useState(false);
+
+  // A tagok listája még tölthet. Amíg nulla sor van, nem állítunk semmit —
+  // különben egy pillanatra az „egyedül vagy" mondat villanna fel annak is,
+  // aki nincs egyedül.
+  if (tagok.length === 0) {
+    return null;
+  }
+
+  const dontes = kilepesDontes({
+    cegNev,
+    szerep,
+    tagokSzama: tagok.length,
+    masikTulajdonos: tagok.some(
+      (t) => t.role === 'tulajdonos' && t.user_id !== sajatAzonosito,
+    ),
+  });
+
+  return (
+    <Kartya cim="Kilépés a cégből" leiras="A fiókod megmarad, a cég adatai maradnak.">
+      <p className="text-sm font-medium text-slate-900">{dontes.cim}</p>
+
+      {dontes.fajta !== 'mehet' ? (
+        <p className="mt-2 text-sm text-slate-500">{dontes.miert}</p>
+      ) : (
+        <>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-500">
+            {dontes.kovetkezmenyek.map((sor) => (
+              <li key={sor}>{sor}</li>
+            ))}
+          </ul>
+
+          {megerosit ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-danger"
+                disabled={kuld}
+                onClick={() => {
+                  kuldAllit(true);
+                  void kilep().finally(() => kuldAllit(false));
+                }}
+              >
+                {kuld ? 'Kilépés…' : 'Igen, kilépek'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={kuld}
+                onClick={() => megerositAllit(false)}
+              >
+                Mégsem
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-secondary mt-4"
+              onClick={() => megerositAllit(true)}
+            >
+              Kilépek a cégből
+            </button>
+          )}
+        </>
+      )}
+    </Kartya>
   );
 }
 

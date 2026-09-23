@@ -219,6 +219,24 @@ export async function szerepetMent(tagId: string, szerep: Szerep): Promise<Mente
 }
 
 /**
+ * Kilépés a cégből — a fiók megmarad.
+ *
+ * Szándékosan RPC, nem egy `delete` a `company_members`-en: a `20260923000100`
+ * épp azért vette ki a politikákból a `user_id = auth.uid()` ágat, mert az
+ * mérve jogosultság-emelést engedett. Az önkiszolgáló műveletnek ezért a
+ * `security definer` függvényben a helye, ahol a szabály ki is van mondva.
+ *
+ * A szerver hibaüzenete magyar és teljes mondat (lásd a migráció fejlécét),
+ * ezért a nyers `error.message` **jó szöveg** a képernyőn — nem kell
+ * fordítani.
+ */
+export async function cegbolKilepek(): Promise<Mentes> {
+  const { error } = await supabase.rpc('cegbol_kilepek');
+
+  return error === null ? { ok: true } : { ok: false, hiba: error.message };
+}
+
+/**
  * Tag eltávolítása.
  *
  * A **saját** tagság eltávolítását itt nem kínáljuk fel: aki az utolsó
