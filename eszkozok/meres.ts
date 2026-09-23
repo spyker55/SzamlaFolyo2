@@ -3,14 +3,19 @@ import { basename } from 'node:path';
 
 import { ellenoriz } from '../shared/uzleti/fajltipus.ts';
 import { feldolgoz, type LancEredmeny } from '../shared/uzleti/lanc.ts';
-import { kiolvas, KiolvasasHiba } from '../shared/uzleti/openrouter.ts';
+import {
+  type Gondolkodas,
+  kiolvas,
+  KIOLVASAS_MAX_TOKEN,
+  KiolvasasHiba,
+} from '../shared/uzleti/openrouter.ts';
 import { xmlbolKiolvas } from '../shared/uzleti/xml/beolvasas.ts';
 import {
   felderit,
   igenyelModellt,
   type Felderites,
 } from '../supabase/functions/kiolvas/felderites.ts';
-import type { Futas, Meres } from './jelentes.ts';
+import type { BukottFutas, Futas, Meres } from './jelentes.ts';
 
 /**
  * A `kiolvasas:proba` **logikája** — a terminál nélkül.
@@ -24,7 +29,15 @@ export type Kapcsolok = {
   ismetles: number;
   modell: string | null;
   json: boolean;
+  /** `null`: nincs `reasoning` a kérésben – pontosan úgy, mint élesben. */
+  gondolkodas: Gondolkodas | null;
 };
+
+/** A `Gondolkodas` olvasható alakja a jelentés fejlécébe. */
+export function gondolkodasSzo(g: Gondolkodas | null): string {
+  if (g === null) return 'alap (nincs korlátozva – mint élesben)';
+  return 'effort' in g ? `effort: ${g.effort}` : `legfeljebb ${g.max_tokens} token`;
+}
 
 export class ProbaHiba extends Error {}
 
@@ -34,6 +47,17 @@ export class ProbaHiba extends Error {}
  * nem a felhasználó gépelt rosszul.
  */
 export class KapcsoloHiba extends ProbaHiba {}
+
+/**
+ * Egy elbukott modellfutás hibája – a `merj` elkapja és feljegyzi, a mérés
+ * megy tovább. Minden más `ProbaHiba` (hiányzó kulcs, rossz fájl) továbbra is
+ * megállít: az nem mérési eredmény.
+ */
+export class FutasHiba extends ProbaHiba {
+  constructor(readonly bukott: BukottFutas) {
+    super(`A modellhívás nem sikerült: ${bukott.hiba}`);
+  }
+}
 
 /**
  * Egy fájl végigmérése.
@@ -60,15 +84,34 @@ export async function merj(
 
   const felderites = await felderit(bajtok, tipus.tipus.mime);
   const futasok: Futas[] = [];
+  const bukottFutasok: BukottFutas[] = [];
 
   for (let i = 0; i < kapcsolok.ismetles; i++) {
-    futasok.push(
-      await egyFutas(bajtok, tipus.tipus.mime, nev, felderites, kapcsolok.modell, figyelmeztet),
-    );
+    let futas: Futas;
+
+    try {
+      futas = await egyFutas(
+        bajtok,
+        tipus.tipus.mime,
+        nev,
+        felderites,
+        kapcsolok.modell,
+        figyelmeztet,
+        kapcsolok.gondolkodas,
+      );
+    } catch (hiba) {
+      if (!(hiba instanceof FutasHiba)) throw hiba;
+
+      bukottFutasok.push(hiba.bukott);
+      figyelmeztet(`${i + 1}. futás elbukott: ${hiba.bukott.hiba}`);
+      continue;
+    }
+
+    futasok.push(futas);
 
     // Az XML-ág determinisztikus: ugyanaz a fa, ugyanaz az értelmező, ugyanaz
     // az eredmény. Az ismétlés ott nem mérés, csak várakozás.
-    if (futasok[i]!.promptVerzio === null && kapcsolok.ismetles > 1) {
+    if (futas.promptVerzio === null && kapcsolok.ismetles > 1) {
       figyelmeztet('Az XML-ág determinisztikus — egy futás elég, az ismétlés kimarad.');
       break;
     }
@@ -76,8 +119,10 @@ export async function merj(
 
   return {
     fajl: { nev, bajt: bajtok.byteLength, mime: tipus.tipus.mime },
+    beallitas: { modell: kapcsolok.modell, gondolkodas: gondolkodasSzo(kapcsolok.gondolkodas) },
     felderites,
     futasok,
+    bukottFutasok,
   };
 }
 
@@ -96,6 +141,7 @@ export async function egyFutas(
   felderites: Felderites,
   modellFelulirasa: string | null,
   figyelmeztet: (uzenet: string) => void = () => {},
+  gondolkodas: Gondolkodas | null = null,
 ): Promise<Futas> {
   const kezdet = Date.now();
 
@@ -139,6 +185,7 @@ export async function egyFutas(
       cegAdoszam: null,
       modell: modellFelulirasa,
       apiKulcs,
+      gondolkodas,
     });
 
     return {
@@ -154,7 +201,16 @@ export async function egyFutas(
     };
   } catch (hiba) {
     if (hiba instanceof KiolvasasHiba) {
-      throw new ProbaHiba(`A modellhívás nem sikerült: ${hiba.message}`);
+      throw new FutasHiba({
+        hiba: hiba.message,
+        reszlet: hiba.reszlet,
+        atmeneti: hiba.atmeneti,
+        leallas: hiba.nyom?.leallasOka ?? null,
+        kimenetToken: hiba.nyom?.kimenetToken ?? null,
+        gondolkodasToken: hiba.nyom?.gondolkodasToken ?? null,
+        koltseg: hiba.nyom?.koltseg ?? null,
+        idoMs: Date.now() - kezdet,
+      });
     }
     throw hiba;
   }
@@ -192,6 +248,7 @@ export function argumentumok(argv: readonly string[]): Kapcsolok {
   let ismetles = 1;
   let modell: string | null = null;
   let json = false;
+  let gondolkodas: Gondolkodas | null = null;
 
   for (let i = 0; i < argv.length; i++) {
     const darab = argv[i]!;
@@ -210,6 +267,8 @@ export function argumentumok(argv: readonly string[]): Kapcsolok {
         throw new KapcsoloHiba('A --modell után modellazonosító kell.');
       }
       modell = ertek;
+    } else if (darab === '--gondolkodas') {
+      gondolkodas = gondolkodasErtelmez(argv[++i]);
     } else if (darab.startsWith('--')) {
       throw new KapcsoloHiba(`Ismeretlen kapcsoló: ${darab}`);
     } else if (utvonal === null) {
@@ -223,5 +282,30 @@ export function argumentumok(argv: readonly string[]): Kapcsolok {
     throw new KapcsoloHiba('Melyik fájlt mérjem?');
   }
 
-  return { utvonal, ismetles, modell, json };
+  return { utvonal, ismetles, modell, json, gondolkodas };
+}
+
+/**
+ * `low` / `medium` / `high`, vagy egy tokenszám.
+ *
+ * A tokenszám felső határa hagy helyet a válasznak: a keret
+ * (`KIOLVASAS_MAX_TOKEN`) a gondolkodást **és** a választ is fedi, és egy
+ * kiolvasás válasza mérve ~300–420 token. Egy nagyobb gondolkodási keret
+ * pont azt a helyzetet idézné elő, amit mérni akarunk.
+ */
+function gondolkodasErtelmez(ertek: string | undefined): Gondolkodas {
+  if (ertek === 'low' || ertek === 'medium' || ertek === 'high') {
+    return { effort: ertek };
+  }
+
+  const felso = KIOLVASAS_MAX_TOKEN - 512;
+  const szam = Number(ertek);
+
+  if (ertek !== undefined && ertek !== '' && Number.isInteger(szam) && szam >= 0 && szam <= felso) {
+    return { max_tokens: szam };
+  }
+
+  throw new KapcsoloHiba(
+    `A --gondolkodas után low, medium, high, vagy egy egész tokenszám 0 és ${felso} között.`,
+  );
 }

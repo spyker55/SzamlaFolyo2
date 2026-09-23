@@ -45,6 +45,7 @@ import { argumentumok, KapcsoloHiba, merj } from './meres.ts';
  * npm run kiolvasas:proba -- szamla.pdf --ismetles 5
  * npm run kiolvasas:proba -- szamla.pdf --modell google/gemini-3.1-flash-lite
  * npm run kiolvasas:proba -- szamla.pdf --json > meres.json
+ * npm run kiolvasas:proba -- szamla.pdf --ismetles 10 --gondolkodas low
  * ```
  *
  * A modellhívásos ághoz `OPENROUTER_API_KEY` kell a `.env`-ben (az npm script
@@ -59,6 +60,9 @@ Használat:
   --ismetles N   ugyanazt a fájlt N-szer olvastatja ki, és megmutatja, mely
                  mezők ingadoznak. N-szer annyiba is kerül. (alap: 1)
   --modell <id>  a configban álló ${szamlafolyo.modell.alapertelmezett} helyett
+  --gondolkodas <low|medium|high|N>
+                 a modell gondolkodásának korlátozása (csak mérés; élesben
+                 nincs beállítva). N: legfeljebb ennyi token.
   --json         nyers mérés JSON-ban, összeméréshez
 `;
 

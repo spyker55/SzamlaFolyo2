@@ -260,6 +260,19 @@ describe('a rendes háromszámlás próbafájl tényleg ellentmondásmentes', ()
       expect(oldal).toContain(`Összesen ${ft(sz.net_amount)} ${ft(sz.vat_amount)} ${ft(sz.gross_amount)}`);
     });
   });
+
+  it('az egyoldalas mérőfájl az első számla, egyedül', async () => {
+    const f = await felderit(
+      new Uint8Array(readFileSync('tesztadat/egy-szamla-rendes.pdf')),
+      'application/pdf',
+    );
+    const [elso, ...tobbi] = ADAT.szamlak;
+
+    expect(f.oldalSzovegek).toHaveLength(1);
+    expect(f.oldalSzovegek![0]).toContain(String(elso!['doc_number']));
+    expect(f.oldalSzovegek![0]).toContain(`Fizetendő: ${ft(elso!.gross_amount)}`);
+    for (const masik of tobbi) expect(f.oldalSzovegek![0]).not.toContain(String(masik['doc_number']));
+  });
 });
 
 describe('felderítés: az önálló XML ága nem változott', () => {

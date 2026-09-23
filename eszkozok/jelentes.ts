@@ -31,10 +31,35 @@ export type Futas = {
   eredmeny: LancEredmeny;
 };
 
+/**
+ * Egy elbukott modellfutás – **ez is mérési eredmény**, nem megszakítás.
+ *
+ * 2026-09-23-ig egy elbukott futás az egész mérést leállította. Pedig a
+ * gondolkodás korlátozásánál épp az a kérdés, hányszor szalad el a modell:
+ * ha az elbukott futás eltűnik, a mérés a jó futásokat mutatja, a rosszakat
+ * nem.
+ */
+export type BukottFutas = {
+  hiba: string;
+  /** A szolgáltató nyers hibaszövege, ha volt. */
+  reszlet: string | null;
+  atmeneti: boolean;
+  /** `finish_reason` / `native_finish_reason`, ha a modell válaszolt. */
+  leallas: string | null;
+  kimenetToken: number | null;
+  gondolkodasToken: number | null;
+  koltseg: number | null;
+  idoMs: number;
+};
+
 export type Meres = {
   fajl: { nev: string; bajt: number; mime: string };
   felderites: Felderites;
   futasok: readonly Futas[];
+  /** Az elbukott modellfutások; üres vagy hiányzó, ha mind sikerült. */
+  bukottFutasok?: readonly BukottFutas[];
+  /** A mérés beállítása – a jelentés fejlécébe, hogy két mérés összevethető legyen. */
+  beallitas?: { modell: string | null; gondolkodas: string };
 };
 
 const SAV_JEL: Record<Sav, string> = {
@@ -106,8 +131,10 @@ export function allandosag(futasok: readonly Futas[]): Record<string, string[]> 
 export function jsonAlak(meres: Meres): Record<string, unknown> {
   return {
     fajl: meres.fajl,
+    beallitas: meres.beallitas ?? null,
     felderites: naplo(meres.felderites),
     futasok: meres.futasok,
+    bukottFutasok: meres.bukottFutasok ?? [],
   };
 }
 
@@ -118,12 +145,22 @@ export function jelentes(meres: Meres): string {
     par('név', meres.fajl.nev),
     par('méret', `${meres.fajl.bajt.toLocaleString('hu-HU')} bájt`),
     par('típus (tartalomból)', meres.fajl.mime),
+    ...(meres.beallitas === undefined
+      ? []
+      : [
+          par('modell', meres.beallitas.modell ?? 'a configban álló'),
+          par('gondolkodás', meres.beallitas.gondolkodas),
+        ]),
     '',
     ...felderitesSorok(meres.felderites),
   ];
 
+  const bukottak = meres.bukottFutasok ?? [];
   const elso = meres.futasok[0];
   if (elso === undefined) {
+    if (bukottak.length > 0) {
+      sorok.push('', ...bukottSorok(bukottak), '', ...osszesitesSorok(meres.futasok, bukottak));
+    }
     return sorok.join('\n');
   }
 
@@ -134,7 +171,11 @@ export function jelentes(meres: Meres): string {
     sorok.push('', ...futasonkentSorok(meres.futasok), '', ...ismetlesSorok(meres.futasok));
   }
 
-  sorok.push('', ...osszesitesSorok(meres.futasok));
+  if (bukottak.length > 0) {
+    sorok.push('', ...bukottSorok(bukottak));
+  }
+
+  sorok.push('', ...osszesitesSorok(meres.futasok, bukottak));
 
   return sorok.join('\n');
 }
@@ -425,14 +466,42 @@ function ismetlesSorok(futasok: readonly Futas[]): string[] {
   return sorok;
 }
 
-function osszesitesSorok(futasok: readonly Futas[]): string[] {
-  const koltsegek = futasok.map((f) => f.koltseg).filter((k): k is number => k !== null);
+/** Az elbukott futások – az ok, a tokenek és a pénz, ami elment rájuk. */
+function bukottSorok(bukottak: readonly BukottFutas[]): string[] {
+  const sorok = [
+    cim(`ELBUKOTT FUTÁSOK (${bukottak.length})`),
+    `  ${pad('#', 4)}${pad('idő', 12)}${pad('kimenet', 10)}${pad('gondolkodás', 14)}${pad('költség', 14)}ok`,
+  ];
+
+  bukottak.forEach((b, i) => {
+    sorok.push(
+      `  ${pad(String(i + 1), 4)}${pad(`${b.idoMs} ms`, 12)}` +
+        `${pad(b.kimenetToken === null ? '—' : String(b.kimenetToken), 10)}` +
+        `${pad(b.gondolkodasToken === null ? '—' : String(b.gondolkodasToken), 14)}` +
+        `${pad(b.koltseg === null ? '—' : `${b.koltseg.toFixed(6)} USD`, 14)}` +
+        `${b.hiba}${b.leallas === null ? '' : ` [${b.leallas}]`}${b.atmeneti ? ' (átmeneti)' : ''}`,
+    );
+  });
+
+  return sorok;
+}
+
+function osszesitesSorok(futasok: readonly Futas[], bukottak: readonly BukottFutas[] = []): string[] {
+  const koltsegek = [...futasok, ...bukottak]
+    .map((f) => f.koltseg)
+    .filter((k): k is number => k !== null);
   const osszes = koltsegek.reduce((a, b) => a + b, 0);
-  const ido = futasok.reduce((a, f) => a + f.idoMs, 0);
+  const ido = [...futasok, ...bukottak].reduce((a, f) => a + f.idoMs, 0);
+  const elszaladt = bukottak.filter((b) => b.leallas !== null && /MAX_TOKENS|length/.test(b.leallas)).length;
 
   return [
     cim('ÖSSZESEN'),
-    par('futás', String(futasok.length)),
+    par(
+      'futás',
+      bukottak.length === 0
+        ? String(futasok.length)
+        : `${futasok.length + bukottak.length} (ebből ${bukottak.length} elbukott, ${elszaladt} a keret végéig gondolkodott)`,
+    ),
     par('idő', `${ido} ms`),
     par(
       'költség',

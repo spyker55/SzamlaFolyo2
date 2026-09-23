@@ -31,7 +31,27 @@ export type KiolvasasKeres = {
   apiKulcs: string;
   /** Az `HTTP-Referer` fejléchez; az OpenRouter ezzel azonosítja a hívót. */
   hivoUrl?: string;
+  /** A gondolkodás korlátozása – **csak mérésre**, lásd `Gondolkodas`. */
+  gondolkodas?: Gondolkodas | null;
 };
+
+/**
+ * A modell gondolkodásának korlátozása (az OpenRouter `reasoning` mezője).
+ *
+ * ⚠️ **Élesben nincs beállítva** – a `kiolvas` Edge Function nem adja át, a
+ * kérés tehát pontosan az, ami eddig volt. Csak a `kiolvasas:proba
+ * --gondolkodas` tölti ki, hogy lemérhessük, mit tesz a kiolvasással.
+ *
+ * Mérve, 2026-09-23: a gondolkodás időnként **elszalad**, és ilyenkor
+ * annyit gondolkodik, amennyi keretet kap (2048-ból 1965, 4096-ból 3936
+ * token, `MAX_TOKENS`, válasz nélkül). A keret emelése ezt csak drágította.
+ *
+ * Hogy a Gemini melyik alakot és milyen értéket fogad el, azt innen nem
+ * tudtuk ellenőrizni (az `openrouter.ai` ebből a környezetből nem érhető el):
+ * **a mérés dönti el**. A jelentés minden futás gondolkodási tokenjét
+ * kiírja, tehát egy hatástalan beállítás ott rögtön látszik.
+ */
+export type Gondolkodas = { effort: 'low' | 'medium' | 'high' } | { max_tokens: number };
 
 export type KiolvasasValasz = {
   nyers: Record<string, unknown>;
@@ -225,6 +245,7 @@ export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
     maxTokens: KIOLVASAS_MAX_TOKEN,
     apiKulcs: keres.apiKulcs,
     hivoUrl: keres.hivoUrl,
+    gondolkodas: keres.gondolkodas ?? null,
   });
 
   return { ...eredmeny, modell, promptVerzio: VERZIO };
@@ -318,6 +339,8 @@ type HivasKeres = {
   hivoUrl?: string | undefined;
   /** A teljes hívás időkorlátja (kérés + választörzs). Alapból a kiolvasásé. */
   idokorlatMp?: number | undefined;
+  /** Csak mérésre; `null` esetén a kérésben nincs `reasoning` mező. */
+  gondolkodas?: Gondolkodas | null;
 };
 
 /**
@@ -414,6 +437,8 @@ async function hivas(keres: HivasKeres): Promise<{
     tool_choice: { type: 'function', function: { name: keres.fuggvenyNev } },
     max_tokens: keres.maxTokens,
     usage: { include: true },
+    // Csak ha kérték – élesben soha (lásd `Gondolkodas`).
+    ...(keres.gondolkodas ? { reasoning: keres.gondolkodas } : {}),
   };
 
   // ⚠️ **Az időkorlát a teljes hívásra vonatkozik, a választörzsre is.**

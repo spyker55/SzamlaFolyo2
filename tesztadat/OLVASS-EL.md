@@ -8,6 +8,7 @@ PDF-ek a modellhez esnének.
 |---|---|---|
 | `harom-szamla.pdf` | a **szövegréteg oldalankénti** kinyerése (a kötegszétszedő erre épül), magyar ékezetekkel (`ő`, `ű`, `Ő`) | Chromium `page.pdf()`, A4, három számla oldalanként |
 | `harom-szamla-rendes.pdf` + `.json` | **a sebességmérés fájlja**: három ellentmondásmentes számla (az összegek kiadják egymást, az adószámok ellenőrző számjegye stimmel), oldalanként egy. A JSON az igazság forrása | `node eszkozok/tesztadat-harom-szamla.mjs` (a JSON-ból) |
+| `egy-szamla-rendes.pdf` | **a `kiolvasas:proba` mérőfájlja**: a rendes köteg első számlája egyedül – élesben a szétszedés után is egyoldalas darabot olvasunk ki | ugyanaz a generátor |
 | `csak-kep.pdf` | a szövegréteg nélküli, csak képet tartalmazó PDF `kep` jelleget kap | Chromium `page.pdf()`, egy vászonra rajzolt, képként beágyazott oldal |
 
 Mindkettő 2026-09-23-án készült, az unpdf 0.12.1 → 1.8.1 váltás mérésére: a

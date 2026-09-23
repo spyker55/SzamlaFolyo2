@@ -1,5 +1,6 @@
 /**
- * A `tesztadat/harom-szamla-rendes.pdf` előállítása a mellette álló JSON-ból:
+ * A `tesztadat/harom-szamla-rendes.pdf` és az `egy-szamla-rendes.pdf` (az
+ * első számla egyedül) előállítása a mellette álló JSON-ból:
  * `node eszkozok/tesztadat-harom-szamla.mjs`
  *
  * Chromiumban nyomtatott PDF, oldalanként egy számla. A JSON az igazság
@@ -47,7 +48,15 @@ const bongeszo = await chromium.launch(
   process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {},
 );
 const lap = await bongeszo.newPage();
+
+// A háromoldalas köteg: a szétszedés és a párhuzamos indítás élő próbájához.
 await lap.setContent(`<html lang="hu"><body>${adat.szamlak.map(oldal).join('')}</body></html>`);
 writeFileSync(new URL('tesztadat/harom-szamla-rendes.pdf', GYOKER), await lap.pdf({ format: 'A4' }));
+
+// Az első számla egyedül: a `kiolvasas:proba` mérésekhez. Élesben a szétszedés
+// után is egyoldalas darabot olvasunk ki, tehát ez a valósághű egység.
+await lap.setContent(`<html lang="hu"><body>${oldal(adat.szamlak[0])}</body></html>`);
+writeFileSync(new URL('tesztadat/egy-szamla-rendes.pdf', GYOKER), await lap.pdf({ format: 'A4' }));
+
 await bongeszo.close();
-console.log('kész: tesztadat/harom-szamla-rendes.pdf');
+console.log('kész: tesztadat/harom-szamla-rendes.pdf, tesztadat/egy-szamla-rendes.pdf');

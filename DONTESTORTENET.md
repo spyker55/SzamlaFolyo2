@@ -5171,3 +5171,30 @@ Szándékos törések: csomagolt 429 ellenőrzés nélkül; a továbbdobás elve
 szöveg az üzenetbe kerül; a dokumentum sora a részletes szöveget kapja; a
 próbafájlban rossz adószám, elcsúszott összeg, illetve a régi PDF – mind
 piros.
+
+## ✅ A mérőeszköz méri a gondolkodás korlátozását – és az elbukott futást is (2026-09-23)
+
+Előkészület egy döntéshez, nem döntés. Az elszaladó gondolkodás (a keret
+végéig, válasz nélkül) élesben a leglassabb és legdrágább hibánk, és a keret
+emelése csak drágította. A valódi javítás a gondolkodás korlátozása lehet –
+az viszont a kiolvasás pontosságára is hathat, tehát előbb mérni kell.
+
+- **`kiolvasas:proba --gondolkodas <low|medium|high|N>`**: az OpenRouter
+  `reasoning` mezőjét tölti ki (`{effort}` vagy `{max_tokens}`). **Élesben
+  semmi nem változik**: a mező opcionális, a `kiolvas` nem adja át, és egy teszt
+  őrzi, hogy egyetlen Edge Function se adja át. Hogy a Gemini melyik alakot
+  fogadja el, azt innen nem tudtuk ellenőrizni (az `openrouter.ai` ebből a
+  környezetből nem érhető el) – a mérés dönti el: a jelentés minden futás
+  gondolkodási tokenjét kiírja, egy hatástalan beállítás ott rögtön látszik.
+- **Az elbukott futás mérési eredmény.** Eddig egy elbukott futás az egész
+  mérést leállította – pont az esetet tüntetve el, amit mérni akarunk. Most
+  feljegyződik (ok, leállás, tokenek, költség, idő), a mérés megy tovább, és
+  az összesítés kimondja, hány futás gondolkodott a keret végéig. A hiányzó
+  kulcs és a rossz fájl továbbra is megállít: az nem mérési eredmény.
+- **`tesztadat/egy-szamla-rendes.pdf`**: a rendes köteg első számlája egyedül –
+  élesben a szétszedés után is egyoldalas darabot olvasunk ki.
+
+Hét szándékos törés, mindegyik piros (mindig küld `reasoning`-et; a
+`kiolvas()` nem adja tovább; élesben is korlátoz; az elbukott futás megállítja
+a mérést; a hiányzó kulcs „mérési eredmény"; az elbukott futás pénze kimarad
+az összegből; nincs felső határ a gondolkodási keretre).
