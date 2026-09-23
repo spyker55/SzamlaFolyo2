@@ -222,6 +222,25 @@ export function osszevet(meresek: { nev: string; m: MeresJson }[], elvart: Recor
   return sorok.join('\n');
 }
 
+/**
+ * Egy mérésfájl beolvasása – **az `npm run` fejlécét átugorva**.
+ *
+ * 2026-09-23: a javasolt `npm run kiolvasas:proba -- … --json > meres.json`
+ * a JSON elé az npm saját fejlécét is a fájlba írta (`> szamlafolyo@0.1.0
+ * kiolvasas:proba` és a parancssor), és az összevető elsőre `Unexpected token
+ * '>'`-rel állt meg. A helyes parancs `npm run --silent …`; a már elkészült
+ * mérések miatt viszont az első `{`-vel kezdődő sortól olvasunk.
+ */
+export function meresBeolvas(szoveg: string): MeresJson {
+  const kezdet = szoveg.search(/^\{/m);
+
+  if (kezdet === -1) {
+    throw new Error('Nem találtam JSON-t a fájlban – `--json` kapcsolóval készült a mérés?');
+  }
+
+  return JSON.parse(szoveg.slice(kezdet)) as MeresJson;
+}
+
 function fo(): number {
   const fajlok = process.argv.slice(2);
   if (fajlok.length === 0) {
@@ -231,7 +250,7 @@ function fo(): number {
 
   const meresek = fajlok.map((f) => ({
     nev: basename(f, '.json'),
-    m: JSON.parse(readFileSync(f, 'utf8')) as MeresJson,
+    m: meresBeolvas(readFileSync(f, 'utf8')),
   }));
 
   const mindProba = meresek.every((x) => x.m.fajl.nev === 'egy-szamla-rendes.pdf');

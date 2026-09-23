@@ -44,9 +44,13 @@ import { argumentumok, KapcsoloHiba, merj } from './meres.ts';
  * npm run kiolvasas:proba minta/ubl-szabalyos.xml
  * npm run kiolvasas:proba -- szamla.pdf --ismetles 5
  * npm run kiolvasas:proba -- szamla.pdf --modell google/gemini-3.1-flash-lite
- * npm run kiolvasas:proba -- szamla.pdf --json > meres.json
+ * npm run --silent kiolvasas:proba -- szamla.pdf --json > meres.json
  * npm run kiolvasas:proba -- szamla.pdf --ismetles 10 --gondolkodas low
  * ```
+ *
+ * ⚠️ Fájlba írásnál a `--silent` kell: nélküle az `npm run` a JSON elé a saját
+ * fejlécét is kiírja (2026-09-23-án így készült három mérés; az
+ * `eszkozok/meres-osszevetes.ts` azóta átugorja).
  *
  * A modellhívásos ághoz `OPENROUTER_API_KEY` kell a `.env`-ben (az npm script
  * onnan olvassa). A kulcsot **soha ne másold ki onnan** — ugyanaz a szabály,

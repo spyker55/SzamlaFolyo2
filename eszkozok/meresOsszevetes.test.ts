@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { osszevet, probaszamlaElvart, type MeresJson } from './meres-osszevetes.ts';
+import { meresBeolvas, osszevet, probaszamlaElvart, type MeresJson } from './meres-osszevetes.ts';
 
 const ELVART = probaszamlaElvart();
 
@@ -68,10 +68,30 @@ describe('a mérések összevetése', () => {
   });
 });
 
+describe('a mérésfájl beolvasása', () => {
+  it('átugorja az `npm run` fejlécét (így készült a 2026-09-23-i három mérés)', () => {
+    const fajl =
+      '\n> szamlafolyo@0.1.0 kiolvasas:proba\n> node --env-file-if-exists=.env eszkozok/kiolvasas-proba.ts x.pdf --json\n\n' +
+      JSON.stringify(ALAP, null, 2) +
+      '\n';
+
+    expect(meresBeolvas(fajl)).toEqual(ALAP);
+  });
+
+  it('fejléc nélkül is', () => {
+    expect(meresBeolvas(JSON.stringify(LOW))).toEqual(LOW);
+  });
+
+  it('ha nincs benne JSON, érthetően szól', () => {
+    expect(() => meresBeolvas('> csak fejléc\n')).toThrow(/--json/);
+  });
+});
+
 describe('az összevető Node-dal indul', () => {
   it('két fájlból táblázatot ír', () => {
     const mappa = mkdtempSync(join(tmpdir(), 'osszevetes-'));
-    writeFileSync(join(mappa, 'meres-alap.json'), JSON.stringify(ALAP));
+    // Úgy, ahogy a tulajdonos gépén készült: az npm fejlécével az elején.
+    writeFileSync(join(mappa, 'meres-alap.json'), `\n> szamlafolyo@0.1.0 kiolvasas:proba\n> node …\n\n${JSON.stringify(ALAP, null, 2)}\n`);
     writeFileSync(join(mappa, 'meres-low.json'), JSON.stringify(LOW));
 
     const f = spawnSync(
