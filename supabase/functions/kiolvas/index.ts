@@ -224,6 +224,7 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
     return { id, ...eredmeny };
   } catch (hiba) {
     const uzenet = hiba instanceof Error ? hiba.message : 'Ismeretlen hiba.';
+    const nyom = hiba instanceof KiolvasasHiba ? hiba.nyom : null;
 
     // A hibába futott kísérlet **nem fogyaszt keretet**: nem a felhasználó
     // hibája, és jórészt nem is került pénzbe. A sor viszont bekerül az
@@ -238,7 +239,32 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
       // meg, melyik lépésen akadt el, nem csak azt, hogy elakadt.
       szakaszok_ms: ora.szakaszok,
       credits: 0,
+      // Ha a modell válaszolt, csak használhatatlanul, a válasz **nyoma** is
+      // megmarad (`openrouter.ts`, `ValaszNyom`). A `model` üres marad — az
+      // a kért modell volna, és a sikeres sorok ezzel különülnek el —, a
+      // `model_version` viszont azt mondja, mi futott ténylegesen. A
+      // `raw_response` itt a teljes boríték, nem a függvény argumentumai.
+      model_version: nyom?.futtatottModell ?? null,
+      raw_response: nyom?.nyers ?? null,
+      input_tokens: nyom?.bemenetToken ?? null,
+      output_tokens: nyom?.kimenetToken ?? null,
+      reasoning_tokens: nyom?.gondolkodasToken ?? null,
+      cost: nyom?.koltseg ?? null,
     });
+
+    // A naplóba csak azonosító és technikai adat kerül, a válasz teste nem:
+    // a `generacio` az OpenRouter naplójában közvetlenül kereshető.
+    console.error(
+      JSON.stringify({
+        esemeny: 'kiolvasas_hiba',
+        dokumentum: dokumentum.id,
+        kiserlet: dokumentum.attempts,
+        hiba: uzenet,
+        generacio: nyom?.generacioId ?? null,
+        leallas: nyom?.leallasOka ?? null,
+        kimenet_token: nyom?.kimenetToken ?? null,
+      }),
+    );
 
     // Amíg van még próbálkozás, visszatesszük a sorba; utána megáll hibával.
     const ujra = dokumentum.attempts < szamlafolyo.kiolvasas.maxProbalkozas;
@@ -248,7 +274,40 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
       .update({ status: ujra ? 'feltoltve' : 'hiba', error: uzenet, claimed_at: null })
       .eq('id', dokumentum.id);
 
+    if (ujra && dokumentum.attempts === 1) {
+      await azonnalUjra(db, dokumentum.id);
+    }
+
     return { id, allapot: ujra ? 'ujraprobalhato' : 'hiba', hiba: uzenet };
+  }
+}
+
+/**
+ * Az **első** elbukott kísérlet után azonnal újra — nem a percfordulón.
+ *
+ * 2026-09-23: a Google egy kiolvasásra 200-as, de üres választ adott ($0,
+ * 0 token), a második kísérlet egy perccel később hibátlan volt. A két
+ * kísérlet között 15 másodperc **tiszta várakozás** telt el a cronra; egy
+ * átmeneti szolgáltatói hibánál ez a legdrágább idő, mert a felhasználó épp
+ * a képernyőt nézi.
+ *
+ * ⚠️ **Csak az első után.** A harmadik kísérlet a percfordulón jön, mint eddig:
+ * ha a szolgáltató percekig nem elérhető, a három próbálkozás így nem ég el
+ * fél perc alatt. A kísérletszámot a claim növeli, tehát az azonnali futás
+ * ugyanúgy beleszámít a `maxProbalkozas`-ba — végtelen hurok nem lehet.
+ *
+ * Ugyanazt az SQL-indítót használja, mint az `email-bekuldes` (vault-kulcs +
+ * pg_net, `20260923000700_kiolvasas_inditasa.sql`). A hibája nem baj — a cron
+ * felveszi —, de naplóba kerül.
+ */
+async function azonnalUjra(db: SupabaseClient, dokumentumId: string): Promise<void> {
+  const { error } = await db.rpc('kiolvasast_indit', { dokumentum: dokumentumId });
+
+  if (error !== null) {
+    console.error(
+      'Az azonnali újrapróbálás indítása nem sikerült – a percforduló veszi fel:',
+      error.message,
+    );
   }
 }
 
@@ -787,21 +846,19 @@ async function kiolvasas(
   // szűkíteni. A kivágott PDF sehova nem kerül mentésre.
   const kuldendo = await csakAzOldalai(dokumentum, frissHatar, bajtok, fajl.mime_type);
 
-  try {
-    const valasz = await kiolvas({
-      tartalom: kuldendo,
-      mime: fajl.mime_type ?? 'application/pdf',
-      fajlnev: fajl.original_filename ?? 'bizonylat',
-      cegNev: dokumentum.companies?.name ?? null,
-      cegAdoszam: dokumentum.companies?.tax_number ?? null,
-      apiKulcs,
-    });
+  // A `KiolvasasHiba` **változatlanul** megy tovább: a válasz nyomát viszi
+  // (`nyom`), és a `feldolgoz()` azt menti el. Egy korábbi `catch` itt sima
+  // `Error`-rá alakította — ezzel a bizonyíték elveszett, mielőtt a mentésig ért.
+  const valasz = await kiolvas({
+    tartalom: kuldendo,
+    mime: fajl.mime_type ?? 'application/pdf',
+    fajlnev: fajl.original_filename ?? 'bizonylat',
+    cegNev: dokumentum.companies?.name ?? null,
+    cegAdoszam: dokumentum.companies?.tax_number ?? null,
+    apiKulcs,
+  });
 
-    return { ...valasz, promptVerzio: valasz.promptVerzio as string | null };
-  } catch (hiba) {
-    if (hiba instanceof KiolvasasHiba) throw new Error(hiba.message);
-    throw hiba;
-  }
+  return { ...valasz, promptVerzio: valasz.promptVerzio as string | null };
 }
 
 /**

@@ -15,6 +15,33 @@ mappa csak az adatbázis- és tárolóhuzalozás. A lánc tiszta magja
 (`shared/uzleti/lanc.ts`) hálózat és adatbázis nélkül tesztelhető, és
 tesztelve is van.
 
+## Hiba és újrapróbálás (2026-09-23 óta)
+
+Egy elbukott kísérlet után a bizonylat `feltoltve` állapotba kerül vissza,
+amíg van próbálkozás (`maxProbalkozas`: 3). A három kísérlet üteme:
+
+| Kísérlet | Mikor indul |
+|---|---|
+| 1. | azonnal (feltöltés: a böngésző; e-mail: `email-bekuldes`) |
+| 2. | **azonnal** az első kudarc után — `kiolvasast_indit()`, a cron kulcsával |
+| 3. | a következő percfordulón (cron) |
+
+A második azért azonnali, mert az első kudarc tipikusan átmeneti: 2026-09-23-án
+a Google (Vertex) egy kérésre 200-as, de **üres** választ adott (0 → 0 token,
+$0), és a második kísérlet hibátlan volt — csak 15 másodpercet várt a cronra. A
+harmadik viszont szándékosan a percfordulón jön: egy percekig tartó
+szolgáltatói kiesés így nem égeti el fél perc alatt mindhárom próbálkozást.
+
+**Minden elbukott kísérlet nyomot hagy.** Ha a modell válaszolt, csak
+használhatatlanul, a teljes válaszboríték a kiolvasási sor `raw_response`-ába
+kerül (a `model` üres, a `model_version` a ténylegesen futott modell), a
+naplóba pedig egy `kiolvasas_hiba` sor az OpenRouter generációazonosítójával
+(`generacio`) és a leállás okával — azzal közvetlenül kereshető az OpenRouter
+naplójában. A válasz teste a naplóba nem kerül.
+
+A felület amíg újrapróbál, semleges sort mutat („Egy kiolvasási kísérlet nem
+sikerült – újrapróbáljuk."); pirosat csak a végleges `hiba` állapot kap.
+
 ## Két hívási mód
 
 | Mód | Ki hívja | Jogosultság |

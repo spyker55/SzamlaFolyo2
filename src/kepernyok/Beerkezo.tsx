@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.ts';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
 import { duplikatumotElvet, feltolt } from '../lib/feltoltes.ts';
 import { frissitesiUtem } from '../lib/frissitesiUtem.ts';
+import { kiolvasasJelzes, type HibaJelzes } from '../lib/kiolvasasJelzes.ts';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
 import { keretMondat } from '@uzleti/keret.ts';
@@ -109,6 +110,20 @@ function ForrasJelzes({ sor }: { sor: Sor }) {
   }
 
   return <> · {jel.rovid}</>;
+}
+
+/**
+ * A sor hibajelzése. Piros csak a végleges hiba; amíg a rendszer újrapróbál,
+ * semleges (`src/lib/kiolvasasJelzes.ts`).
+ */
+function HibaSor({ jelzes }: { jelzes: HibaJelzes | null }) {
+  if (jelzes === null) return null;
+
+  return (
+    <div className={`mt-1 max-w-xs text-xs ${jelzes.sulyos ? 'text-red-700' : 'text-slate-500'}`}>
+      {jelzes.szoveg}
+    </div>
+  );
 }
 
 /** Az állapotjelvény stílusa. A kiemelés a bajt jelöli, nem a rendben lévőt. */
@@ -382,9 +397,7 @@ export function Beerkezo() {
                     <span className={`badge ${jelvenyStilus(sor.status)}`}>
                       {allapotCimke(sor.status)}
                     </span>
-                    {sor.error !== null && (
-                      <div className="mt-1 max-w-xs text-xs text-red-700">{sor.error}</div>
-                    )}
+                    <HibaSor jelzes={kiolvasasJelzes(sor.status, sor.error)} />
                     {sor.status === 'duplikatum' && (
                       <div className="mt-1 text-xs text-slate-400">Ez a fájl már bent van.</div>
                     )}

@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { hasznalatOlvas, szolgaltatoiKikotes } from './openrouter.ts';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  argumentumok,
+  hasznalatOlvas,
+  kiolvas,
+  KiolvasasHiba,
+  szolgaltatoiKikotes,
+  valaszNyom,
+} from './openrouter.ts';
 import { szamlafolyo } from '../../config/szamlafolyo.ts';
 
 /**
@@ -109,5 +116,126 @@ describe('használat-olvasó', () => {
     expect(h.kimenetToken).toBeNull();
     expect(h.gondolkodasToken).toBeNull();
     expect(h.koltseg).toBeNull();
+  });
+});
+
+/**
+ * Az elbukott válasz nyoma (2026-09-23).
+ *
+ * A Google (Vertex) egy kiolvasásra 200-as, de **üres** választ adott: 0 → 0
+ * token, függvényhívás nélkül. Mi csak annyit mentettünk, hogy „nem a kért
+ * függvénnyel válaszolt" — az okot az OpenRouter naplójából kellett
+ * kikeresni. Ezek a tesztek azt mérik, hogy a válasz nyoma mostantól a
+ * hibával együtt utazik.
+ */
+const URES_VALASZ = {
+  id: 'gen-1790165557-teszt',
+  model: 'google/gemini-3.8-flash',
+  choices: [
+    {
+      finish_reason: null,
+      native_finish_reason: null,
+      message: { role: 'assistant', content: '' },
+    },
+  ],
+  usage: { prompt_tokens: 0, completion_tokens: 0, cost: 0 },
+};
+
+describe('a függvényhívás argumentumai', () => {
+  it('a rendes válaszból kiveszi az argumentumokat', () => {
+    expect(
+      argumentumok({
+        choices: [
+          {
+            finish_reason: 'tool_calls',
+            message: { tool_calls: [{ function: { name: 'x', arguments: '{"a":1}' } }] },
+          },
+        ],
+      }),
+    ).toEqual({ a: 1 });
+  });
+
+  it('az üres válasz saját üzenetet kap – nem „nem a kért függvénnyel"', () => {
+    expect(() => argumentumok(URES_VALASZ)).toThrow('A modell üres választ adott.');
+    expect(() => argumentumok({ choices: [] })).toThrow('A modell üres választ adott.');
+    expect(() => argumentumok({})).toThrow('A modell üres választ adott.');
+  });
+
+  it('a szöveges válasz függvényhívás helyett: nem a kért függvénnyel', () => {
+    expect(() =>
+      argumentumok({ choices: [{ message: { content: 'Íme a számla adatai: …' } }] }),
+    ).toThrow('A modell nem a kért függvénnyel válaszolt.');
+  });
+
+  it('a hibás JSON-argumentum: nem értelmezhető', () => {
+    expect(() =>
+      argumentumok({ choices: [{ message: { tool_calls: [{ function: { arguments: '{' } }] } }] }),
+    ).toThrow('A modell válasza nem értelmezhető.');
+  });
+});
+
+describe('a válasz nyoma', () => {
+  it('kiolvassa a generációazonosítót, a modellt és a tokeneket', () => {
+    const nyom = valaszNyom(URES_VALASZ);
+
+    expect(nyom.generacioId).toBe('gen-1790165557-teszt');
+    expect(nyom.futtatottModell).toBe('google/gemini-3.8-flash');
+    expect(nyom.kimenetToken).toBe(0);
+    expect(nyom.leallasOka).toBeNull();
+    expect(nyom.nyers).toBe(URES_VALASZ);
+  });
+
+  it('a leállás okát a szolgáltató sajátjával együtt adja', () => {
+    expect(
+      valaszNyom({ choices: [{ finish_reason: 'stop', native_finish_reason: 'MALFORMED_FUNCTION_CALL' }] })
+        .leallasOka,
+    ).toBe('stop / MALFORMED_FUNCTION_CALL');
+    expect(valaszNyom({ choices: [{ finish_reason: 'stop', native_finish_reason: 'stop' }] }).leallasOka).toBe(
+      'stop',
+    );
+  });
+});
+
+describe('a teljes hívás: a nyom a hibával együtt utazik', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('üres 200-as válaszra KiolvasasHiba, rajta a válasz nyomával', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(URES_VALASZ), { status: 200 })),
+    );
+
+    const hiba = await kiolvas({
+      tartalom: new Uint8Array([37, 80, 68, 70]),
+      mime: 'application/pdf',
+      fajlnev: 'teszt.pdf',
+      apiKulcs: 'teszt',
+    }).catch((h: unknown) => h);
+
+    expect(hiba).toBeInstanceOf(KiolvasasHiba);
+    expect((hiba as KiolvasasHiba).message).toBe('A modell üres választ adott.');
+    expect((hiba as KiolvasasHiba).nyom?.generacioId).toBe('gen-1790165557-teszt');
+    expect((hiba as KiolvasasHiba).nyom?.nyers).toEqual(URES_VALASZ);
+  });
+
+  it('a hálózati hibának nincs nyoma – nem volt válasz', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed');
+      }),
+    );
+
+    const hiba = await kiolvas({
+      tartalom: new Uint8Array([37, 80, 68, 70]),
+      mime: 'application/pdf',
+      fajlnev: 'teszt.pdf',
+      apiKulcs: 'teszt',
+    }).catch((h: unknown) => h);
+
+    expect(hiba).toBeInstanceOf(KiolvasasHiba);
+    expect((hiba as KiolvasasHiba).nyom).toBeNull();
   });
 });

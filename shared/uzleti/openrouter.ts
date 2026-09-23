@@ -76,7 +76,45 @@ export type SzetszedesValasz = {
   koltseg: number | null;
 };
 
-export class KiolvasasHiba extends Error {}
+/**
+ * Amit egy modellválaszról tudunk — akkor is, ha a válasz használhatatlan.
+ *
+ * # Miért kell a hibához is
+ *
+ * 2026-09-23-án a Google (Vertex) egy kiolvasásra **200-as, de üres** választ
+ * adott: 0 → 0 token, függvényhívás nélkül, $0 költséggel. Mi ebből annyit
+ * mentettünk, hogy „a modell nem a kért függvénnyel válaszolt" — sem a
+ * generációazonosítót, sem a leállás okát, sem a válasz testét. Az okot végül
+ * az OpenRouter naplójából, képernyőképről kellett összerakni.
+ *
+ * Mostantól a hiba **magával viszi** a válasz nyomát, és a `kiolvas` a
+ * kiolvasási sorba írja: a teljes boríték a `raw_response`-ba kerül (ugyanaz a
+ * 90 napos takarítás vonatkozik rá, mint a sikeresre), az azonosító és a
+ * leállás oka pedig a naplóba.
+ */
+export type ValaszNyom = {
+  /** Az OpenRouter generációazonosítója (`gen-…`) — ezzel kereshető a naplójukban. */
+  generacioId: string | null;
+  futtatottModell: string | null;
+  /** A `finish_reason`; ha a szolgáltató sajátja is megvan, az utána áll. */
+  leallasOka: string | null;
+  bemenetToken: number | null;
+  kimenetToken: number | null;
+  gondolkodasToken: number | null;
+  koltseg: number | null;
+  /** A teljes válaszboríték, érintetlenül. */
+  nyers: Record<string, unknown>;
+};
+
+export class KiolvasasHiba extends Error {
+  /** A modell válaszának nyoma, ha a hiba a válasz **után** keletkezett. */
+  readonly nyom: ValaszNyom | null;
+
+  constructor(uzenet: string, nyom: ValaszNyom | null = null) {
+    super(uzenet);
+    this.nyom = nyom;
+  }
+}
 
 export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
   if (keres.apiKulcs === '') {
@@ -313,21 +351,63 @@ async function hivas(keres: HivasKeres): Promise<{
   }
 
   const valaszJson = (await valasz.json()) as Record<string, unknown>;
+  const nyom = valaszNyom(valaszJson);
+
+  let nyers: Record<string, unknown>;
+
+  try {
+    nyers = argumentumok(valaszJson);
+  } catch (hiba) {
+    // A válasz megjött, csak nem használható: a nyomot a hibához csatoljuk,
+    // hogy a hívó el tudja menteni.
+    if (hiba instanceof KiolvasasHiba) throw new KiolvasasHiba(hiba.message, nyom);
+    throw hiba;
+  }
 
   return {
-    nyers: argumentumok(valaszJson),
-    futtatottModell: typeof valaszJson['model'] === 'string' ? valaszJson['model'] : null,
-    ...hasznalatOlvas(valaszJson),
+    nyers,
+    futtatottModell: nyom.futtatottModell,
+    bemenetToken: nyom.bemenetToken,
+    kimenetToken: nyom.kimenetToken,
+    gondolkodasToken: nyom.gondolkodasToken,
+    koltseg: nyom.koltseg,
   };
 }
 
-/** A kikényszerített függvényhívás argumentumai. Ha nincs, az hiba. */
-function argumentumok(valasz: Record<string, unknown>): Record<string, unknown> {
+/** A válasz nyoma — **exportált és tiszta**, hogy tesztelhető legyen. */
+export function valaszNyom(valasz: Record<string, unknown>): ValaszNyom {
+  const elso = elsoValasztas(valasz);
+  const okok = [elso?.['finish_reason'], elso?.['native_finish_reason']].filter(
+    (ok): ok is string => typeof ok === 'string' && ok !== '',
+  );
+
+  return {
+    generacioId: typeof valasz['id'] === 'string' ? valasz['id'] : null,
+    futtatottModell: typeof valasz['model'] === 'string' ? valasz['model'] : null,
+    leallasOka: okok.length > 0 ? [...new Set(okok)].join(' / ') : null,
+    ...hasznalatOlvas(valasz),
+    nyers: valasz,
+  };
+}
+
+function elsoValasztas(valasz: Record<string, unknown>): Record<string, unknown> | null {
   const valasztasok = valasz['choices'];
-  const elso = Array.isArray(valasztasok) ? valasztasok[0] : null;
-  const uzenet = (elso as Record<string, unknown> | null)?.['message'] as
-    | Record<string, unknown>
-    | undefined;
+  const elso: unknown = Array.isArray(valasztasok) ? valasztasok[0] : null;
+
+  return elso !== null && typeof elso === 'object' ? (elso as Record<string, unknown>) : null;
+}
+
+/**
+ * A kikényszerített függvényhívás argumentumai. Ha nincs, az hiba.
+ *
+ * Két hibát különböztetünk meg, mert mást jelentenek: az **üres** válasz
+ * (se függvényhívás, se szöveg — a 2026-09-23-i Vertex-eset) a szolgáltató
+ * átmeneti hibája, a **szöveges** válasz viszont azt jelenti, hogy a modell
+ * nem követte a kikényszerített hívást.
+ */
+export function argumentumok(valasz: Record<string, unknown>): Record<string, unknown> {
+  const elso = elsoValasztas(valasz);
+  const uzenet = elso?.['message'] as Record<string, unknown> | undefined;
   const hivasok = uzenet?.['tool_calls'];
   const hivas = Array.isArray(hivasok) ? hivasok[0] : null;
   const fuggveny = (hivas as Record<string, unknown> | null)?.['function'] as
@@ -339,7 +419,14 @@ function argumentumok(valasz: Record<string, unknown>): Record<string, unknown> 
     // Ha a modell nem a függvényt hívta, nincs értelmezhető eredményünk. A
     // szabad szövegből való JSON-bányászás pont az a bizonytalanság, amit a
     // kikényszerített hívással kerülünk el.
-    throw new KiolvasasHiba('A modell nem a kért függvénnyel válaszolt.');
+    const tartalom = uzenet?.['content'];
+    const vanSzoveg =
+      (typeof tartalom === 'string' && tartalom.trim() !== '') ||
+      (Array.isArray(tartalom) && tartalom.length > 0);
+
+    throw new KiolvasasHiba(
+      vanSzoveg ? 'A modell nem a kért függvénnyel válaszolt.' : 'A modell üres választ adott.',
+    );
   }
 
   try {

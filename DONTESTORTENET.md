@@ -4858,3 +4858,34 @@ használja, korai `return` nélkül) és `supabase/functions/email-bekuldes/indi
 (a hívás, a naplózott hiba, az SQL-függvény jogai). Szándékosan elrontva mind
 piros: a tétlen ütem „soha"-ra állítva, a korai `return` visszatéve, a hívás
 kivéve.
+
+## ✅ Az elbukott kiolvasás nyomot hagy, azonnal újrapróbál, és nem ijeszt (2026-09-23)
+
+Az e-mailes teszt a gyors indítás után is fél perc volt, és egy hibaüzenet
+jelent meg a bizonylaton. Mérve: az azonnali indítás működött (12:12:35,7), de
+az első kiolvasás elbukott, és a második a percfordulót várta.
+
+Az okot **mi nem tudtuk megmondani**: a hibás válaszból semmit nem mentettünk.
+A tulajdonos az OpenRouter naplójából hozta: a Google (Vertex) **200-as, de üres**
+választ adott — 0 → 0 token, nincs `finish_reason`, $0 —, egy perccel később
+ugyanaz a kérés hibátlan volt. Szolgáltatói, átmeneti hiba; nem a mi
+feldolgozásunk, nem a prompt.
+
+Három javítás, a tulajdonos döntése szerint mind:
+
+1. **Nyom.** A `KiolvasasHiba` a válasz nyomát viszi (`ValaszNyom`:
+   generációazonosító, futtatott modell, leállás oka, tokenek, teljes boríték).
+   A `kiolvas` a kiolvasási sorba írja (`raw_response` = boríték,
+   `model_version`, tokenek), a naplóba pedig `kiolvasas_hiba` sort
+   generációazonosítóval. Az üres válasz saját üzenetet kap („A modell üres
+   választ adott."). Útközben egy `catch` a `kiolvas`-ban a hibát sima
+   `Error`-rá alakította — ez a nyomot is eldobta volna; kivéve.
+2. **Azonnali második kísérlet**, ugyanazzal az SQL-indítóval, mint az e-mail.
+   Csak az első kudarc után: a harmadik a percfordulón jön, hogy egy percekig
+   tartó kiesés ne égesse el fél perc alatt mindhárom próbálkozást.
+3. **Semleges jelzés újrapróbálás közben** (`src/lib/kiolvasasJelzes.ts`);
+   piros csak a végleges `hiba`.
+
+Őrök: `openrouter.test.ts` (álcázott `fetch`-csel a teljes lánc, a 09-23-i
+üres válasz alakjával), `kiolvas/hibaNyom.test.ts`, `kiolvasasJelzes.test.ts`.
+Szándékosan elrontva mind az öt irányban piros.
