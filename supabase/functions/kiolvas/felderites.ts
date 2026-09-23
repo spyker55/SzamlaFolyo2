@@ -171,45 +171,67 @@ export function igenyelModellt(jelleg: Jelleg): boolean {
  * A PDF mellékletei, semleges alakban.
  *
  * ⚠️ **A pdf.js a `Names/EmbeddedFiles` névfát olvassa, az `/AF` bejegyzéseket
- * nem** (mérve a csomagolt forrásban). A PDF/A-3 — és vele a Factur-X meg a
- * ZUGFeRD — mindkettőt előírja, tehát a szabványos hibrid számla átjön; egy
- * csak `/AF`-et író, szabálytalan kiadó bizonylata viszont a modellhez esik.
- * Az irány jó: rosszabb kiolvasás helyett drágább kiolvasás.
+ * nem** (mérve a csomagolt forrásban, az unpdf 0.12.1-ben és 1.8.1-ben is). A
+ * PDF/A-3 — és vele a Factur-X meg a ZUGFeRD — mindkettőt előírja, tehát a
+ * szabványos hibrid számla átjön; egy csak `/AF`-et író, szabálytalan kiadó
+ * bizonylata viszont a modellhez esik. Az irány jó: rosszabb kiolvasás helyett
+ * drágább kiolvasás.
+ *
+ * # Két lépés, és ez mérés eredménye (unpdf 1.8.1, pdf.js 5)
+ *
+ * A 0.12.1 alatti pdf.js a `getAttachments()`-ben **sima objektumot** adott,
+ * mellékletenként a tartalommal (`content`). Az 1.8.1 alatti már **`Map`-et**
+ * ad, és benne **csak a nevet és a leírást** — a tartalmat mellékletenként a
+ * `getAttachmentContent(kulcs)` hozza. A régi kód az új változaton **hiba
+ * nélkül** üres listát adott (`Object.entries` egy `Map`-re `[]`), és minden
+ * hibrid számla csendben a modellhez esett volna. A `felderites.test.ts` hat
+ * tesztje erre pirosra váltott, és tíz PDF felderítésének a váltás előtti és
+ * utáni összevetése ugyanezt mutatta – a javítás után mind a tíz azonos.
  *
  * A saját `try` azért van, mert egy sérült mellékletlista nem viheti magával a
  * már kimért oldalszámot és szövegréteget — ott a bizonylat `kep` lenne
- * hibaüzenettel, pedig a PDF-fel magával semmi baj nincs.
+ * hibaüzenettel, pedig a PDF-fel magával semmi baj nincs. Egy **egyes**
+ * melléklet olvasási hibája pedig a többit nem viheti magával.
  */
 async function csatolmanyok(pdf: {
-  getAttachments: () => Promise<unknown>;
+  getAttachments: () => Promise<Map<string, { filename?: unknown }> | null>;
+  getAttachmentContent: (kulcs: string) => Promise<Uint8Array | null>;
 }): Promise<PdfCsatolmany[]> {
+  let nevek: Map<string, { filename?: unknown }> | null;
+
   try {
-    const nyers = await pdf.getAttachments();
-
-    // Melléklet nélküli PDF-re `null` jön vissza, nem üres objektum.
-    if (nyers === null || typeof nyers !== 'object') {
-      return [];
-    }
-
-    const lista: PdfCsatolmany[] = [];
-
-    for (const [kulcs, ertek] of Object.entries(nyers as Record<string, unknown>)) {
-      if (ertek === null || typeof ertek !== 'object') continue;
-
-      const { filename, content } = ertek as { filename?: unknown; content?: unknown };
-
-      if (!(content instanceof Uint8Array)) continue;
-
-      lista.push({
-        nev: typeof filename === 'string' && filename !== '' ? filename : kulcs,
-        tartalom: content,
-      });
-    }
-
-    return lista;
+    nevek = await pdf.getAttachments();
   } catch {
     return [];
   }
+
+  // Melléklet nélküli PDF-re `null` jön vissza, nem üres `Map`.
+  if (!(nevek instanceof Map)) {
+    return [];
+  }
+
+  const lista: PdfCsatolmany[] = [];
+
+  for (const [kulcs, adatok] of nevek) {
+    let tartalom: Uint8Array | null;
+
+    try {
+      tartalom = await pdf.getAttachmentContent(kulcs);
+    } catch {
+      continue;
+    }
+
+    if (!(tartalom instanceof Uint8Array)) continue;
+
+    const { filename } = adatok ?? {};
+
+    lista.push({
+      nev: typeof filename === 'string' && filename !== '' ? filename : kulcs,
+      tartalom,
+    });
+  }
+
+  return lista;
 }
 
 function xmlNekLatszik(bajtok: Uint8Array): boolean {

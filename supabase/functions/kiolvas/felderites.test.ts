@@ -12,7 +12,10 @@ import { ertelmez } from '../../../shared/uzleti/xml/xmlKiolvaso.ts';
  * feltételezni akarunk, hanem tudni:
  *
  * 1. hogy a `unpdf` (pdf.js) `getAttachments()`-e **létezik és működik** az
- *    általunk használt verzión, és mit ad vissza melléklet nélküli PDF-re;
+ *    általunk használt verzión, és mit ad vissza melléklet nélküli PDF-re (az
+ *    1.8.1-re váltáskor ez az API megváltozott – `Map`, és a tartalom külön
+ *    hívással –, és az alábbi tesztek közül hat pontosan erre lett piros;
+ *    lásd a `csatolmanyok()` docblockját);
  * 2. hogy a kinyert bájtokból a repó **saját** lánca (`xmltFelolvas` →
  *    `ertelmez`) valóban kiolvassa a számlát.
  *
@@ -154,6 +157,55 @@ describe('felderítés: PDF-be ágyazott e-számla', () => {
     // a kötegszétszedést — lásd az `esetlegSzetszed` fékjét.
     expect(f.jelleg).toBe('beagyazott_xml');
     expect(f.oldalszam).toBe(3);
+  });
+});
+
+describe('felderítés: szövegréteg oldalanként (Chromiumban nyomtatott PDF)', () => {
+  // A kötegszétszedő az oldalankénti szöveget küldi a modellnek, nem a fájlt.
+  // Ha a szöveg egybefolyna, vagy az ékezet elveszne, a bizonylathatárok
+  // felismerése romlana – hibaüzenet nélkül. Lásd `tesztadat/OLVASS-EL.md`.
+
+  it('három oldal, három külön szöveg, mindegyikben csak a saját számlája', async () => {
+    const f = await felderit(
+      new Uint8Array(readFileSync('tesztadat/harom-szamla.pdf')),
+      'application/pdf',
+    );
+
+    expect(f.jelleg).toBe('szovegreteg');
+    expect(f.oldalszam).toBe(3);
+    expect(f.oldalSzovegek).toHaveLength(3);
+
+    f.oldalSzovegek!.forEach((szoveg, i) => {
+      for (let j = 1; j <= 3; j++) {
+        const sorszam = `SZ-2026/000${j}`;
+        if (j === i + 1) expect(szoveg).toContain(sorszam);
+        else expect(szoveg).not.toContain(sorszam);
+      }
+    });
+  });
+
+  it('a magyar ékezetek épen jönnek ki (ő, ű, Ő)', async () => {
+    const f = await felderit(
+      new Uint8Array(readFileSync('tesztadat/harom-szamla.pdf')),
+      'application/pdf',
+    );
+    const elso = f.oldalSzovegek![0]!;
+
+    expect(elso).toContain('Árvíztűrő Tükörfúrógép Kft.');
+    expect(elso).toContain('Őrült Ügyvitel Bt.');
+    expect(elso).toContain('Fizetendő: 1 234 567,00 Ft');
+  });
+
+  it('a csak képet tartalmazó PDF `kep`, és az oldalszáma megvan', async () => {
+    const f = await felderit(
+      new Uint8Array(readFileSync('tesztadat/csak-kep.pdf')),
+      'application/pdf',
+    );
+
+    expect(f.jelleg).toBe('kep');
+    expect(f.oldalszam).toBe(1);
+    expect(f.szovegHossz).toBeLessThan(SZOVEG_KUSZOB);
+    expect(f.hiba).toBeNull();
   });
 });
 

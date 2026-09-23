@@ -4974,3 +4974,45 @@ azok is igazodtak: az adatvesztés „neki felróható” fordulata, és a 12. p
 archívum diffje a `-2`-höz képest pontosan ez az öt bekezdés; az impresszum
 lenyomata változatlan. A `legal_versions` sora **a push előtt** került élesbe
 (MCP), mert a böngésző ezt a verziót küldi a cégalapításkor.
+
+## ✅ unpdf 0.12.1 → 1.8.1 – és a beágyazott e-számla, ami csendben eltört volna (2026-09-23)
+
+**A mérés elkapta, ami élesben hibaüzenet nélkül ment volna el.** A pdf.js 5
+(unpdf 1.x) `getAttachments()`-e már **`Map`-et** ad, és benne csak a nevet
+és a leírást; a tartalmat mellékletenként a `getAttachmentContent(kulcs)`
+hozza. A régi kód erre üres listát adott (`Object.entries(Map)` → `[]`), és
+**minden Factur-X / ZUGFeRD számla a modellhez esett volna** – pénzért,
+tízszer lassabban, hibaüzenet nélkül. A `felderites.test.ts` hat tesztje is
+piros volt rá. Javítva: `csatolmanyok()` két lépésben, mellékletenkénti
+hibatűréssel.
+
+Mérve, tíz PDF-en (Chromiumban nyomtatott magyar számla 1, 3 és 30 oldalon;
+csak képet tartalmazó PDF; a `minta/factur-x-szabalyos.pdf`; három pdf-lib-es
+mellékletes; egy csonkolt és egy hamis PDF), a felderítés teljes kimenetét
+összevetve (jelleg, oldalszám, oldalankénti szöveg hash-e, XML hash-e,
+hibaüzenet, a bemenet épsége):
+
+| Összevetés | Eredmény |
+|---|---|
+| Node, 0.12.1 → 1.8.1, régi kód | **3 eltérés** – mindhárom mellékletes PDF elveszti az XML-t |
+| Node, 0.12.1 → 1.8.1, javított kód | 10/10 azonos |
+| Node 0.12.1 ↔ **Deno 2.1.4** 0.12.1 | 10/10 azonos |
+| **Deno 2.1.4**, 0.12.1 régi kód → 1.8.1 új kód | 10/10 azonos |
+
+A Deno-verzió élesből mérve: a függvénynapló szerint `supabase-edge-runtime-1.76.0
+(compatible with Deno v2.1.4)`; a Deno 2.1.4 npm-ből futott itt (eddig ebben a
+környezetben nem volt Deno). A `deno check` a teljes `kiolvas`-ra mindkét
+változaton hibátlan. Hidegindítás (import + első PDF, 5 futás): ~62 → ~73 ms.
+
+Mellékhatások: a 0.12.1 opcionális natív `canvas`-lánca kiesett a lockfile-ból
+(61 csomag), és vele az `npm audit` 6 találatról (1 kritikus, 3 magas) 2
+közepesre ment; a Deno-oldali „lifecycle scripts" figyelmeztetés is eltűnt.
+
+Új őr: a szövegréteg oldalankénti kinyerésére eddig nem volt teszt, pedig a
+kötegszétszedő arra épül. A `tesztadat/` alá két Chromium-PDF került (három
+számla oldalanként, ékezetekkel; egy csak képes), három teszttel – mindhárom
+külön piros, ha az oldalak egybefolynak (`mergePages: true`), ha az ékezet
+szétesik (NFD), vagy ha a küszöb elcsúszik.
+
+⚠️ **Élesben még nincs mérve**: a `kiolvas` újratelepítése után egy valódi
+PDF-es és egy Factur-X feltöltés `forras_naplo`-ja dönti el.
