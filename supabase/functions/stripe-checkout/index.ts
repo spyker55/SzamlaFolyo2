@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { szamlafolyo, type CsomagKulcs } from '../../../config/szamlafolyo.ts';
 import { tokenAllitas } from '../../../shared/uzleti/token.ts';
@@ -198,7 +198,7 @@ async function arKulcsbol(kulcs: string, lookupKulcs: string): Promise<string | 
  * ügyfélazonosítóra mutatna, és onnan nincs magától visszaút.
  */
 async function ugyfelet(
-  db: ReturnType<typeof createClient>,
+  db: SupabaseClient,
   kulcs: string,
   ceg: Ceg,
   email: string | null,

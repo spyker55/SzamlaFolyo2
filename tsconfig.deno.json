@@ -1,0 +1,55 @@
+{
+  // A Deno alatt futó Edge Functionök típusellenőrzése.
+  //
+  // Miért külön projekt: a `tsconfig.app.json` a böngészőé (DOM, JSX), ez a
+  // kódbázis viszont egy szerveroldali futtatókörnyezeté. 2026-09-23-ig a
+  // `supabase/functions/` egyáltalán NEM volt typecheckelve — a hibák csak a
+  // telepítés `deno check`-jén vagy élesben derültek ki.
+  //
+  // A `lib` szándékosan `ES2023`, DOM NÉLKÜL, és a webes API-kat (`fetch`,
+  // `Request`, `Response`, `crypto`, `TextEncoder`) a Node típusai adják. Ez
+  // közelebb van a Denóhoz, mint a DOM: ott nincs `document` és nincs
+  // `window`. DOM-mal egy `document.querySelector` némán átmenne a
+  // typecheckn, és élesben hasalna el.
+  //
+  // ⚠️ **Amit ez a Vercel-telepítéssel csinál.** A `tsconfig.json` referenciái
+  // közé bekötve nemcsak az `npm run typecheck` viszi, hanem az `npm run build`
+  // is — vagyis egy Edge Function-típushiba **megállítja a weboldal
+  // telepítését**, pedig a böngésző nem is szállítja ki azt a kódot.
+  //
+  // Ez tudatos csere, nem mellékhatás. Ebben a projektben **nincs CI** (nincs
+  // `.github/workflows/`), tehát a Vercel buildje az egyetlen automatikus kapu,
+  // ami létezik; ha ez nem nézné az Edge Functionöket, semmi nem nézné őket a
+  // telepítés pillanatáig. Az ár: egy típushiba addig nem enged kiadni egy
+  // nyitólap-javítást sem. A már kiszolgált telepítést ez nem érinti — a sikeres
+  // előző build tovább él —, tehát az oldal nem esik le tőle.
+  //
+  // A szigorúság szándékosan azonos a `tsconfig.app.json`-éval: ha az Edge
+  // Functionök enyhébb mércét kapnának, az egyetlen közös `shared/uzleti`
+  // modulra két különböző szabály vonatkozna — és a lazább nyerne.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    // A `node:fs` és a `vitest` a három `.test.ts` fájl miatt kell: azok
+    // Vitest alatt futnak, nem Deno alatt, és PDF-fixtúrákat olvasnak be.
+    "types": ["node"]
+  },
+  "include": ["supabase/functions"]
+}

@@ -16,11 +16,40 @@ import type { Elozmeny } from '../../../shared/uzleti/kapuk.ts';
 /** Ezek az állapotok jelentik azt, hogy egy bizonylatot ember már elfogadott. */
 const JOVAHAGYOTT = ['jovahagyva', 'exportalva'];
 
+/**
+ * Az öt mező, amiből az előzmény-kapuk dolgoznak.
+ *
+ * ⚠️ **Szándékosan nevesített típus, nem index-aláírás.** A laza alak
+ * 2026-09-23-ig itt állt, és egy latens hibát takart: index-aláírásból
+ * bármelyik kulcs lekérdezhető, tehát egy elgépelt vagy átnevezett mezőnév
+ * némán `undefined`-ot ad vissza — a fordító nem szól.
+ *
+ * Az `undefined` pedig itt **nem ártalmatlan**. A `penznemSzokatlan()` a
+ * `null`-ra véd (`penznem === null`), az `undefined` viszont átcsúszik rajta,
+ * és a végén `!latottak.has(undefined)` → **`true`** lesz belőle: a hiányzó
+ * pénznemből „szokatlan pénznem" válna, és rossz indokkal küldene emberhez
+ * minden bizonylatot. A `keltKilog()` és a `bizonylatszamMarLatott` ugyanezen
+ * a `=== null` mintán áll — azok véletlenül ártalmatlanul sülnének el.
+ *
+ * Ma nem áll elő ilyen érték: az egyetlen hívó (`elozmenyMezok()` a
+ * `kiolvas/index.ts`-ben) mind az öt kulcsot kiírja, és az `undefined`-ot
+ * `null`-ra fordítja. A nevesített típus azt zárja ki, hogy ez **csendben**
+ * változzon meg: egy átnevezett mező innentől a typechecken hasal el, nem
+ * élesben, egy rossz kapudöntésben.
+ */
+export type ElozmenyMezok = {
+  supplier_tax_number: string | null;
+  doc_number: string | null;
+  gross_amount: string | null;
+  issue_date: string | null;
+  currency: string | null;
+};
+
 export async function elozmenyt(
   db: SupabaseClient,
   cegId: string,
   dokumentumId: string,
-  mezok: Record<string, string | null>,
+  mezok: ElozmenyMezok,
 ): Promise<Elozmeny> {
   const { count: cegEddigi } = await db
     .from('documents')
@@ -30,7 +59,7 @@ export async function elozmenyt(
 
   const cegEddigiBizonylatai = cegEddigi ?? 0;
 
-  const szallitoTorzs = torzsszam(mezok['supplier_tax_number']);
+  const szallitoTorzs = torzsszam(mezok.supplier_tax_number);
 
   // Előzmény nélkül nincs mihez mérni: a bemelegítés úgyis emberhez viszi az
   // első bizonylatokat, itt tehát elég a „nem ismert szállító" válasz.
@@ -75,11 +104,11 @@ export async function elozmenyt(
   return {
     ismertSzallito: true,
     bizonylatszamMarLatott:
-      mezok['doc_number'] !== null &&
-      szallitoe.some((sor) => sor.doc_number === mezok['doc_number']),
-    osszegKilog: osszegKilog(mezok['gross_amount'], szallitoe),
-    keltKilog: keltKilog(mezok['issue_date']),
-    penznemSzokatlan: penznemSzokatlan(mezok['currency'], korabbiak ?? []),
+      mezok.doc_number !== null &&
+      szallitoe.some((sor) => sor.doc_number === mezok.doc_number),
+    osszegKilog: osszegKilog(mezok.gross_amount, szallitoe),
+    keltKilog: keltKilog(mezok.issue_date),
+    penznemSzokatlan: penznemSzokatlan(mezok.currency, korabbiak ?? []),
     cegEddigiBizonylatai,
   };
 }

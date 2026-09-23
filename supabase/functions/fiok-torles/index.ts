@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { nevEgyezik, torlesDontes, type TorlesTenyek } from '../../../shared/uzleti/fiokTorles.ts';
 import { tokenAllitas } from '../../../shared/uzleti/token.ts';
@@ -215,7 +215,7 @@ Deno.serve(async (keres: Request): Promise<Response> => {
 
 /** A hívó cége — ugyanaz a rendezés, mint a `belso.aktualis_ceg()`-ben. */
 async function cegAzonosito(
-  db: ReturnType<typeof createClient>,
+  db: SupabaseClient,
   felhasznalo: string,
 ): Promise<string | null> {
   const { data } = await db
@@ -297,7 +297,7 @@ async function elofizetestLemond(
  * lapozás azért kell, mert a `list` egy hívásban csak véges sok nevet ad.
  */
 async function mappatUrit(
-  db: ReturnType<typeof createClient>,
+  db: SupabaseClient,
   tarolo: string,
   ceg: string,
 ): Promise<{ ok: true; darab: number } | { ok: false; miert: string }> {

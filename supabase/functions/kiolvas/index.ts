@@ -10,7 +10,7 @@ import { keretAllapot, type CegAllapot } from '../../../shared/uzleti/keret.ts';
 
 import { felderit, igenyelModellt, naplo } from './felderites.ts';
 import { oldaltartomany } from './pdf.ts';
-import { elozmenyt } from './elozmeny.ts';
+import { elozmenyt, type ElozmenyMezok } from './elozmeny.ts';
 
 /**
  * A kiolvasó.
@@ -723,7 +723,7 @@ async function esetlegSzetszed(
 }
 
 /** Az előzmény-lekérdezéshez elég a szállító adószáma és a bizonylat azonosítói. */
-function elozmenyMezok(nyers: Record<string, unknown>): Record<string, string | null> {
+function elozmenyMezok(nyers: Record<string, unknown>): ElozmenyMezok {
   const szoveg = (ertek: unknown) =>
     ertek === null || ertek === undefined || ertek === '' ? null : String(ertek);
 
