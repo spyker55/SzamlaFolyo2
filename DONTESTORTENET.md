@@ -4889,3 +4889,41 @@ Három javítás, a tulajdonos döntése szerint mind:
 Őrök: `openrouter.test.ts` (álcázott `fetch`-csel a teljes lánc, a 09-23-i
 üres válasz alakjával), `kiolvas/hibaNyom.test.ts`, `kiolvasasJelzes.test.ts`.
 Szándékosan elrontva mind az öt irányban piros.
+
+## ✅ Figyelő ablak: 5 s, amikor nézed — és a naplókeret, ami miatt nem mindig (2026-09-23)
+
+Az e-mailes teszt ~37 s-a mérve: ~18 s a Gmail és a Resend között (nem a mi
+rendszerünk), ~15 s a mi feldolgozásunk (hiba nélkül, azonnali indítással), és
+**6 s a képernyőn**: a 15 s-os tétlen frissítés 0,2 s-mal lekéste a bizonylat
+sorát (a böngésző kérései az API-átjáró naplójában látszanak).
+
+A tulajdonos 5 s-ot kért, **„ha nem eszi meg a keretet"**. Mérve:
+
+- **Vercel: nem érinti.** A kérés a böngészőből közvetlenül a Supabase-hez megy.
+- **Supabase-forgalom (250 GB/hó): nem érinti érdemben.** Üres Beérkezőnél a
+  válasz 2 bájt, egy sor ~0,5 KB.
+- **Supabase-naplóbevitel (5 GB/hó, a számlázása most indul): ez a szűk keret.**
+  Minden kérés ~4,2 KB naplósort ír, akármilyen kicsi a válasz. A mai
+  alapfogyasztás ~16 MB/nap (~0,5 GB/hó). Egy napi 8 órán át nyitva hagyott
+  fül: 15 s-mal ~180 MB/hó (~25 ilyen felhasználó fér a keretbe), **mindig
+  5 s-mal ~530 MB/hó (~8)**.
+
+A sima 5 s tehát nem felelt meg a feltételnek. Helyette **figyelő ablak**: az
+oldal megnyitásakor, fül- vagy ablakváltáskor (`visibilitychange`, `focus`)
+azonnal frissít, és 2 percig 5 s-onként néz; utána vissza 15 s-ra. A levélküldés
+pont ilyen: visszajössz a Gmailből, és figyelsz. Egy ablak 24 kérés, ~100 KB.
+
+⚠️ **A 15 s-os alapütem is fogyaszt**: ~25 egész nap nyitott fül fölött a
+naplókeret betelik. Túllépésnél 0,50 $/GB (felhasználónként havi ~0,1 $), vagy
+— ha a Spend Cap be van kapcsolva — korlátozás. Ha a felhasználószám erre
+tart, a valós idejű értesítés (Supabase Realtime) a skálázható út: ott nincs
+lekérdezgetés.
+
+A hurok kikerült egy React nélküli függvénybe (`frissitoHurok()`), és álórával
+(fake timers) fut a tesztben. Ennek volt ára: az első változatban három,
+egymást átfedő őr állt a „két hurok soha" szabály mögött, és bármelyiket
+kivéve a teszt zöld maradt — nem mért semmit. A felesleges réteg kiment, a
+teszt pedig megkapta a két valós helyzetet, ami a megmaradt őröket igényli
+(fordított sorrendben visszaérő kérések; szinte egyszerre érkező
+`visibilitychange` + `focus`). Azóta mind az öt szabály külön-külön piros, ha
+kivesszük.

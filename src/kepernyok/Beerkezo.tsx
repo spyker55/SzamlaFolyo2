@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.ts';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
 import { duplikatumotElvet, feltolt } from '../lib/feltoltes.ts';
-import { frissitesiUtem } from '../lib/frissitesiUtem.ts';
+import { frissitesiUtem, frissitoHurok } from '../lib/frissitesiUtem.ts';
 import { kiolvasasJelzes, type HibaJelzes } from '../lib/kiolvasasJelzes.ts';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { keret as keretetKer, type Keret } from '../lib/keret.ts';
@@ -188,43 +188,37 @@ export function Beerkezo() {
   // közben e-mailben érkezett új bizonylat.
   const dolgozikMeg = sorok.some((s) => s.status === 'feltoltve' || s.status === 'feldolgozas_alatt');
 
+  // Mikor került utoljára előtérbe az oldal (megnyitás, fül- vagy
+  // ablakváltás). A hurok újraindulásai (a `dolgozikMeg` váltásai) között is
+  // meg kell maradnia, ezért ref, nem a hatás helyi változója.
+  const figyelem = useRef(Date.now());
+
   useEffect(() => {
     const kezdet = Date.now();
-    let el = true;
-    let idozito = 0;
 
-    // A `catch` nem kozmetika: egy elutasított betöltés (pillanatnyi hálózati
-    // hiba) enélkül **némán megállítaná** a frissítést, és a sor örökre
-    // „feldolgozás alatt" maradna a képernyőn. Egy frissítő ciklusnak túl kell
-    // élnie egy rossz körutat.
-    const frissit = () => betoltes().catch(() => undefined);
+    // A hurok maga a `frissitoHurok()` (`src/lib/frissitesiUtem.ts`): soha
+    // nem fut belőle kettő, és rejtett fülön nem kérdez.
+    const hurok = frissitoHurok({
+      frissit: betoltes,
+      utem: () => frissitesiUtem(dolgozikMeg, Date.now() - kezdet, Date.now() - figyelem.current),
+      lathato: () => document.visibilityState !== 'hidden',
+    });
 
-    function utemez() {
-      idozito = window.setTimeout(() => {
-        // Rejtett fülön nem kérdezünk: egy háttérben felejtett fül ne terhelje
-        // az adatbázist. Visszaváltáskor a `lathatova` azonnal frissít.
-        if (document.visibilityState === 'hidden') {
-          if (el) utemez();
-          return;
-        }
-
-        void frissit().then(() => {
-          if (el) utemez();
-        });
-      }, frissitesiUtem(dolgozikMeg, Date.now() - kezdet));
+    // Visszajöttél a fülre vagy az ablakra (pl. a Gmailből, egy elküldött levél
+    // után): azonnal frissít, és a figyelő ablak két percre felgyorsítja az
+    // ütemet.
+    function figyel() {
+      figyelem.current = Date.now();
+      if (document.visibilityState === 'visible') hurok.most();
     }
 
-    function lathatova() {
-      if (document.visibilityState === 'visible') void frissit();
-    }
-
-    document.addEventListener('visibilitychange', lathatova);
-    utemez();
+    document.addEventListener('visibilitychange', figyel);
+    window.addEventListener('focus', figyel);
 
     return () => {
-      el = false;
-      window.clearTimeout(idozito);
-      document.removeEventListener('visibilitychange', lathatova);
+      hurok.leallit();
+      document.removeEventListener('visibilitychange', figyel);
+      window.removeEventListener('focus', figyel);
     };
   }, [dolgozikMeg, betoltes]);
 
