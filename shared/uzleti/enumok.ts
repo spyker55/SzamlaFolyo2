@@ -147,7 +147,7 @@ export function adminisztralhat(szerep: Szerep): boolean {
 function cimkezo<T extends string>(cimkek: Record<T, string>) {
   return (ertek: string | null | undefined): string => {
     if (ertek === null || ertek === undefined || ertek === '') {
-      return '—';
+      return '–';
     }
     // Ismeretlen érték esetén magát az értéket adjuk vissza: „Egyéb"-nek
     // mutatni néma félrecímkézés lenne.

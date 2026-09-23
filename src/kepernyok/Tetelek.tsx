@@ -73,7 +73,7 @@ export function Tetelek() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Tételek</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Jóváhagyott bizonylatok, exportra várva. Innen még vissza lehet küldeni javításra —
+          Jóváhagyott bizonylatok, exportra várva. Innen még vissza lehet küldeni javításra –
           az export után már nem.
         </p>
         {tetelek.length > 0 && szerkeszthet && (
@@ -115,7 +115,7 @@ export function Tetelek() {
               {tetelek.map((tetel) => (
                 <tr key={tetel.id} className="trow">
                   <td className="td">
-                    <div className="font-medium text-slate-900">{tetel.doc_number ?? '—'}</div>
+                    <div className="font-medium text-slate-900">{tetel.doc_number ?? '–'}</div>
                     {tetel.auto_jovahagyva && (
                       <div className="mt-1">
                         <span className="badge badge-semleges">automatikusan jóváhagyva</span>
@@ -131,7 +131,7 @@ export function Tetelek() {
                     )}
                   </td>
                   <td className="td">{tipusCimke(tetel.doc_type)}</td>
-                  <td className="td">{tetel.supplier_name ?? '—'}</td>
+                  <td className="td">{tetel.supplier_name ?? '–'}</td>
                   <td className="td whitespace-nowrap">{datum(tetel.issue_date)}</td>
                   <td className="td whitespace-nowrap">
                     {formaz(tetel.gross_amount, tetel.currency)}

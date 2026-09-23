@@ -250,7 +250,7 @@ export function mellekletValogat(mellekletek: readonly MellekletFej[]): Valogata
       }
 
       if (beagyazott(m) && vanCsatoltKep) {
-        mellozott.push({ nev, indok: 'A levél törzsébe ágyazott kép — valószínűleg aláírás.' });
+        mellozott.push({ nev, indok: 'A levél törzsébe ágyazott kép – valószínűleg aláírás.' });
         continue;
       }
 
@@ -262,7 +262,7 @@ export function mellekletValogat(mellekletek: readonly MellekletFej[]): Valogata
 
       if (meret !== null && meret < bekuldes.kepMinBajt) {
         const kb = Math.round(bekuldes.kepMinBajt / 1024);
-        mellozott.push({ nev, indok: `Kisebb ${kb} kB-nál — valószínűleg aláíráskép.` });
+        mellozott.push({ nev, indok: `Kisebb ${kb} kB-nál – valószínűleg aláíráskép.` });
         continue;
       }
     }

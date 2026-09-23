@@ -195,7 +195,7 @@ function VarMegHivo({ meghivo }: { meghivo: VaroMeghivo }) {
   return (
     <div className="alert alert-info mb-5">
       <p>
-        Meghívtak a(z) <strong>{meghivo.ceg_nev}</strong> SzámlaFolyó-fiókjába —{' '}
+        Meghívtak a(z) <strong>{meghivo.ceg_nev}</strong> SzámlaFolyó-fiókjába –{' '}
         {szerepCimke(meghivo.szerep).toLowerCase()} szerepben. A meghívó még {nap} napig
         érvényes.
       </p>

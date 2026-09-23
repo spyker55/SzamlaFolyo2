@@ -133,7 +133,7 @@ export function meghivoLevel(adat: LevelAdat): Level {
     '',
     `${ervenyesseg} Elfogadni azzal az e-mail címmel lehet, amelyikre ez a levél érkezett.`,
     '',
-    'Ha nem számítottál erre a levélre, nincs teendőd — a meghívó magától lejár.',
+    'Ha nem számítottál erre a levélre, nincs teendőd – a meghívó magától lejár.',
     '',
     'SzámlaFolyó',
   ].join('\n');
@@ -145,7 +145,7 @@ export function meghivoLevel(adat: LevelAdat): Level {
 <p style="margin:0 0 16px;font-size:16px;line-height:1.5"><strong>${hivo}</strong> meghívott a(z) <strong>${ceg}</strong> SzámlaFolyó-fiókjába, <strong>${htmlBiztos(szerep.toLowerCase())}</strong> szerepben.</p>
 <p style="margin:0 0 24px"><a href="${htmlBiztos(link)}" style="display:inline-block;background:#9e5537;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Elfogadom a meghívót</a></p>
 <p style="margin:0 0 8px;font-size:14px;color:#475569">${ervenyesseg} Elfogadni azzal az e-mail címmel lehet, amelyikre ez a levél érkezett.</p>
-<p style="margin:0 0 16px;font-size:14px;color:#475569">Ha nem számítottál erre a levélre, nincs teendőd — a meghívó magától lejár.</p>
+<p style="margin:0 0 16px;font-size:14px;color:#475569">Ha nem számítottál erre a levélre, nincs teendőd – a meghívó magától lejár.</p>
 <p style="margin:0;font-size:13px;color:#94a3b8">Ha a gomb nem működik, másold be ezt a címet:<br>${htmlBiztos(link)}</p>
 </div>
 </body></html>`;

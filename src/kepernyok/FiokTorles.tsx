@@ -142,7 +142,7 @@ export function FiokTorles() {
         {dontes.fajta === 'ceggel' && tenyek.bizonylatok > 0 && (
           <div className="alert alert-info mt-4">
             <p>
-              Ha kellenek az adataid, <strong>előbb készíts exportot</strong> — utána már nem lesz
+              Ha kellenek az adataid, <strong>előbb készíts exportot</strong> – utána már nem lesz
               miből.
             </p>
             <Link to="/tetelek" className="btn btn-secondary btn-sm mt-3">

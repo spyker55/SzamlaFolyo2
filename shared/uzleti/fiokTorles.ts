@@ -111,7 +111,7 @@ export function torlesDontes(t: TorlesTenyek, most: Date = new Date()): TorlesDo
       kovetkezmenyek: [
         'A belépési adataid törlődnek, és ezzel a fiókod megszűnik.',
         `A cégben rajtad kívül ${t.tagokSzama - 1} felhasználó dolgozik, ezért a cég ` +
-          'bizonylatai, exportjai és beállításai érintetlenek maradnak — azok a céghez ' +
+          'bizonylatai, exportjai és beállításai érintetlenek maradnak – azok a céghez ' +
           'tartoznak, nem hozzád.',
         'Az előfizetéshez nem nyúlunk: az a cégé.',
       ],
@@ -141,7 +141,7 @@ function kovetkezmenyek(t: TorlesTenyek, most: Date): string[] {
     sorok.push(
       nap > 0
         ? `Az előfizetésed **azonnal** megszűnik. A kifizetett időszakból ${nap} nap van ` +
-            'hátra — ez elvész, és nem téríthető vissza. Ha ki akarod használni, előbb ' +
+            'hátra – ez elvész, és nem téríthető vissza. Ha ki akarod használni, előbb ' +
             'mondd le a számlázási portálon, és csak a fordulónap után törölj.'
         : 'Az előfizetésed azonnal megszűnik. Visszatérítésre nincs mód.',
     );
@@ -157,7 +157,7 @@ function kovetkezmenyek(t: TorlesTenyek, most: Date): string[] {
     darabok.length > 0
       ? `Törlődik ${darabok.join(', ')}, a kiolvasott adatokkal és a napló minden ` +
           'bejegyzésével együtt.'
-      : 'A cégnek nincs bizonylata, tehát nincs mit elvinni — a cég sora és a ' +
+      : 'A cégnek nincs bizonylata, tehát nincs mit elvinni – a cég sora és a ' +
           'beállításai szűnnek meg.',
   );
 
@@ -176,8 +176,8 @@ function kovetkezmenyek(t: TorlesTenyek, most: Date): string[] {
   // iratmegőrzés — a Szolgáltató egyéni vállalkozó, nem a számviteli törvény
   // alá tartozik), az ÁSZF-elfogadás nyomát egy későbbi vita bizonyítékaként.
   sorok.push(
-    'Két dolog marad meg: a már kiállított számlák, az adójogi iratmegőrzési idő végéig — ' +
-      'ezt jogszabály írja elő —, és az ÁSZF elfogadásának nyilvántartása (melyik ' +
+    'Két dolog marad meg: a már kiállított számlák, az adójogi iratmegőrzési idő végéig – ' +
+      'ezt jogszabály írja elő –, és az ÁSZF elfogadásának nyilvántartása (melyik ' +
       'változatot, mikor, ki fogadta el, melyik cég nevében), öt évig.',
   );
 

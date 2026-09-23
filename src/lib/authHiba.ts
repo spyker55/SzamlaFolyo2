@@ -60,7 +60,7 @@ const LEJART = 'A link lejárt, vagy már felhasználták. Kérj újat.';
  * „ezzel a címmel már van fiók", azt a védelmet mi gyengítenénk el.
  */
 const FOGLALT =
-  'Ha ezzel a címmel már van fiókod, lépj be — vagy kérj új jelszót a bejelentkezésnél.';
+  'Ha ezzel a címmel már van fiókod, lépj be – vagy kérj új jelszót a bejelentkezésnél.';
 
 /** A `weak_password` hiba oka dönti el a mondatot. */
 function jelszoUzenet(hiba: AuthHibaAlak): string {

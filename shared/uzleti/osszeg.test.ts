@@ -103,7 +103,7 @@ describe('formaz — kiírás magyar írásmód szerint', () => {
     expect(formaz('1612900.25')).toBe('1 612 900,25');
     expect(formaz('1500.00')).toBe('1 500');
     expect(formaz('12700', 'HUF')).toBe('12 700 HUF');
-    expect(formaz(null)).toBe('—');
+    expect(formaz(null)).toBe('–');
   });
 
   test('a negatív érték előjele megmarad', () => {

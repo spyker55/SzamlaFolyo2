@@ -327,7 +327,7 @@ describe('mellekletValogat', () => {
 
       expect(elfogadott.map((m) => m.id)).toEqual(['nyugta']);
       expect(mellozott).toEqual([
-        { nev: 'logo.png', indok: 'A levél törzsébe ágyazott kép — valószínűleg aláírás.' },
+        { nev: 'logo.png', indok: 'A levél törzsébe ágyazott kép – valószínűleg aláírás.' },
       ]);
     });
 

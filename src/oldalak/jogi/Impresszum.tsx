@@ -74,7 +74,7 @@ export function Impresszum() {
               <br />
               {a.szekhely ?? NINCS_SZEKHELY}
               <br />
-              {a.mit} — {a.hol}
+              {a.mit} – {a.hol}
               <br />
               <a
                 className="underline"
@@ -92,8 +92,8 @@ export function Impresszum() {
           tárolódnak. <strong>Több közreműködő azonban az Unión kívül dolgozza fel az adatot, vagy
           fér hozzá:</strong> a tárhelyszolgáltató szerződő fele szingapúri, és Unión kívül
           történik a gépi kiolvasás, a fizetés, a levelezés és magának a weboldalnak a
-          kiszolgálása is. A teljes felsorolás — jogi személlyel, székhellyel (ahol a szerződés
-          megadja), feladattal, feldolgozási országgal és a továbbítás alapjával — az{' '}
+          kiszolgálása is. A teljes felsorolás – jogi személlyel, székhellyel (ahol a szerződés
+          megadja), feladattal, feldolgozási országgal és a továbbítás alapjával – az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató 5. pontjában
           </Link>{' '}
@@ -114,12 +114,12 @@ export function Impresszum() {
             ügyfél vállalkozás
           </strong>
           : a fogyasztóvédelmi törvény fogyasztó-fogalma bizonyos kis- és középvállalkozásokat is
-          lefed — önmagában a KKV-minőség azonban nem elég hozzá.
+          lefed – önmagában a KKV-minőség azonban nem elég hozzá.
         </P>
         <P>
           <strong>Melyik testület illetékes.</strong> Főszabály szerint az a békéltető testület,
           amelynek illetékességi területén a fogyasztónak minősülő ügyfél lakóhelye vagy
-          tartózkodási helye — nem természetes személy esetén a székhelye — található. Nem
+          tartózkodási helye – nem természetes személy esetén a székhelye – található. Nem
           minden ügyfélre ugyanaz a testület illetékes, és ez nem a Szolgáltató székhelyétől
           függ. A <strong>Borsod-Abaúj-Zemplén, Heves és Nógrád</strong> vármegyei
           illetékességi területen a <strong>{bekeltetoTestulet.nev}</strong> jár el:
@@ -144,7 +144,7 @@ export function Impresszum() {
         <P>
           ⚠️ A békéltető testületek 2024. január 1-je óta <strong>regionális</strong> alapon
           működnek, és az illetékesség az ügyfél lakóhelyéhez, tartózkodási helyéhez vagy
-          székhelyéhez igazodik — nem a Szolgáltatóéhoz, és nem a Szolgáltató kamarai
+          székhelyéhez igazodik – nem a Szolgáltatóéhoz, és nem a Szolgáltató kamarai
           tagságához. Az utóbbi külön kérdés: az a fenti {szolgaltato.kamara}.
         </P>
         <P>

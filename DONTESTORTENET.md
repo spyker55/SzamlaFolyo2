@@ -4765,3 +4765,46 @@ ha `navigator.webdriver` igaz vagy a user agent `Headless`-t tartalmaz. A fenti
 „nyitva hagyott" pont tehát — böngészővel ellenőrizni a `document.cookie`-t —
 **nem elvégezhető**: Playwrighttal akkor is „semmi sem történik" jönne ki, ha a
 szűrőnk egyáltalán nem működne. A szűrő bizonyítéka az egységteszt marad.
+
+## ✅ Gondolatjel: hosszú (—) helyett nagykötőjel (–) a látható szövegben (2026-09-23)
+
+A tulajdonos kérése: minden látható szövegben a hosszú gondolatjel helyett rövid.
+Két döntés az övé volt:
+
+- **A jel: nagykötőjel (–)**, nem kiskötőjel (-). Ez a magyar helyesírás szerinti
+  gondolatjel, és a szövegben 39 helyen (számtartományok) már ez állt.
+- **A jogi szövegek új változatot kaptak** (`2026-09-23-2`), a hatálybalépés
+  napja marad szeptember 23. A reggel bevezetett szabály (kiadott változat
+  szövege nem változik) így ép maradt. Tartalmi változás nincs: a reggeli
+  archívumban a —-t –-re cserélve karakterre a délutánit kapjuk.
+
+### Hol cserélődött, és hol nem
+
+A csere a TypeScript szintaxisfáján ment, tehát **csak szövegben**: karakterlánc-,
+sablonliterál és JSX-szöveg, 321 helyen, plusz az `index.html` leírása és három
+SQL-hibaüzenet (`tulhasznalat_ore`, `meghivot_elfogad`, `ceg_letrehozas`; az
+élő függvényeken mérve pontosan ez a három volt). A diff minden sora csak a
+jelben tér el az előzőtől, ezt szkript ellenőrizte.
+
+**Nem cserélődött**, szándékosan:
+
+- a kommentek (kb. 1400 jel) — nem látszanak;
+- a `console.*` szövegei — napló;
+- a `prompt.ts` és a `sema.ts` — **a modell olvassa**, egy írásjel-csere ott a
+  kiolvasás bemenetét változtatná, nem a megjelenést;
+- az `eszkozok/` mérőeszközei — belső riportok, ügyfél nem látja.
+
+### Az őr
+
+`src/gondolatjel.test.ts`: ugyanaz a szintaxisfa-bejárás, plusz minden
+SQL-függvény legutolsó definíciójának kódsorai. Szándékosan elrontva mindhárom
+irányban piros lett (egy JSX-szöveg, a modell-kivétel levétele, a migráció
+elvétele — utóbbinál pontosan az élesben mért három függvényt jelezte).
+
+### Telepítés
+
+A migráció (`20260923000600_gondolatjel.sql`) a push **előtt** ment élesre: a
+frontend már a `2026-09-23-2` verziót küldi, és a sora nélkül a cégalapítás
+megállna. Élesben a három függvény md5-je egyezik a repóval. Az érintett Edge
+Functionök: `email-bekuldes`, `fiok-torles`, `kiolvas`, `meghivo-kuld` (a
+meghívólevél HTML-je), `stripe-webhook`.

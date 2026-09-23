@@ -174,7 +174,7 @@ export function FejlesztesAlattAblak() {
           <p id="fejlesztes-szoveg" className="mb-6 text-sm leading-relaxed text-slate-600">
             A SzámlaFolyó még nem indult el, <strong className="font-semibold text-slate-700">
             regisztrálni egyelőre nem lehet</strong>. Amit itt látsz, még változik. Nézz vissza
-            később — vagy írj, és szólunk, amint élesedik:{' '}
+            később – vagy írj, és szólunk, amint élesedik:{' '}
             <a
               href={`mailto:${kapcsolatEmail}`}
               className="font-medium text-blue-700 hover:underline"

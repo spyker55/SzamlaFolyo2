@@ -90,7 +90,7 @@ export function Valaszto({
         value={ertek}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">— válassz —</option>
+        <option value="">– válassz –</option>
         {opciok.map((o) => (
           <option key={o.ertek} value={o.ertek}>
             {o.cimke}

@@ -153,7 +153,7 @@ export function Export() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="flabel" htmlFor="tol">
-                Beérkezés — tól
+                Beérkezés – tól
               </label>
               <input
                 id="tol"
@@ -165,7 +165,7 @@ export function Export() {
             </div>
             <div>
               <label className="flabel" htmlFor="ig">
-                Beérkezés — ig
+                Beérkezés – ig
               </label>
               <input
                 id="ig"
@@ -218,7 +218,7 @@ export function Export() {
               ))}
             </select>
             <p className="mt-1 text-xs text-slate-400">
-              Adószám alapján, a törzsszám (első nyolc jegy) szerint — így az sem gond, ha
+              Adószám alapján, a törzsszám (első nyolc jegy) szerint – így az sem gond, ha
               ugyanaz a cég más alakban szerepel a bizonylatokon. A kiválasztott ügyfél{' '}
               <strong>bejövő és kimenő</strong> bizonylatai is bekerülnek.
             </p>
@@ -232,7 +232,7 @@ export function Export() {
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([penznem, ossz]) => (
                 <div key={penznem} className="mt-1 text-xs text-slate-600">
-                  {penznem} — nettó {formaz(ossz.netto)} · ÁFA {formaz(ossz.afa)} · bruttó{' '}
+                  {penznem} – nettó {formaz(ossz.netto)} · ÁFA {formaz(ossz.afa)} · bruttó{' '}
                   {formaz(ossz.brutto)}{' '}
                   <span className="text-slate-400">({ossz.darab} könyvelendő)</span>
                 </div>
@@ -271,7 +271,7 @@ export function Export() {
                 Az export után az eredeti PDF-ek és képek törlődnek a szerverről.
               </strong>{' '}
               Az adatok az Archívumban maradnak, de a bizonylat képe nem hívható vissza. Töltsd
-              le őket most, ha meg akarod őrizni — a megőrzési kötelezettség a tiéd.
+              le őket most, ha meg akarod őrizni – a megőrzési kötelezettség a tiéd.
             </div>
           ) : (
             <div className="alert alert-info">
@@ -318,7 +318,7 @@ export function Export() {
           {!szerkeszthet && (
             <p className="text-xs text-slate-500">
               Megtekintő szerepben az eredetiket le tudod tölteni, exportot viszont nem
-              készíthetsz — az átjelöli a tételeket és törli az eredeti fájlokat.
+              készíthetsz – az átjelöli a tételeket és törli az eredeti fájlokat.
             </p>
           )}
         </div>

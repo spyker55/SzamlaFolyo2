@@ -65,8 +65,8 @@ export function kilepesDontes(t: KilepesTenyek): KilepesDontes {
       cim: 'Egyedül vagy a cégben, ezért a kilépés nem a helyes út.',
       miert:
         `Rajtad kívül senki nem dolgozik a(z) ${ceg} fiókjában. Ha kilépnél, a cég ` +
-        'adataihoz soha többé senki nem férne hozzá — törölni és exportálni sem lehetne ' +
-        'őket —, az adószám viszont foglalt maradna, tehát ugyanez a vállalkozás nem ' +
+        'adataihoz soha többé senki nem férne hozzá – törölni és exportálni sem lehetne ' +
+        'őket –, az adószám viszont foglalt maradna, tehát ugyanez a vállalkozás nem ' +
         'tudna új céget alapítani. Ha meg akarsz válni a cégtől, a **Fiók törlése** a ' +
         'helyes út: az megmondja, mi vész el, és a cégsort is elviszi.',
     };
@@ -90,11 +90,11 @@ export function kilepesDontes(t: KilepesTenyek): KilepesDontes {
     kovetkezmenyek: [
       'A hozzáférésed azonnal megszűnik: a cég bizonylatait, exportjait és beállításait ' +
         'többé nem látod.',
-      'A cég adataiból **semmi nem törlődik** — azok a céghez tartoznak, nem hozzád. ' +
+      'A cég adataiból **semmi nem törlődik** – azok a céghez tartoznak, nem hozzád. ' +
         'Amit feltöltöttél vagy jóváhagytál, a helyén marad.',
       'A fiókod megmarad, a belépési adataid változatlanok. Ha újra hívnak, ugyanezzel ' +
         'a címmel visszatérhetsz.',
-      'A cég naplójába bekerül, hogy kiléptél — a bent maradók lássák, mi történt.',
+      'A cég naplójába bekerül, hogy kiléptél – a bent maradók lássák, mi történt.',
     ],
   };
 }

@@ -137,7 +137,7 @@ export function formaz(
   penznem?: string | null,
 ): string {
   if (ertek === null || ertek === undefined || ertek === '') {
-    return '—';
+    return '–';
   }
 
   // A tárolt alak kanonikus (pont a tizedesjel), ezért **nem** az emberi
@@ -148,7 +148,7 @@ export function formaz(
     typeof ertek === 'number' ? kerekitSzamrol(ertek) : olvasKanonikus(ertek);
 
   if (kanonikus === null) {
-    return '—';
+    return '–';
   }
 
   const negativ = kanonikus.startsWith('-');

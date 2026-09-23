@@ -240,7 +240,7 @@ export function Ellenorzes() {
           {bizonylat.auto_indok ?? 'Minden ellenőrzés rendben.'}
           <p className="mt-1 text-xs">
             Ezt a bizonylatot a rendszer engedte át, ember eddig nem nézte meg. Ha most
-            javítasz rajta, azt külön rögzítjük — ebből derül ki, hogy jól vannak-e beállítva
+            javítasz rajta, azt külön rögzítjük – ebből derül ki, hogy jól vannak-e beállítva
             a küszöbök.
           </p>
         </div>
@@ -255,7 +255,7 @@ export function Ellenorzes() {
         <div className="alert alert-figyelem mb-4">
           <strong>Kézzel írott vagy nehezen olvasható bizonylat.</strong> Az ilyen iraton a
           gépi kiolvasás megbízhatatlan, és a hibája nem hagy nyomot, amit ellenőrizni
-          tudnánk — <strong>minden mezőt vess össze a papírral</strong>, a jelöletlen mezőket
+          tudnánk – <strong>minden mezőt vess össze a papírral</strong>, a jelöletlen mezőket
           is. Különösen a neveket: azok az egyetlen adatok, amikhez semmilyen ellenőrzésünk
           nincs.
         </div>
@@ -284,7 +284,7 @@ export function Ellenorzes() {
         bizonylat.tobb_irat_gyanu && (
           <div className="alert alert-figyelem mb-4">
             Úgy tűnik, ebben a fájlban <strong>több különálló bizonylat</strong> van, de a
-            határaikat nem tudtuk biztosan megállapítani — ezért <strong>nem</strong> szedtük
+            határaikat nem tudtuk biztosan megállapítani – ezért <strong>nem</strong> szedtük
             szét. Az alábbi adatok az elsőre vonatkoznak; a többit külön érdemes feltölteni.
           </div>
         )
@@ -297,7 +297,7 @@ export function Ellenorzes() {
         <div className="card overflow-hidden lg:sticky lg:top-20 lg:self-start">
           {fajlUrl === null ? (
             <div className="empty m-4">
-              Ehhez az irathoz már nincs fájl — az export után törlődött.
+              Ehhez az irathoz már nincs fájl – az export után törlődött.
             </div>
           ) : kepE ? (
             <img

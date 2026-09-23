@@ -90,7 +90,7 @@ export function AfaBontasSzerkeszto({
                       disabled={csakOlvashato}
                       onChange={(e) => modosit(i, 'kategoria', e.target.value)}
                     >
-                      <option value="">—</option>
+                      <option value="">–</option>
                       {AFA_KATEGORIAK.map((k) => (
                         <option key={k} value={k}>
                           {kategoriaCimke(k)}

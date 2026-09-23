@@ -117,7 +117,7 @@ export function Beallitasok() {
       // állapot. Amit a portálon tettek, azt a webhook írja be — ez a mondat
       // csak megmagyarázza, miért nem azonnal látszik.
       setUzenet(
-        'Visszatértél a számlázási portálról. Ha ott változtattál, az pár másodpercen belül itt is megjelenik — frissítsd az oldalt.',
+        'Visszatértél a számlázási portálról. Ha ott változtattál, az pár másodpercen belül itt is megjelenik – frissítsd az oldalt.',
       );
     }
 
@@ -207,7 +207,7 @@ export function Beallitasok() {
             <p className="mt-2 text-sm text-slate-600">
               Az adószám nem módosítható: az export ügyfélszűrője és az ellenőrzések is ebből
               dolgoznak, egy átírás visszamenőleg sorolná át a bizonylataidat. Ha elgépelted,
-              szólj — ellenőrzött úton javítjuk.
+              szólj – ellenőrzött úton javítjuk.
             </p>
           </div>
         </Kartya>
@@ -252,7 +252,7 @@ export function Beallitasok() {
                 */}
                 <p className="mt-2 text-sm text-slate-500">
                   Ez a cím <strong>titok</strong>: aki ismeri, a ti keretetekből költ. Ne tedd
-                  ki nyilvános helyre. Ha kiszivárgott, cseréld le — a régi cím azonnal
+                  ki nyilvános helyre. Ha kiszivárgott, cseréld le – a régi cím azonnal
                   érvénytelen lesz.
                 </p>
               </div>
@@ -286,7 +286,7 @@ export function Beallitasok() {
               <ul className="mt-3 space-y-1 text-sm text-slate-600">
                 <li>
                   • <strong>PDF, kép és e-számla XML</strong> mellékleteket dolgozunk fel. Ha a
-                  levélben van PDF vagy XML, a képekhez hozzá sem nyúlunk — így az aláírásban
+                  levélben van PDF vagy XML, a képekhez hozzá sem nyúlunk – így az aláírásban
                   ülő céglogóból nem lesz bizonylat.
                 </li>
                 <li>
@@ -340,7 +340,7 @@ export function Beallitasok() {
             be_opcio={{
               cimke: 'Csak azt kapjam kézhez, amivel dolgom van',
               leiras:
-                'Ami minden ellenőrzésen átment, magától jóváhagyásra kerül — jelvénnyel és indokkal.',
+                'Ami minden ellenőrzésen átment, magától jóváhagyásra kerül – jelvénnyel és indokkal.',
             }}
             onValt={(be) =>
               void ment(
@@ -355,13 +355,13 @@ export function Beallitasok() {
           <ul className="mt-3 space-y-1 text-sm text-slate-600">
             <li>
               • Az első <strong>{szamlafolyo.automatikusJovahagyas.bemelegitesDarab}</strong>{' '}
-              bizonylat akkor is hozzád kerül — előzmények nélkül a rendszernek nincs mihez
+              bizonylat akkor is hozzád kerül – előzmények nélkül a rendszernek nincs mihez
               mérnie, és neked is látnod kell egyszer, mit csinál.
             </li>
             <li>
               • Utána is minden{' '}
               <strong>{szamlafolyo.automatikusJovahagyas.mintavetelMinden}.</strong> bizonylat
-              emberhez megy. Ettől marad kalibrálva az ellenőrzés — és csak így mérhető, hogy
+              emberhez megy. Ettől marad kalibrálva az ellenőrzés – és csak így mérhető, hogy
               az automatika mennyit téved.
             </li>
             <li>
@@ -401,7 +401,7 @@ export function Beallitasok() {
           <p className="mt-3 text-sm text-slate-600">
             Amíg a fájl megvan, addig idegen cégek számláit tároljuk.{' '}
             <strong>Ami nincs meg, azt nem is lehet kiszivárogtatni.</strong> Hosszabb megőrzés
-            akkor indokolt, ha időnként vissza kell nézned az eredetibe — a kiolvasott adat és
+            akkor indokolt, ha időnként vissza kell nézned az eredetibe – a kiolvasott adat és
             az export ettől függetlenül megmarad.
           </p>
 
@@ -433,7 +433,7 @@ export function Beallitasok() {
           {!FUTO_ALLAPOTOK.includes(ceg.stripe_status ?? '') ? (
             <p className="alert alert-info">
               A túlhasználat <strong>előfizetéssel</strong> érhető el. A próbaidő kerete
-              zárt keret: ha elfogy, csomagot lehet választani — extra bizonylatot
+              zárt keret: ha elfogy, csomagot lehet választani – extra bizonylatot
               számlázni nincs kinek.
             </p>
           ) : (
@@ -492,7 +492,7 @@ export function Beallitasok() {
                 <p className="mt-2 text-sm text-slate-600">
                   A plafon <strong>nem opcionális</strong>: a nyitott végű engedély váratlan
                   számlát jelentene. Forintban mér, nem bizonylatban, mert a darabár csomagonként
-                  más. Ha a keret fölötti munka eléri, a feldolgozás <strong>megáll</strong> —
+                  más. Ha a keret fölötti munka eléri, a feldolgozás <strong>megáll</strong> –
                   itt emelheted.
                 </p>
 
@@ -504,7 +504,7 @@ export function Beallitasok() {
                 {keret?.tulhasznalat != null && (
                   <p className="mt-2 text-sm text-slate-500">
                     Ebben a ciklusban <strong>{keret.tulhasznalat.darab}</strong> bizonylat ment a
-                    kereten felül — {formaz(keret.tulhasznalat.ft, 'Ft')} a{' '}
+                    kereten felül – {formaz(keret.tulhasznalat.ft, 'Ft')} a{' '}
                     {formaz(keret.tulhasznalat.plafonFt, 'Ft')}-os plafonból. A tétel a következő
                     számlán jelenik meg, a ciklus fordulóján.
                   </p>
@@ -888,7 +888,7 @@ function ElofizetesKartya({
             <div className="alert alert-figyelem">
               <p>
                 <strong>Lemondtad az előfizetést.</strong> {datum(lemondva)}-ig minden változatlan
-                — a teljes kereted megmarad —, utána nem terhelünk többet.
+                – a teljes kereted megmarad –, utána nem terhelünk többet.
               </p>
               <p className="mt-1">
                 Meggondoltad magad? A számlázási portálon a lemondás visszavonható, amíg a
@@ -932,7 +932,7 @@ function ElofizetesKartya({
 
           <p className="text-sm text-slate-500">
             {admin
-              ? 'A fizetés a Stripe oldalán történik — bankkártyaadat nem kerül hozzánk. Az árak a fizetendő végösszegek: alanyi adómentesként áfa nem járul hozzájuk.'
+              ? 'A fizetés a Stripe oldalán történik – bankkártyaadat nem kerül hozzánk. Az árak a fizetendő végösszegek: alanyi adómentesként áfa nem járul hozzájuk.'
               : 'Az előfizetést a cég tulajdonosa indíthatja.'}
           </p>
 
@@ -997,7 +997,7 @@ function PortalSor({
           'A korábbi számláid és a számlázási adataid a Stripe portálján érhetők el.'
         ) : (
           <>
-            Csomagváltás, lemondás, kártyacsere és a számláid — mind a Stripe oldalán, ahol a
+            Csomagváltás, lemondás, kártyacsere és a számláid – mind a Stripe oldalán, ahol a
             bankkártyaadat is van. A csomagváltás ott az{' '}
             <strong className="font-medium text-slate-700">„Előfizetés frissítése"</strong> gomb
             mögött van. Amit módosítasz, az pár másodpercen belül itt is látszik.{' '}
@@ -1337,7 +1337,7 @@ function Meghivas({
       <h3 className="text-sm font-semibold text-slate-900">Kolléga meghívása</h3>
       <p className="mt-1 text-sm text-slate-500">
         Kap egy levelet a meghívó linkjével. Elfogadni <strong>csak ezzel az e-mail címmel</strong>{' '}
-        belépve tud — a link nem adható át másnak.
+        belépve tud – a link nem adható át másnak.
       </p>
 
       {uzenet !== null && <div className="alert alert-siker mt-3">{uzenet}</div>}

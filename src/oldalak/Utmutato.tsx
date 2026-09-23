@@ -72,7 +72,7 @@ export function Utmutato() {
       </P>
       <P>
         Ez az útmutató a <strong>bizonylat útját</strong> követi, nem a menüt. Ha most ülsz le
-        először, olvasd végig egyszer — nagyjából tíz perc, és utána minden képernyőn tudni
+        először, olvasd végig egyszer – nagyjából tíz perc, és utána minden képernyőn tudni
         fogod, mit keresel.
       </P>
 
@@ -94,11 +94,11 @@ export function Utmutato() {
         </P>
         <Figyelem>
           <strong>Az ügyfélszűrő kényelmi szűrés, nem hozzáférési korlát.</strong> A cégben
-          mindenki a <em>teljes</em> bizonylatállományt látja, a szerepe szerinti jogokkal — nem
+          mindenki a <em>teljes</em> bizonylatállományt látja, a szerepe szerinti jogokkal – nem
           csak azt az ügyfelet, akivel dolgozik. Ha egy ügyfél iratait el kell különíteni a
           többitől, ahhoz külön cég (és külön előfizetés) kell. Adatvédelmi oldalról is érdemes
           tudni: amikor az ügyfeled megbízásából dolgozol, <em>te</em> vagy az ő adatfeldolgozója,
-          és a SzámlaFolyó al-adatfeldolgozó — ehhez az ügyfél felhatalmazása kell. A részletek az{' '}
+          és a SzámlaFolyó al-adatfeldolgozó – ehhez az ügyfél felhatalmazása kell. A részletek az{' '}
           <Link to="/aszf" className="underline">
             ÁSZF 11. pontjában
           </Link>{' '}
@@ -107,7 +107,7 @@ export function Utmutato() {
         <P>
           <strong>Kollégák meghívása.</strong> A Beállítások → <em>Tagok</em> kártyáján
           e-mail-címre szól a meghívó; a meghívott a levélben kapott linken nyit fiókot, vagy
-          ha már van neki, azzal lép be. Hogy ki mit tehet, azt a szerepe dönti el — a{' '}
+          ha már van neki, azzal lép be. Hogy ki mit tehet, azt a szerepe dönti el – a{' '}
           {pont('szerepek')}. pontban van a táblázat.
         </P>
       </Fejezet>
@@ -121,13 +121,13 @@ export function Utmutato() {
           <li>
             Elfogadott formátumok: <strong>PDF, JPG, PNG, WEBP</strong> és{' '}
             <strong>e-számla XML</strong> (UBL, Factur-X/ZUGFeRD, NAV Online Számla és a régebbi
-            APEH-alak). A <strong>hibrid e-számlát</strong> — azt a PDF-et, amibe a kibocsátó az
-            XML-t is beletette (Factur-X, ZUGFeRD) — magától felismerjük, és a beágyazott
+            APEH-alak). A <strong>hibrid e-számlát</strong> – azt a PDF-et, amibe a kibocsátó az
+            XML-t is beletette (Factur-X, ZUGFeRD) – magától felismerjük, és a beágyazott
             XML-ből olvassuk ki: neked ugyanúgy egy PDF-et kell feltöltened.
           </li>
           <li>
             ⚠️ <strong>Ha egy XML nem a négy ismert alak valamelyike</strong>, nem utasítjuk el:
-            ugyanúgy feldolgozzuk, mint egy PDF-et — vagyis <strong>a modell olvassa ki</strong>.
+            ugyanúgy feldolgozzuk, mint egy PDF-et – vagyis <strong>a modell olvassa ki</strong>.
             A keretedbe ugyanannyi, a tartalma viszont így elhagyja a szervert. A
             részletek az{' '}
             <Link to="/adatkezeles" className="underline">
@@ -141,7 +141,7 @@ export function Utmutato() {
           </li>
           <li>
             A fájl típusát a <strong>tartalmából</strong> állapítjuk meg, nem a kiterjesztésből
-            — egy rosszul elnevezett fájl is bekerül, ha egyébként jó.
+            – egy rosszul elnevezett fájl is bekerül, ha egyébként jó.
           </li>
           <li>
             <strong>Ugyanaz a fájl kétszer nem kerül be.</strong> Ha egy bizonylat már bent van,
@@ -152,14 +152,14 @@ export function Utmutato() {
         <P>
           <strong>E-mailben.</strong> A cégnek saját beküldő címe van a{' '}
           <code className="rounded bg-slate-100 px-1">{szamlafolyo.bekuldes.domain}</code>{' '}
-          tartományon — a Beállítások → <em>E-mailes beküldés</em> kártyán kapcsolható be, és ott
+          tartományon – a Beállítások → <em>E-mailes beküldés</em> kártyán kapcsolható be, és ott
           is másolható ki. Amit oda küldesz, az úgy kerül a Beérkezőbe, mintha feltöltötted
           volna.
         </P>
         <Figyelem>
           <strong>A beküldő cím titok.</strong> Nincs rajta jelszó: aki ismeri, a ti
           keretetekből költ. Ne tedd ki weboldalra vagy nyilvános aláírásba. Ha mégis
-          kiszivárgott, a Beállításokban egy gombbal lecserélhető — a régi cím azonnal
+          kiszivárgott, a Beállításokban egy gombbal lecserélhető – a régi cím azonnal
           érvénytelen lesz.
         </Figyelem>
         <P>Amit a levelekről tudni érdemes:</P>
@@ -170,7 +170,7 @@ export function Utmutato() {
             szeretnéd, hogy a szállítóid közvetlenül ide küldjenek.
           </li>
           <li>
-            Ha a levélben van PDF vagy XML, a <strong>képekhez hozzá sem nyúlunk</strong> — így
+            Ha a levélben van PDF vagy XML, a <strong>képekhez hozzá sem nyúlunk</strong> – így
             az aláírásban ülő céglogóból nem lesz bizonylat.
           </li>
           <li>
@@ -178,17 +178,17 @@ export function Utmutato() {
             mellékletet dolgozunk fel.
           </li>
           <li>
-            <strong>A feladó nem kap választ.</strong> Hogy mi lett egy levéllel — átment,
-            vagy miért nem —, azt a Beállítások ugyanezen kártyáján, a lap alján látod.
+            <strong>A feladó nem kap választ.</strong> Hogy mi lett egy levéllel – átment,
+            vagy miért nem –, azt a Beállítások ugyanezen kártyáján, a lap alján látod.
           </li>
         </Lista>
         <Figyelem>
           <strong>A beküldő cím olyan, mint egy kulcs: aki ismeri, a te keretedből költ.</strong>{' '}
           Ne tedd ki nyilvános helyre, és ne írd bele körlevélbe. Alapesetben csak a cég
-          tagjainak címéről fogadunk el levelet — ez átállítható „bárkitől" állásba, de tudd,
+          tagjainak címéről fogadunk el levelet – ez átállítható „bárkitől" állásba, de tudd,
           hogy a feladómező hamisítható, tehát ez a szűrés a véletlen ellen véd (hírlevél,
           automata válasz), nem a szándékos visszaélés ellen. Ha a cím kiszivárog, a Beállítások
-          kártyáján <strong>cseréld le</strong> — a régi cím azonnal érvénytelen lesz.
+          kártyáján <strong>cseréld le</strong> – a régi cím azonnal érvénytelen lesz.
         </Figyelem>
       </Fejezet>
 
@@ -196,7 +196,7 @@ export function Utmutato() {
         <P>
           A feltöltés után a bizonylat sorba áll, és magától végigmegy a feldolgozáson. Nincs
           „indítás" gomb; a Beérkező listája frissül, ahogy halad. Ami valamelyik állapotban
-          megakad, az ott is marad láthatóan — nem tűnik el csendben.
+          megakad, az ott is marad láthatóan – nem tűnik el csendben.
         </P>
         <Tablazat fejlec={['Állapot', 'Mit jelent', 'Van-e vele dolgod']}>
           <Sor
@@ -212,7 +212,7 @@ export function Utmutato() {
           <Sor
             allapot={allapotCimke('ellenorzesre_var')}
             mit="Kiolvastuk, és rád vár a jóváhagyás."
-            dolog={`Igen — ez a ${pont('ellenorzes')}. pont.`}
+            dolog={`Igen – ez a ${pont('ellenorzes')}. pont.`}
           />
           <Sor
             allapot={allapotCimke('hiba')}
@@ -236,8 +236,8 @@ export function Utmutato() {
           />
         </Tablazat>
         <P>
-          <strong>Ha egy fájlban több bizonylat van</strong> — mert egyben szkennelted be a havi
-          paksamétát —, a rendszer megkeresi a határokat, és{' '}
+          <strong>Ha egy fájlban több bizonylat van</strong> – mert egyben szkennelted be a havi
+          paksamétát –, a rendszer megkeresi a határokat, és{' '}
           <strong>külön bizonylatot csinál mindegyikből</strong>, oldalszám szerint. A fájlt nem
           vágjuk szét, csak megjegyezzük, melyik bizonylat hol áll benne. A szétszedés maga nem
           kerül külön kreditbe.
@@ -248,7 +248,7 @@ export function Utmutato() {
         <P>
           Ez a rendszer szíve. Bal oldalon az eredeti bizonylat, jobb oldalon a kiolvasott
           adatok. A feladatod nem az, hogy mindent begépelj, hanem hogy{' '}
-          <strong>megnézd, amit megjelöltünk</strong> — azzal a megszorítással, hogy a{' '}
+          <strong>megnézd, amit megjelöltünk</strong> – azzal a megszorítással, hogy a{' '}
           <em>jelöletlen</em> mező sem garancia. Azt jelenti, hogy nincs okunk gyanakodni, nem
           azt, hogy biztosan jó. A végösszeget és a bizonylatszámot érdemes akkor is ránézésre
           összevetni az eredetivel.
@@ -258,18 +258,18 @@ export function Utmutato() {
         </P>
         <Lista>
           <li>
-            <strong>Jelöletlen</strong> — magabiztos kiolvasás, és minden ellenőrzés rendben.
+            <strong>Jelöletlen</strong> – magabiztos kiolvasás, és minden ellenőrzés rendben.
             Nem azt jelenti, hogy biztosan jó; azt, hogy nincs okunk gyanakodni.
           </li>
           <li>
-            <strong>Sárga</strong> — bizonytalan. Vesd össze a papírral.
+            <strong>Sárga</strong> – bizonytalan. Vesd össze a papírral.
           </li>
           <li>
-            <strong>Piros</strong> — vagy nagyon bizonytalan a kiolvasás, vagy{' '}
+            <strong>Piros</strong> – vagy nagyon bizonytalan a kiolvasás, vagy{' '}
             <strong>megbukott egy ellenőrzés</strong>. A mező alatt ott a mondat, hogy mi a baj.
           </li>
           <li>
-            <strong>Szürke, „nincs adat"</strong> — ezt a mezőt nem találtuk a bizonylaton. Ez
+            <strong>Szürke, „nincs adat"</strong> – ezt a mezőt nem találtuk a bizonylaton. Ez
             nem hiba: egy nyugtán nincs vevő adószáma.
           </li>
         </Lista>
@@ -278,7 +278,7 @@ export function Utmutato() {
           bizonylat magával összhangban van-e: kiadja-e a nettó és az ÁFA a bruttót, stimmel-e
           a tételsorok összege, érvényes-e az adószám ellenőrző számjegye, nem későbbi-e a
           teljesítés a keltnél. Ha egy ilyen megbukik, az vagy kiolvasási hiba, vagy{' '}
-          <strong>a bizonylaton van eltérés</strong> — és a kettő közül a másodikat is jó időben
+          <strong>a bizonylaton van eltérés</strong> – és a kettő közül a másodikat is jó időben
           megtudni. A jelzés <strong>vizsgálandó eltérés, nem ítélet</strong>: a keltnél későbbi
           teljesítés például teljesen szabályos lehet (időszakos elszámolásnál rendszeres is),
           csak érdemes ránézni. A jelölés <strong>élő</strong>: ha átírsz egy számot, az ellenőrzés azonnal
@@ -288,14 +288,14 @@ export function Utmutato() {
           <strong>A neveket senki nem tudja ellenőrizni.</strong> Összeget, dátumot, adószámot
           számtan fog meg; egy szállítónevet semmi. Kézzel írott vagy rosszul szkennelt
           bizonylatnál ezért a rendszer külön figyelmeztet, és olyankor{' '}
-          <strong>a jelöletlen mezőket is</strong> érdemes végigfutni — különösen a neveket.
+          <strong>a jelöletlen mezőket is</strong> érdemes végigfutni – különösen a neveket.
         </Figyelem>
         <P>
-          <strong>A képernyő tetején az is ott van, ki olvasta ki a bizonylatot</strong> — és ez
+          <strong>A képernyő tetején az is ott van, ki olvasta ki a bizonylatot</strong> – és ez
           megváltoztatja, mennyire kell gyanakodnod. Ha a fájlban strukturált e-számla volt (UBL,
           Factur-X/ZUGFeRD, NAV Online Számla vagy a régebbi APEH-alak), akkor a mezők a
           szállító rendszerének <strong>kiírt értékei</strong>: átvettük őket, nem olvastuk le
-          semmiről. Minden más esetben — papír, szkennelt kép, és a fel nem ismert alakú XML is —
+          semmiről. Minden más esetben – papír, szkennelt kép, és a fel nem ismert alakú XML is –
           a modell olvasta ki, tehát minden mező olvasat. A különbség a neveknél a legnagyobb:
           átvett névnél nincs mit félreolvasni, olvasott névnél van. Ugyanez a jelzés ott áll a
           Beérkező listájában is, a bizonylat sorában; ahol nincs kiírva, ott a bizonylat még nem
@@ -314,7 +314,7 @@ export function Utmutato() {
         </P>
         <P>
           Amit javítasz, azt <strong>megjegyezzük</strong> (hogy melyik mezőt írtad át, mire).
-          Nem ellenőrzésképpen: ebből derül ki, hol pontatlan a kiolvasás — ez az egyetlen
+          Nem ellenőrzésképpen: ebből derül ki, hol pontatlan a kiolvasás – ez az egyetlen
           visszajelzés, amiből a rendszer javítható.
         </P>
       </Fejezet>
@@ -325,7 +325,7 @@ export function Utmutato() {
           állnak. Innen vissza lehet küldeni egyet javításra. Az export sem zárja le véglegesen:
           egy kiment tétel az Archívumból <strong>visszahívható</strong>, javítható és újra
           exportálható (lásd a {pont('archivum')}. pontot). Ami az exporttal{' '}
-          <strong>tényleg elindul</strong>, az az eredeti fájl órája — a bizonylat képe a
+          <strong>tényleg elindul</strong>, az az eredeti fájl órája – a bizonylat képe a
           megőrzési idő után nem hívható vissza.
         </P>
         <P>
@@ -333,20 +333,20 @@ export function Utmutato() {
           beérkezési dátumra, bizonylattípusra és <strong>ügyfélre</strong>. Az ügyfélszűrő az{' '}
           <strong>adószám törzsszáma</strong> (az első nyolc jegy) szerint dolgozik, tehát akkor
           is összetartja egy ügyfél bizonylatait, ha a cégnév írásmódja bizonylatonként
-          különbözik — és a kiválasztott ügyfél <strong>bejövő és kimenő</strong> bizonylatait
+          különbözik – és a kiválasztott ügyfél <strong>bejövő és kimenő</strong> bizonylatait
           egyaránt hozza.
         </P>
         <Lista>
           <li>
             Formátum: <strong>xlsx</strong> (Excel), <strong>csv</strong> vagy{' '}
             <strong>json</strong>. A pénzoszlopok számként, az Excel saját nyelvi beállítása
-            szerinti formátumban — a dátumok szándékosan szöveges ISO alakban (
+            szerinti formátumban – a dátumok szándékosan szöveges ISO alakban (
             <code className="rounded bg-slate-100 px-1">2026-09-20</code>), mert azt semmilyen
             táblázatkezelő nem írja át.
           </li>
           <li>
             Export előtt látod, <strong>hány tétel</strong> kerül bele, és pénznemenként a
-            nettó/ÁFA/bruttó összeget — érdemes ránézni, mielőtt kimegy.
+            nettó/ÁFA/bruttó összeget – érdemes ránézni, mielőtt kimegy.
           </li>
           <li>
             Az <strong>eredeti fájlok</strong> (a PDF-ek és képek) egy gombbal ZIP-ben
@@ -359,7 +359,7 @@ export function Utmutato() {
           Ami kiment, az az Archívumba kerül, és az eredeti PDF-ek a beállított megőrzési idő
           (alapból <strong>0 nap</strong>, vagyis azonnal) után törlődnek a szerverről. Az{' '}
           <strong>adatok megmaradnak</strong>, a bizonylat képe viszont nem hívható vissza. A
-          megőrzési kötelezettség a tiéd — ha kell a papír képe, <strong>töltsd le a ZIP-et az
+          megőrzési kötelezettség a tiéd – ha kell a papír képe, <strong>töltsd le a ZIP-et az
           export előtt</strong>, mert 0 napos megőrzésnél az export után már nincs mit letölteni.
           Ha egy fájlban több bizonylat volt, az óra csak akkor indul, amikor{' '}
           <strong>mindegyik</strong> kiment: egy részleges export nem viszi el a még
@@ -371,7 +371,7 @@ export function Utmutato() {
         <P>
           Ami kiment, az itt áll. Az export fájl{' '}
           <strong>{szamlafolyo.megorzes.exportNap} napig</strong> újra letölthető; utána a fájl
-          törlődik, de <strong>a tételek megmaradnak</strong> — a Tételekből bármikor
+          törlődik, de <strong>a tételek megmaradnak</strong> – a Tételekből bármikor
           készíthető új export ugyanazokról.
         </P>
         <P>
@@ -394,7 +394,7 @@ export function Utmutato() {
         </P>
         <P>
           <strong>A próbaidő {szamlafolyo.proba.napok} nap vagy{' '}
-          {szamlafolyo.proba.dokumentumok} dokumentum</strong> — amelyik előbb elfogy —,{' '}
+          {szamlafolyo.proba.dokumentumok} dokumentum</strong> – amelyik előbb elfogy –,{' '}
           {szamlafolyo.proba.felhasznalok} felhasználóval, bankkártya nélkül.
         </P>
         <Tablazat fejlec={['Csomag', 'Dokumentum / hó', 'Felhasználó', 'Havi díj', 'Keret fölött']}>
@@ -415,7 +415,7 @@ export function Utmutato() {
         <P>
           <strong>A keret fölött alapból megállunk.</strong> Váratlan számlát senki ne kapjon
           attól, hogy egy hónapban többet dolgozott. Ha mégis azt szeretnéd, hogy a hónap vége
-          ne álljon meg, a Beállításokban bekapcsolható a túlhasználat — és{' '}
+          ne álljon meg, a Beállításokban bekapcsolható a túlhasználat – és{' '}
           <strong>akkor is van felső határa</strong>: egy forintban megadott plafon (alapértéke{' '}
           {formaz(szamlafolyo.tulhasznalat.alapPlafonFt)} Ft), ami fölött ugyanúgy megállunk. A
           keret fölötti dokumentumok a <strong>következő havi számlán</strong> szerepelnek külön
@@ -428,43 +428,43 @@ export function Utmutato() {
         </P>
         <P>
           A Stripe lapján a csomagváltás az <strong>„Előfizetés frissítése"</strong> gomb mögött
-          van — ott lehet másik csomagot választani. Ugyanezen a lapon áll a lemondás, a
+          van – ott lehet másik csomagot választani. Ugyanezen a lapon áll a lemondás, a
           bankkártya cseréje és a korábbi <strong>fizetési bizonylatok</strong> letöltése. Amit
           ott módosítasz, az pár másodpercen belül a Beállításokon is látszik.
         </P>
         <Figyelem>
           <strong>A Stripe-nál letölthető bizonylat nem a számlád.</strong> Az a fizetési
           szolgáltató saját dokumentuma a tranzakcióról. A <em>számlát</em> mi állítjuk ki, magyar
-          számlázóprogrammal, és e-mailben küldjük a megadott címedre — azt tedd a könyvelésbe,
+          számlázóprogrammal, és e-mailben küldjük a megadott címedre – azt tedd a könyvelésbe,
           ne a Stripe-ét.
         </Figyelem>
         <P>
           <strong>A csomagváltás nem indítja újra a számlázási ciklust</strong>, és nem terhelünk
           érte azonnal semmit: a fordulónap marad, ahol volt, és külön számlát sem kapsz róla. A{' '}
-          <strong>keret viszont azonnal változik</strong> — nagyobb csomagra váltva rögtön több,
+          <strong>keret viszont azonnal változik</strong> – nagyobb csomagra váltva rögtön több,
           kisebbre váltva rögtön kevesebb.
         </P>
         <P>
           A pénzt a <strong>következő havi számla</strong> rendezi, napra arányosan, és{' '}
           <strong>mindkét irányban</strong>. Nagyobb csomagra váltva a hátralévő napok
           különbözete külön soron jelenik meg rajta; kisebbre váltva a már kifizetett, de fel nem
-          használt rész <strong>jóváírásként jön vissza</strong> — szintén külön soron. Minden
+          használt rész <strong>jóváírásként jön vissza</strong> – szintén külön soron. Minden
           váltás a saját napjától számít: aki nagyobbra vált, majd vissza, annak a nagyobb
           csomagban töltött napok díjkülönbözete megmarad.
         </P>
         <Figyelem>
           <strong>Kisebb csomagra váltva a keret azonnal szűkül.</strong> Ha a hónapban addigra
           már több bizonylatot dolgoztál fel, mint amennyi az új csomagba fér, a váltás
-          pillanatában kereten kívülre kerülsz — onnantól a következő fordulónapig várnak a
+          pillanatában kereten kívülre kerülsz – onnantól a következő fordulónapig várnak a
           bizonylatok, hacsak be nem kapcsolod a túlhasználatot. A váltás{' '}
           <strong>előtt</strong> feldolgozott bizonylatokért viszont utólag nem számolunk fel
           túlhasználatot: azok a régi csomag keretéig fedezve maradnak. A különbözet a következő
-          számlán jóváíródik — ⚠️ de ha közben az előfizetést le is mondod, a fel nem használt
+          számlán jóváíródik – ⚠️ de ha közben az előfizetést le is mondod, a fel nem használt
           jóváírás nem jár vissza.
         </Figyelem>
         <P>
           A lemondás a <strong>kifizetett időszak végéig</strong> hagyja használni a rendszert, és
-          a fordulónapig <strong>visszavonható</strong> — szintén a portálon. Amíg a lemondás él,
+          a fordulónapig <strong>visszavonható</strong> – szintén a portálon. Amíg a lemondás él,
           a Beállítások kiírja, meddig fut még az előfizetés.
         </P>
       </Fejezet>
@@ -473,7 +473,7 @@ export function Utmutato() {
         <Tablazat fejlec={['Kártya', 'Mit állít', 'Alapérték']}>
           <Sor
             allapot="A cég"
-            mit="Cégnév és adószám — ez szerepel az exporton."
+            mit="Cégnév és adószám – ez szerepel az exporton."
             dolog="A regisztrációkor megadott adat."
           />
           <Sor
@@ -484,12 +484,12 @@ export function Utmutato() {
           <Sor
             allapot="Automatikus jóváhagyás"
             mit="Bekapcsolva az a bizonylat, amelyik minden ellenőrzésen átment, ember nélkül is továbbmehet a Tételekbe."
-            dolog="Kikapcsolva — minden bizonylat rád vár."
+            dolog="Kikapcsolva – minden bizonylat rád vár."
           />
           <Sor
             allapot="Eredeti fájlok megőrzése"
             mit={`Hány napig maradjon meg az eredeti PDF az export után (0–${szamlafolyo.megorzes.maxNap} nap).`}
-            dolog="0 nap — az export után azonnal törlődik."
+            dolog="0 nap – az export után azonnal törlődik."
           />
           <Sor
             allapot="Túlhasználat"
@@ -515,7 +515,7 @@ export function Utmutato() {
           hozzád kerül</strong> (a rendszernek előbb meg kell ismernie a cég szokásait), és utána
           is minden{' '}
           <strong>{szamlafolyo.automatikusJovahagyas.mintavetelMinden}.</strong> automatikusan
-          jóváhagyható bizonylatot elédteszünk — hogy legyen mihez mérni. Az így átment bizonylat{' '}
+          jóváhagyható bizonylatot elédteszünk – hogy legyen mihez mérni. Az így átment bizonylat{' '}
           <strong>jelvényt kap az indokkal együtt</strong>, és az exportig visszahívható. Soha nem
           írjuk rá, hogy „ellenőrizve", ha senki nem nézte meg.
         </P>
@@ -564,13 +564,13 @@ export function Utmutato() {
             majd a Google). A kérés kiköti, hogy a tartalmat ne tárolják és ne tanítsanak vele, és
             <strong> nincs tartalék útvonal</strong> meg nem nevezett szolgáltatóhoz. A{' '}
             <strong>felismert</strong> e-számla XML-je fel sem megy: azt a rendszer helyben
-            olvassa ki — és ez a hibrid e-számlára is áll, ahol az XML a PDF-be van ágyazva. Az
+            olvassa ki – és ez a hibrid e-számlára is áll, ahol az XML a PDF-be van ágyazva. Az
             az XML viszont, amit a rendszer nem ismer fel, a modellhez kerül, mint egy PDF.
           </li>
           <li>
             A <strong>fiók és a cég törlése</strong> a Beállításokból indítható, és
             visszafordíthatatlan. Az egyedüli tulajdonos addig nem törölhet, amíg más is
-            dolgozik a cégben — előbb át kell adni a tulajdonosi szerepet vagy el kell távolítani
+            dolgozik a cégben – előbb át kell adni a tulajdonosi szerepet vagy el kell távolítani
             a tagokat. A törlés után az ÁSZF elfogadásának nyoma (melyik változatot, mikor, ki
             fogadta el) {szamlafolyo.megorzes.aszfBizonyitekEv} évig megmarad.
           </li>
@@ -581,7 +581,7 @@ export function Utmutato() {
           </li>
         </Lista>
         <P>
-          A részletek — jogalap, adatfeldolgozók, a kiolvasás útja — az{' '}
+          A részletek – jogalap, adatfeldolgozók, a kiolvasás útja – az{' '}
           <Link to="/adatkezeles" className="text-blue-700 underline hover:text-blue-900">
             Adatkezelési tájékoztatóban
           </Link>{' '}
@@ -625,7 +625,7 @@ export function Utmutato() {
           <strong>A három exportformátum ugyanazokat az oszlopokat viszi</strong>, ugyanabban a
           sorrendben. A dátum mindenhol <code>ÉÉÉÉ-HH-NN</code> (ISO 8601), budapesti nap
           szerint. A <strong>CSV</strong> UTF-8 kódolású (bájtsorrend-jellel), a mezőelválasztó
-          pontosvessző, a tizedesjel vessző, a sorvég CRLF — így nyitja meg helyesen a magyar
+          pontosvessző, a tizedesjel vessző, a sorvég CRLF – így nyitja meg helyesen a magyar
           Excel. Az <strong>XLSX</strong> a számokat számként tárolja. A <strong>JSON</strong>{' '}
           a számot számként, a hiányzó értéket <code>null</code>-ként adja, és a táblázatos
           oszlopok mellett a bizonylat teljes ÁFA-bontását is tartalmazza (
@@ -668,7 +668,7 @@ export function Utmutato() {
         <P>
           Minden időbélyeg UTC, ISO 8601 alakban; az összegek forintban, a modellhívás
           költsége (<code>cost</code>) dollárban. Két dolog szándékosan kimarad, mert{' '}
-          <strong>élő kulcs</strong>: a cég titkos beküldő címe és a meghívók jelei — aki
+          <strong>élő kulcs</strong>: a cég titkos beküldő címe és a meghívók jelei – aki
           ismeri őket, a cég nevében tudna eljárni. A helyükön magyarázó szöveg áll.
         </P>
       </Fejezet>
@@ -684,7 +684,7 @@ export function Utmutato() {
             allapot="A számok nem stimmelnek"
             mit="Piros mező, alatta az ellenőrzés mondata. Két különböző dolog lehet mögötte."
             dolog={
-              'Ha a kiolvasás olvasta félre a papírt: írd át arra, ami a bizonylaton áll — ' +
+              'Ha a kiolvasás olvasta félre a papírt: írd át arra, ami a bizonylaton áll – ' +
               'a jelölés azonnal frissül. Ha viszont maga a bizonylat hibás, azt itt nem ' +
               'lehet megjavítani: az alkalmazásban átírt adat a kibocsátott számlát nem ' +
               'helyesbíti. Ilyenkor a kibocsátótól kell helyesbítő vagy sztornó számlát ' +
@@ -699,7 +699,7 @@ export function Utmutato() {
           <Sor
             allapot={'„Elfogyott a havi kereted”'}
             mit="A csomag dokumentumkerete betelt, és a túlhasználat ki van kapcsolva."
-            dolog="Válts nagyobb csomagra, vagy kapcsold be a túlhasználatot — plafonnal."
+            dolog="Válts nagyobb csomagra, vagy kapcsold be a túlhasználatot – plafonnal."
           />
           <Sor
             allapot="Rossz adat ment ki az exportban"
@@ -724,7 +724,7 @@ export function Utmutato() {
             {kapcsolatEmail}
           </a>
           . Ha egy bizonylattal van baj, a bizonylatszám és a feltöltés ideje sokat segít.{' '}
-          <strong>Az eredeti fájlt ne küldd el</strong> — amíg a rendszerben van, magunk is
+          <strong>Az eredeti fájlt ne küldd el</strong> – amíg a rendszerben van, magunk is
           megnézzük. ⚠️ Egy kivétel: az eredetik az <strong>export után törlődnek</strong>{' '}
           (a {pont('archivum')}. pont szerint), tehát egy már exportált bizonylat fájlja lehet,
           hogy nálunk sincs meg. Ha ilyenről kérdezel, és nálad megvan, mellékeld.
@@ -762,7 +762,7 @@ const FEJEZETEK = [
   {
     id: 'ellenorzes',
     cimke: 'Az Ellenőrzés képernyő',
-    hosszu: 'Az Ellenőrzés képernyő — itt dolgozol',
+    hosszu: 'Az Ellenőrzés képernyő – itt dolgozol',
   },
   { id: 'tetelek-export', cimke: 'Tételek és Export' },
   { id: 'archivum', cimke: 'Archívum' },
@@ -770,7 +770,7 @@ const FEJEZETEK = [
   {
     id: 'beallitasok',
     cimke: 'Beállítások',
-    hosszu: 'Beállítások — amit érdemes egyszer végigmenni',
+    hosszu: 'Beállítások – amit érdemes egyszer végigmenni',
   },
   { id: 'szerepek', cimke: 'Ki mit tehet' },
   { id: 'adatok', cimke: 'Az adataitok', hosszu: 'Az adataitok: hol vannak és meddig' },

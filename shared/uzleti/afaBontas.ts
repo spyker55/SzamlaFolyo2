@@ -204,7 +204,7 @@ function kulcsKiiras(ertek: unknown): string {
   const szamErtek = kulcsErtelmez(ertek);
 
   if (szamErtek === null) {
-    return '—';
+    return '–';
   }
 
   if (szamErtek === Math.floor(szamErtek)) {

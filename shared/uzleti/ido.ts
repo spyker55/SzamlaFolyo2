@@ -12,7 +12,7 @@ export const ZONA = 'Europe/Budapest';
 /** `2026. 03. 14.` */
 export function datum(ido: Date | string | null | undefined): string {
   const d = datumma(ido);
-  if (d === null) return '—';
+  if (d === null) return '–';
 
   return reszek(d, { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
@@ -20,7 +20,7 @@ export function datum(ido: Date | string | null | undefined): string {
 /** `2026. 03. 14. 09:32` */
 export function datumIdo(ido: Date | string | null | undefined): string {
   const d = datumma(ido);
-  if (d === null) return '—';
+  if (d === null) return '–';
 
   const nap = reszek(d, { year: 'numeric', month: '2-digit', day: '2-digit' });
   const ora = new Intl.DateTimeFormat('hu-HU', {

@@ -163,7 +163,7 @@ export function Archivum() {
                   <span className="text-xs text-slate-500">
                     A fájl a {szamlafolyo.megorzes.exportNap} napos megőrzési idő lejártával
                     törlődött{sor.file_deleted_at === null ? '' : ` (${datum(sor.file_deleted_at)})`}.
-                    A tételek megvannak — a Tételek közül újra exportálhatók.
+                    A tételek megvannak – a Tételek közül újra exportálhatók.
                   </span>
                 ) : (
                   <button
@@ -187,7 +187,7 @@ export function Archivum() {
                 <div className="mt-3 overflow-x-auto border-t border-slate-100 pt-3">
                   {tetelek.length === 0 ? (
                     <p className="text-sm text-slate-500">
-                      Ebben az exportban már nincs tétel — mindet visszahívták.
+                      Ebben az exportban már nincs tétel – mindet visszahívták.
                     </p>
                   ) : (
                     <table className="tbl">
@@ -205,10 +205,10 @@ export function Archivum() {
                         {tetelek.map((tetel) => (
                           <tr key={tetel.id} className="trow">
                             <td className="td font-medium text-slate-900">
-                              {tetel.doc_number ?? '—'}
+                              {tetel.doc_number ?? '–'}
                             </td>
                             <td className="td">{tipusCimke(tetel.doc_type)}</td>
-                            <td className="td">{tetel.supplier_name ?? '—'}</td>
+                            <td className="td">{tetel.supplier_name ?? '–'}</td>
                             <td className="td whitespace-nowrap">{datum(tetel.issue_date)}</td>
                             <td className="td whitespace-nowrap">
                               {formaz(tetel.gross_amount as string | null, tetel.currency)}

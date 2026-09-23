@@ -389,7 +389,7 @@ export function keretMondat(k: Keret): string {
     // A **forint** szerepel benne, nem csak az, hogy „díjszabás szerint": ez
     // az a szám, ami a következő számlán meg fog jelenni. Aki a keretén túl
     // dolgozik, annak nem a tény újdonság, hanem az összeg.
-    return `A ${k.csomag} keretén túl vagy (${k.felhasznalt} / ${k.keret}). A ${t.darab} többlet eddig ${formaz(t.ft, 'Ft')} — a plafonod ${formaz(t.plafonFt, 'Ft')}.`;
+    return `A ${k.csomag} keretén túl vagy (${k.felhasznalt} / ${k.keret}). A ${t.darab} többlet eddig ${formaz(t.ft, 'Ft')} – a plafonod ${formaz(t.plafonFt, 'Ft')}.`;
   }
 
   return `${k.csomag}: ${k.maradek} bizonylat van hátra a ${k.keret}-ből.`;

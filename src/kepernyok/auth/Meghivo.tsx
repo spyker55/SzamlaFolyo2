@@ -104,7 +104,7 @@ export function Meghivo() {
       <h1 className="mb-1 text-lg font-semibold text-slate-900">Meghívó</h1>
       <p className="mb-5 text-sm text-slate-500">
         Meghívtak a(z) <strong className="text-slate-700">{adat.ceg_nev}</strong> SzámlaFolyó-fiókjába
-        {adat.szerep !== null && <> — {szerepCimke(adat.szerep).toLowerCase()} szerepben</>}.
+        {adat.szerep !== null && <> – {szerepCimke(adat.szerep).toLowerCase()} szerepben</>}.
       </p>
 
       {hiba !== null && <div className="alert alert-hiba mb-4">{hiba}</div>}
@@ -237,7 +237,7 @@ function MasCimmel({ cim, belepve }: { cim: string; belepve: string }) {
     <>
       <div className="alert alert-figyelem">
         Ez a meghívó a(z) <strong>{cim}</strong> címre szól, te viszont{' '}
-        <strong>{belepve}</strong> néven vagy belépve. A meghívó nem adható át másnak — ha ez a
+        <strong>{belepve}</strong> néven vagy belépve. A meghívó nem adható át másnak – ha ez a
         cím nem jó, a cég tulajdonosa küldjön újat.
       </div>
 

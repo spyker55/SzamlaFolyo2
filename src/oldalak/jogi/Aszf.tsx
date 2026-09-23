@@ -208,8 +208,8 @@ export function Aszf() {
         <P>
           <strong>Mikor jön létre.</strong> A regisztráció önmagában fiókot hoz létre; a
           szerződés a <strong>céges munkaterület létrehozásával</strong> (a továbbiakban röviden: a
-          cég létrehozása) jön létre — ez a rendszerben egy munkaterület megnyitása, nem gazdasági
-          társaság alapítása —, amikor a felhasználó a jelen
+          cég létrehozása) jön létre – ez a rendszerben egy munkaterület megnyitása, nem gazdasági
+          társaság alapítása –, amikor a felhasználó a jelen
           ÁSZF-et és az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztatót
@@ -243,8 +243,8 @@ export function Aszf() {
           Előfizető. A rendszer ezért a cég létrehozásakor rögzíti{' '}
           <strong>az elfogadott ÁSZF-változat azonosítóját</strong> (a lap tetején szereplő
           hatálybalépési nap), az <strong>elfogadás időpontját</strong>, az{' '}
-          <strong>eljáró felhasználót</strong> és a <strong>céget</strong> — a nevével és az
-          adószámával —, amelynek nevében eljárt.
+          <strong>eljáró felhasználót</strong> és a <strong>céget</strong> – a nevével és az
+          adószámával –, amelynek nevében eljárt.
         </P>
         <P>
           Ezt a nyilvántartást a Szolgáltató{' '}
@@ -253,7 +253,7 @@ export function Aszf() {
           vitában ez bizonyítja, mi volt a szerződés tartalma. Csak az elfogadás nyoma marad meg;
           a cég bizonylatai és egyéb adatai nem. Minden kiadott ÁSZF-változat{' '}
           <strong>teljes, utólag nem módosított szövegét</strong> is megőrzi, hogy egy korábban
-          elfogadott változat később is bemutatható legyen — a mindenkori weboldal ugyanis mindig
+          elfogadott változat később is bemutatható legyen – a mindenkori weboldal ugyanis mindig
           csak a hatályos szöveget mutatja.
         </P>
         <P>
@@ -261,20 +261,20 @@ export function Aszf() {
           előfizetéses szolgáltatásnál megszokni lehet: az{' '}
           <strong>eredeti fájlok automatikus törlése</strong> (10. pont) és a{' '}
           <strong>felelősség összegszerű korlátja</strong> (13. pont). Mindkettő teljes szövege
-          ezen az oldalon olvasható, a szerződés megkötése — vagyis a cég létrehozása — előtt.
+          ezen az oldalon olvasható, a szerződés megkötése – vagyis a cég létrehozása – előtt.
         </P>
       </Szakasz>
 
       <Szakasz cim="2. A Szolgáltatás kizárólag vállalkozásoknak szól">
         <P>
-          A Szolgáltatást kizárólag a Polgári Törvénykönyv szerinti vállalkozások — gazdasági
+          A Szolgáltatást kizárólag a Polgári Törvénykönyv szerinti vállalkozások – gazdasági
           társaságok, egyéni vállalkozók és egyéb, önálló foglalkozásuk vagy gazdasági
-          tevékenységük körében eljáró személyek — vehetik igénybe. A felhasználó a céges
+          tevékenységük körében eljáró személyek – vehetik igénybe. A felhasználó a céges
           munkaterület létrehozásával kijelenti, hogy vállalkozásként, gazdasági tevékenysége körében jár el.
         </P>
         <P>
           Ezt a rendszer is számon kéri: cég létrehozásához érvényes magyar adószám szükséges.{' '}
-          <strong>Ez azonban csak formai ellenőrzés</strong> — az adószám ellenőrző számjegyének
+          <strong>Ez azonban csak formai ellenőrzés</strong> – az adószám ellenőrző számjegyének
           helyessége nem bizonyítja sem azt, hogy a vállalkozás működik, sem azt, hogy a
           regisztráló képviseletére jogosult.
         </P>
@@ -286,14 +286,14 @@ export function Aszf() {
             Ha az Előfizető a fogyasztóvédelmi szabályok szerint békéltető testületi eljárásra
             jogosultnak minősül
           </strong>{' '}
-          — a hatályos fogyasztóvédelmi törvény bizonyos kis- és középvállalkozásokat is e körbe
-          von, önmagában a kis- és középvállalkozói minőség azonban nem elég hozzá —, e jogát a
+          – a hatályos fogyasztóvédelmi törvény bizonyos kis- és középvállalkozásokat is e körbe
+          von, önmagában a kis- és középvállalkozói minőség azonban nem elég hozzá –, e jogát a
           jelen ÁSZF nem korlátozza.
         </P>
         <P>
           <strong>Melyik testület illetékes.</strong> Főszabály szerint az a békéltető testület,
           amelynek illetékességi területén a fogyasztónak minősülő Előfizető lakóhelye vagy
-          tartózkodási helye — nem természetes személy esetén a székhelye — található. Nem
+          tartózkodási helye – nem természetes személy esetén a székhelye – található. Nem
           minden ügyfélre ugyanaz a testület illetékes, és ez nem a Szolgáltató székhelyétől
           függ. A Borsod-Abaúj-Zemplén, Heves és Nógrád vármegyei illetékességi területen a{' '}
           <strong>{bekeltetoTestulet.nev}</strong> ({bekeltetoTestulet.szekhely}) jár el;
@@ -320,7 +320,7 @@ export function Aszf() {
             feltöltött;
           </li>
           <li>
-            a kiolvasott adatokat egy ellenőrző képernyőn átnézheti és javíthatja — a rendszer
+            a kiolvasott adatokat egy ellenőrző képernyőn átnézheti és javíthatja – a rendszer
             megjelöli azokat a mezőket, amelyekben bizonytalan;
           </li>
           <li>
@@ -368,8 +368,8 @@ export function Aszf() {
         </P>
         <P>
           <strong>
-            Az adat helyességéért — és mindazért, ami abból a könyvelésben, a bevallásokban vagy
-            máshol következik — az Előfizető felel.
+            Az adat helyességéért – és mindazért, ami abból a könyvelésben, a bevallásokban vagy
+            máshol következik – az Előfizető felel.
           </strong>{' '}
           Ez akkor is így van, ha az Előfizető bekapcsolta a 3. pont szerinti gépi jóváhagyást,
           és a bizonylat emberi ellenőrzés nélkül ment át: a gépi jóváhagyás a munkát könnyíti,
@@ -382,7 +382,7 @@ export function Aszf() {
           Az elektronikus levél útja a Szolgáltató érdekkörén kívül esik: a levél elveszhet,
           késhet, vagy levélszemétként elakadhat a küldő vagy a továbbító oldalán. A Szolgáltató
           azokat a leveleket dolgozza fel, amelyek hozzá megérkeznek, és minden ilyen levél
-          sorsát — az elutasítottakét is, az elutasítás okával együtt — megmutatja a Beállítások
+          sorsát – az elutasítottakét is, az elutasítás okával együtt – megmutatja a Beállítások
           képernyőn. <strong>A feladónak viszont nem küld választ:</strong> a küldő nem kap
           visszajelzést arról, hogy a levele feldolgozásra került-e. Annak ellenőrzése, hogy egy
           beküldött bizonylat megérkezett-e, az Előfizető feladata.
@@ -412,7 +412,7 @@ export function Aszf() {
           címen is kérhető. A cég adatai akkor szűnnek meg, ha a cégnek nem marad felhasználója;
           amíg más felhasználó dolgozik benne, a kilépő fiók törlése a cég adatait és az
           előfizetést nem érinti. A cég egyetlen
-          tulajdonosának fiókja addig nem törölhető, amíg a cégben más felhasználó van — előbb
+          tulajdonosának fiókja addig nem törölhető, amíg a cégben más felhasználó van – előbb
           másik tulajdonost kell kijelölni, vagy a többi felhasználót el kell távolítani.
         </P>
       </Szakasz>
@@ -420,7 +420,7 @@ export function Aszf() {
       <Szakasz cim="6. Próbaidő">
         <P>
           <strong>A cég létrehozásától</strong> számított {szamlafolyo.proba.napok} napos,
-          bankkártya megadása nélküli próbaidő jár — nem a regisztrációtól, mert a szerződés is a
+          bankkártya megadása nélküli próbaidő jár – nem a regisztrációtól, mert a szerződés is a
           cég létrehozásával jön létre (1. pont). Aki regisztrál, de csak később hoz létre céges
           munkaterületet, a teljes próbaidőt akkor kapja meg. A próbaidő alatt legfeljebb{' '}
           {szamlafolyo.proba.dokumentumok} dokumentum
@@ -464,7 +464,7 @@ export function Aszf() {
           <strong>A keret mértékegysége a bizonylat, nem a fájl</strong>, és nem számít, hogy a
           fájl feltöltéssel vagy a cég beküldő címére küldött levél mellékleteként érkezett. Ha
           egy fájl több bizonylatot tartalmaz, a rendszer szétszedi őket, és mindegyik külön
-          számít — de{' '}
+          számít – de{' '}
           <strong>a szétszedés maga nem kerül külön kreditbe</strong>, az a Szolgáltatás része.
         </P>
         <P>
@@ -479,26 +479,26 @@ export function Aszf() {
             <strong>Egy szokásos, egy–három oldalas számla:</strong> {oldalakbol(3)} dokumentum.
           </li>
           <li>
-            <strong>Egy {peldaOldal} oldalas számla:</strong> {oldalakbol(peldaOldal)} dokumentum —
+            <strong>Egy {peldaOldal} oldalas számla:</strong> {oldalakbol(peldaOldal)} dokumentum –
             ez <em>egy</em> bizonylat, csak hosszú.
           </li>
           <li>
             <strong>Tíz darab egyoldalas számla egyetlen PDF-ben:</strong> a rendszer külön
             bizonylatokra bontja, tehát <strong>{10 * oldalakbol(1)} dokumentum</strong>. A
             szétbontás maga nem kerül külön kreditbe, de a benne lévő bizonylatok külön-külön
-            igen — ahogy akkor is, ha egyesével töltötted volna fel őket.
+            igen – ahogy akkor is, ha egyesével töltötted volna fel őket.
           </li>
         </Lista>
         <P>
           <strong>Az e-számla XML ugyanúgy a keretbe számít.</strong> Az ilyen iratot a rendszer
-          modellhívás nélkül, saját értelmezővel olvassa ki — ez gyorsabb és a Szolgáltatónak
-          nincs mesterséges intelligencia költsége —, de a keret szempontjából{' '}
+          modellhívás nélkül, saját értelmezővel olvassa ki – ez gyorsabb és a Szolgáltatónak
+          nincs mesterséges intelligencia költsége –, de a keret szempontjából{' '}
           <strong>ugyanannyi, mint bármelyik másik bizonylat</strong>, és túlhasználati díja is
           ugyanúgy lehet.
         </P>
         <P>
-          ⚠️ <strong>Ha a rendszer egy XML-t nem ismer fel</strong> — mert olyan formátumban
-          készült, amit a fenti négy értelmező egyike sem kezel —, a bizonylat a{' '}
+          ⚠️ <strong>Ha a rendszer egy XML-t nem ismer fel</strong> – mert olyan formátumban
+          készült, amit a fenti négy értelmező egyike sem kezel –, a bizonylat a{' '}
           <strong>szokásos gépi kiolvasás útjára kerül</strong>. Ez a keret szempontjából nem
           jelent különbséget, adatvédelmi szempontból viszont igen: ilyenkor az XML{' '}
           <strong>tartalma is elhagyja a szervert</strong>, ugyanazon a két, név szerint
@@ -512,7 +512,7 @@ export function Aszf() {
         <P>
           Ugyanez vonatkozik a <strong>hibrid e-számlára</strong> (Factur-X, ZUGFeRD), amelynél
           a PDF mellé az e-számla XML is be van ágyazva: a Szolgáltatás ilyenkor a beágyazott
-          XML-t dolgozza fel, <strong>ha felismeri</strong> — és akkor semmi nem hagyja el a
+          XML-t dolgozza fel, <strong>ha felismeri</strong> – és akkor semmi nem hagyja el a
           szervert. Ha nem ismeri fel, a PDF megy a gépi kiolvasásra, a benne lévő melléklettel
           együtt. A keretbe mindkét esetben egy bizonylatként számít.
         </P>
@@ -564,7 +564,7 @@ export function Aszf() {
             keret változatlanul használható. Ezt követően a Szolgáltatás csomag nélküli állapotba
             kerül: új dokumentum feldolgozására nincs lehetőség, a meglévő adatok és exportok
             viszont elérhetők maradnak, és kimenthetők. <strong>A lemondás a szerződést nem
-            szünteti meg</strong> — a szerződés megszűnéséről a 10. pont szól.
+            szünteti meg</strong> – a szerződés megszűnéséről a 10. pont szól.
           </li>
           <li>
             <strong>Egy felhasználó fiókjának törlése.</strong> Ha a cégben más felhasználó is
@@ -574,7 +574,7 @@ export function Aszf() {
           <li>
             <strong>A teljes céges környezet törlése.</strong> Ha a törléssel a cégnek nem marad
             felhasználója, az előfizetés <strong>azonnal</strong> megszűnik, és az adatok is
-            törlődnek — a kifizetett időszak hátralévő része így nem használható fel, és nem
+            törlődnek – a kifizetett időszak hátralévő része így nem használható fel, és nem
             téríthető vissza. Ha az Előfizető a kifizetett időszakot ki akarja használni, előbb
             mondja fel az előfizetést, és a törlést csak az időszak végén indítsa.
           </li>
@@ -583,7 +583,7 @@ export function Aszf() {
           <strong>Csomagváltás.</strong> Az Előfizető a számlázási felületen bármikor válthat
           csomagot. A váltás <strong>azonnal hatályos</strong>: a csomaghoz tartozó darabkeret és
           fejszám a váltás pillanatától az új csomagé. A{' '}
-          <strong>számlázási időszak fordulónapja nem változik</strong> — a váltás nem indítja
+          <strong>számlázási időszak fordulónapja nem változik</strong> – a váltás nem indítja
           újra a ciklust.
         </P>
         <P>
@@ -594,7 +594,7 @@ export function Aszf() {
           terhelésként, kisebb csomagra váltásnál a már kifizetett, de fel nem használt rész{' '}
           <strong>jóváírásként</strong>. Minden váltás a saját napjától számít: aki a cikluson
           belül nagyobb csomagra vált, majd vissza, annak a nagyobb csomagban töltött napokra a
-          magasabb díj időarányos része megmarad — az oda-vissza váltás tehát nem feltétlenül
+          magasabb díj időarányos része megmarad – az oda-vissza váltás tehát nem feltétlenül
           díjmentes.
         </P>
         <P>
@@ -611,8 +611,8 @@ export function Aszf() {
           az minősül, ami a feldolgozás idején érvényes keret fölé esett.
         </P>
         <P>
-          <strong>Ha az előfizetés a váltás után megszűnik.</strong> Lemondáskor — ami a
-          kifizetett időszak végén lép hatályba — a még el nem számolt különbözetet a fizetési
+          <strong>Ha az előfizetés a váltás után megszűnik.</strong> Lemondáskor – ami a
+          kifizetett időszak végén lép hatályba – a még el nem számolt különbözetet a fizetési
           szolgáltató az időszak végén rendezi: a terhelést kiszámlázza, a jóváírást pedig az
           Előfizető fizetési szolgáltatónál vezetett egyenlegén írja jóvá.{' '}
           <strong>
@@ -641,7 +641,7 @@ export function Aszf() {
             Ez a szabály nem vonatkozik arra, ha a Szolgáltatás a Szolgáltatónak felróható okból
             marad el vagy válik tartósan használhatatlanná
           </strong>{' '}
-          — ilyenkor az Előfizetőt a hibás teljesítés általános szabályai szerinti igények
+          – ilyenkor az Előfizetőt a hibás teljesítés általános szabályai szerinti igények
           illetik meg, ideértve a díj arányos leszállítását is.
         </P>
         <P>
@@ -650,8 +650,8 @@ export function Aszf() {
           határidővel, indokolás nélkül is felmondhatja; ilyenkor a már kifizetett, de fel nem
           használt időszakra eső díjat <strong>időarányosan visszatéríti</strong>, és a
           felmondási idő alatt biztosítja az adatok kimentését (16. pont). Súlyos
-          szerződésszegés — így különösen a Szolgáltatás jogellenes vagy visszaélésszerű
-          használata — esetén a felmondás azonnali hatályú; ilyenkor visszatérítés nem jár.
+          szerződésszegés – így különösen a Szolgáltatás jogellenes vagy visszaélésszerű
+          használata – esetén a felmondás azonnali hatályú; ilyenkor visszatérítés nem jár.
         </P>
       </Szakasz>
 
@@ -674,7 +674,7 @@ export function Aszf() {
           <strong>Az elkészült export fájl {exportNap} napig érhető el</strong>, azután a
           Szolgáltató automatikusan törli. Ez az idő nem hosszabbítható és nem állítható: az
           export a jóváhagyott tételekből bármikor újrakészíthető, az adat tehát nem vész el. Az
-          Archívum ezután is mutatja, mi, mikor és hány tétellel ment ki — csak a fájl letöltése
+          Archívum ezután is mutatja, mi, mikor és hány tétellel ment ki – csak a fájl letöltése
           szűnik meg.
         </P>
         <P>
@@ -683,7 +683,7 @@ export function Aszf() {
           nem helyettesíti; a Szolgáltató általi törlés az Előfizető megőrzési kötelezettségét nem
           érinti. <strong>A Szolgáltatás „Archívum" képernyője ebben az értelemben nem
           archiválás:</strong> az az elkészült exportokat tartja nyilván, hogy azok a fenti
-          {' '}{exportNap} napig visszakereshetők legyenek — munkafolyamati funkció, nem a jogszabály szerinti
+          {' '}{exportNap} napig visszakereshetők legyenek – munkafolyamati funkció, nem a jogszabály szerinti
           bizonylatmegőrzés, és azt nem is pótolja. Az Előfizetőnek ezért az eredeti bizonylatokat
           magának kell megőriznie.
         </P>
@@ -739,13 +739,13 @@ export function Aszf() {
         </P>
       </Szakasz>
 
-      <Szakasz cim="11. Adatkezelés — adatfeldolgozási feltételek">
+      <Szakasz cim="11. Adatkezelés – adatfeldolgozási feltételek">
         <P>
           A feltöltött bizonylatok tekintetében az Előfizető az adatkezelő, a Szolgáltató pedig
           adatfeldolgozóként jár el. <strong>Ez a pont egyben a felek közötti adatfeldolgozási
           szerződés</strong> a GDPR 28. cikk (3) bekezdése szerint; külön okirat aláírása nem
           szükséges. A fiók adataira (a regisztráló neve, e-mail címe, a cég adatai, az
-          előfizetés) nézve viszont a Szolgáltató önálló adatkezelő — arról az{' '}
+          előfizetés) nézve viszont a Szolgáltató önálló adatkezelő – arról az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató
           </Link>{' '}
@@ -753,8 +753,8 @@ export function Aszf() {
         </P>
         <P>
           <strong>
-            Ha az Előfizető nem a saját, hanem az ügyfele bizonylatait dolgozza fel — például
-            könyvelőirodaként —, akkor ő maga adatfeldolgozó, a Szolgáltató pedig
+            Ha az Előfizető nem a saját, hanem az ügyfele bizonylatait dolgozza fel – például
+            könyvelőirodaként –, akkor ő maga adatfeldolgozó, a Szolgáltató pedig
             al-adatfeldolgozó.
           </strong>{' '}
           Ilyen használat esetén az Előfizető szavatolja, hogy az ügyfelétől (az adatkezelőtől)
@@ -762,8 +762,8 @@ export function Aszf() {
           ügyfelével kötött adatfeldolgozási szerződése lehetővé teszi a jelen pont szerinti
           igénybevételt. A Szolgáltatót terhelő, alább felsorolt kötelezettségek ilyenkor
           változatlanok, és az Előfizetőn keresztül az adatkezelő javára is fennállnak. Az
-          Előfizető az ügyfele felé fennálló kötelezettségeiért — így az értesítésért és a
-          hozzáférések szabályozásáért — maga felel.
+          Előfizető az ügyfele felé fennálló kötelezettségeiért – így az értesítésért és a
+          hozzáférések szabályozásáért – maga felel.
         </P>
         <P>
           ⚠️ <strong>A Szolgáltatás ügyfélszűrője nem hozzáférési korlát.</strong> Egy cégen belül
@@ -775,8 +775,8 @@ export function Aszf() {
           <strong>Az adatfeldolgozás tárgya és időtartama:</strong> a Szolgáltatás nyújtása, a
           jelen szerződés hatálya alatt. <strong>Jellege és célja:</strong> a feltöltött
           bizonylatok tárolása, gépi kiolvasása, az adatok ellenőrizhetővé tétele és exportálása.{' '}
-          <strong>A kezelt adatok típusa:</strong> a bizonylatokon szereplő adatok — így a partner
-          neve, címe, adószáma, a bizonylat számai és tételei —, ideértve a munkavállalói vagy
+          <strong>A kezelt adatok típusa:</strong> a bizonylatokon szereplő adatok – így a partner
+          neve, címe, adószáma, a bizonylat számai és tételei –, ideértve a munkavállalói vagy
           megbízotti költségbizonylatokon szereplő adatokat is; a bizonylathoz kapcsolódó
           feldolgozási adatok, így a <strong>modell nyers válasza</strong>, a jóváhagyáskor
           végzett <strong>javítások naplója</strong>, valamint e-mailes beküldés esetén a levél
@@ -789,8 +789,8 @@ export function Aszf() {
         <P>A Szolgáltató adatfeldolgozóként vállalja, hogy:</P>
         <Lista>
           <li>
-            a személyes adatokat kizárólag az Előfizető írásbeli utasítása alapján kezeli —
-            ideértve a harmadik országba történő adattovábbítást is —, kivéve, ha a kezelést uniós
+            a személyes adatokat kizárólag az Előfizető írásbeli utasítása alapján kezeli –
+            ideértve a harmadik országba történő adattovábbítást is –, kivéve, ha a kezelést uniós
             vagy tagállami jog írja elő; a Szolgáltatás rendeltetésszerű használata (feltöltés,
             kiolvasás, export) ilyen utasításnak minősül.{' '}
             <strong>
@@ -853,9 +853,9 @@ export function Aszf() {
             szerinti adatkimentés áll rendelkezésére; ha az Előfizető az adatok visszaadását kéri,
             azt a Szolgáltató a 16. pont szerinti formátumokban teljesíti.{' '}
             <strong>A visszaadás és a törlés tehát nem vagylagos, hanem egymás után következik</strong>{' '}
-            — előbb a kimentés, azután a törlés —, kivéve, ha jogszabály a megőrzést előírja
-            (ilyen a Szolgáltató által kiállított számla). A törlés lefolyásáról — aktív rendszer,
-            mentések kifutása, közreműködők — az Adatkezelési tájékoztató 4. pontja szól;
+            – előbb a kimentés, azután a törlés –, kivéve, ha jogszabály a megőrzést előírja
+            (ilyen a Szolgáltató által kiállított számla). A törlés lefolyásáról – aktív rendszer,
+            mentések kifutása, közreműködők – az Adatkezelési tájékoztató 4. pontja szól;
           </li>
           <li>
             az Előfizető rendelkezésére bocsát minden olyan információt, amely a jelen pont
@@ -890,10 +890,10 @@ export function Aszf() {
         <P>
           <strong>A közreműködők hibája nem általános mentesülés.</strong> A Szolgáltató által
           igénybe vett közreműködők (tárhely-, fizetési és modellszolgáltató) teljesítéséért a
-          Szolgáltató úgy felel, mintha maga járt volna el — ez a szabály alól a jelen ÁSZF nem
+          Szolgáltató úgy felel, mintha maga járt volna el – ez a szabály alól a jelen ÁSZF nem
           tér el. A Szolgáltató kizárólag azokért a kimaradásokért nem felel, amelyek{' '}
           <strong>rajta kívül álló, elháríthatatlan okból</strong> következnek be, és amelyeket
-          az elvárható gondosság mellett sem tudott megelőzni vagy elhárítani — ilyen az
+          az elvárható gondosság mellett sem tudott megelőzni vagy elhárítani – ilyen az
           internetkapcsolat általános hibája vagy a közreműködő előre nem látható, tartós
           üzemzavara. Az ilyen kimaradás idejére eső díjról a felek elszámolnak.
         </P>
@@ -913,8 +913,8 @@ export function Aszf() {
           </li>
           <li>
             <strong>A Szolgáltatás hibája.</strong> Ha a rendszer nem úgy működik, ahogy a jelen
-            ÁSZF leírja — például elveszít egy feltöltött bizonylatot, vagy rosszul számolja a
-            keretet —, az <strong>hibás teljesítés</strong>, amelyért a Szolgáltató az általános
+            ÁSZF leírja – például elveszít egy feltöltött bizonylatot, vagy rosszul számolja a
+            keretet –, az <strong>hibás teljesítés</strong>, amelyért a Szolgáltató az általános
             szabályok szerint felel.
           </li>
           <li>
@@ -935,13 +935,13 @@ export function Aszf() {
         </Lista>
         <P>
           <strong>Összegszerű korlát.</strong> A Szolgáltató szerződésszegéssel okozott károkért
-          fennálló felelőssége — a fenti negyedik eset, továbbá a{' '}
+          fennálló felelőssége – a fenti negyedik eset, továbbá a{' '}
           <strong>szándékosan okozott</strong>, valamint az emberi életet, testi épséget vagy
-          egészséget megkárosító szerződésszegés esetét kivéve — összesen legfeljebb a káresemény
+          egészséget megkárosító szerződésszegés esetét kivéve – összesen legfeljebb a káresemény
           bekövetkeztét megelőző hat hónapban ténylegesen megfizetett szolgáltatási díj összegéig
-          terjed. <strong>Ugyanezekkel a kivételekkel</strong> — vagyis a negyedik eset, a
+          terjed. <strong>Ugyanezekkel a kivételekkel</strong> – vagyis a negyedik eset, a
           szándékosan okozott, valamint az emberi életet, testi épséget vagy egészséget
-          megkárosító szerződésszegés kivételével — a Szolgáltató nem felel az elmaradt
+          megkárosító szerződésszegés kivételével – a Szolgáltató nem felel az elmaradt
           haszonért sem. A kötelező kivételek tehát a korlátozás{' '}
           <strong>mindkét</strong> alakjára állnak; a Szolgáltató ezeket a felelősségeket nem
           zárja ki és nem korlátozza.
@@ -954,14 +954,14 @@ export function Aszf() {
           felsorolt adatfeldolgozók és egyéb közreműködők a Szolgáltató teljesítési segédei: az ő
           magatartásukért a Szolgáltató úgy felel, mintha maga járt volna el. Kimentésre csak
           olyan, ellenőrzési körén kívül eső, előre nem látható körülmény ad alapot, amelyet
-          elhárítani sem lehetett — egy közreműködő kiesése önmagában nem ilyen. Ugyanez áll az
+          elhárítani sem lehetett – egy közreműködő kiesése önmagában nem ilyen. Ugyanez áll az
           e-mailes beküldési útvonalra: az azon át érkező iratok feldolgozásáért a Szolgáltató
           ugyanúgy felel, mint a felületen feltöltöttekért, azt viszont nem vállalja, hogy egy
           hozzá el sem jutott levélről tudomást szerez.
         </P>
         <P>
           A jelen pont a Szolgáltatás díjához mért kockázatmegosztást rögzíti. Ez a korlátozás
-          — csakúgy, mint a 10. pont szerinti automatikus fájltörlés — eltér attól, amit egy
+          – csakúgy, mint a 10. pont szerinti automatikus fájltörlés – eltér attól, amit egy
           előfizetéses szolgáltatásnál megszokni lehet, ezért az 1. pont ezt a két kikötést{' '}
           <strong>külön is kiemeli</strong>. Mindkettő teljes szövege ezen az oldalon
           olvasható, a szerződés megkötése előtt, és az ÁSZF elfogadását a Szolgáltató az 1.
@@ -990,8 +990,8 @@ export function Aszf() {
         <P>
           <strong>Ha az Előfizető a módosítást nem fogadja el</strong>, a hatálybalépésig
           felmondhatja az előfizetést. Ilyenkor a felmondás{' '}
-          <strong>a módosítás hatálybalépésének napján</strong> hatályosul — nem kell megvárnia a
-          számlázási időszak végét —, és a Szolgáltató a már kifizetett, de fel nem használt
+          <strong>a módosítás hatálybalépésének napján</strong> hatályosul – nem kell megvárnia a
+          számlázási időszak végét –, és a Szolgáltató a már kifizetett, de fel nem használt
           időszakra eső díjat <strong>időarányosan visszatéríti</strong>. A megszűnésig az
           Előfizető a 16. pont szerint mentheti ki az adatait. Enélkül a felmondás joga csak
           látszólagos volna: a változást elutasító Előfizető a hatálybalépés után is a módosított
@@ -1046,10 +1046,10 @@ export function Aszf() {
         </P>
         <Lista>
           <li>
-            <strong>1. Átállási időszak — a kérés beérkezésétől számított harminc nap.</strong>{' '}
+            <strong>1. Átállási időszak – a kérés beérkezésétől számított harminc nap.</strong>{' '}
             Ezalatt a szerződés hatályban marad. A Szolgáltató ezen időszakon belül díjmentesen
-            kiadja az Előfizető adatait — a fent felsorolt, a felületről ma nem exportálható
-            adatokat is —, géppel olvasható, a{' '}
+            kiadja az Előfizető adatait – a fent felsorolt, a felületről ma nem exportálható
+            adatokat is –, géppel olvasható, a{' '}
             <Link to="/utmutato#adatformatumok" className="underline">
               Használati útmutató „Adatformátumok" fejezetében
             </Link>{' '}
@@ -1068,7 +1068,7 @@ export function Aszf() {
           </li>
           <li>
             <strong>
-              3. Adat-visszanyerési időszak — az átállási időszak végétől számított legalább
+              3. Adat-visszanyerési időszak – az átállási időszak végétől számított legalább
               harminc nap.
             </strong>{' '}
             Ezalatt az adatok változatlanul megmaradnak és letölthetők, a kiadott állomány
@@ -1084,7 +1084,7 @@ export function Aszf() {
         <P>
           <strong>Az adatformátumok nyilvánosak.</strong> A Szolgáltató nyílt, széles körben
           olvasható formátumokat használ (XLSX, CSV, JSON), és az exportok, valamint a teljes
-          adatkiadás szerkezetét — mezőnként, a használt szabványokkal — a{' '}
+          adatkiadás szerkezetét – mezőnként, a használt szabványokkal – a{' '}
           <Link to="/utmutato#adatformatumok" className="underline">
             Használati útmutató
           </Link>{' '}

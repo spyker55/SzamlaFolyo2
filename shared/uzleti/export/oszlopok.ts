@@ -169,7 +169,7 @@ export function osszesites(bizonylatok: readonly ExportBizonylat[]): Osszesitese
     }
 
     const penznem = d.currency === null || d.currency === undefined || d.currency === ''
-      ? '—'
+      ? '–'
       : d.currency;
 
     const eddig = ki[penznem] ?? { netto: 0, afa: 0, brutto: 0, darab: 0 };

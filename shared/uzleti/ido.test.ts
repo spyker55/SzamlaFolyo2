@@ -28,7 +28,7 @@ describe('datumErtelmez', () => {
 describe('megjelenítés budapesti idő szerint', () => {
   test('a dátum magyar alakban jön', () => {
     expect(datum('2026-03-14T10:00:00Z')).toBe('2026. 03. 14.');
-    expect(datum(null)).toBe('—');
+    expect(datum(null)).toBe('–');
   });
 
   /**

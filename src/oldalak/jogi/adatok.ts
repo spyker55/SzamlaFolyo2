@@ -58,8 +58,16 @@ export const hatalyos = '2026. szeptember 23.';
  * `archivum.test.tsx` pirosra vált, ha a mai szöveg eltér a mai verzió
  * archívumától. Új szöveg = új dátum itt, új sor a migrációban, és
  * `npx vite-node eszkozok/jogiArchivum.ts`.
+ *
+ * # Két változat egy napon: `-2` utótag
+ *
+ * Ha ugyanazon a napon jön új szöveg, a dátum nem lehet az azonosító — a
+ * reggeli változat már ki van adva. Ilyenkor a betűsor `<dátum>-<sorszám>`, a
+ * `hatalyos` pedig ugyanaz a nap marad, mert a hatálybalépés napja tényleg
+ * az. Az első ilyen: `2026-09-23-2`, amelyben a gondolatjel hosszúról (—)
+ * nagykötőjelre (–) változott, tartalmi változás nélkül.
  */
-export const JOGI_VERZIO = '2026-09-23';
+export const JOGI_VERZIO = '2026-09-23-2';
 
 /**
  * Az illetékes békéltető testület.
@@ -224,7 +232,7 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
   },
   {
     ki: 'Google (al-adatfeldolgozó)',
-    jogiSzemely: 'Google LLC — a Google AI Studio, illetve a Google Cloud Vertex AI végpontjai',
+    jogiSzemely: 'Google LLC – a Google AI Studio, illetve a Google Cloud Vertex AI végpontjai',
     szekhely: null,
     mit: 'A bizonylat gépi kiolvasása, az OpenRouter megbízásából',
     adatkor: 'A bizonylat tartalma, valamint a saját cég neve és adószáma',
@@ -264,14 +272,14 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
   {
     ki: 'Stripe',
     jogiSzemely:
-      'Stripe Payments Europe, Limited (Írország) — a szerződő fél; az adatot a Stripe, LLC ' +
+      'Stripe Payments Europe, Limited (Írország) – a szerződő fél; az adatot a Stripe, LLC ' +
       '(Amerikai Egyesült Államok) részére továbbítja',
     szekhely: null,
     mit: 'Bankkártyás fizetés, előfizetés-kezelés',
     adatkor:
       'A fizető neve, számlázási címe és bankkártyaadatai. A TELJES KÁRTYAADATOT a ' +
       'Szolgáltató nem látja és nem tárolja; a nevet és a számlázási címet viszont ' +
-      'igen — abból állítja ki a magyar számlát',
+      'igen – abból állítja ki a magyar számlát',
     hol: 'Írország / Amerikai Egyesült Államok',
     unionBelul: false,
     garanciaUrl: 'https://stripe.com/legal/dpa',

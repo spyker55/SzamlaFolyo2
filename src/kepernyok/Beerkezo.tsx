@@ -319,7 +319,7 @@ export function Beerkezo() {
           />
           <span className="text-sm font-medium text-slate-700">Bizonylatok feltöltése</span>
           <span className="mt-1 text-xs text-slate-500">
-            PDF, JPG, PNG, WEBP vagy e-számla XML — legfeljebb 20 MB darabonként
+            PDF, JPG, PNG, WEBP vagy e-számla XML – legfeljebb 20 MB darabonként
           </span>
           {feltoltFolyik && <span className="mt-2 text-xs text-blue-700">Feltöltés folyamatban…</span>}
         </label>
@@ -339,7 +339,7 @@ export function Beerkezo() {
         <div className="empty">Egy pillanat…</div>
       ) : sorok.length === 0 ? (
         <div className="empty">
-            Itt jelennek meg a bizonylatok — akár feltöltöd, akár a cég beküldő címére küldöd
+            Itt jelennek meg a bizonylatok – akár feltöltöd, akár a cég beküldő címére küldöd
             őket.
           </div>
       ) : (
@@ -385,7 +385,7 @@ export function Beerkezo() {
                     </div>
                   </td>
                   <td className="td">{tipusCimke(sor.doc_type)}</td>
-                  <td className="td">{sor.supplier_name ?? '—'}</td>
+                  <td className="td">{sor.supplier_name ?? '–'}</td>
                   <td className="td whitespace-nowrap">{formaz(sor.gross_amount, sor.currency)}</td>
                   <td className="td">
                     <span className={`badge ${jelvenyStilus(sor.status)}`}>

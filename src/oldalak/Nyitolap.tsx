@@ -305,11 +305,11 @@ function Hero() {
 
             <p className="mb-8 text-lg leading-relaxed text-slate-500 sm:text-xl">
               <strong className="font-bold text-slate-800">
-                Töltsd fel a számlát vagy a nyugtát — vagy küldd tovább e-mailben. A
+                Töltsd fel a számlát vagy a nyugtát – vagy küldd tovább e-mailben. A
                 SzámlaFolyó kiolvassa.
               </strong>{' '}
               <strong className="font-bold text-slate-800">Alapértelmezés szerint minden
-              bizonylatot te hagysz jóvá</strong> — a rendszer megjelöli, amiben bizonytalan,
+              bizonylatot te hagysz jóvá</strong> – a rendszer megjelöli, amiben bizonytalan,
               tehát elsősorban azzal van dolgod. Export, és kész. Nem funkciókat halmozunk, hanem a legkisebb,
               leggyorsabb munkafolyamatot adjuk.
             </p>
@@ -439,7 +439,7 @@ function EllenorzesMinta() {
           <p className="fhiba text-sm">A nettó és az ÁFA összege nem adja ki a bruttót.</p>
 
           <p className="rounded-lg bg-vaszon/60 px-3 py-2 text-xs text-slate-500">
-            A többi mezőhöz nincs mit hozzátenned — ezt az egyet kérdezzük meg.
+            A többi mezőhöz nincs mit hozzátenned – ezt az egyet kérdezzük meg.
           </p>
         </div>
       </div>
@@ -524,19 +524,19 @@ function Folyamat() {
     {
       cim: 'Beküldés',
       szoveg:
-        'Húzd be a fájlokat a Beérkezőbe — PDF, kép vagy e-számla XML, egyszerre több is. Vagy küldd tovább őket a céged saját beküldő címére.',
+        'Húzd be a fájlokat a Beérkezőbe – PDF, kép vagy e-számla XML, egyszerre több is. Vagy küldd tovább őket a céged saját beküldő címére.',
       ikon: <IkonFeltoltes className="h-8 w-8" />,
     },
     {
       cim: 'Kiolvasás',
       szoveg:
-        'Az e-számla XML-jét gép olvassa, modell nélkül — másodperc alatt. Papír vagy szkennelt PDF esetén jön az AI.',
+        'Az e-számla XML-jét gép olvassa, modell nélkül – másodperc alatt. Papír vagy szkennelt PDF esetén jön az AI.',
       ikon: <IkonVillam className="h-8 w-8" />,
     },
     {
       cim: 'Ellenőrzés',
       szoveg:
-        'Alapértelmezés szerint minden bizonylat rád vár: gépi jóváhagyás csak akkor van, ha te kapcsolod be. A megjelölt mezőkkel — a bizonytalanokkal és az ellentmondásosakkal — van elsősorban dolgod, de a jelöletlen sem garancia: azt jelenti, nincs okunk gyanakodni.',
+        'Alapértelmezés szerint minden bizonylat rád vár: gépi jóváhagyás csak akkor van, ha te kapcsolod be. A megjelölt mezőkkel – a bizonytalanokkal és az ellentmondásosakkal – van elsősorban dolgod, de a jelöletlen sem garancia: azt jelenti, nincs okunk gyanakodni.',
       ikon: <IkonPajzs className="h-8 w-8" />,
     },
     {
@@ -593,7 +593,7 @@ function EgyFolyamatban() {
     {
       cim: 'Vegyes bizonylatok',
       szoveg:
-        'Belföldi számla, nyugta, külföldi bizonylat, fotózott blokk és e-számla XML — egy folyamatban, egy exportban.',
+        'Belföldi számla, nyugta, külföldi bizonylat, fotózott blokk és e-számla XML – egy folyamatban, egy exportban.',
     },
     {
       cim: 'E-számla XML modellhívás nélkül',
@@ -603,7 +603,7 @@ function EgyFolyamatban() {
     {
       cim: 'Rendszerfüggetlenség',
       szoveg:
-        'Nincs bezártság. Az adatot úgy kapod meg (XLSX, CSV, JSON), ahogy a saját rendszered kéri — és az eredetit ZIP-ben mellé.',
+        'Nincs bezártság. Az adatot úgy kapod meg (XLSX, CSV, JSON), ahogy a saját rendszered kéri – és az eredetit ZIP-ben mellé.',
     },
   ];
 
@@ -617,7 +617,7 @@ function EgyFolyamatban() {
             </h2>
             <p className="mb-8 text-lg leading-relaxed text-slate-500">
               A hangsúly nem csak a hazai számlákon van. Legyen éttermi blokk, külföldi bizonylat
-              vagy vegyesen beszkennelt PDF — a SzámlaFolyó szétválogatja és értelmezi.
+              vagy vegyesen beszkennelt PDF – a SzámlaFolyó szétválogatja és értelmezi.
             </p>
 
             <ul className="space-y-5">
@@ -724,19 +724,19 @@ function Elonyok() {
       ikon: <IkonSzamologep className="h-6 w-6" />,
       cim: 'Nettó + ÁFA = bruttó',
       szoveg:
-        'Az ÁFA-bontás soronként is számol: ha a sorok nem adják ki a végösszeget, azt jelezzük — akkor is, ha a modell magabiztos volt.',
+        'Az ÁFA-bontás soronként is számol: ha a sorok nem adják ki a végösszeget, azt jelezzük – akkor is, ha a modell magabiztos volt.',
     },
     {
       ikon: <IkonToll className="h-6 w-6" />,
       cim: 'Kézírás külön elbírálás alá esik',
       szoveg:
-        'A kézzel írt bizonylatnál a szállító nevét nem lehet ellenőrizni semmivel — a modell pedig ilyenkor talál ki neveket a legmagabiztosabban. Ezért a kézírást külön megjelöljük.',
+        'A kézzel írt bizonylatnál a szállító nevét nem lehet ellenőrizni semmivel – a modell pedig ilyenkor talál ki neveket a legmagabiztosabban. Ezért a kézírást külön megjelöljük.',
     },
     {
       ikon: <IkonPajzs className="h-6 w-6" />,
       cim: 'Az utolsó szó a tiéd',
       szoveg:
-        'Alapból minden bizonylat jóváhagyásra vár: semmi nem kerül exportba úgy, hogy egy ember rá ne bólintott volna. A gépi jóváhagyás külön bekapcsolható lehetőség, alapból ki van kapcsolva. És amit nem jelöltünk meg, az is lehet hibás — a nevekre nincs számtani ellenőrzés.',
+        'Alapból minden bizonylat jóváhagyásra vár: semmi nem kerül exportba úgy, hogy egy ember rá ne bólintott volna. A gépi jóváhagyás külön bekapcsolható lehetőség, alapból ki van kapcsolva. És amit nem jelöltünk meg, az is lehet hibás – a nevekre nincs számtani ellenőrzés.',
     },
   ];
 
@@ -890,7 +890,7 @@ function Arak() {
           </p>
           <p>
             Ha elfogy a havi keret, a feldolgozás <strong className="text-vaszon">alapból megáll</strong>{' '}
-            — a beküldött iratok megvárják a következő időszakot. Darabonkénti továbbszámlázás csak
+            – a beküldött iratok megvárják a következő időszakot. Darabonkénti továbbszámlázás csak
             akkor van, ha külön bekapcsolod, és akkor is{' '}
             <strong className="text-vaszon">az általad megadott forintos határig</strong>: váratlan
             számla nem érhet.
@@ -899,7 +899,7 @@ function Arak() {
             Egy dokumentum a fair-use szabály szerint:{' '}
             <strong className="text-vaszon">{szabaly()}</strong> Egy szokásos, egy–három oldalas
             számla vagy nyugta így <strong className="text-vaszon">egy</strong> dokumentum; egy
-            hosszú, sok tételsoros számla az oldalszáma szerint több — és egy vastag,
+            hosszú, sok tételsoros számla az oldalszáma szerint több – és egy vastag,
             összefűzött köteg annyi, ahány bizonylat van benne. A köteg szétszedése nem kerül
             külön kreditbe.
           </p>

@@ -176,6 +176,6 @@ describe('osszesites', () => {
   test('pénznem nélkül külön vödör, nem keveredik', () => {
     const ossz = osszesites([{ ...SZAMLA, currency: null }]);
 
-    expect(ossz['—']?.darab).toBe(1);
+    expect(ossz['–']?.darab).toBe(1);
   });
 });

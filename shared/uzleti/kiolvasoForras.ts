@@ -88,7 +88,7 @@ export function kiolvasoForras(model: string | null | undefined): ForrasJel {
       mondat:
         'A bizonylat adatai a fájlban lévő strukturált e-számlából származnak: a szállító ' +
         'rendszere írta ki őket, mi átvettük. Nem gépi olvasat, és a tartalma nem hagyta el ' +
-        'a szervert. A számtani ellenőrzések ettől még futnak — egy rosszul kiállított ' +
+        'a szervert. A számtani ellenőrzések ettől még futnak – egy rosszul kiállított ' +
         'számla így is elbukhat rajtuk.',
     };
   }
@@ -98,7 +98,7 @@ export function kiolvasoForras(model: string | null | undefined): ForrasJel {
     rovid: 'modell olvasta ki',
     mondat:
       'A bizonylat adatait nyelvi modell olvasta ki a fájlból. Minden mező olvasat, nem ' +
-      'átvétel — a neveknél ez külön számít, mert azokra semmilyen számtani ellenőrzésünk ' +
+      'átvétel – a neveknél ez külön számít, mert azokra semmilyen számtani ellenőrzésünk ' +
       'nincs.',
   };
 }

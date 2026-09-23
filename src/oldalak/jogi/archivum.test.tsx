@@ -56,7 +56,8 @@ describe('a mai szöveg a mai verzió archívuma', () => {
 });
 
 describe('az archívum lenyomatai az adatbázisban', () => {
-  const verziok = readdirSync(ARCHIVUM).filter((v) => /^\d{4}-\d{2}-\d{2}$/.test(v));
+  // `<dátum>` vagy `<dátum>-<sorszám>`, ha egy napon két változat jelent meg.
+  const verziok = readdirSync(ARCHIVUM).filter((v) => /^\d{4}-\d{2}-\d{2}(-\d+)?$/.test(v));
 
   it('egyáltalán talál archivált verziókat', () => {
     expect(verziok.length).toBeGreaterThanOrEqual(2);

@@ -118,7 +118,7 @@ export function JelszoBeallitas() {
 
       setHiba(
         magyarul ??
-          'Nem sikerült beállítani a jelszót. Lehet, hogy a link lejárt — kérj újat a bejelentkezésnél.',
+          'Nem sikerült beállítani a jelszót. Lehet, hogy a link lejárt – kérj újat a bejelentkezésnél.',
       );
       return;
     }
