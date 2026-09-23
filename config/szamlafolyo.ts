@@ -171,6 +171,21 @@ export const szamlafolyo = {
     // Sokkal olcsóbb, és a határok felismeréséhez a szöveg elég — a képet csak
     // akkor kell nézni, ha nincs szövegréteg.
     szovegMaxOldal: 60,
+    // A szöveges szétszedés időkorlátja – rövidebb, mint a kiolvasásé (90 s).
+    //
+    // Mérve, 2026-09-23: egy háromoldalas, szövegréteges köteg szétszedő
+    // kérése (4,6 KB szöveg, 1024 tokenes keret) **90 s-ig nem kapott
+    // választ**, és az OpenRouter naplójában sem generálás, sem továbbított
+    // kérés nem volt róla – el sem jutott a Google-ig. Ugyanaz a fájl
+    // egyben kiolvasva 11,4 s volt, fájllal együtt. A szétszedés kiegészítő
+    // lépés: ha elakad, a bizonylat egyben olvasódik ki (`tobb_irat_gyanu`),
+    // tehát a várakozás itt csak késleltet, semmit nem ment meg. 30 s-mal egy
+    // ilyen eset ~102 helyett ~42 s.
+    //
+    // ⚠️ Csak a **szöveges** útra vonatkozik. Szövegréteg nélkül a teljes
+    // fájl megy, és a modell végiglapozza – annak az idejét élesben még nem
+    // mértük, ott a kiolvasás 90 s-a marad, amíg nincs szám.
+    szovegIdokorlatMp: 30,
   },
 
   kiolvasas: {

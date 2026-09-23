@@ -5,6 +5,7 @@ import {
   kiolvas,
   KIOLVASAS_MAX_TOKEN,
   KiolvasasHiba,
+  szetszed,
   szolgaltatoiKikotes,
   valaszNyom,
 } from './openrouter.ts';
@@ -271,5 +272,107 @@ describe('a kiolvasás tokenkerete', () => {
 
     const [, opciok] = fetchHamis.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(opciok.body as string).max_tokens).toBe(KIOLVASAS_MAX_TOKEN);
+  });
+});
+
+describe('az időkorlát a teljes hívásra vonatkozik', () => {
+  // 2026-09-23, élesben: a szöveges szétszedő kérése 90 s-ig nem kapott
+  // választ, és az OpenRouter naplójában nyoma sem volt. A hamis `fetch` itt
+  // úgy viselkedik, mint a valódi: a megszakító jel a függő kérést és a
+  // folyamban lévő törzset is megszakítja.
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const megszakitva = () => new DOMException('The operation was aborted.', 'AbortError');
+
+  /** Válasz soha nem jön – csak a jel állítja meg. */
+  function elakadtKeres() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (_url: string, opciok: RequestInit) =>
+          new Promise<Response>((_kesz, hiba) => {
+            opciok.signal?.addEventListener('abort', () => hiba(megszakitva()));
+          }),
+      ),
+    );
+  }
+
+  /** A fejléc megjön (200), a törzs viszont soha nem ér véget. */
+  function elakadtTorzs() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, opciok: RequestInit) => {
+        const folyam = new ReadableStream<Uint8Array>({
+          start(vezerlo) {
+            vezerlo.enqueue(new TextEncoder().encode('{"id":'));
+            opciok.signal?.addEventListener('abort', () => vezerlo.error(megszakitva()));
+          },
+        });
+        return new Response(folyam, { status: 200 });
+      }),
+    );
+  }
+
+  /** A hívás állapota az álóra léptetése közben. */
+  function figyel(igeret: Promise<unknown>) {
+    const a: { allapot: 'fuggo' | 'kesz' | 'hiba'; hiba?: unknown } = { allapot: 'fuggo' };
+    igeret.then(
+      () => (a.allapot = 'kesz'),
+      (h: unknown) => {
+        a.allapot = 'hiba';
+        a.hiba = h;
+      },
+    );
+    return a;
+  }
+
+  const PDF = { tartalom: new Uint8Array([37, 80, 68, 70]), mime: 'application/pdf', fajlnev: 't.pdf', apiKulcs: 't' };
+
+  it('a szöveges szétszedés 30 s után feladja, előtte nem', async () => {
+    vi.useFakeTimers();
+    elakadtKeres();
+
+    const h = figyel(szetszed({ ...PDF, oldalszam: 3, oldalSzovegek: ['a', 'b', 'c'] }));
+
+    await vi.advanceTimersByTimeAsync(szamlafolyo.koteg.szovegIdokorlatMp * 1000 - 1);
+    expect(h.allapot).toBe('fuggo');
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(h.allapot).toBe('hiba');
+    expect((h.hiba as Error).message).toBe('A kiolvasás túllépte az időkorlátot (30 s).');
+    expect(szamlafolyo.koteg.szovegIdokorlatMp).toBeLessThan(szamlafolyo.modell.idokorlatMp);
+  });
+
+  it('a fájlos szétszedés és a kiolvasás marad 90 s-on – a rövid korlát nem szivárog át', async () => {
+    vi.useFakeTimers();
+    elakadtKeres();
+
+    const fajlos = figyel(szetszed({ ...PDF, oldalszam: 3, oldalSzovegek: null }));
+    const kiolvasas = figyel(kiolvas(PDF));
+
+    await vi.advanceTimersByTimeAsync(szamlafolyo.koteg.szovegIdokorlatMp * 1000);
+    expect(fajlos.allapot).toBe('fuggo');
+    expect(kiolvasas.allapot).toBe('fuggo');
+
+    await vi.advanceTimersByTimeAsync((szamlafolyo.modell.idokorlatMp - szamlafolyo.koteg.szovegIdokorlatMp) * 1000);
+    expect(fajlos.allapot).toBe('hiba');
+    expect(kiolvasas.allapot).toBe('hiba');
+    expect((kiolvasas.hiba as Error).message).toBe('A kiolvasás túllépte az időkorlátot (90 s).');
+  });
+
+  it('a fejléc után elakadó törzs sem lóg a végtelenségig', async () => {
+    vi.useFakeTimers();
+    elakadtTorzs();
+
+    const h = figyel(kiolvas(PDF));
+
+    await vi.advanceTimersByTimeAsync(szamlafolyo.modell.idokorlatMp * 1000);
+    expect(h.allapot).toBe('hiba');
+    expect(h.hiba).toBeInstanceOf(KiolvasasHiba);
+    expect((h.hiba as Error).message).toBe('A kiolvasás túllépte az időkorlátot (90 s).');
   });
 });

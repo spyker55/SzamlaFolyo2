@@ -5042,3 +5042,33 @@ küldi-e (`max_tokens`, álfetch-csel).
 gondolkodás **nincs mérve**: a sikertelen szétszedés csak a függvénynaplóba
 kerül, és a bizonylat ilyenkor egyben olvasódik ki. Ha egyszer többbizonylatos
 fájl marad szétszedetlen, ez az első gyanúsított.
+
+## ✅ A szöveges szétszedés 30 s-os korlátot kap, és a korlát a választörzsre is vonatkozik (2026-09-23)
+
+Élő próba (`tesztadat/harom-szamla.pdf`, `kiolvas` v26): a bizonylat 102 s-ig
+állt „feldolgozás alatt". Ebből 90 s a kötegszétszedő OpenRouter-kérése volt,
+amire **nem jött válasz**, és a mi időkorlátunk vágta el; utána a tartalék út
+dolgozott (egyben kiolvasás, 11,7 s, `tobb_irat_gyanu`), ahogy terveztük.
+
+Hogy mi akadt el, azt a tulajdonos OpenRouter-naplója döntötte el: 15:35:48
+körül **sem a Generations, sem az Upstream Requests fülön nincs sor** – a kérés
+el sem jutott a Google-ig. Helyben a kérés rendben van (4,6 KB, ugyanazok a
+szolgáltatói kikötések, mint a kiolvasásé); a modell gondolkodása sem
+magyarázza, mert az 1024-es keret ~160 tok/s-mal ~6,5 s alatt elfogyna.
+
+Két javítás:
+
+- **A szöveges szétszedés korlátja 30 s** (`koteg.szovegIdokorlatMp`). Kiegészítő
+  lépés, aminek a kiesését a tartalék út kezeli; a várakozás csak késleltet. A
+  fájlos szétszedés (szövegréteg nélkül a modell végiglapozza a fájlt) marad a
+  kiolvasás 90 s-án, mert annak az idejét élesben még nem mértük.
+- **A korlát a teljes hívásra vonatkozik.** Eddig az időzítő a fejléc
+  megérkezésekor leállt, és a `valasz.json()` korlát nélkül futott: egy fejléc
+  után elakadó törzs a függvényt az Edge Runtime saját határáig tartotta volna.
+  Most nem ez történt (az időzítő elsült, tehát fejléc sem jött), de ugyanaz a
+  hibacsalád. A hibaüzenet a másodperceket is kiírja.
+
+Négy szándékos törés, mindegyik a saját tesztjén piros: a szétszedő nem adja át
+a rövid korlátot; a hívás figyelmen kívül hagyja; a rövid korlát átszivárog a
+kiolvasásra; az időzítő a fejlécnél leáll (álórával, a valódi `fetch`-hez
+hasonlóan a jelre megszakadó kéréssel és törzzsel).

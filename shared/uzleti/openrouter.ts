@@ -207,6 +207,11 @@ export async function szetszed(keres: SzetszedesKeres): Promise<SzetszedesValasz
     maxTokens: 1024,
     apiKulcs: keres.apiKulcs,
     hivoUrl: keres.hivoUrl,
+    // A szöveges út rövidebb korlátot kap – lásd `koteg.szovegIdokorlatMp`.
+    idokorlatMp:
+      keres.oldalSzovegek === null || keres.oldalSzovegek === undefined
+        ? undefined
+        : szamlafolyo.koteg.szovegIdokorlatMp,
   });
 
   return { ...eredmeny, modell, promptVerzio: SZETSZEDES_VERZIO };
@@ -246,6 +251,8 @@ type HivasKeres = {
   maxTokens: number;
   apiKulcs: string;
   hivoUrl?: string | undefined;
+  /** A teljes hívás időkorlátja (kérés + választörzs). Alapból a kiolvasásé. */
+  idokorlatMp?: number | undefined;
 };
 
 /**
@@ -344,38 +351,54 @@ async function hivas(keres: HivasKeres): Promise<{
     usage: { include: true },
   };
 
+  // ⚠️ **Az időkorlát a teljes hívásra vonatkozik, a választörzsre is.**
+  // 2026-09-23-ig az időzítő a fejléc megérkezésekor leállt, és a
+  // `valasz.json()` korlát nélkül futott: egy fejléc után elakadó törzs a
+  // függvényt az Edge Runtime saját határáig tartotta volna, a bizonylatot
+  // pedig addig „feldolgozás alatt". A jel a törzs olvasását is megszakítja.
+  const idokorlatMp = keres.idokorlatMp ?? szamlafolyo.modell.idokorlatMp;
   const vezerlo = new AbortController();
-  const idozito = setTimeout(() => vezerlo.abort(), szamlafolyo.modell.idokorlatMp * 1000);
+  const idozito = setTimeout(() => vezerlo.abort(), idokorlatMp * 1000);
+  const idotullepes = () =>
+    new KiolvasasHiba(`A kiolvasás túllépte az időkorlátot (${idokorlatMp} s).`);
 
-  let valasz: Response;
+  let valaszJson: Record<string, unknown>;
   try {
-    valasz = await fetch(`${szamlafolyo.modell.alapUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${keres.apiKulcs}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': keres.hivoUrl ?? 'https://szamlafolyo.hu',
-        'X-Title': 'SzamlaFolyo',
-      },
-      body: JSON.stringify(torzs),
-      signal: vezerlo.signal,
-    });
-  } catch (hiba) {
-    throw new KiolvasasHiba(
-      hiba instanceof Error && hiba.name === 'AbortError'
-        ? 'A kiolvasás túllépte az időkorlátot.'
-        : 'Nem sikerült elérni a kiolvasó szolgáltatást.',
-    );
+    let valasz: Response;
+    try {
+      valasz = await fetch(`${szamlafolyo.modell.alapUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${keres.apiKulcs}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': keres.hivoUrl ?? 'https://szamlafolyo.hu',
+          'X-Title': 'SzamlaFolyo',
+        },
+        body: JSON.stringify(torzs),
+        signal: vezerlo.signal,
+      });
+    } catch (hiba) {
+      throw vezerlo.signal.aborted
+        ? idotullepes()
+        : new KiolvasasHiba('Nem sikerült elérni a kiolvasó szolgáltatást.');
+    }
+
+    if (!valasz.ok) {
+      const szoveg = await valasz.text().catch(() => '');
+      throw new KiolvasasHiba(`A kiolvasó szolgáltatás hibát adott (${valasz.status}). ${szoveg.slice(0, 300)}`);
+    }
+
+    try {
+      valaszJson = (await valasz.json()) as Record<string, unknown>;
+    } catch {
+      throw vezerlo.signal.aborted
+        ? idotullepes()
+        : new KiolvasasHiba('A kiolvasó szolgáltatás válasza nem értelmezhető.');
+    }
   } finally {
     clearTimeout(idozito);
   }
 
-  if (!valasz.ok) {
-    const szoveg = await valasz.text().catch(() => '');
-    throw new KiolvasasHiba(`A kiolvasó szolgáltatás hibát adott (${valasz.status}). ${szoveg.slice(0, 300)}`);
-  }
-
-  const valaszJson = (await valasz.json()) as Record<string, unknown>;
   const nyom = valaszNyom(valaszJson);
 
   let nyers: Record<string, unknown>;
