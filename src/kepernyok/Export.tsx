@@ -57,7 +57,7 @@ const PROGRAM_ALLAPOT: Record<Program, string> = {
   novitax:
     'a Novitax NTAX fájlját egy valódi NTAX beolvasta: bejövő (vegyes kulccsal is), kimenő, mentes (AM) és sztornó is.',
   kulcs:
-    'a Kulcs-Könyvelés fájl a gyártó leírása és mintája szerint készül, valódi programban még nincs kipróbálva.',
+    'a Kulcs-Könyvelés fájlját egy valódi Kulcs-Könyvelés beolvasta: kimenő, mentes, bejövő (vegyes kulccsal is), előleg és készpénzes számla is.',
 };
 
 const PROGRAM_FORMATUMOK: { ertek: Program; cimke: string }[] = [

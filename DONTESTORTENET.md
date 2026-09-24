@@ -5753,3 +5753,33 @@ Eltörés-próbák, mindkettő piros lett:
 A 20-as (rossz kód) próbánál nem tudjuk, mit könyvelt a Kulcs, ezt nem
 mértük vissza. A felület ezért csak annyit állít, amennyit tudunk: a rossz
 kódot a Kulcs nem jelzi.
+
+### ✅ Kulcs: kimérve, béta le (2026-09-24)
+
+A 2. ellenőrző próbában az előleg a `12`-es kóddal már ÁFA-kérdés nélkül
+ment át. A vevő és a pénztár viszont újra előjött, mert az előző kört a
+tulajdonos a pénztárnál megszakította. **A Kulcs a párosítást csak a
+feladás végén menti el.** A végigvitt 2. próba után a 3. (előleg +
+készpénz) **egyetlen kérdés nélkül** átment.
+
+Ezzel minden eset beolvasódott, amit a Kulcs-író ma gyárt:
+- kimenő 27% és 18%;
+- mentes;
+- bejövő vegyes kulccsal;
+- előleg;
+- készpénz.
+
+Az alap ÁFA-kódokkal, kézi kódbeírás nélkül. A sztornó és a helyesbítő
+szándékosan akadály. Így `KIMERVE.kulcs = true`, és mindhárom program
+kimért.
+
+- A „Könyvelőknek” oldal szövege: „…vagy közvetlenül az RLB Kettős, a
+  Novitax NTAX vagy a Kulcs-Könyvelés könyvelőprogramba”.
+- Az Útmutató a Kulcsot kipróbáltként említi. A „kódját és nevét” mondat
+  helyett ez áll benne: a kódot előre kitöltjük, és a partner, illetve a
+  pénztár egyszeri párosítása pipával és végigvitt feladással megmarad. A
+  formátumtábla „(béta)” jelölése lekerült.
+- A betöltési lépés kimondja: „a párosítás a feladás végén mentődik”.
+- Eltörés-próbák, mindkettő piros lett:
+  - a Kulcs lekerül a lapról;
+  - `KIMERVE.kulcs = false`, miközben a lapon rajta marad.

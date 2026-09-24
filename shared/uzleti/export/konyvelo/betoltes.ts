@@ -25,7 +25,7 @@ export const BETOLTES: Record<Program, readonly string[]> = {
     'Bontsd ki a letöltött ZIP-et egy saját mappába (Windowson: jobb klikk → Összes kibontása).',
     'A Főkönyvi Adatimporter Beállításaiban (jobb klikk a címsoron → Beállítások) legyen bepipálva a „Fejléc kihagyása” – a fájlok első sora fejléc. A beállítás csak rendszergazdaként indítva mentődik el.',
     `A Főkönyvi Adatimporterben: Kulcs-Számla felad Kulcs-Könyvelésnek → „Fájlból szeretném a feladást elvégezni”, és a mappából a „${KULCS_FAJLOK.fej}” fájlt tallózd be.`,
-    'Egy új vevőt vagy szállítót a Kulcs első alkalommal párosíttat (Adategyeztetés): válaszd ki vagy vedd fel, és pipáld be a „Továbbiakban erre cserélje le…” lehetőséget – enélkül minden számlánál újra kérdez, vele megjegyzi.',
+    'Egy új vevőt vagy szállítót a Kulcs első alkalommal párosíttat (Adategyeztetés): válaszd ki vagy vedd fel, és pipáld be a „Továbbiakban erre cserélje le…” lehetőséget – enélkül minden számlánál újra kérdez. A párosítás a feladás végén mentődik: ha félbeszakítod, legközelebb újra kérdez.',
     'Készpénzes számlánál a Kulcs egyszer megkérdezi a forintpénztár főkönyvi számát (pl. 3811 Pénztárszámla) – ugyanígy, pipával.',
     `A „${KULCS_FAJLOK.tetel}” (tételek) és a „${KULCS_FAJLOK.partner}” (partnerek) maradjon mellette ugyanabban a mappában.`,
   ],

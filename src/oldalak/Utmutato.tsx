@@ -353,9 +353,9 @@ export function Utmutato() {
           <li>
             <strong>Könyvelőprogramba:</strong> RLB Kettős – valódi RLB-ben kipróbálva (bejövő,
             kimenő, mentes, sztornó, nyugta); Novitax NTAX – valódi NTAX-ban kipróbálva (bejövő,
-            kimenő, mentes, sztornó); Kulcs-Könyvelés – <strong>béta</strong>: a gyártó közzétett
-            leírása szerint készül, valódi programban még nincs kipróbálva. Mindháromhoz van <strong>Próbafájl</strong> gomb, ami nem
-            jelöli át a tételeket – béta programnál előbb egy próbacégbe töltsd be.
+            kimenő, mentes, sztornó); Kulcs-Könyvelés – valódi Kulcs-Könyvelésben kipróbálva
+            (bejövő, kimenő, mentes, előleg, készpénz). Mindháromhoz van <strong>Próbafájl</strong>{' '}
+            gomb, ami nem jelöli át a tételeket – új beállításnál érdemes azzal kezdeni.
           </li>
           <li>
             A Novitax és a Kulcs <strong>ZIP-et</strong> kap, mert több fájlt olvas egy mappából:
@@ -381,8 +381,10 @@ export function Utmutato() {
           bejövő és mi kimenő. A <strong>főkönyvi számokat</strong> (költség, előzetes ÁFA,
           szállítók; árbevétel, fizetendő ÁFA, vevők) te adod meg, ügyfelenként vagy egyszer az
           egész cégre – a SzámlaFolyó nem kontíroz helyetted, minden tétel ezekre a számlákra
-          megy, a programban átkontírozhatod. A Novitaxhoz a napló kódja, a Kulcshoz a saját
-          ÁFA-kulcsaid kódja és neve is kell. Első fájl előtt a beállítást menteni kell.
+          megy, a programban átkontírozhatod. A Novitaxhoz a napló kódja kell; a Kulcshoz az
+          ÁFA-kulcsok „Kód”-ja, amit a Kulcs alaptáblájából előre kitöltünk. A Kulcs az új
+          partnert és a pénztárat első alkalommal egyszer párosíttatja – pipával, végigvitt
+          feladással megjegyzi. Első fájl előtt a beállítást menteni kell.
         </P>
         <P>
           <strong>Ami nem megy programfájlba</strong>, az a listán marad, és a képernyő
@@ -664,7 +666,7 @@ export function Utmutato() {
             dolog="Az Export képernyőről, bármikor, bármennyiszer, időszakra és ügyfélre szűrve."
           />
           <Sor
-            allapot="Jóváhagyott tételek, könyvelőprogramba (Kulcs-Könyvelés: béta)"
+            allapot="Jóváhagyott tételek, könyvelőprogramba"
             mit="RLB Kettős: pontosvesszős CSV. Novitax NTAX és Kulcs-Könyvelés: ZIP, benne pontosvesszős szövegfájlok. Windows-1250 kódolás."
             dolog="Az Export képernyőről, a gyártók közzétett leírása szerint. Kényelmi többlet, nem helyettesíti a fenti formátumokat."
           />

@@ -44,9 +44,8 @@ import {
  * # Amit a lap nem ígér, szándékosan
  *
  * - **Olyan könyvelőprogramot, amit valódi példány még nem olvasott be.** A
- *   lap csak a `KIMERVE`-s programot nevezi meg (`beallitas.ts`; ma az RLB
- *   Kettős és a Novitax NTAX); a béta programok nem kerülnek ide, amíg
- *   nincsenek kimérve.
+ *   lap csak a `KIMERVE`-s programot nevezi meg (`beallitas.ts`); egy új
+ *   program béta, amíg nincs kimérve, és addig nem kerül ide.
  * - **Feltétel nélküli emberi jóváhagyást.** Ugyanaz a szabály, mint a
  *   nyitólapon (`jogiSzovegek.test.ts`, 9. pont): alapértelmezés szerint.
  * - **Hogy az adat végig az Unióban marad.** A tárolás Frankfurtban van, a
@@ -283,7 +282,7 @@ function IrodaiFolyamat() {
     {
       cim: 'Ügyfelenként exportálsz',
       szoveg:
-        'Az exportot adószám szerint válogatod le: „12345678-2-41" és „HU12345678" ugyanaz az ügyfél. XLSX, CSV vagy JSON, vagy közvetlenül az RLB Kettős vagy a Novitax NTAX könyvelőprogramba – és ZIP-ben az eredeti bizonylatok.',
+        'Az exportot adószám szerint válogatod le: „12345678-2-41" és „HU12345678" ugyanaz az ügyfél. XLSX, CSV vagy JSON, vagy közvetlenül az RLB Kettős, a Novitax NTAX vagy a Kulcs-Könyvelés könyvelőprogramba – és ZIP-ben az eredeti bizonylatok.',
       ikon: <IkonLetoltes className="h-8 w-8" />,
     },
   ];

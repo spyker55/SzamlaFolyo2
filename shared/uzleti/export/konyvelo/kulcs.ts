@@ -34,12 +34,14 @@ import { ansiCsv, datum, szoveg } from './mezok.ts';
  * A fejet és a tételt a `szamlaid` köti össze, a fejet és a partnert az
  * `Ugyfelkod`. Egész forint („nincs fillér kezelés").
  *
- * Az ÁFA-kód és -név **a könyvelő Kulcs-Könyvelésében rögzített** kulcsé –
- * ezt nem tudhatjuk, a beállításból jön.
+ * Az ÁFA-kód a Kulcs ÁFA-kulcsának „Kód”-ja, irányonként a beállításból
+ * (alapértéke a Kulcs alaptáblája, `KULCS_ALAP_KODOK`); a név nem számít.
  *
- * ⚠️ A kódolást a leírás nem mondja ki; a magyar Windows-os szokás (ANSI)
- * szerint írunk, mint a másik két programnál. **Nincs kimérve valódi
- * Kulcs-Könyvelésben** – a felületen béta.
+ * ✅ **Kimérve a demó Főkönyvi Adatimporterben (2026-09-24):** ANSI kódolás,
+ * fejléc + „Fejléc kihagyása”, kimenő, mentes („áfás = 1”), bejövő vegyes
+ * kulccsal, előleg (Kimenő speciális, `12`), készpénz. Az új partnert és a
+ * forintpénztárat a Kulcs egyszer párosíttatja; pipával és **végigvitt
+ * feladással** megjegyzi. A mérés menete: `DONTESTORTENET.md`.
  */
 
 /** A három fájl neve a ZIP-ben – a betöltési lépések (`betoltes.ts`) is ezt mondják. */
