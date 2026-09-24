@@ -5334,3 +5334,7 @@ Az alap mellett a szállító nevénél 3+2 tartalmi eltérés látszott – val
 két, a papíron egyaránt szereplő cégnév (márkanév vs. cégjegyzékbeli név). Ez
 jóváhagyáskor látszik, és a mérés cégadat nélkül futott (`cegNev: null`), ami
 élesben segít a szállító és a vevő elválasztásában.
+
+**Mellékdöntés (2026-09-24):** a nettó és az ÁFA **nem** kerül a kulcsmezők
+közé (`kapuk.ts`). Az ÁFA-bontás nélküli bizonylatok – nyugta, alanyi
+adómentes számla – különben mindig ember elé kerülnének. A tulajdonos döntése.
