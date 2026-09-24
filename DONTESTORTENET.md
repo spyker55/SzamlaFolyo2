@@ -5352,3 +5352,42 @@ adómentes számla – különben mindig ember elé kerülnének. A tulajdonos d
 - **Élesben igazolva:** a Beérkező „Újrapróbálom" / „Elvetem" gombja működik
   (a beragadt hibás sort a tulajdonos eltüntette), és a
   `tesztadat/harom-szamla-rendes.pdf` rendben háromfelé szedődött.
+
+## 🔓 #39 – Próbaidő a törlés után: tudatosan nyitva hagyva (2026-09-24)
+
+**A rés:** aki a fióktörléssel megszünteti a cégét, ugyanazzal az adószámmal
+újra alapíthat, és új 14 napos próbaidőt kap – a cégsor eltűnt, nincs mivel
+ütköznie. (A párhuzamos esetet az adószám egyedi kényszere már lezárta,
+`20260922000400`.)
+
+**A döntés: nem zárjuk be.** A tulajdonosé, ezekkel az indokokkal:
+
+1. A zárás megőrzés volna a törlés után – új cél és jogalap (jogos érdek, a
+   visszaélés megelőzése) az Adatkezelési tájékoztatóban, vagyis új jogi
+   változat egy nappal a jogi csomag véglegesítése után.
+2. Egyéni vállalkozónál az adószám személyes adat, és a hasítás nem segít:
+   egy 8 jegyű törzsszám hash-éből a teljes kulcstér másodpercek alatt
+   végigpróbálható.
+3. A visszaélés drága a csalónak: minden kör 14 nap, és minden törléssel
+   elveszik minden adata. Egy kitalált, de ellenőrző számjegyre érvényes
+   adószám pedig a zárat ma is megkerülné – azt csak a NAV törzsadat-lekérdezése
+   fogná meg.
+
+⚠️ **Amit nem szabad jelzésnek használni:** a `terms_acceptances` a törlés
+után is őrzi a cég adószámát – de a `20260923000400` migráció kimondja, hogy
+**kizárólag** az ÁSZF-elfogadás bizonyítéka, és a próbaidő-visszaélés
+kiszűrésére **nem** használjuk. Aki ebből akarná „megnézni, visszajött-e
+valaki", célhoz kötöttséget sért. (Egy korábbi válaszban ezt tévesen az admin
+felület egyik jeleként javasoltuk – itt helyesbítve.)
+
+**Mikor kell elővenni:**
+
+- ha jön a NAV-integráció (törzsadat-lekérdezés) – akkor a kitalált adószám
+  rése is bezárható, és egy körben érdemes mindkettőt;
+- ha az **összesített** számok jeleznek: sok új próbaidő, arányaiban kevés
+  előfizetés – ez személyes adat nélkül is látszik;
+- ha konkrét bejelentés vagy észlelés érkezik visszaélésről.
+
+**Ha sorra kerül, egy kör:** külön tábla (a törzsszám és a próbaidő
+felhasználásának dátuma), a `ceg_letrehozas()` ebből dönt, a tájékoztató 3.
+pontja új céllal és megőrzési idővel, új jogi változat, és teszt.
