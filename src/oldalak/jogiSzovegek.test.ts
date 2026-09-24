@@ -428,3 +428,16 @@ describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
     expect(mp, `A videó ${mp.toFixed(1)} mp – a lap „egy perc alatt”-ot ígér.`).toBeLessThanOrEqual(90);
   });
 });
+
+describe('a nyitólap bemutatóvideója', () => {
+  const nyitolapSzoveg = nyitolap.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  it('a hivatkozott videó, WebM-tartalék és poszter ott van a public/-ban', () => {
+    const utak = [...new Set(nyitolapSzoveg.match(/\/bemutato\/[\w.-]+/g) ?? [])];
+    expect(utak.filter((u) => /\.(mp4|webm|jpg)$/.test(u)).length, 'A nyitólap nem hivatkozik mindhárom bemutatófájlra.').toBe(3);
+    const publikus = new URL('../../public', import.meta.url).pathname;
+    for (const ut of utak) {
+      expect(existsSync(publikus + ut), `Hiányzik: public${ut} (scripts/bemutato-video/)`).toBe(true);
+    }
+  });
+});

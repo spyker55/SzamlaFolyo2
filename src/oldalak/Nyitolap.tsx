@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { LogoSor } from '../komponensek/Logo.tsx';
 import { FejlesztesAlattSav } from '../komponensek/FejlesztesAlatt.tsx';
 import { FejlesztesAlattAblak } from '../komponensek/FejlesztesAlattAblak.tsx';
@@ -9,7 +9,7 @@ import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
 import { szabaly } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { tetejereUszik } from '../lib/gorgetes.ts';
-import { allapotCimke, tipusCimke } from '@uzleti/enumok.ts';
+import { allapotCimke } from '@uzleti/enumok.ts';
 
 /**
  * A nyitólap.
@@ -352,7 +352,7 @@ function Hero() {
             <ProbaAdatok />
           </div>
 
-          <EllenorzesMinta />
+          <HeroVideo />
         </div>
       </div>
     </section>
@@ -428,101 +428,162 @@ function ProbaAdatok() {
   );
 }
 
+/** A nyitólap bemutatóvideója (`scripts/bemutato-video/`, `nyitolap` változat). */
+const HERO_VIDEO = {
+  mp4: '/bemutato/nyitolap.mp4',
+  webm: '/bemutato/nyitolap.webm',
+  poszter: '/bemutato/nyitolap-poszter.jpg',
+} as const;
+
 /**
- * Az Ellenőrzés képernyő kicsiben.
+ * A hero bemutatóvideója – a régi „Dokumentum jóváhagyása” mintakártya helyén.
  *
- * **Nem rajzolt képernyőkép.** A mezők ugyanazokat az osztályokat viselik, mint
- * az éles felületen (`mezo-biztos`, `mezo-gyanus`), a típus címkéje a
- * `tipusCimke()`-ből jön, és a hibaüzenet szó szerint az, amit a
- * `validatorok.ts` ad a nettó + ÁFA ≠ bruttó esetre. Egy nyitólapon a kitalált
- * képernyőkép a legolcsóbb hazugság; ez viszont pont annyit ígér, amennyit a
- * termék tud.
+ * **Valódi felvétel, nem rajz:** a SzámlaFolyó felülete kitalált adatokkal,
+ * ugyanaz a „nettó + ÁFA ≠ bruttó” jelzés, amit a mintakártya mutatott – csak
+ * most a termék maga mutatja.
  *
- * ⚠️ Egy ponton **eltérünk a tervtől, szándékosan**: ott a bizonytalan mező
- * mustársárga. A termékben a bukott validátor **piros** — a sárga a gyenge
- * magabiztosságé. A mintakártya a termék színkódját követi, nem a tervlapét.
+ * - **Magától, némítva, ismétlődve fut**, mint egy élő képernyő. A némítás
+ *   nem díszítés: a böngészők csak így engedik magától elindulni (hangja
+ *   amúgy sincs).
+ * - **Megállítható** (szünet gomb) – a magától mozgó tartalomnak ez jár
+ *   (WCAG 2.2.2).
+ * - **Csökkentett mozgás beállításnál nem indul el magától**; ott a poszter
+ *   áll (az ellenőrző képernyő a piros bruttóval), és a gombbal indítható.
+ * - **„Megnézem nagyban”**: kis méretben a felület betűi apróak, ezért egy
+ *   natív `<dialog>` elejéről, vezérlőkkel, nagyban játssza le.
+ *
+ * Két forrás: az MP4 (H.264) szinte mindenhol megy, de a nyílt forrású
+ * Chromium és a rendszerkodek nélküli Firefox nem játssza le – nekik a WebM.
  */
-function EllenorzesMinta() {
+function HeroVideo() {
+  const kicsiRef = useRef<HTMLVideoElement>(null);
+  const nagyRef = useRef<HTMLVideoElement>(null);
+  const ablakRef = useRef<HTMLDialogElement>(null);
+  const [megy, setMegy] = useState(false);
+
+  useEffect(() => {
+    const v = kicsiRef.current;
+    if (v === null || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // A React a `muted`-ot tulajdonságként állítja, nem attribútumként – az
+    // automatikus indításhoz a lejátszás előtt biztosan némítva kell lennie.
+    v.muted = true;
+    v.play().then(
+      () => setMegy(true),
+      () => setMegy(false),
+    );
+  }, []);
+
+  function valt() {
+    const v = kicsiRef.current;
+    if (v === null) return;
+
+    if (v.paused) {
+      v.muted = true;
+      v.play().then(
+        () => setMegy(true),
+        () => setMegy(false),
+      );
+    } else {
+      v.pause();
+      setMegy(false);
+    }
+  }
+
+  function nagyban() {
+    kicsiRef.current?.pause();
+    setMegy(false);
+    ablakRef.current?.showModal();
+
+    const n = nagyRef.current;
+    if (n !== null) {
+      n.currentTime = 0;
+      void n.play().catch(() => undefined);
+    }
+  }
+
+  function bezar() {
+    ablakRef.current?.close();
+  }
+
   return (
-    <div className="relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
-      <div className="overflow-hidden rounded-2xl border border-zsalya/20 bg-white shadow-2xl">
-        {/* Ablakfejléc: a terv három pöttye, a három márkaszínnel. */}
-        <div className="flex items-center justify-between border-b border-zsalya/20 bg-vaszon/50 p-4">
-          <p className="text-sm font-bold text-slate-800">Dokumentum jóváhagyása</p>
-          <div aria-hidden="true" className="flex gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-blue-500" />
-            <span className="h-3 w-3 rounded-full bg-mustar" />
-            <span className="h-3 w-3 rounded-full bg-zsalya" />
-          </div>
-        </div>
+    <div className="relative mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none">
+      <div className="overflow-hidden rounded-2xl border border-zsalya/20 bg-tinta shadow-2xl">
+        <video
+          ref={kicsiRef}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={HERO_VIDEO.poszter}
+          aria-label="Bemutató: egy számla feltöltése, ellenőrzése, jóváhagyása és exportja"
+          className="aspect-video w-full"
+        >
+          <source src={HERO_VIDEO.mp4} type="video/mp4" />
+          <source src={HERO_VIDEO.webm} type="video/webm" />
+        </video>
+      </div>
 
-        <div className="space-y-4 p-6">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">Típus</span>
-            <span className="rounded-md bg-zsalya/20 px-2 py-1 text-xs font-bold text-slate-700">
-              {tipusCimke('szamla')}
-            </span>
-          </div>
-
-          <MintaMezo cimke="Szállító neve" ertek="Hegyvidék Nyomda Zrt." />
-          <MintaMezo cimke="Szállító adószáma" ertek="12345676-2-42" />
-          <MintaMezo cimke="Nettó" ertek={formaz(100000, 'Ft')} />
-          <MintaMezo cimke="ÁFA" ertek={formaz(27000, 'Ft')} />
-          <MintaMezo cimke="Végösszeg (bruttó)" ertek={formaz(130000, 'Ft')} gyanus />
-
-          <p className="fhiba text-sm">A nettó és az ÁFA összege nem adja ki a bruttót.</p>
-
-          <p className="rounded-lg bg-vaszon/60 px-3 py-2 text-xs text-slate-500">
-            A többi mezőhöz nincs mit hozzátenned – ezt az egyet kérdezzük meg.
-          </p>
-        </div>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={valt}>
+          {megy ? (
+            <>
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor">
+                <rect x="3" y="2" width="3.5" height="12" rx="1" />
+                <rect x="9.5" y="2" width="3.5" height="12" rx="1" />
+              </svg>
+              Szünet
+            </>
+          ) : (
+            <>
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor">
+                <path d="M4 2.5v11a.5.5 0 0 0 .76.43l9-5.5a.5.5 0 0 0 0-.86l-9-5.5A.5.5 0 0 0 4 2.5z" />
+              </svg>
+              Lejátszás
+            </>
+          )}
+        </button>
+        <button type="button" className="btn btn-secondary btn-sm rounded-full" onClick={nagyban}>
+          Megnézem nagyban
+        </button>
       </div>
 
       {/*
-        A lebegő visszajelzés a tervből. `motion-safe`: akinek a rendszere
-        csökkentett mozgást kér, annak áll.
+        Natív `<dialog>`: az Esc bezárja, a fókuszt a böngésző kezeli. A
+        háttérre kattintás is bezárja (a kattintás célpontja ilyenkor maga a
+        `<dialog>`, nem a tartalma). Bezáráskor a nagy videó megáll.
       */}
-      <div className="absolute -right-3 -bottom-6 flex items-center gap-3 rounded-xl border border-zsalya/20 bg-white p-4 shadow-xl motion-safe:animate-bounce sm:-right-6" style={{ animationDuration: '3s' }}>
-        <span className="rounded-full bg-zsalya/20 p-2 text-zsalya">
-          <IkonLetoltes className="h-5 w-5" />
-        </span>
-        <span>
-          <span className="block text-xs font-bold text-slate-800">Sikeres export</span>
-          <span className="block text-[10px] text-slate-500">szamlak_2026_09.xlsx</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function MintaMezo({
-  cimke,
-  ertek,
-  gyanus = false,
-}: {
-  cimke: string;
-  ertek: string;
-  gyanus?: boolean;
-}) {
-  return (
-    <div className="space-y-1">
-      <p className="flex items-center justify-between text-xs font-semibold text-slate-500">
-        {cimke}
-        {gyanus && <span className="badge badge-hiba">Ellenőrizendő</span>}
-      </p>
-      <div
-        className={`relative rounded-md border bg-white py-2 pr-9 pl-3 text-sm font-semibold text-slate-800 ${
-          gyanus ? 'mezo-gyanus' : 'mezo-biztos'
-        }`}
+      <dialog
+        ref={ablakRef}
+        aria-label="Bemutatóvideó"
+        className="m-auto w-[min(96vw,1200px)] max-w-none overflow-hidden rounded-2xl bg-tinta p-0 backdrop:bg-slate-900/80"
+        onClose={() => nagyRef.current?.pause()}
+        onClick={(e) => {
+          if (e.target === ablakRef.current) bezar();
+        }}
       >
-        {ertek}
-        <span
-          aria-hidden="true"
-          className={`absolute top-1/2 right-3 -translate-y-1/2 ${gyanus ? 'text-red-600' : 'text-zsalya'}`}
+        <div className="flex justify-end px-2 pt-2">
+          <button
+            type="button"
+            className="rounded-full px-3 py-1 text-sm font-semibold text-vaszon transition-colors hover:bg-tinta-lagy"
+            onClick={bezar}
+          >
+            Bezárás ✕
+          </button>
+        </div>
+        <video
+          ref={nagyRef}
+          controls
+          playsInline
+          preload="none"
+          poster={HERO_VIDEO.poszter}
+          className="aspect-video w-full"
         >
-          {gyanus ? <IkonFigyelem className="h-4 w-4" /> : <IkonPipa className="h-4 w-4" />}
-        </span>
-      </div>
+          <source src={HERO_VIDEO.mp4} type="video/mp4" />
+          <source src={HERO_VIDEO.webm} type="video/webm" />
+          <a href={HERO_VIDEO.mp4}>A bemutatóvideó letöltése (MP4)</a>
+        </video>
+      </dialog>
     </div>
   );
 }
@@ -1103,13 +1164,6 @@ export const IkonPajzs = ({ className = 'h-6 w-6' }: { className?: string }) => 
 
 export const IkonLetoltes = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon className={className} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-);
-
-export const IkonFigyelem = ({ className = 'h-4 w-4' }: { className?: string }) => (
-  <Ikon
-    className={className}
-    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-  />
 );
 
 const IkonFajl = ({ className = 'h-6 w-6' }: { className?: string }) => (

@@ -1,7 +1,8 @@
 /**
- * A Könyvelőknek oldal bemutatóvideójának felvétele.
+ * A bemutatóvideók felvétele – a Könyvelőknek oldalé és a nyitólapé.
  *
- *   node scripts/bemutato-video/felvetel.mjs
+ *   node scripts/bemutato-video/felvetel.mjs konyveloknek
+ *   node scripts/bemutato-video/felvetel.mjs nyitolap
  *
  * A SzámlaFolyó **valódi felületét** veszi fel egy Vite dev szerveren, de a
  * Supabase helyett egy memóriabeli álszerver válaszol (`bemutato.supabase.co`,
@@ -22,10 +23,17 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CEG, CEG_SOR, FOTO_FAJLNEV, FOTO_OLVASAT, SZAMLA_HTML, kezdoBizonylatok } from './adatok.mjs';
+import { CEG, VALTOZATOK } from './adatok.mjs';
+
+const VALTOZAT = process.argv[2] ?? 'konyveloknek';
+const V = VALTOZATOK[VALTOZAT];
+if (V === undefined) {
+  throw new Error(`Ismeretlen változat: ${VALTOZAT} (lehet: ${Object.keys(VALTOZATOK).join(', ')})`);
+}
 
 const GYOKER = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const KIMENET = join(GYOKER, 'public/bemutato');
+// Próbafelvételhez máshová is írhat, hogy a kitett videót ne írja felül.
+const KIMENET = process.env.BEMUTATO_KIMENET ?? join(GYOKER, 'public/bemutato');
 const FFMPEG = process.env.FFMPEG ?? 'ffmpeg';
 const PORT = 5288;
 const HOST = 'bemutato.supabase.co';
@@ -83,8 +91,8 @@ try {
   // -------------------------------------------------------------------------
 
   const gyar = await bongeszo.newPage({ viewport: { width: 1000, height: 1300 } });
-  await gyar.setContent(SZAMLA_HTML);
-  const fotoUt = join(munka, FOTO_FAJLNEV);
+  await gyar.setContent(V.foto.html);
+  const fotoUt = join(munka, V.foto.fajlnev);
   writeFileSync(fotoUt, await gyar.screenshot({ type: 'jpeg', quality: 82 }));
   await gyar.setContent(blokkHtml());
   const kotegPdf = await gyar.pdf({ width: '80mm', height: '140mm', printBackground: true });
@@ -94,7 +102,7 @@ try {
   // Az álszerver
   // -------------------------------------------------------------------------
 
-  const allapot = { sorok: kezdoBizonylatok(), fajlok: new Map() };
+  const allapot = { sorok: V.kezdo(), fajlok: new Map(), exportok: [] };
 
   const ctx = await bongeszo.newContext({
     viewport: { width: SZELES, height: MAGAS },
@@ -104,10 +112,12 @@ try {
   });
 
   await ctx.addInitScript(belepes, { host: HOST });
-  await ctx.addInitScript(retegek);
+  await ctx.addInitScript(retegek, { feliratMeret: V.feliratMeret });
   await ctx.route(`https://${HOST}/**`, (u) => alszerver(u, allapot, { fotoUt, kotegPdf }));
 
   const oldal = await ctx.newPage();
+  // Az export „Folytatod?” kérdése: igen.
+  oldal.on('dialog', (d) => void d.accept());
   const hibak = [];
   oldal.on('pageerror', (e) => hibak.push(e.message));
   oldal.on('console', (m) => {
@@ -119,10 +129,8 @@ try {
   // Felvétel: a képernyőközvetítés kockái az időbélyegükkel
   // -------------------------------------------------------------------------
 
-  await oldal.goto(`http://localhost:${PORT}/beerkezo`);
-  await oldal.waitForSelector('text=Ellenőrzésre vár');
-  await kartya(oldal, 'SzámlaFolyó könyvelőirodáknak', 'Bizonylattól a könyvelőprogramig');
-  await oldal.waitForTimeout(800);
+  const forgatokonyv = forgatokonyvek()[VALTOZAT];
+  await forgatokonyv.elokeszit(oldal);
 
   const cdp = await ctx.newCDPSession(oldal);
   const kockak = [];
@@ -139,8 +147,15 @@ try {
     maxHeight: MAGAS * SURUSEG,
   });
 
+  // A poszter pillanata: a forgatókönyv jelöli meg (`jelol`), különben a
+  // címkártya.
+  let poszterIdo = null;
+  const jelol = () => {
+    poszterIdo = Date.now() / 1000;
+  };
+
   try {
-    await forgatokonyv(oldal, fotoUt);
+    await forgatokonyv.felvesz(oldal, fotoUt, jelol);
   } catch (e) {
     await oldal.screenshot({ path: join(munka, 'hiba.png') });
     console.error(`Elakadt: ${oldal.url()} – kép: ${join(munka, 'hiba.png')}`);
@@ -170,7 +185,7 @@ try {
   const listaUt = join(munka, 'lista.txt');
   writeFileSync(listaUt, `${lista}\nfile '${join(kockaMappa, kockak.at(-1).nev)}'\n`);
 
-  const mp4 = join(KIMENET, 'konyveloknek.mp4');
+  const mp4 = join(KIMENET, `${VALTOZAT}.mp4`);
   futtat(FFMPEG, [
     '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', listaUt,
     '-vf', 'fps=30,scale=1920:1080:flags=lanczos,format=yuv420p',
@@ -183,11 +198,12 @@ try {
     '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', listaUt,
     '-vf', 'fps=30,scale=1920:1080:flags=lanczos,format=yuv420p',
     '-c:v', 'libvpx-vp9', '-crf', '40', '-b:v', '0', '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2',
-    '-an', join(KIMENET, 'konyveloknek.webm'),
+    '-an', join(KIMENET, `${VALTOZAT}.webm`),
   ]);
+  const poszterMp = poszterIdo === null ? 2.5 : poszterIdo - kockak[0].ido;
   futtat(FFMPEG, [
-    '-y', '-loglevel', 'error', '-ss', '2.5', '-i', mp4, '-frames:v', '1',
-    '-vf', 'scale=1280:720', '-q:v', '4', join(KIMENET, 'konyveloknek-poszter.jpg'),
+    '-y', '-loglevel', 'error', '-ss', poszterMp.toFixed(2), '-i', mp4, '-frames:v', '1',
+    '-vf', 'scale=1280:720', '-q:v', '4', join(KIMENET, `${VALTOZAT}-poszter.jpg`),
   ]);
 
   console.log(`Kész: ${mp4} (${kockak.length} kocka)`);
@@ -199,10 +215,25 @@ try {
 }
 
 // ===========================================================================
-// A forgatókönyv
+// A forgatókönyvek
 // ===========================================================================
 
-async function forgatokonyv(oldal, fotoUt) {
+/** Függvény, nem konstans: a fenti, felső szintű kód előbb fut, mint ez a sor. */
+function forgatokonyvek() {
+  return {
+    konyveloknek: { elokeszit: konyvelokElokeszit, felvesz: konyvelokFelvesz },
+    nyitolap: { elokeszit: nyitolapElokeszit, felvesz: nyitolapFelvesz },
+  };
+}
+
+async function konyvelokElokeszit(oldal) {
+  await oldal.goto(`http://localhost:${PORT}/beerkezo`);
+  await oldal.waitForSelector('text=Ellenőrzésre vár');
+  await kartya(oldal, 'SzámlaFolyó könyvelőirodáknak', 'Bizonylattól a könyvelőprogramig');
+  await oldal.waitForTimeout(800);
+}
+
+async function konyvelokFelvesz(oldal, fotoUt) {
   await oldal.waitForTimeout(3200);
   await kartya(oldal, null);
 
@@ -215,7 +246,7 @@ async function forgatokonyv(oldal, fotoUt) {
   await mutat(oldal, 'label[for="fajlok"]');
   await oldal.waitForTimeout(1800);
   await oldal.setInputFiles('#fajlok', fotoUt);
-  await oldal.waitForSelector(`tr:has-text("${FOTO_FAJLNEV}")`);
+  await oldal.waitForSelector(`tr:has-text("${V.foto.fajlnev}")`);
   await felirat(oldal, 'Pár másodperc, és kiolvasta: partnerek, dátumok, összegek, ÁFA-bontás.');
   await oldal.waitForSelector('tr:has-text("MSZ-2026/0412") >> text=Ellenőrzésre vár', { timeout: 20_000 });
   await oldal.waitForTimeout(1500);
@@ -280,6 +311,73 @@ async function forgatokonyv(oldal, fotoUt) {
   await felirat(oldal, null);
   await kartya(oldal, 'Próbáld ki egy ügyfél egy hónapjával.', 'szamlafolyo.hu');
   await oldal.waitForTimeout(4500);
+}
+
+async function nyitolapElokeszit(oldal) {
+  await oldal.goto(`http://localhost:${PORT}/beerkezo`);
+  await oldal.waitForSelector('text=Itt jelennek meg a bizonylatok');
+  await kartya(oldal, 'SzámlaFolyó', 'Bizonylatból könyvelésre kész adat');
+  await oldal.waitForTimeout(800);
+}
+
+/**
+ * A vállalkozó útja: egy fotózott számla, egy megjelölt bruttó, jóváhagyás,
+ * Excel-export. A nyitólapon ismétlődve fut, ezért rövid, és a zárókártya
+ * után újra a címkártya jön.
+ */
+async function nyitolapFelvesz(oldal, fotoUt, jelol) {
+  await oldal.waitForTimeout(2400);
+  await kartya(oldal, null);
+
+  // 1. Beérkező -----------------------------------------------------------
+  await felirat(oldal, 'Feltöltöd a számlát – fotót, PDF-et vagy e-számla XML-t. Vagy e-mailben továbbítod.');
+  await mutat(oldal, 'label[for="fajlok"]');
+  await oldal.waitForTimeout(3400);
+  await oldal.setInputFiles('#fajlok', fotoUt);
+  await oldal.waitForSelector(`tr:has-text("${V.foto.fajlnev}")`);
+  await felirat(oldal, 'Pár másodperc, és kiolvasta.');
+  await oldal.waitForSelector('tr:has-text("MNY-2026/0877") >> text=Ellenőrzésre vár', { timeout: 20_000 });
+  await oldal.waitForTimeout(1200);
+
+  // 2. Ellenőrzés ---------------------------------------------------------
+  await kattint(oldal, 'tr:has-text("MNY-2026/0877") a:has-text("Ellenőrzés")');
+  await oldal.waitForSelector('#gross_amount');
+  await felirat(oldal, 'Ami nem stimmel, azt megjelöli: itt a nettó és az ÁFA nem adja ki a bruttót.');
+  await mutat(oldal, '#gross_amount');
+  await oldal.waitForTimeout(1500);
+  jelol();
+  await oldal.waitForTimeout(3500);
+
+  await felirat(oldal, 'Ránézel a képre, és kijavítod.');
+  await kattint(oldal, '#gross_amount', { clickCount: 3 });
+  await oldal.keyboard.type('127000', { delay: 120 });
+  await oldal.waitForTimeout(1800);
+
+  await felirat(oldal, 'Jóváhagyod.');
+  await kattint(oldal, 'button:has-text("Jóváhagyás")');
+
+  // 3. Tételek ------------------------------------------------------------
+  await oldal.waitForURL(/tetelek/);
+  await oldal.waitForSelector('text=MNY-2026/0877');
+  await felirat(oldal, 'A jóváhagyott tételek egy helyen várják az exportot.');
+  await mutat(oldal, 'tr:has-text("MNY-2026/0877") td >> nth=0');
+  await oldal.waitForTimeout(3600);
+
+  // 4. Export -------------------------------------------------------------
+  await kattint(oldal, 'nav a:has-text("Export") >> visible=true');
+  await oldal.waitForSelector('text=tétel kerül exportba');
+  await felirat(oldal, 'Export Excelbe, CSV-be vagy JSON-ba – vagy egyenesen a könyvelőprogramba.');
+  await mutat(oldal, 'label:has-text("Excel")');
+  await oldal.waitForTimeout(3800);
+  await kattint(oldal, 'button:has-text("Export elkészítése")');
+  await oldal.waitForURL(/archivum/);
+  await felirat(oldal, 'Kész: az Excel letöltődött, és az export az Archívumban marad.');
+  await oldal.waitForTimeout(4200);
+
+  // 5. Zárás --------------------------------------------------------------
+  await felirat(oldal, null);
+  await kartya(oldal, 'Próbáld ki a saját bizonylataiddal.', 'szamlafolyo.hu');
+  await oldal.waitForTimeout(4000);
 }
 
 // ===========================================================================
@@ -360,13 +458,13 @@ function belepes({ host }) {
 }
 
 /** Felirat, egérmutató, kattintás-hullám és címkártya. */
-function retegek() {
+function retegek({ feliratMeret }) {
   const telepit = () => {
     const stilus = document.createElement('style');
     stilus.textContent = `
       #bm-felirat { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); z-index:2147483600;
         max-width:960px; padding:14px 26px; border-radius:14px; background:rgba(42,42,38,.92); color:#f6ede4;
-        font:600 22px/1.4 'DM Sans Variable','DM Sans',system-ui,sans-serif; text-align:center;
+        font:600 ${feliratMeret}px/1.4 'DM Sans Variable','DM Sans',system-ui,sans-serif; text-align:center;
         box-shadow:0 10px 30px rgba(0,0,0,.25); transition:opacity .35s; opacity:0; pointer-events:none; }
       #bm-eger { position:fixed; left:0; top:0; z-index:2147483646; width:22px; height:22px; margin:-3px 0 0 -3px;
         pointer-events:none; transition:transform .06s linear; }
@@ -456,6 +554,7 @@ function blokkHtml() {
 // ===========================================================================
 
 async function alszerver(utvonal, allapot, { fotoUt, kotegPdf }) {
+  const olvasat = V.foto.olvasat;
   const keres = utvonal.request();
   const u = new URL(keres.url());
   const ut = u.pathname;
@@ -484,7 +583,7 @@ async function alszerver(utvonal, allapot, { fotoUt, kotegPdf }) {
     setTimeout(() => modosit(allapot, id, { status: 'feldolgozas_alatt' }), 1200);
     setTimeout(() => {
       modosit(allapot, id, {
-        ...FOTO_OLVASAT,
+        ...olvasat,
         status: 'ellenorzesre_var',
         document_extractions: [{ model: 'modell', created_at: new Date().toISOString() }],
       });
@@ -506,7 +605,7 @@ async function alszerver(utvonal, allapot, { fotoUt, kotegPdf }) {
   }
 
   if (ut === '/rest/v1/company_members') {
-    return json([{ role: 'tulajdonos', created_at: '2026-01-01T00:00:00Z', companies: CEG_SOR }]);
+    return json([{ role: 'tulajdonos', created_at: '2026-01-01T00:00:00Z', companies: V.ceg }]);
   }
 
   if (ut === '/rest/v1/rpc/keret_adatok') {
@@ -526,18 +625,19 @@ async function alszerver(utvonal, allapot, { fotoUt, kotegPdf }) {
     const id = (u.searchParams.get('document_id') ?? '').replace('eq.', '');
     const sor = allapot.sorok.find((s) => s.id === id);
     if (sor === undefined) return json([]);
-    const mezok = Object.fromEntries(Object.keys(FOTO_OLVASAT).map((m) => [m, sor[m]]));
-    const kezdo = sor.id.startsWith('b-') ? mezok : FOTO_OLVASAT;
+    const mezok = Object.fromEntries(Object.keys(olvasat).map((m) => [m, sor[m]]));
+    const kezdo = sor.id.startsWith('b-') ? mezok : olvasat;
     return json([{
       id: `x-${id}`,
       fields: kezdo,
-      confidence: Object.fromEntries(Object.keys(FOTO_OLVASAT).map((m) => [m, 0.97])),
+      confidence: Object.fromEntries(Object.keys(olvasat).map((m) => [m, 0.97])),
       model: 'modell',
     }]);
   }
 
   // Az ügyfél kontírja be van állítva – enélkül a programfájl nem készülne el.
   if (ut === '/rest/v1/konyvelo_beallitasok') {
+    if (!V.kontir) return json([]);
     return json([
       { ugyfel_torzsszam: null, beallitas: { koltseg: '529', arbevetel: '911' } },
       { ugyfel_torzsszam: '11111111', beallitas: { koltseg: '529', arbevetel: '911' } },
@@ -546,12 +646,30 @@ async function alszerver(utvonal, allapot, { fotoUt, kotegPdf }) {
 
   if (ut === '/rest/v1/document_corrections') return utvonal.fulfill({ status: 201, body: '' });
 
+  // Az export rögzítése: a tételek átkerülnek, az Archívum listázza.
+  if (ut === '/rest/v1/rpc/export_rogzit') {
+    const be = JSON.parse(keres.postData());
+    const id = `exp-${allapot.exportok.length + 1}`;
+    for (const s of allapot.sorok) {
+      if (be.dokumentum_idk.includes(s.id)) Object.assign(s, { status: 'exportalva', export_id: id });
+    }
+    allapot.exportok.unshift({
+      id, format: be.formatum, filters: be.szurok, item_count: be.dokumentum_idk.length,
+      file_name: be.fajl_nev, file_path: be.fajl_utvonal, file_deleted_at: null,
+      file_bytes: be.fajl_bajt, created_at: new Date().toISOString(),
+      documents: [{ count: be.dokumentum_idk.length }],
+    });
+    return json({ export_id: id, darab: be.dokumentum_idk.length, torolheto: [] });
+  }
+
+  if (ut === '/rest/v1/exports') return json(allapot.exportok);
+
   if (ut === '/rest/v1/documents') {
     if (mod === 'POST') {
       const be = JSON.parse(keres.postData());
       const fajl = allapot.fajlok.get(be.file_id);
       const uj = {
-        ...Object.fromEntries(Object.keys(FOTO_OLVASAT).map((m) => [m, null])),
+        ...Object.fromEntries(Object.keys(olvasat).map((m) => [m, null])),
         id: crypto.randomUUID(),
         company_id: CEG,
         file_id: be.file_id,

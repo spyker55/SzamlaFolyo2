@@ -1,11 +1,17 @@
-# A Könyvelőknek oldal bemutatóvideója
+# A bemutatóvideók
 
-`public/bemutato/konyveloknek.mp4` és `konyveloknek-poszter.jpg` innen készül.
+Két videó készül innen, mindkettő MP4, WebM és poszter (`public/bemutato/`):
+
+- `konyveloknek`: a Könyvelőknek oldal videója (könyvelőiroda, Kulcs-export);
+- `nyitolap`: a nyitólap hero videója (vállalkozó, egy számla, Excel-export).
+
+A nyitólapon ismétlődve fut.
 Egy UI-változás után újra kell venni, különben a videó mást mutat, mint az
 alkalmazás.
 
 ```sh
-FFMPEG=/út/az/ffmpeg node scripts/bemutato-video/felvetel.mjs
+FFMPEG=/út/az/ffmpeg node scripts/bemutato-video/felvetel.mjs konyveloknek
+FFMPEG=/út/az/ffmpeg node scripts/bemutato-video/felvetel.mjs nyitolap
 ```
 
 - **ffmpeg libx264-gyel kell.** Ha nincs a gépen:
@@ -13,6 +19,8 @@ FFMPEG=/út/az/ffmpeg node scripts/bemutato-video/felvetel.mjs
   `/tmp/ff/imageio_ffmpeg/binaries/ffmpeg-…` fájlra mutasson.
 - `CHROMIUM=…`: ha a Playwright saját Chromiuma nincs letöltve.
 - `MEGTART=1`: a munkamappa (kockák, hibakép) nem törlődik.
+- `BEMUTATO_KIMENET=/mappa`: próbafelvétel máshová, a kitett videót nem írja
+  felül.
 
 ## Mit csinál
 
@@ -31,7 +39,8 @@ FFMPEG=/út/az/ffmpeg node scripts/bemutato-video/felvetel.mjs
 - **A hossz:** a Könyvelőknek lap „egy perc alatt”-ot mond. A
   `jogiSzovegek.test.ts` az MP4 fejlécéből méri, és 40–90 mp között
   engedi.
-- **A feliratok:** a `forgatokonyv()` függvényben vannak. Csak olyat
+- **A feliratok:** a `konyvelokFelvesz()` és a `nyitolapFelvesz()` függvényben
+  vannak. Csak olyat
   állítsanak, amit a program tényleg tud.
 - **A nézőnek:** a videót a böngésző gyorsítótárazhatja. Új felvételnél
   érdemes új fájlnevet adni, és a lapon a `BEMUTATO_VIDEO`-t átírni.

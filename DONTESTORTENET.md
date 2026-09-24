@@ -5867,3 +5867,46 @@ Playwright a buildelt lapon, mindkét oldalon, 320, 360, 390, 768, 1024 és
 - nincs túllógás;
 - a horgonyra ugráskor a szakaszcím a fejléc alatt van;
 - oda-vissza navigáció mobilon.
+
+### 🎬 Nyitólap: a mintakártya helyén valódi felvétel (2026-09-24)
+
+A nyitólap hero részében eddig egy rajzolt „Dokumentum jóváhagyása” kártya
+állt: egy piros „nettó + ÁFA ≠ bruttó” jelzés és egy lebegő „Sikeres
+export” jelvény. A helyére egy 44 mp-es felvétel került a valódi felületről
+(`scripts/bemutato-video/`, `nyitolap` változat). Egy vállalkozó
+(Próba Kft.):
+- feltölt egy fotózott nyomdaszámlát;
+- a modell a bruttót 127 000 helyett 121 000-nek olvassa, és ugyanaz a
+  „nettó + ÁFA ≠ bruttó” jelzés szól, amit a kártya mutatott;
+- kijavítja és jóváhagyja;
+- Excelbe exportál, az export az Archívumba kerül.
+
+Mindez kitalált adatokkal.
+
+A tulajdonos döntése: **magától induljon**. Ezért:
+- **némítva, ismétlődve** indul (a böngésző csak némítva enged
+  automatikus indítást);
+- van **szünet gomb** (WCAG 2.2.2);
+- **csökkentett mozgás** beállításnál nem indul el magától, a poszter áll;
+- **„Megnézem nagyban”**: natív `<dialog>`, elejéről, vezérlőkkel. Kicsiben
+  a felület betűi apróak, ezért a felirat itt nagyobb (30 px a 22 helyett).
+
+Ára: minden látogatónál kb. 1 MB (az 1,3 MB-os MP4 vagy az 1,0 MB-os WebM).
+
+A poszter a piros bruttós pillanat. A forgatókönyv jelöli meg (`jelol()`),
+nem egy rögzített időpont, így újravételnél is ott marad.
+
+Ellenőrizve a buildelt lapon, 1440 és 390 px szélesen, csökkentett
+mozgással is:
+- magától fut, a szünet megállítja;
+- csökkentett mozgásnál áll, a gombbal elindul;
+- a nagy ablak középen nyílik, elejéről játszik, közben a kicsi áll;
+- Esc-re bezárul, és a nagy videó megáll;
+- nincs túllógás és nincs JS-hiba.
+
+Őr: a nyitólap hivatkozott MP4-e, WebM-je és posztere ott van a
+`public/`-ban. A WebM-et kivéve piros lett.
+
+A felvevő szkript két változatú lett (`felvetel.mjs konyveloknek|nyitolap`).
+A könyvelős változatot egy próbamappába újra felvettük, hogy az átírás nem
+törte-e el.
