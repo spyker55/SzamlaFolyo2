@@ -5391,3 +5391,31 @@ felület egyik jeleként javasoltuk – itt helyesbítve.)
 **Ha sorra kerül, egy kör:** külön tábla (a törzsszám és a próbaidő
 felhasználásának dátuma), a `ceg_letrehozas()` ebből dönt, a tájékoztató 3.
 pontja új céllal és megőrzési idővel, új jogi változat, és teszt.
+
+## 📣 A „Könyvelőknek" oldal (2026-09-24)
+
+`/konyveloknek` – a marketing első csatornája a könyvelőiroda, nem a
+vállalkozó: egy iroda 20–100 ügyfél bizonylatait rögzíti. A nyitólap
+fejlécéből (széles kijelzőn) és láblécéből érhető el.
+
+A lap szerkezete: a NAV-kérdés („minek, megvan a NAV-ból") → a munkafolyamat
+egy irodában → **kalkulátor** (ügyfélszám × bizonylat, a legolcsóbb csomagot
+kiemeli) → adatvédelem és szerepek → az őszinte határok → bemutatókérés
+(`mailto:`, a kapcsolati címre).
+
+Amit **szándékosan nem** állít, és a `jogiSzovegek.test.ts` őrzi:
+
+- **könyvelőprogram nevét** – hogy melyik olvassa be az exportot, nincs
+  kimérve. Amíg nincs, a lap formátumot mond (XLSX, CSV, JSON), nem programot;
+- **kézzel írt árat** – minden forint a configból jön (`src/lib/irodaiKoltseg.ts`);
+- feltétel nélküli emberi jóváhagyást, és hogy az adat „végig az Unióban
+  marad" – ugyanazok a tiltások, mint a nyitólapon;
+- viszont **kimondja**, hogy az ügyfélszűrő nem jogosultság (Adatkezelés 1.).
+
+⚠️ A NAV-oszlop azt mutatja, amit **a vevő lekérdezhet** az Online Számlából,
+nem azt, amit a NAV tud: a nyugta adata a pénztárgépből eljut a NAV-hoz, de a
+vevő onnan nem kapja meg. A kézzel kiállított belföldi számla adata is bekerül
+– ezért a táblázat a bizonylat *képét* választja szét, nem „a papírt".
+
+Nyitott: a `KONYVELO` kuponkód (Stripe-kupon + a checkoutban a promóciós kód
+engedélyezése) és a „Honnan hallottál rólunk?" mező – egyik sincs még kész.

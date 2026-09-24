@@ -333,3 +333,41 @@ describe('a harmadik felülvizsgálat után sem térhetnek vissza', () => {
     expect(adatkezeles).toContain('A fiók adatait');
   });
 });
+
+/**
+ * # A „Könyvelőknek" oldal (2026-09-24)
+ *
+ * Marketinglap, tehát ugyanaz a kísértés, mint a nyitólapon: érvnek hangzó
+ * mondat, ami a kódnál többet ígér. Az őrök ugyanazok, plusz kettő, ami erre
+ * a lapra jellemző.
+ */
+describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
+  const konyveloknek = olvas('Konyveloknek.tsx');
+
+  it('egyáltalán elolvasta', () => {
+    expect(konyveloknek.length).toBeGreaterThan(3000);
+  });
+
+  it('nem ígér feltétlen emberi jóváhagyást, és nem ígéri, hogy az adat végig az Unióban marad', () => {
+    expect(konyveloknek).not.toMatch(/Minden bizonylatot\s+(<strong[^>]*>\s*)?te hagysz/);
+    expect(konyveloknek).toContain('Alapértelmezés szerint minden bizonylat rád vár');
+    expect(konyveloknek).not.toContain('végig az Unión belül');
+    expect(konyveloknek).toContain('a bizonylat a Google modelljéhez kerül');
+  });
+
+  it('kimondja, hogy az ügyfélszűrő nem jogosultság (Adatkezelés 1. pont)', () => {
+    expect(konyveloknek).toContain('Az ügyfélszűrő nem jogosultság');
+  });
+
+  it('nem nevez meg könyvelőprogramot, amíg a beolvasás nincs kimérve', () => {
+    for (const program of ['RLB', 'Kulcs-Könyvelés', 'Kulcs-Soft', 'Novitax', 'Forint-Soft', 'TenSoft', 'Infotéka']) {
+      expect(konyveloknek, `A lap a(z) ${program} programot nevezi meg – ki van mérve az export beolvasása?`).not.toContain(program);
+    }
+  });
+
+  it('árat nem ír kézzel: minden forintösszeg a configból jön', () => {
+    expect(konyveloknek, 'Kézzel beírt forintösszeg a lapon – a configból kell jönnie (irodaiKoltseg.ts).').not.toMatch(
+      /\d[\d\s]*\s?Ft\b/,
+    );
+  });
+});

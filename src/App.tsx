@@ -23,6 +23,7 @@ import { Export } from './kepernyok/Export.tsx';
 import { Archivum } from './kepernyok/Archivum.tsx';
 import { Nyitolap } from './oldalak/Nyitolap.tsx';
 import { Utmutato } from './oldalak/Utmutato.tsx';
+import { Konyveloknek } from './oldalak/Konyveloknek.tsx';
 import { Beallitasok } from './kepernyok/Beallitasok.tsx';
 import { Aszf } from './oldalak/jogi/Aszf.tsx';
 import { Adatkezeles } from './oldalak/jogi/Adatkezeles.tsx';
@@ -71,6 +72,7 @@ export function App() {
           {/* Nyilvános */}
           <Route path="/" element={<Kezdolap />} />
           <Route path="/utmutato" element={<Utmutato />} />
+          <Route path="/konyveloknek" element={<Konyveloknek />} />
           <Route path="/aszf" element={<Aszf />} />
           <Route path="/adatkezeles" element={<Adatkezeles />} />
           <Route path="/impresszum" element={<Impresszum />} />

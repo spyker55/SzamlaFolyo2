@@ -187,6 +187,9 @@ function Fejlec() {
               {h.cimke}
             </a>
           ))}
+          <Link to="/konyveloknek" className="text-sm font-medium text-slate-500 transition-colors hover:text-blue-600">
+            Könyvelőknek
+          </Link>
           <FejlecGombok />
         </nav>
 
@@ -240,7 +243,7 @@ const HORGONYOK = [
  * ⚠️ Zárt regisztrációnál a fejléc nem kínál „Ingyenes próba" gombot — lásd a
  * `HeroGombok` indoklását. Ilyenkor a belépés maga a kiemelt gomb.
  */
-function FejlecGombok() {
+export function FejlecGombok() {
   if (!regisztracioNyitva) {
     return (
       <Link to="/bejelentkezes" className="btn btn-primary rounded-full px-5 shadow-lg shadow-blue-500/20">
@@ -922,7 +925,7 @@ function ArSor({ ajanlott, children }: { ajanlott: boolean; children: ReactNode 
 // Lábléc
 // ---------------------------------------------------------------------------
 
-function Lablec() {
+export function Lablec() {
   return (
     <footer className="border-t border-zsalya/20 bg-slate-50 pt-16 pb-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -965,6 +968,9 @@ function Lablec() {
                 Regisztráció
               </Link>
             )}
+            <Link to="/konyveloknek" className="transition-colors hover:text-blue-600">
+              Könyvelőknek
+            </Link>
             <LablecLinkek osztaly="transition-colors hover:text-blue-600" />
           </nav>
         </div>
@@ -983,7 +989,7 @@ function Lablec() {
 // Közös szakaszkeret
 // ---------------------------------------------------------------------------
 
-function Szekcio({
+export function Szekcio({
   id,
   felcim,
   cim,
@@ -1041,34 +1047,34 @@ function Ikon({ d, className }: { d: string; className: string }) {
   );
 }
 
-const IkonPipa = ({ className = 'h-4 w-4' }: { className?: string }) => (
+export const IkonPipa = ({ className = 'h-4 w-4' }: { className?: string }) => (
   <Ikon className={className} d="M5 13l4 4L19 7" />
 );
 
-const IkonNyil = ({ className = 'h-4 w-4' }: { className?: string }) => (
+export const IkonNyil = ({ className = 'h-4 w-4' }: { className?: string }) => (
   <Ikon className={className} d="M14 5l7 7m0 0l-7 7m7-7H3" />
 );
 
-const IkonFeltoltes = ({ className = 'h-6 w-6' }: { className?: string }) => (
+export const IkonFeltoltes = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon className={className} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
 );
 
-const IkonVillam = ({ className = 'h-6 w-6' }: { className?: string }) => (
+export const IkonVillam = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon className={className} d="M13 10V3L4 14h7v7l9-11h-7z" />
 );
 
-const IkonPajzs = ({ className = 'h-6 w-6' }: { className?: string }) => (
+export const IkonPajzs = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon
     className={className}
     d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
   />
 );
 
-const IkonLetoltes = ({ className = 'h-6 w-6' }: { className?: string }) => (
+export const IkonLetoltes = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon className={className} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
 );
 
-const IkonFigyelem = ({ className = 'h-4 w-4' }: { className?: string }) => (
+export const IkonFigyelem = ({ className = 'h-4 w-4' }: { className?: string }) => (
   <Ikon
     className={className}
     d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
@@ -1082,7 +1088,7 @@ const IkonFajl = ({ className = 'h-6 w-6' }: { className?: string }) => (
   />
 );
 
-const IkonKep = ({ className = 'h-6 w-6' }: { className?: string }) => (
+export const IkonKep = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon
     className={className}
     d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
@@ -1096,11 +1102,11 @@ const IkonKartya = ({ className = 'h-6 w-6' }: { className?: string }) => (
   />
 );
 
-const IkonRacs = ({ className = 'h-6 w-6' }: { className?: string }) => (
+export const IkonRacs = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon className={className} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
 );
 
-const IkonSzamologep = ({ className = 'h-6 w-6' }: { className?: string }) => (
+export const IkonSzamologep = ({ className = 'h-6 w-6' }: { className?: string }) => (
   <Ikon
     className={className}
     d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
