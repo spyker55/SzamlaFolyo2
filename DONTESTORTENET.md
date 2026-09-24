@@ -5526,3 +5526,21 @@ programfájlt megnyitás és újramentés nélkül kell betölteni. Az RLB
 és a nyugta esetét a `eszkozok/rlb-diagnosztika/12_kiegeszito.csv` méri,
 utána a mappa törlődik. A Novitax és a Kulcs még egyáltalán nincs
 kimérve.
+
+### ✅ RLB: kimérve, béta le (2026-09-24)
+
+A kiegészítő próba (kimenő `VF/VT` készpénzzel, alanyi mentes `4`-es
+kóddal, sztornó negatív összegekkel, nyugta bankkártyával vevő nélkül) is
+**átment** a valódi RLB Kettősben. Ezzel minden eset, amit az RLB-író ma
+gyárt, egyszer beolvasódott. A diagnosztikai mappa törölve.
+
+- **Egy igazság a kimértségre:** `KIMERVE` (`shared/uzleti/export/konyvelo/beallitas.ts`),
+  ma `{ rlb: true, novitax: false, kulcs: false }`. Az Export képernyő
+  béta-jelvénye és a „Könyvelőknek" oldal őre is ebből olvas. Igazra csak
+  valódi próbaimport után állítható.
+- **A „Könyvelőknek" oldal őre új szabályt kapott:** a lap csak kimért
+  programot nevezhet meg, és a kimértet nem hallgathatja el. Ma: „vagy
+  közvetlenül az RLB Kettős könyvelőprogramba". Eltörés-próba: Novitax a
+  lapon → piros; `KIMERVE.rlb = false` → piros; az RLB kivéve a lapról →
+  piros.
+- A Novitax és a Kulcs béta marad, amíg valódi példány be nem olvassa.

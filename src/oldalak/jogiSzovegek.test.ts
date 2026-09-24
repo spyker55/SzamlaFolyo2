@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { KIMERVE, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
 
 /**
  * A nyilvános szövegek elcsúszás-őre.
@@ -359,10 +360,29 @@ describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
     expect(konyveloknek).toContain('Az ügyfélszűrő nem jogosultság');
   });
 
-  it('nem nevez meg könyvelőprogramot, amíg a beolvasás nincs kimérve', () => {
-    for (const program of ['RLB', 'Kulcs-Könyvelés', 'Kulcs-Soft', 'Novitax', 'Forint-Soft', 'TenSoft', 'Infotéka']) {
-      expect(konyveloknek, `A lap a(z) ${program} programot nevezi meg – ki van mérve az export beolvasása?`).not.toContain(program);
+  it('csak olyan könyvelőprogramot nevez meg, amit valódi példány beolvasott (KIMERVE)', () => {
+    // A lapon előforduló névből → melyik program kimértsége kell hozzá.
+    // Ami nem a mi programunk (Forint-Soft, TenSoft, Infotéka), az soha.
+    const nevek: [string, Program | null][] = [
+      ['RLB', 'rlb'],
+      ['Novitax', 'novitax'],
+      ['Kulcs-Könyvelés', 'kulcs'],
+      ['Kulcs-Soft', 'kulcs'],
+      ['Forint-Soft', null],
+      ['TenSoft', null],
+      ['Infotéka', null],
+    ];
+    for (const [nev, program] of nevek) {
+      if (!konyveloknek.includes(nev)) continue;
+      expect(
+        program !== null && KIMERVE[program],
+        `A lap a(z) ${nev} programot nevezi meg, de nincs kimérve – valódi próbaimport előtt nem ígérhetjük.`,
+      ).toBe(true);
     }
+  });
+
+  it('az RLB-t megnevezi – a kimért programot nem hallgatjuk el', () => {
+    expect(konyveloknek).toContain('RLB Kettős');
   });
 
   it('árat nem ír kézzel: minden forintösszeg a configból jön', () => {

@@ -21,7 +21,14 @@ import {
 import { DOKUMENTUM_TIPUSOK, opciok, tipusCimke } from '@uzleti/enumok.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { torzsszam } from '@uzleti/adoszam.ts';
-import { alapBeallitas, PROGRAM_NEVEK, type KontirBeallitas, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
+import {
+  alapBeallitas,
+  KIMERVE,
+  PROGRAM_NEVEK,
+  PROGRAMOK,
+  type KontirBeallitas,
+  type Program,
+} from '@uzleti/export/konyvelo/beallitas.ts';
 import { elokeszit } from '@uzleti/export/konyvelo/elokeszit.ts';
 import { beallitasBetolt, beallitasMent, type BeallitasForras } from '../lib/konyveloBeallitas.ts';
 import { Elokeszitesi, KontirPanel } from '../komponensek/KonyveloProgram.tsx';
@@ -41,15 +48,11 @@ const FORMATUMOK: { ertek: Formatum; cimke: string }[] = [
 ];
 
 /**
- * A könyvelőprogramok – **béta**: a gyártói leírás és minta szerint
- * készülnek, valódi programban még nincsenek kimérve.
- */
-/**
- * Mennyire mért a formátum. Az RLB-t 2026-09-24-én egy valódi RLB Kettős
- * beolvasta (DONTESTORTENET.md); a másik kettőt még senki nem töltötte be.
+ * Mennyire mért a formátum – a béta-doboz szövege. Hogy melyik béta, azt a
+ * `KIMERVE` mondja meg (`beallitas.ts`), nem ez a lista.
  */
 const PROGRAM_ALLAPOT: Record<Program, string> = {
-  rlb: 'az RLB Kettős fájlját egy valódi RLB már beolvasta (bejövő számlákkal); a kimenő, sztornós és mentes eseteket még mérjük.',
+  rlb: 'az RLB Kettős fájlját egy valódi RLB Kettős beolvasta: bejövő, kimenő, mentes, sztornó és nyugta is.',
   novitax:
     'a Novitax NTAX fájl a gyártó leírása és mintája szerint készül, valódi programban még nincs kipróbálva.',
   kulcs:
@@ -374,9 +377,7 @@ export function Export() {
                 <FormatumGomb key={f.ertek} f={f} valasztott={formatum} onValaszt={setFormatum} />
               ))}
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-              Könyvelőprogram <span className="badge badge-varakozo">béta</span>
-            </div>
+            <div className="mt-3 text-xs text-slate-500">Könyvelőprogram</div>
             <div className="mt-1 flex flex-wrap gap-2">
               {PROGRAM_FORMATUMOK.map((f) => (
                 <FormatumGomb key={f.ertek} f={f} valasztott={formatum} onValaszt={setFormatum} />
@@ -386,11 +387,18 @@ export function Export() {
 
           {program !== null && (
             <div className="space-y-3">
-              <div className="alert alert-info">
-                <strong>Béta:</strong> {PROGRAM_ALLAPOT[program]} Először tölts le
-                <strong> próbafájlt</strong>, és egy próbacégbe töltsd be – az nem jelöli át a
-                tételeket.
-              </div>
+              {KIMERVE[program] ? (
+                <div className="alert alert-info">
+                  Kipróbálva: {PROGRAM_ALLAPOT[program]} Ha új irodai beállítással dolgozol, a{' '}
+                  <strong>próbafájl</strong> nem jelöli át a tételeket.
+                </div>
+              ) : (
+                <div className="alert alert-info">
+                  <strong>Béta:</strong> {PROGRAM_ALLAPOT[program]} Először tölts le
+                  <strong> próbafájlt</strong>, és egy próbacégbe töltsd be – az nem jelöli át a
+                  tételeket.
+                </div>
+              )}
 
               <p className="text-xs text-slate-500">
                 A letöltött fájlt <strong>közvetlenül</strong> töltsd be. Ne nyisd meg és ne mentsd
@@ -516,6 +524,9 @@ function FormatumGomb(props: {
         className="sr-only"
       />
       {f.cimke}
+      {(PROGRAMOK as readonly string[]).includes(f.ertek) && !KIMERVE[f.ertek as Program] && (
+        <span className="badge badge-varakozo">béta</span>
+      )}
     </label>
   );
 }

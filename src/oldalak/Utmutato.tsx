@@ -349,12 +349,11 @@ export function Utmutato() {
             nettó/ÁFA/bruttó összeget – érdemes ránézni, mielőtt kimegy.
           </li>
           <li>
-            <strong>Könyvelőprogramba (béta):</strong> RLB Kettős, Novitax NTAX és
-            Kulcs-Könyvelés. A fájl a gyártók közzétett leírása és mintája szerint készül; az
-            RLB-fájlt egy valódi RLB Kettős már beolvasta, a másik kettő{' '}
-            <strong>valódi programban még nincs kipróbálva</strong> – ezért van{' '}
-            <strong>Próbafájl</strong> gomb, ami nem jelöli át a tételeket. Előbb egy próbacégbe
-            töltsd be.
+            <strong>Könyvelőprogramba:</strong> RLB Kettős – valódi RLB-ben kipróbálva (bejövő,
+            kimenő, mentes, sztornó, nyugta); Novitax NTAX és Kulcs-Könyvelés –{' '}
+            <strong>béta</strong>: a gyártók közzétett leírása szerint készül, valódi programban
+            még nincs kipróbálva. Mindháromhoz van <strong>Próbafájl</strong> gomb, ami nem
+            jelöli át a tételeket – béta programnál előbb egy próbacégbe töltsd be.
           </li>
           <li>
             A programfájlt <strong>közvetlenül</strong> töltsd be, ahogy letöltötted. Ha
