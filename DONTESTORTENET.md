@@ -5783,3 +5783,56 @@ kimért.
 - Eltörés-próbák, mindkettő piros lett:
   - a Kulcs lekerül a lapról;
   - `KIMERVE.kulcs = false`, miközben a lapon rajta marad.
+
+### 🎬 Élő bemutató helyett videó (2026-09-24)
+
+A Könyvelőknek oldal két helyen ígért élő bemutatót: „Kérek egy 15 perces
+bemutatót”, illetve „írj, és végigmegyünk rajta együtt negyedóra alatt”.
+Mindkettő `mailto:` link volt. **A tulajdonos nem akar egyeztetett
+bemutatót tartani**, és egy ígéret, amit senki nem tart meg, rosszabb a
+semminél. Helyette egy kb. 70 másodperces, **hang nélküli, feliratos**
+videó jött:
+- feltöltés;
+- kiolvasás;
+- egy megjelölt, elírt adószám javítása;
+- a köteg darabjainak jóváhagyása;
+- Tételek;
+- Export a Kulcs-Könyvelésbe, és az eredetik ZIP-je.
+
+Döntések:
+- **A valódi felületről készül, kitalált adatokkal.** A
+  `scripts/bemutato-video/felvetel.mjs` egy Vite dev szervert hajt,
+  memóriabeli Supabase-álszerverrel. Az adószámok a projekt próbaszámai,
+  vagy nyolc egyforma jegy. Így újra lehet venni, ha a felület változik.
+- **Nem a Playwright `recordVideo`-ja.** Az alacsony bitrátájú VP8, azon a
+  kis betű elmosódik. Helyette a CDP képernyőközvetítés JPG-kockáiból fűzi
+  össze az ffmpeg, a valódi időzítéssel: 1080p H.264 (2,3 MB), mellé egy
+  VP9 WebM (2,0 MB).
+- **Miért két forrás.** Mérve: a Playwright nyílt forrású Chromiuma H.264-et
+  nem játszik le (`canPlayType('avc1…')` üres). A Linuxos Chromium és a
+  rendszerkodek nélküli Firefox ugyanígy jár. Az MP4 áll elöl, mert a
+  Safari azt biztosan viszi, a WebM a tartalék. A buildelt lapon a
+  tartalék ág lejátszva ellenőrizve (1440 és 390 px): `currentSrc` =
+  `.webm`, 3 mp alatt 3 mp-t haladt. Az MP4-et hiba nélkül végigdekódolja
+  az ffmpeg, a `moov` az elején van (faststart).
+- **Felirat, nem gépi hang.** A magyar gépi hang gyenge, és a legtöbben
+  némítva néznek.
+- **Saját tárhely (`public/`), nem YouTube.** A beágyazott lejátszó
+  harmadik féltől jövő sütit hozna, az pedig a sütiablakot és az
+  Adatkezelést is érintené.
+- **Szám nincs a videóban.** A próbanapok száma és az ár configból jön. A
+  videóba égetett szám egy áremelés után hazudna.
+- **Az e-mail-cím maradt, de csak így:** „Kérdésed van? Írj:”. Időpontot
+  és hívást nem ígér.
+
+Mérve, nem feltételezve:
+- a fejetlen Chromium PDF-nézője megjeleníti a köteget;
+- a dátummezők magyar formátumához a `LANG` környezeti változó kell, a
+  `locale` és a `--lang` nem elég.
+
+Őrök (`jogiSzovegek.test.ts`), mindhárom eltörve piros lett:
+- a lap nem ígér „perces bemutatót”, „negyedórát” vagy „bemutató kérést”;
+- a hivatkozott `/bemutato/…` fájlok ott vannak a `public/`-ban (a WebM
+  bekötése után, felvétel előtt magától is piros lett);
+- a lap „egy perc alatt”-ot mond, ezért a videó hosszát az MP4 `mvhd`
+  fejlécéből mérjük (69,5 mp), és 40–90 mp között engedjük.

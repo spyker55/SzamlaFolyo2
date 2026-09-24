@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { KIMERVE, PROGRAM_NEVEK, PROGRAMOK, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
 
@@ -396,5 +396,35 @@ describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
     expect(konyveloknek, 'Kézzel beírt forintösszeg a lapon – a configból kell jönnie (irodaiKoltseg.ts).').not.toMatch(
       /\d[\d\s]*\s?Ft\b/,
     );
+  });
+
+  // 2026-09-24: élő bemutató helyett videó. A tulajdonos nem tart egyeztetett
+  // bemutatót – a lap ne ígérjen olyat, amit senki nem fog megtartani.
+  it('nem ígér élő, egyeztetett bemutatót', () => {
+    expect(konyvelokSzoveg).not.toMatch(/perces bemutató/i);
+    expect(konyvelokSzoveg).not.toMatch(/negyedór/i);
+    expect(konyvelokSzoveg).not.toMatch(/bemutató(t)? kér/i);
+  });
+
+  it('a bemutatóvideó és a posztere ott van a public/-ban, és a videó tényleg kb. egy perc', () => {
+    const utak = [...new Set(konyvelokSzoveg.match(/\/bemutato\/[\w.-]+/g) ?? [])];
+    expect(utak.length, 'A lap nem hivatkozik bemutatófájlra.').toBeGreaterThanOrEqual(2);
+    const publikus = new URL('../../public', import.meta.url).pathname;
+    for (const ut of utak) {
+      expect(existsSync(publikus + ut), `Hiányzik: public${ut} (scripts/bemutato-video/)`).toBe(true);
+    }
+
+    // A lap „egy perc alatt”-ot mond: az MP4 fejlécéből (mvhd) mérjük, nem hisszük.
+    const mp4 = utak.find((u) => u.endsWith('.mp4'));
+    expect(mp4).toBeDefined();
+    const b = readFileSync(publikus + mp4);
+    const i = b.indexOf('mvhd');
+    expect(i).toBeGreaterThan(0);
+    const v1 = b[i + 4] === 1;
+    const skala = b.readUInt32BE(i + (v1 ? 24 : 16));
+    const hossz = Number(v1 ? b.readBigUInt64BE(i + 28) : BigInt(b.readUInt32BE(i + 20)));
+    const mp = hossz / skala;
+    expect(mp, `A videó ${mp.toFixed(1)} mp – a lap „egy perc alatt”-ot ígér.`).toBeGreaterThan(40);
+    expect(mp, `A videó ${mp.toFixed(1)} mp – a lap „egy perc alatt”-ot ígér.`).toBeLessThanOrEqual(90);
   });
 });

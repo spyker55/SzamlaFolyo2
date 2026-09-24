@@ -54,6 +54,8 @@ import {
  * - **Ügyfélenkénti hozzáférést.** Az ügyfélszűrő nem jogosultság
  *   (Adatkezelés 1. pont) – ez egy könyvelőnél az első ügyfélmeghívásnál
  *   derülne ki, ezért a lapon előbb.
+ * - **Élő, egyeztetett bemutatót.** Helyette videó van (`BEMUTATO_VIDEO`,
+ *   felvétele: `scripts/bemutato-video/`); az e-mail-cím csak kérdésre való.
  *
  * # A számok
  *
@@ -66,6 +68,7 @@ export function Konyveloknek() {
       <Fejlec />
       <main>
         <Hero />
+        <Bemutato />
         <NavOsszevetes />
         <IrodaiFolyamat />
         <Kalkulator />
@@ -78,7 +81,18 @@ export function Konyveloknek() {
   );
 }
 
-const BEMUTATO_LINK = `mailto:${kapcsolatEmail}?subject=${encodeURIComponent('Bemutató kérése – SzámlaFolyó könyvelőirodáknak')}`;
+/**
+ * A bemutatóvideó a `public/`-ból – saját tárhelyen, nem YouTube-on: a
+ * beágyazott lejátszó harmadik féltől jövő sütit hozna.
+ *
+ * Két forrás: az MP4 (H.264) szinte mindenhol megy, de a nyílt forrású
+ * Chromium és a rendszerkodek nélküli Firefox nem játssza le – nekik a WebM.
+ */
+const BEMUTATO_VIDEO = {
+  mp4: '/bemutato/konyveloknek.mp4',
+  webm: '/bemutato/konyveloknek.webm',
+  poszter: '/bemutato/konyveloknek-poszter.jpg',
+} as const;
 
 // ---------------------------------------------------------------------------
 // Fejléc
@@ -154,14 +168,14 @@ function Hero() {
             </Link>
           )}
           <a
-            href={BEMUTATO_LINK}
+            href="#bemutato"
             className={
               regisztracioNyitva
                 ? 'btn btn-secondary rounded-full border-zsalya/30 px-8 py-4 text-lg font-semibold'
                 : 'btn btn-primary rounded-full px-8 py-4 text-lg font-bold shadow-xl shadow-blue-500/20'
             }
           >
-            Kérek egy 15 perces bemutatót
+            Megnézem a bemutatót
           </a>
         </div>
 
@@ -179,6 +193,36 @@ function Hero() {
         </dl>
       </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bemutató
+// ---------------------------------------------------------------------------
+
+function Bemutato() {
+  return (
+    <Szekcio
+      id="bemutato"
+      felcim="Bemutató"
+      cim="Egy ügyfél bizonylatai, egy perc alatt."
+      alcim="Feltöltés, kiolvasás, ellenőrzés és export a Kulcs-Könyvelésbe – a valódi felületen, kitalált adatokkal. Hang nélkül is érthető: feliratos."
+      halvany
+    >
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-zsalya/30 bg-tinta shadow-2xl shadow-slate-900/10">
+        <video
+          controls
+          playsInline
+          preload="none"
+          poster={BEMUTATO_VIDEO.poszter}
+          className="aspect-video w-full"
+        >
+          <source src={BEMUTATO_VIDEO.mp4} type="video/mp4" />
+          <source src={BEMUTATO_VIDEO.webm} type="video/webm" />
+          <a href={BEMUTATO_VIDEO.mp4}>A bemutatóvideó letöltése (MP4)</a>
+        </video>
+      </div>
+    </Szekcio>
   );
 }
 
@@ -589,8 +633,7 @@ function Zaro() {
         </h2>
         <p className="mb-8 text-lg leading-relaxed text-vaszon/70">
           {szamlafolyo.proba.napok} nap, {szamlafolyo.proba.dokumentumok} dokumentum, bankkártya
-          nélkül. Ha inkább megmutatnád a saját bizonylataidon, írj, és végigmegyünk rajta
-          együtt negyedóra alatt.
+          nélkül.
         </p>
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
           {regisztracioNyitva && (
@@ -602,12 +645,18 @@ function Zaro() {
             </Link>
           )}
           <a
-            href={BEMUTATO_LINK}
+            href="#bemutato"
             className="rounded-full border border-vaszon/30 px-8 py-4 text-lg font-semibold text-vaszon transition-colors hover:bg-tinta-lagy"
           >
-            Bemutatót kérek: {kapcsolatEmail}
+            Megnézem a bemutatót
           </a>
         </div>
+        <p className="mt-8 text-sm text-vaszon/60">
+          Kérdésed van? Írj:{' '}
+          <a href={`mailto:${kapcsolatEmail}`} className="underline hover:text-vaszon">
+            {kapcsolatEmail}
+          </a>
+        </p>
       </div>
     </section>
   );
