@@ -29,7 +29,9 @@ import { ansiCsv, datum, szoveg } from './mezok.ts';
  * Tétel-ÁFA oszlop nincs: a program a nettóból és a kulcsból számolja. A fej
  * összesen-ÁFÁ-ja a bizonylaté.
  *
- * ⚠️ **Nincs kimérve valódi NTAX-ban** – a felületen béta.
+ * ⚠️ **Részben kimérve:** egy bejövő, 27%-os számla (új partnerrel, a
+ * `partner.csv`-ből) valódi NTAX-ban beolvasódott (2026-09-24). A kimenő, a
+ * mentes (`AM`/`TM`) és a sztornó (`-` jel) még nem – a felületen béta.
  */
 
 /**

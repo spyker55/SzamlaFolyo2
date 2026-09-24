@@ -55,7 +55,7 @@ const FORMATUMOK: { ertek: Formatum; cimke: string }[] = [
 const PROGRAM_ALLAPOT: Record<Program, string> = {
   rlb: 'az RLB Kettős fájlját egy valódi RLB Kettős beolvasta: bejövő, kimenő, mentes, sztornó és nyugta is.',
   novitax:
-    'a Novitax NTAX fájl a gyártó leírása és mintája szerint készül, valódi programban még nincs kipróbálva.',
+    'a Novitax NTAX fájlból egy bejövő, 27%-os számlát egy valódi NTAX már beolvasott; a kimenő, a mentes és a sztornó még nincs kipróbálva.',
   kulcs:
     'a Kulcs-Könyvelés fájl a gyártó leírása és mintája szerint készül, valódi programban még nincs kipróbálva.',
 };

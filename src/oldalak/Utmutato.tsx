@@ -353,8 +353,9 @@ export function Utmutato() {
           <li>
             <strong>Könyvelőprogramba:</strong> RLB Kettős – valódi RLB-ben kipróbálva (bejövő,
             kimenő, mentes, sztornó, nyugta); Novitax NTAX és Kulcs-Könyvelés –{' '}
-            <strong>béta</strong>: a gyártók közzétett leírása szerint készül, valódi programban
-            még nincs kipróbálva. Mindháromhoz van <strong>Próbafájl</strong> gomb, ami nem
+            <strong>béta</strong>: a gyártók közzétett leírása szerint készül. A Novitaxból egy
+            bejövő számlát már beolvasott egy valódi NTAX, a többi esetet még nem; a Kulcs-Könyvelés
+            még egyáltalán nincs kipróbálva. Mindháromhoz van <strong>Próbafájl</strong> gomb, ami nem
             jelöli át a tételeket – béta programnál előbb egy próbacégbe töltsd be.
           </li>
           <li>

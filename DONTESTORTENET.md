@@ -5598,3 +5598,28 @@ melyik fájlt kell kiválasztani.
   - a Kulcs partnerfájl-lépése kivéve.
 - A Novitax béta marad, amíg a kibontott `szamla.csv` be nem olvasódik egy
   valódi NTAX-ban.
+
+### 📏 Az első valódi NTAX-import (2026-09-24)
+
+A tulajdonos a kibontott `szamla.csv`-t egy **demó** NTAX-ba töltötte be.
+Élőben mérve az exportban egyetlen bizonylat volt: bejövő, 27%-os, új
+partnerrel, tehát a `partner.csv`-ből. A demó csak **02.28. előtti**
+számlát fogad, ezért a dátumokat kézzel írta át. Ezzel az NTAX elfogadta a
+fájlt.
+
+- **A béta marad.** A kimenő (`KI`), a mentes (`AM`/`TM`) és a sztornó (`-`
+  jel, abszolút tételösszeg) még nem futott át. Ez a kettő a
+  legbizonytalanabb a leírás alapján. Az RLB-nél is csak a kiegészítő fájl
+  után jött le a béta, a mérce ugyanaz.
+- A felület (Export, Útmutató) pontosan ezt mondja: „egy bejövő, 27%-os
+  számlát egy valódi NTAX már beolvasott”.
+- **Kiegészítő próbafájl** a tulajdonosnak, kitalált adatokkal, 2026
+  februári dátumokkal (a demó miatt), az ő kontírjával (napló `12`,
+  `52/491/454/311`) és `AM`-mel. Tartalma:
+  - kimenő 27%;
+  - kimenő mentes;
+  - kimenő sztornó;
+  - bejövő vegyes 27% + 5%.
+
+  Iktatószámok `SZF9001–9004`, hogy ne ütközzenek. Ha átmegy,
+  `KIMERVE.novitax = true`. A repóba nem kerül.
