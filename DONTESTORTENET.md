@@ -5680,3 +5680,16 @@ mindhárom üresnek látszott.
 - **Eltörés-próba:** a `.001` fejlécét kivéve piros lett.
 - Következik a fejléces próba (`kulcs-proba-2-fejleccel.zip`), utána a
   teljes próba a tulajdonos saját ÁFA-kódjaival.
+
+**Mérve (2026-09-24, demó Adatimporter):**
+- kikapcsolt „Fejléc kihagyása” mellett az 1. próba (fejléc nélkül) **átment**;
+- bekapcsolt pipával a 2. próba (fejléccel, a mostani export alakja) is
+  **átment**.
+
+A magyarázat igaz volt. Egy kimenő, 27%-os számlával ezek is átmentek:
+- a szerkezet, a kódolás és a partnerfájl;
+- a fizetési mód neve („Átutalás”);
+- a gyártói minta ÁFA-kódja (`1` / „27%-os fiz.ÁFA”).
+
+A teljes próba (bejövő, vegyes, mentes, előleg) a tulajdonos ÁFA-kulcs-
+listájára vár.
