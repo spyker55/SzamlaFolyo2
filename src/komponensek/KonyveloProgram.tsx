@@ -234,6 +234,7 @@ export function KontirPanel(props: {
                 szerkeszthet={szerkeszthet}
                 onValtozik={(irany, uj) =>
                   allit('kulcs', {
+                    ...vazlat.kulcs,
                     afakodok: {
                       ...vazlat.kulcs.afakodok,
                       [irany]: { ...vazlat.kulcs.afakodok[irany], [fajta]: uj },
@@ -242,6 +243,19 @@ export function KontirPanel(props: {
                 }
               />
             ))}
+            <span className="text-slate-700">Előleg</span>
+            <input
+              aria-label="Előleg 27% – kimenő kód"
+              className="control"
+              inputMode="numeric"
+              maxLength={3}
+              value={vazlat.kulcs.elolegKod}
+              disabled={!szerkeszthet}
+              onChange={(e) =>
+                allit('kulcs', { ...vazlat.kulcs, elolegKod: e.target.value.replace(/\D/g, '') })
+              }
+            />
+            <span className="text-xs text-slate-500">Kimenő speciális → „Előleg áfa 27%”</span>
           </div>
         </>
       )}

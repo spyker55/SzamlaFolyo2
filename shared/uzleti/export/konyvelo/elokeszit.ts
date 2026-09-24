@@ -69,6 +69,7 @@ export function elokeszit(
           bejovo: mehet.some((b) => b.irany === 'bejovo'),
           kimeno: mehet.some((b) => b.irany === 'kimeno'),
           fajtak,
+          kimenoEloleg: mehet.some((b) => b.irany === 'kimeno' && b.tipus === 'eloleg'),
         });
 
   return { mehet, elakadt, figyelmeztetesek, beallitasHiany };

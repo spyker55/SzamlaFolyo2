@@ -78,7 +78,7 @@ describe('kontír-beállítás', () => {
 
     const rossz = {
       ...b,
-      kulcs: { afakodok: { kimeno: { ...KULCS_ALAP_KODOK, '27': 'K27' }, bejovo: { ...KULCS_ALAP_KODOK, mentes: '' } } },
+      kulcs: { afakodok: { kimeno: { ...KULCS_ALAP_KODOK, '27': 'K27' }, bejovo: { ...KULCS_ALAP_KODOK, mentes: '' } }, elolegKod: '12' },
     };
     const hiany = beallitasHianyai(rossz, 'kulcs', igeny);
     // A kimenő 27%-os rossz kódja nem számít: nincs kimenő bizonylat.
@@ -93,7 +93,7 @@ describe('kontír-beállítás', () => {
     const b = {
       ...alapBeallitas(),
       arbevetel: '911',
-      kulcs: { afakodok: { kimeno: { ...KULCS_ALAP_KODOK, '5': '1' }, bejovo: { ...KULCS_ALAP_KODOK } } },
+      kulcs: { afakodok: { kimeno: { ...KULCS_ALAP_KODOK, '5': '1' }, bejovo: { ...KULCS_ALAP_KODOK } }, elolegKod: '12' },
     };
     const mindketto = { bejovo: false, kimeno: true, fajtak: new Set<AfaFajta>(['27', '5']) };
     expect(beallitasHianyai(b, 'kulcs', mindketto)).toEqual([
@@ -101,5 +101,15 @@ describe('kontír-beállítás', () => {
     ]);
     // Ha csak az egyik fajta szerepel a bizonylatokon, nincs ütközés.
     expect(beallitasHianyai(b, 'kulcs', { ...mindketto, fajtak: new Set<AfaFajta>(['5']) })).toEqual([]);
+  });
+
+  it('Kulcs: az előleg-kódot csak kimenő előlegnél kéri, alapértéke a Kimenő speciális „Előleg áfa 27%” (12)', () => {
+    expect(alapBeallitas().kulcs.elolegKod).toBe('12');
+    const b = { ...alapBeallitas(), arbevetel: '911', kulcs: { ...alapBeallitas().kulcs, elolegKod: 'x' } };
+    const igeny = { bejovo: false, kimeno: true, fajtak: new Set<AfaFajta>(['27']) };
+    expect(beallitasHianyai(b, 'kulcs', igeny)).toEqual([]);
+    expect(beallitasHianyai(b, 'kulcs', { ...igeny, kimenoEloleg: true })[0]).toMatch(/Kimenő speciális „Előleg áfa 27%”/);
+    expect(tisztit({ kulcs: { elolegKod: '31' } }).kulcs.elolegKod).toBe('31');
+    expect(tisztit({ kulcs: { elolegKod: 'E27' } }).kulcs.elolegKod).toBe('12');
   });
 });

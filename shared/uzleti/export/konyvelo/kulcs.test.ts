@@ -17,6 +17,7 @@ const K: KontirBeallitas = {
       kimeno: { ...KULCS_ALAP_KODOK },
       bejovo: { '27': '11', '18': '12', '5': '18', '0': '15', mentes: '16' },
     },
+    elolegKod: '42',
   },
 };
 
@@ -148,9 +149,26 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
   });
 
   it('kimenő előlegszámla a 4-es típus', async () => {
-    const eloleg = { ...KIMENO, tipus: 'eloleg' as const };
-    const fej = vissza(kicsomagol(await kulcs([eloleg], K, IKT)).get('feladas.csv')).split('\r\n')[1]!.split(';');
+    const eloleg = {
+      ...KIMENO,
+      tipus: 'eloleg' as const,
+      sorok: [{ fajta: '27' as const, netto: 8000, afa: 2160 }],
+      afa: 2160,
+      brutto: 10160,
+    };
+    expect(kulcsEllenoriz(eloleg)).toEqual([]);
+    const f = kicsomagol(await kulcs([eloleg], K, IKT));
+    const fej = vissza(f.get('feladas.csv')).split('\r\n')[1]!.split(';');
     expect(fej[0]).toBe('4');
+    // A Kimenő speciális „Előleg áfa 27%” kódja – a sima 27%-osat a Kulcs itt nem fogadja.
+    const tetel = vissza(f.get('feladas.001')).split('\r\n')[1]!.split(';');
+    expect(tetel.slice(6, 8)).toEqual(['42', 'Előleg áfa 27%']);
+  });
+
+  it('nem 27%-os kimenő előleg akadály – a Kulcs alaptáblájában csak 27%-os előleg-kulcs van', () => {
+    expect(kulcsEllenoriz({ ...KIMENO, tipus: 'eloleg' })[0]).toMatch(/csak 27%-os előleg-ÁFAkulcs/);
+    // A bejövő előleg nem érintett: az szállítói számlaként megy.
+    expect(kulcsEllenoriz({ ...BEJOVO, tipus: 'eloleg' })).toEqual([]);
   });
 
   it('esedékesség napokban, a kelttől; hónaphatáron és visszafelé is', () => {

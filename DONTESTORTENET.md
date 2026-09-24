@@ -5732,3 +5732,24 @@ A partnert az első Adategyeztetés után a Kulcs megjegyzi.
   - bejövő vegyes;
   - **előleg (típus 4)**;
   - készpénzes 18%.
+
+**A teljes próba (2026-09-24):** öt bizonylat, alapkódokkal. Három dolog
+derült ki:
+- **Partner:** pipa nélkül a Kulcs minden számlánál újra kérdez, pipával
+  megjegyzi. A betöltési lépés ezt most kimondja.
+- **Előleg (4-es típus):** a Kulcs nem a sima 27%-os kulcsot keresi, hanem a
+  „Kapott előleg (27%)”-ot, vagyis a Kimenő speciális lista „Előleg áfa 27%”
+  kulcsát, amelynek Kódja `12`. Új mező: `kulcs.elolegKod`, alapértéke `12`.
+  Csak kimenő előlegnél kötelező. Az alaptáblában csak 27%-os előleg-kulcs
+  van, ezért a más kulcsú kimenő előleg akadály.
+- **Készpénz:** „A HUF pénztár főkönyvi szám nem állapítható meg
+  automatikusan”. A mi formátumunkban erre nincs mező, a Kulcs egyszer
+  megkérdezi (pl. 3811), és pipával megjegyzi. Ez is betöltési lépés lett.
+
+Eltörés-próbák, mindkettő piros lett:
+- az előleg a sima kóddal;
+- a nem 27%-os előleg átengedve.
+
+A 20-as (rossz kód) próbánál nem tudjuk, mit könyvelt a Kulcs, ezt nem
+mértük vissza. A felület ezért csak annyit állít, amennyit tudunk: a rossz
+kódot a Kulcs nem jelzi.

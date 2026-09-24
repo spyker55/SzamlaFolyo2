@@ -106,6 +106,10 @@ export function kulcsEllenoriz(b: KonyveloiBizonylat): string[] {
       'Sztornó és helyesbítő számlánál a Kulcs az eredeti számla számát kéri – ezt a bizonylatból nem olvassuk ki.',
     );
   if (b.bizonylatszam.length > 80) ki.push('A bizonylatszám hosszabb 80 karakternél (Kulcs-korlát).');
+  if (b.irany === 'kimeno' && b.tipus === 'eloleg' && b.sorok.some((s) => s.fajta !== '27'))
+    ki.push(
+      'A Kulcs-Könyvelésben csak 27%-os előleg-ÁFAkulcs van (Kimenő speciális) – más kulcsú előlegszámlát ott kézzel rögzíts.',
+    );
   return ki;
 }
 
@@ -159,6 +163,9 @@ export async function kulcs(
     fejek.push(fej);
 
     const irany = bejovo ? 'bejovo' : 'kimeno';
+    // Kimenő előleg: a Kimenő speciális lista „Előleg áfa 27%” kulcsa – a sima
+    // 27%-os kódot a Kulcs itt nem fogadja el (mérve, 2026-09-24).
+    const eloleg = !bejovo && b.tipus === 'eloleg';
     for (const s of b.sorok) {
       const t: string[] = new Array(TETEL_MEZOK).fill('');
       t[0] = String(++tetelId);
@@ -169,8 +176,8 @@ export async function kulcs(
       // „áfás = 0” fej mellett a tételen nem lehet ÁFA-kód, -név és -főkönyvi
       // szám – az Adatimporter ezt hibának jelzi (mérve, 2026-09-24).
       t[5] = afas ? (bejovo ? k.elozetesAfa : k.fizetendoAfa) : '';
-      t[6] = afas ? k.kulcs.afakodok[irany][s.fajta] : '';
-      t[7] = afas ? KULCS_AFANEVEK[irany][s.fajta] : '';
+      t[6] = !afas ? '' : eloleg ? k.kulcs.elolegKod : k.kulcs.afakodok[irany][s.fajta];
+      t[7] = !afas ? '' : eloleg ? 'Előleg áfa 27%' : KULCS_AFANEVEK[irany][s.fajta];
       t[8] = '0'; // Helyesbito
       t[14] = '0'; // Fordított
       tetelek.push(t);

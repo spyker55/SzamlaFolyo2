@@ -91,6 +91,14 @@ export const KULCS_ALAP_KODOK: Readonly<Record<AfaFajta, string>> = {
   mentes: '6',
 };
 
+/**
+ * A kimenő előlegszámla ÁFA-kulcsa: a Kulcs a 4-es típusnál nem a sima
+ * „27%-os fiz.ÁFA”-t, hanem a **Kimenő speciális** lista „Előleg áfa 27%”
+ * kulcsát keresi („Kapott előleg (27%)” – mérve, 2026-09-24). Az alaptáblában
+ * a kódja `12`, és csak 27%-os van belőle.
+ */
+export const KULCS_ALAP_ELOLEG_KOD = '12';
+
 /** 1–3 számjegy: az Adatimporter az `afakod` mezőben mást nem fogad. */
 export function kulcsKodE(ertek: string): boolean {
   return /^\d{1,3}$/.test(ertek);
@@ -131,6 +139,8 @@ export type KontirBeallitas = {
      * kérjük: mérten nem számít (lásd `KULCS_AFANEVEK`, `kulcs.ts`).
      */
     afakodok: KulcsAfakodok;
+    /** A kimenő előleg ÁFA-kulcsának kódja (Kimenő speciális → Előleg áfa 27%). */
+    elolegKod: string;
   };
 };
 
@@ -147,6 +157,7 @@ export function alapBeallitas(): KontirBeallitas {
     novitax: { naplokodBe: '', naplokodKi: '', mentesTipus: '' },
     kulcs: {
       afakodok: { kimeno: { ...KULCS_ALAP_KODOK }, bejovo: { ...KULCS_ALAP_KODOK } },
+      elolegKod: KULCS_ALAP_ELOLEG_KOD,
     },
   };
 }
@@ -189,6 +200,7 @@ export function tisztit(nyers: unknown): KontirBeallitas {
     return ki;
   };
   const afakodok: KulcsAfakodok = { kimeno: irany(kul['kimeno']), bejovo: irany(kul['bejovo']) };
+  const elolegKod = kod(((n['kulcs'] ?? {}) as Record<string, unknown>)['elolegKod'], KULCS_ALAP_ELOLEG_KOD);
 
   const mentes = nov['mentesTipus'];
 
@@ -208,7 +220,7 @@ export function tisztit(nyers: unknown): KontirBeallitas {
       naplokodKi: szoveg(nov['naplokodKi'], 2, ''),
       mentesTipus: mentes === 'AM' || mentes === 'TM' ? mentes : '',
     },
-    kulcs: { afakodok },
+    kulcs: { afakodok, elolegKod },
   };
 }
 
@@ -221,7 +233,7 @@ export function tisztit(nyers: unknown): KontirBeallitas {
 export function beallitasHianyai(
   b: KontirBeallitas,
   program: Program,
-  igeny: { bejovo: boolean; kimeno: boolean; fajtak: ReadonlySet<AfaFajta> },
+  igeny: { bejovo: boolean; kimeno: boolean; fajtak: ReadonlySet<AfaFajta>; kimenoEloleg?: boolean },
 ): string[] {
   const hiany: string[] = [];
   const fokonyv = (ertek: string, nev: string) => {
@@ -252,6 +264,10 @@ export function beallitasHianyai(
   }
 
   if (program === 'kulcs') {
+    if (igeny.kimenoEloleg === true && !kulcsKodE(b.kulcs.elolegKod))
+      hiany.push(
+        'Az előlegszámla Kulcs-kódja 1–3 számjegy legyen: a Kulcs-Könyvelés Törzskarbantartás → Kimenő speciális „Előleg áfa 27%” sorának „Kód” oszlopából.',
+      );
     const iranyok = [
       ...(igeny.kimeno ? [['kimeno', 'Kimenő'] as const] : []),
       ...(igeny.bejovo ? [['bejovo', 'Bejövő'] as const] : []),
