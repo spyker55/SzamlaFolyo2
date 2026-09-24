@@ -5,6 +5,7 @@ import { ir as jsonIr } from '@uzleti/export/json.ts';
 import { fajl as xlsxFajl } from '@uzleti/export/xlsx.ts';
 import { egyediNev, zip, type ZipBejegyzes } from '@uzleti/export/zip.ts';
 import { bizonylatFajlnev, exportFajlnev, programFajlnev } from '@uzleti/export/nevek.ts';
+import { EXPORT_MIME } from '@uzleti/export/mime.ts';
 import { PROGRAM_NEVEK, PROGRAMOK, type KontirBeallitas, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
 import type { KonyveloiBizonylat } from '@uzleti/export/konyvelo/atalakit.ts';
 import { rlb } from '@uzleti/export/konyvelo/rlb.ts';
@@ -209,14 +210,7 @@ export type ExportEredmeny = {
   toroltFajlok?: number;
 };
 
-const MIME: Record<Formatum, string> = {
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  csv: 'text/csv',
-  json: 'application/json',
-  rlb: 'text/csv',
-  novitax: 'application/zip',
-  kulcs: 'application/zip',
-};
+const MIME: Record<Formatum, string> = EXPORT_MIME;
 
 export async function keszit(
   tetelek: readonly Tetel[],

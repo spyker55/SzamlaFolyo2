@@ -5544,3 +5544,27 @@ gyárt, egyszer beolvasódott. A diagnosztikai mappa törölve.
   lapon → piros; `KIMERVE.rlb = false` → piros; az RLB kivéve a lapról →
   piros.
 - A Novitax és a Kulcs béta marad, amíg valódi példány be nem olvassa.
+
+### 🧱 Novitax: a ZIP a tárolón akadt el (2026-09-24)
+
+Az első Novitax-exportnál a gomb ezt írta: „Az export fájl feltöltése nem
+sikerült: mime type application/zip is not supported". Az `exportok` bucket
+`allowed_mime_types` listája a 20260912000700-as migráció óta csak XLSX-et,
+CSV-t és JSON-t engedett. Az RLB azért ment át, mert az CSV. A Novitax és a
+Kulcs viszont ZIP, így ez a kettő az első élő próbáig egyszer sem juthatott
+el a tárolóig.
+
+- **Kár nem keletkezett.** A feltöltés az 1. lépés, tehát egyetlen tétel sem
+  kapott `export_id`-t. Élőben mérve nincs `exports`-sor és nincs gazdátlan
+  objektum. Egy iktatószám kiment (SZF1), de ez szándékos: az újrapróbálás
+  ugyanazt a számot adja ugyanannak a bizonylatnak.
+- **Javítás:** a `20260924000500_exportok_zip.sql` az `application/zip`-et is
+  beveszi a bucket listájába. Élőben alkalmazva és visszamérve.
+- **Őr:** a MIME-tábla a `shared/uzleti/export/mime.ts`-be költözött. A
+  `migracio.test.ts` ellenőrzi, hogy a bucket-listát utoljára definiáló
+  migráció (akár `insert`, akár `update`) minden export-MIME-et befogad.
+  Ugyanez a hiányzó őr volt a hiba gyökere: a formátumlistára volt őr, a
+  tároló listájára nem. Két eltörés-próbát is futtattam, mindkettő piros
+  lett:
+  - az új migráció nélkül a régi `insert` bukik;
+  - a ZIP-et kivéve az `update` bukik.
