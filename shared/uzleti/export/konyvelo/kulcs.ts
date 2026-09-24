@@ -199,14 +199,20 @@ export async function kulcs(
 }
 
 /**
- * A fej „afas” mezője: tartalmaz-e a számla ÁFÁ-t.
+ * A fej „afas” mezője: van-e a számlának ÁFA-kulcsos tétele.
  *
- * ⚠️ Mérés alatt (2026-09-24): a csak mentes számla „afas = 0” fejjel és
- * kódos tétellel hibát dob. Hogy az „afas = 1” + `6`-os kód (18a) vagy az
- * „afas = 0” + üres tétel-ÁFA (18b) a jó, azt a demó dönti el.
+ * Nálunk minden tétel ÁFA-kulcsos – a mentes és a 0% is (a Kulcsban „fiz.ÁFA
+ * mentes”, „0%-os fiz.ÁFA”) –, így ez minden valódi számlán igaz. Mérve
+ * (2026-09-24, demó):
+ * - „afas = 0” fej + kódos tétel: **hiba** („az áfás mező 0, ennek ellenére
+ *   a tétel tartalmaz áfakódot”);
+ * - „afas = 1” + `6`-os kód a csak mentes számlán: ✅ (18a);
+ * - „afas = 0” + üres tétel-ÁFA: szintén ✅ (18b), de akkor a mentes
+ *   értékesítés kimarad a Kulcs ÁFA-analitikájából – a bevallás miatt az
+ *   „afas = 1” a jó.
  */
 export function afasE(b: KonyveloiBizonylat): boolean {
-  return b.sorok.some((s) => s.afa !== 0);
+  return b.sorok.length > 0;
 }
 
 /** A fizetési határidő napokban a kelttől (a Kulcs `esed` mezője). */

@@ -257,6 +257,16 @@ export function beallitasHianyai(
       ...(igeny.bejovo ? [['bejovo', 'Bejövő'] as const] : []),
     ];
     for (const [irany, cimke] of iranyok) {
+      // Egy irányon belül két fajta nem kaphatja ugyanazt a kódot: a Kulcs a
+      // rossz kódot szó nélkül elfogadja (mérve, 2026-09-24: 27%-os tétel
+      // 5%-os kóddal átment), így ez az egyetlen elírás, amit mi láthatunk.
+      const kodok = b.kulcs.afakodok[irany];
+      const hasznalt = [...igeny.fajtak].map((f) => kodok[f]).filter(kulcsKodE);
+      const dupla = hasznalt.find((k, i) => hasznalt.indexOf(k) !== i);
+      if (dupla !== undefined)
+        hiany.push(
+          `A(z) ${dupla} Kulcs-kód két ${cimke.toLowerCase()} ÁFA-kulcsnál is szerepel – mindegyik kulcsnak a sajátja kell (${cimke} áfa-kulcsok, „Kód” oszlop).`,
+        );
       for (const fajta of igeny.fajtak) {
         if (!kulcsKodE(b.kulcs.afakodok[irany][fajta])) {
           const nev = fajta === 'mentes' ? 'mentes' : `${fajta}%-os`;

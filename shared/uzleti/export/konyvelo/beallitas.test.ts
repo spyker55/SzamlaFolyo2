@@ -86,4 +86,20 @@ describe('kontír-beállítás', () => {
     expect(hiany[0]).toMatch(/mentes bejövő ÁFA-kulcs Kulcs-kódja 1–3 számjegy/);
     expect(hiany[0]).toMatch(/Bejövő áfa-kulcsok „Kód” oszlopából/);
   });
+
+  it('Kulcs: egy irányon belül két használt fajta nem kaphatja ugyanazt a kódot', () => {
+    // A Kulcs a rossz kódot szó nélkül elfogadja (27%-os tétel 5%-os kóddal
+    // átment) – a dupla kód az egyetlen elírás, amit mi láthatunk.
+    const b = {
+      ...alapBeallitas(),
+      arbevetel: '911',
+      kulcs: { afakodok: { kimeno: { ...KULCS_ALAP_KODOK, '5': '1' }, bejovo: { ...KULCS_ALAP_KODOK } } },
+    };
+    const mindketto = { bejovo: false, kimeno: true, fajtak: new Set<AfaFajta>(['27', '5']) };
+    expect(beallitasHianyai(b, 'kulcs', mindketto)).toEqual([
+      'A(z) 1 Kulcs-kód két kimenő ÁFA-kulcsnál is szerepel – mindegyik kulcsnak a sajátja kell (Kimenő áfa-kulcsok, „Kód” oszlop).',
+    ]);
+    // Ha csak az egyik fajta szerepel a bizonylatokon, nincs ütközés.
+    expect(beallitasHianyai(b, 'kulcs', { ...mindketto, fajtak: new Set<AfaFajta>(['5']) })).toEqual([]);
+  });
 });

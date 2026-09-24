@@ -5693,3 +5693,42 @@ A magyarázat igaz volt. Egy kimenő, 27%-os számlával ezek is átmentek:
 
 A teljes próba (bejövő, vegyes, mentes, előleg) a tulajdonos ÁFA-kulcs-
 listájára vár.
+
+### 📏 Kulcs: a Kód oszlop, a név nem számít, a mentes és az „áfás” mező (2026-09-24)
+
+A demó Adatimporterrel diagnosztikai fájlok sorozatát mértük:
+
+| Mi ment ki | Eredmény |
+|---|---|
+| ÁFA-kód = a lista „Azonosító”-ja (18), vagy a főkönyvi szám (467) | Adategyeztetés: „A fogadott Áfa kulcs nem található” |
+| betűs kód (`K27`) | hiba: „1. sor 7. oszlop (afakod)”, **csak szám** mehet |
+| Kód `1` (Törzskarbantartás → Kimenő/Bejövő áfa-kulcsok, **Kód** oszlop) | ✅ kérdés nélkül, mindkét irányban |
+| bejövő, Kód `1`, de „fiz.” névvel | ✅ **a név nem számít** |
+| csak mentes számla, „áfás” = 0 + kódos tétel | ❌ „az áfás mező 0, ennek ellenére a tétel tartalmaz áfakódot” |
+| ugyanez „áfás” = 1-gyel (18a), illetve „áfás” = 0 + üres tétel-ÁFÁ-val (18b) | ✅ mindkettő |
+| 27%-os tétel az 5%-os kulcs kódjával (`8`) | ✅ **szó nélkül átment** |
+| „Bankkártya”, ami a listában nincs | ✅ kérdés nélkül |
+
+A partnert az első Adategyeztetés után a Kulcs megjegyzi.
+
+- **A beállítás irányonként kódot kér** (`KULCS_ALAP_KODOK`, alapérték
+  1 / 2 / 8 / 5 / 6, a demó Kód oszlopa). Nevet nem kér, a fájlba a Kulcs
+  alapneve kerül irány szerint (`KULCS_AFANEVEK`). A régi alak kódja mindkét
+  irányba átjön.
+- **„Áfás” = 1 minden számlán, a mentesen is (18a).** A 18b is működne, de
+  akkor a mentes értékesítés kimaradna a Kulcs ÁFA-analitikájából, pedig a
+  bevallásba kell.
+- **A rossz kód néma.** A Kulcs nem veti össze a kulcs százalékát a kóddal.
+  Amit mi láthatunk, az a dupla kód egy irányon belül, ez most akadály. A
+  súgó a „Kód” oszlopot nevezi meg, és hangsúlyosan kimondja, hogy nem az
+  Azonosítót.
+- Eltörés-próbák, mindhárom piros lett:
+  - a bejövő kódot a kimenő táblából olvasva;
+  - a régi „áfás” szabály;
+  - a dupla-kód ellenőrzés nélkül.
+- Következik a teljes próba az alapbeállítással:
+  - kimenő 27%;
+  - mentes;
+  - bejövő vegyes;
+  - **előleg (típus 4)**;
+  - készpénzes 18%.

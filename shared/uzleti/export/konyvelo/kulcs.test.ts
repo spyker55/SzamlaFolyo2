@@ -81,7 +81,7 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
       [
         KULCS_FEJLECEK.fej.join(';'),
         sor(33, { ...kozos, 1: '2', 2: 'Példa Beszállító Kft.', 3: '454', 4: 'SZF17', 5: '17', 6: 'SZ-2026/14', 7: 'Átutalás', 8: '2026.09.08', 9: '2026.09.10', 10: '2026.09.18', 12: '17950', 17: 'B', 18: '8', 19: '1', 20: '15000', 21: '17950', 26: '23456787', 28: 'Irodaszer' }),
-        sor(33, { ...kozos, 1: '1', 2: 'Vevő Bt.', 3: '311', 4: 'SZF18', 6: 'K-001', 7: 'Készpénz', 8: '2026.09.08', 9: '2026.09.10', 10: '2026.09.10', 12: '8000', 17: 'K', 18: '0', 19: '0', 20: '8000', 21: '8000', 26: '11111111' }),
+        sor(33, { ...kozos, 1: '1', 2: 'Vevő Bt.', 3: '311', 4: 'SZF18', 6: 'K-001', 7: 'Készpénz', 8: '2026.09.08', 9: '2026.09.10', 10: '2026.09.10', 12: '8000', 17: 'K', 18: '0', 19: '1', 20: '8000', 21: '8000', 26: '11111111' }),
         '',
       ].join('\r\n'),
     );
@@ -92,8 +92,8 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
         // Bejövő: a bejövő lista kódja és „lev.” neve.
         sor(22, { 1: '1', 2: '5211', 3: '10000', 4: '27', 5: 'SZF17', 6: '466', 7: '11', 8: '27%-os lev.ÁFA', 9: '0', 15: '0' }),
         sor(22, { 1: '2', 2: '5211', 3: '5000', 4: '5', 5: 'SZF17', 6: '466', 7: '18', 8: '5%-os lev.ÁFA', 9: '0', 15: '0' }),
-        // Csak mentes kimenő: „áfás = 0” fej, a tételen nincs ÁFA-kód, -név, -főkönyv.
-        sor(22, { 1: '3', 2: '911', 3: '8000', 4: '0', 5: 'SZF18', 9: '0', 15: '0' }),
+        // Csak mentes kimenő: „áfás = 1” fej és a mentes kulcs kódja (mérve: 18a).
+        sor(22, { 1: '3', 2: '911', 3: '8000', 4: '0', 5: 'SZF18', 6: '467', 7: '6', 8: 'fiz.ÁFA mentes', 9: '0', 15: '0' }),
         '',
       ].join('\r\n'),
     );
@@ -136,6 +136,15 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
       expect(sorok, nev).toHaveLength(2);
       expect(sorok[1]!.split(';'), nev).toHaveLength(mezok);
     }
+  });
+
+  it('csak mentes számla: „áfás = 1” fej és kódos tétel – a demóban mért (18a) alak', async () => {
+    // „áfás = 0” + kódos tétel = hiba az Adatimporterben (diag-18, 2026-09-24).
+    const f = kicsomagol(await kulcs([KIMENO], K, IKT));
+    const fej = vissza(f.get('feladas.csv')).split('\r\n')[1]!.split(';');
+    const tetel = vissza(f.get('feladas.001')).split('\r\n')[1]!.split(';');
+    expect(fej[18]).toBe('1');
+    expect(tetel.slice(3, 8)).toEqual(['0', 'SZF18', '467', '6', 'fiz.ÁFA mentes']);
   });
 
   it('kimenő előlegszámla a 4-es típus', async () => {
