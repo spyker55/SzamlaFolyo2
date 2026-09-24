@@ -30,6 +30,7 @@ import {
   type Program,
 } from '@uzleti/export/konyvelo/beallitas.ts';
 import { elokeszit } from '@uzleti/export/konyvelo/elokeszit.ts';
+import { BETOLTES } from '@uzleti/export/konyvelo/betoltes.ts';
 import { beallitasBetolt, beallitasMent, type BeallitasForras } from '../lib/konyveloBeallitas.ts';
 import { Elokeszitesi, KontirPanel } from '../komponensek/KonyveloProgram.tsx';
 
@@ -400,10 +401,20 @@ export function Export() {
                 </div>
               )}
 
+              <div className="text-xs text-slate-600">
+                <div className="font-medium">Betöltés</div>
+                <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+                  {BETOLTES[program].map((lepes) => (
+                    <li key={lepes}>{lepes}</li>
+                  ))}
+                </ol>
+              </div>
+
               <p className="text-xs text-slate-500">
-                A letöltött fájlt <strong>közvetlenül</strong> töltsd be. Ne nyisd meg és ne mentsd
-                újra Excelben, Google Táblázatban vagy a Google Drive-on: azok átírják az
-                elválasztót és az ékezetek kódolását, és a program elutasítja a fájlt.
+                A fájl{program === 'rlb' ? 't' : 'okat'} <strong>közvetlenül</strong> töltsd be. Ne
+                nyisd meg és ne mentsd újra Excelben, Google Táblázatban vagy a Google Drive-on:
+                azok átírják az elválasztót és az ékezetek kódolását, és a program elutasítja a
+                fájlt.
               </p>
 
               {szurok.ugyfel === '' && (

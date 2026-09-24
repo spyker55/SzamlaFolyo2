@@ -30,6 +30,9 @@ import { ansiCsv, datum, szoveg } from './mezok.ts';
  * Kulcs-Könyvelésben** – a felületen béta.
  */
 
+/** A három fájl neve a ZIP-ben – a betöltési lépések (`betoltes.ts`) is ezt mondják. */
+export const KULCS_FAJLOK = { fej: 'feladas.csv', tetel: 'feladas.001', partner: 'feladas.002' } as const;
+
 const FEJ_MEZOK = 33;
 const TETEL_MEZOK = 22;
 const UGYFEL_MEZOK = 21;
@@ -122,9 +125,9 @@ export async function kulcs(
   }
 
   return zip([
-    { nev: 'feladas.csv', tartalom: ansiCsv(fejek), tomorit: true },
-    { nev: 'feladas.001', tartalom: ansiCsv(tetelek), tomorit: true },
-    { nev: 'feladas.002', tartalom: ansiCsv([...ugyfelek.values()]), tomorit: true },
+    { nev: KULCS_FAJLOK.fej, tartalom: ansiCsv(fejek), tomorit: true },
+    { nev: KULCS_FAJLOK.tetel, tartalom: ansiCsv(tetelek), tomorit: true },
+    { nev: KULCS_FAJLOK.partner, tartalom: ansiCsv([...ugyfelek.values()]), tomorit: true },
   ]);
 }
 

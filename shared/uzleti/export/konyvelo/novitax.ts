@@ -32,6 +32,12 @@ import { ansiCsv, datum, szoveg } from './mezok.ts';
  * ⚠️ **Nincs kimérve valódi NTAX-ban** – a felületen béta.
  */
 
+/**
+ * A két fájl neve a ZIP-ben. A felület betöltési lépései (`betoltes.ts`) is
+ * ezekre hivatkoznak: amit ott kiválasztani mondunk, az legyen a ZIP-ben.
+ */
+export const NOVITAX_FAJLOK = { szamla: 'szamla.csv', partner: 'partner.csv' } as const;
+
 const SZAMLA_MEZOK = 40;
 const PARTNER_MEZOK = 26;
 
@@ -104,7 +110,7 @@ export async function novitax(
   }
 
   return zip([
-    { nev: 'szamla.csv', tartalom: ansiCsv(szamlaSorok), tomorit: true },
-    { nev: 'partner.csv', tartalom: ansiCsv([...partnerek.values()]), tomorit: true },
+    { nev: NOVITAX_FAJLOK.szamla, tartalom: ansiCsv(szamlaSorok), tomorit: true },
+    { nev: NOVITAX_FAJLOK.partner, tartalom: ansiCsv([...partnerek.values()]), tomorit: true },
   ]);
 }

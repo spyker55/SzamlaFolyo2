@@ -5568,3 +5568,33 @@ el a tárolóig.
   lett:
   - az új migráció nélkül a régi `insert` bukik;
   - a ZIP-et kivéve az `update` bukik.
+
+### 📦 A ZIP csak csomagolás (2026-09-24)
+
+A tároló-javítás után a Novitax-export már letöltődött, csak épp ZIP-ként.
+Az NTAX „Számlák bemásolása külső file-ból” funkciója CSV-t kér. A
+tulajdonos feltöltötte a gyártói mintát és a leírást. Mindkettő **bájtra
+ugyanaz**, amiből az író készült (a sha256 megegyezik a `novitax.ts`
+fejlécével), tehát a formátumon nincs mit javítani. A leírás 10. mezője
+(„Partner kódja”) így szól: „Megegyezve PARTNER.csv-ben találttal”. Két
+fájl kell tehát, egy mappában, és a ZIP csak csomagolás.
+
+A hiány az volt, hogy **sehol nem mondtuk meg**, hogy ki kell bontani, és
+melyik fájlt kell kiválasztani.
+
+- **Miért nem két külön letöltés?** A böngésző a második exportnál
+  `partner (1).csv`-re nevezné át a fájlt, és az NTAX csendben a *régi*
+  `partner.csv`-t olvasná. A Windows „Összes kibontása” viszont saját,
+  exportnevű mappát nyit, ott nincs keveredés. Az Archívum is exportonként
+  egy fájlt tárol.
+- **Betöltési lépések programonként:** `shared/uzleti/export/konyvelo/betoltes.ts`.
+  Az Export képernyő sorszámozott listaként mutatja őket, az Útmutató röviden.
+  A fájlnevek egy helyen élnek (`NOVITAX_FAJLOK`, `KULCS_FAJLOK`), a ZIP és a
+  szöveg is ezekből dolgozik.
+- **Őr:** a `betoltes.test.ts` ellenőrzi, hogy a ZIP pontosan azokat a
+  fájlokat tartalmazza, amelyeket a lépések megneveznek. Két eltörés-próba,
+  mindkettő piros lett:
+  - átnevezett ZIP-bejegyzés;
+  - a Kulcs partnerfájl-lépése kivéve.
+- A Novitax béta marad, amíg a kibontott `szamla.csv` be nem olvasódik egy
+  valódi NTAX-ban.

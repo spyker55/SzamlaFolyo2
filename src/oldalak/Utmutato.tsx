@@ -7,6 +7,8 @@ import { szabaly } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { allapotCimke, szerepCimke, SZEREPEK } from '@uzleti/enumok.ts';
 import { FEJLECEK, KULCSOK, SZAM_OSZLOPOK } from '@uzleti/export/oszlopok.ts';
+import { KULCS_FAJLOK } from '@uzleti/export/konyvelo/kulcs.ts';
+import { NOVITAX_FAJLOK } from '@uzleti/export/konyvelo/novitax.ts';
 
 /**
  * Használati útmutató.
@@ -354,6 +356,12 @@ export function Utmutato() {
             <strong>béta</strong>: a gyártók közzétett leírása szerint készül, valódi programban
             még nincs kipróbálva. Mindháromhoz van <strong>Próbafájl</strong> gomb, ami nem
             jelöli át a tételeket – béta programnál előbb egy próbacégbe töltsd be.
+          </li>
+          <li>
+            A Novitax és a Kulcs <strong>ZIP-et</strong> kap, mert több fájlt olvas egy mappából:
+            bontsd ki egy saját mappába, és a számlafájlt válaszd ki (Novitaxnál a{' '}
+            <code>{NOVITAX_FAJLOK.szamla}</code>, Kulcsnál a <code>{KULCS_FAJLOK.fej}</code>) – a
+            többi maradjon mellette. A lépéseket az Export képernyő programonként mutatja.
           </li>
           <li>
             A programfájlt <strong>közvetlenül</strong> töltsd be, ahogy letöltötted. Ha
