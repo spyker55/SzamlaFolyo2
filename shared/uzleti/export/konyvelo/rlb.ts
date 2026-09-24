@@ -1,5 +1,5 @@
 import type { AfaFajta, FizetesiMod, KontirBeallitas } from './beallitas.ts';
-import type { KonyveloiBizonylat } from './atalakit.ts';
+import { afaEsedekesseg, type KonyveloiBizonylat } from './atalakit.ts';
 import { ansiCsv, datum, szoveg } from './mezok.ts';
 
 /**
@@ -96,18 +96,4 @@ export function rlb(bizonylatok: readonly KonyveloiBizonylat[], k: KontirBeallit
   if (sorok.length > 1) (sorok[1] as (string | number)[])[0] = 'V1.1';
 
   return ansiCsv(sorok);
-}
-
-/**
- * Az ÁFA esedékessége.
- *
- * - **Kimenő:** a teljesítés (Áfa tv. 55. §, általános szabály).
- * - **Bejövő:** a levonási jog legkorábban akkor nyílik meg, amikor a
- *   teljesítés megtörtént **és** a számla a birtokunkban van – a birtoklás
- *   nem lehet a kelt előtt. A kettő közül a későbbi tehát a legkorábbi
- *   biztosan helyes időpont.
- */
-export function afaEsedekesseg(b: KonyveloiBizonylat): string {
-  if (b.irany === 'kimeno') return b.teljesites;
-  return b.kelt > b.teljesites ? b.kelt : b.teljesites;
 }

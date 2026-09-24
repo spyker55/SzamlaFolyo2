@@ -47,6 +47,16 @@ describe('előellenőrzés', () => {
     expect(e.elakadt[0]!.okok).toEqual(['A bizonylatszám hosszabb 30 karakternél (RLB-korlát).']);
   });
 
+  it('programonként a saját korlát: a Kulcsnál a sztornó, a Novitaxnál a külföldi partner akad el', () => {
+    const sztorno = { ...jo, id: 'st', doc_type: 'sztorno_szamla', net_amount: -1000, vat_amount: -270, gross_amount: -1270, afa_bontas: [{ kulcs: 27, kategoria: 'S', netto: -1000, afa: -270 }] };
+    expect(elokeszit([sztorno], 'kulcs', SAJAT, alapBeallitas()).elakadt[0]!.okok[0]).toMatch(/eredeti számla számát/);
+    expect(elokeszit([sztorno], 'rlb', SAJAT, alapBeallitas()).mehet).toHaveLength(1);
+
+    const kulfoldi = { ...jo, id: 'kf', supplier_tax_number: 'ATU23456787' };
+    expect(elokeszit([kulfoldi], 'novitax', SAJAT, alapBeallitas()).elakadt[0]!.okok[0]).toMatch(/Novitax-partnerkód/);
+    expect(elokeszit([kulfoldi], 'rlb', SAJAT, alapBeallitas()).mehet).toHaveLength(1);
+  });
+
   it('a figyelmeztetés nem akadály, de látszik', () => {
     const e = elokeszit([{ ...jo, payment_method: null }], 'rlb', SAJAT, alapBeallitas());
     expect(e.mehet).toHaveLength(1);

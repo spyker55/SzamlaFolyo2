@@ -1,0 +1,131 @@
+import { describe, expect, it } from 'vitest';
+import { kicsomagol } from '../tesztZip.ts';
+import { alapBeallitas, type KontirBeallitas } from './beallitas.ts';
+import type { KonyveloiBizonylat } from './atalakit.ts';
+import { kulcs, kulcsEllenoriz, napok } from './kulcs.ts';
+
+const vissza = (b: Uint8Array | undefined) => new TextDecoder('windows-1250').decode(b);
+
+const K: KontirBeallitas = {
+  ...alapBeallitas(),
+  koltseg: '5211',
+  arbevetel: '911',
+  kulcs: {
+    afakodok: {
+      '27': { kod: '1', nev: '27%-os levonható' },
+      '18': { kod: '', nev: '' },
+      '5': { kod: '3', nev: '5%-os levonható' },
+      '0': { kod: '', nev: '' },
+      mentes: { kod: 'AM', nev: 'Alanyi mentes' },
+    },
+  },
+};
+
+const BEJOVO: KonyveloiBizonylat = {
+  id: 'd1',
+  irany: 'bejovo',
+  tipus: 'szamla',
+  partner: { nev: 'Példa Beszállító Kft.', adoszam: '23456787-2-13', torzsszam: '23456787' },
+  bizonylatszam: 'SZ-2026/14',
+  kelt: '2026-09-10',
+  teljesites: '2026-09-08',
+  esedekesseg: '2026-09-18',
+  fizmod: 'atutalas',
+  sorok: [
+    { fajta: '27', netto: 10000, afa: 2700 },
+    { fajta: '5', netto: 5000, afa: 250 },
+  ],
+  netto: 15000,
+  afa: 2950,
+  brutto: 17950,
+  megjegyzes: 'Irodaszer',
+};
+
+const KIMENO: KonyveloiBizonylat = {
+  ...BEJOVO,
+  id: 'd2',
+  irany: 'kimeno',
+  partner: { nev: 'Vevő Bt.', adoszam: '11111111-2-41', torzsszam: '11111111' },
+  bizonylatszam: 'K-001',
+  fizmod: 'keszpenz',
+  esedekesseg: '2026-09-10',
+  sorok: [{ fajta: 'mentes', netto: 8000, afa: 0 }],
+  netto: 8000,
+  afa: 0,
+  brutto: 8000,
+  megjegyzes: null,
+};
+
+const IKT = new Map([
+  ['d1', 17],
+  ['d2', 18],
+]);
+
+/** n mezős sor a megadott (1-es alapú) pozíciókkal – a leírás számozásával. */
+function sor(n: number, ertekek: Record<number, string>): string {
+  const s = new Array(n).fill('');
+  for (const [poz, ertek] of Object.entries(ertekek)) s[Number(poz) - 1] = ertek;
+  return s.join(';');
+}
+
+describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
+  it('három, azonos alapnevű fájl', async () => {
+    const fajlok = kicsomagol(await kulcs([BEJOVO], K, IKT));
+    expect([...fajlok.keys()]).toEqual(['feladas.csv', 'feladas.001', 'feladas.002']);
+  });
+
+  it('aranyminta: fejek (33 mező), tételek (22), ügyfelek (21)', async () => {
+    const fajlok = kicsomagol(await kulcs([BEJOVO, KIMENO], K, IKT));
+
+    const kozos = { 13: 'HUF', 14: '1', 22: '0', 23: '0', 25: '0', 29: '0', 30: '0' };
+    expect(vissza(fajlok.get('feladas.csv'))).toBe(
+      [
+        sor(33, { ...kozos, 1: '2', 2: 'Példa Beszállító Kft.', 3: '454', 4: 'SZF17', 5: '17', 6: 'SZ-2026/14', 7: 'Átutalás', 8: '2026.09.08', 9: '2026.09.10', 10: '2026.09.18', 12: '17950', 17: 'B', 18: '8', 19: '1', 20: '15000', 21: '17950', 26: '23456787', 28: 'Irodaszer' }),
+        sor(33, { ...kozos, 1: '1', 2: 'Vevő Bt.', 3: '311', 4: 'SZF18', 6: 'K-001', 7: 'Készpénz', 8: '2026.09.08', 9: '2026.09.10', 10: '2026.09.10', 12: '8000', 17: 'K', 18: '0', 19: '0', 20: '8000', 21: '8000', 26: '11111111' }),
+        '',
+      ].join('\r\n'),
+    );
+
+    expect(vissza(fajlok.get('feladas.001'))).toBe(
+      [
+        sor(22, { 1: '1', 2: '5211', 3: '10000', 4: '27', 5: 'SZF17', 6: '466', 7: '1', 8: '27%-os levonható', 9: '0', 15: '0' }),
+        sor(22, { 1: '2', 2: '5211', 3: '5000', 4: '5', 5: 'SZF17', 6: '466', 7: '3', 8: '5%-os levonható', 9: '0', 15: '0' }),
+        sor(22, { 1: '3', 2: '911', 3: '8000', 4: '0', 5: 'SZF18', 6: '467', 7: 'AM', 8: 'Alanyi mentes', 9: '0', 15: '0' }),
+        '',
+      ].join('\r\n'),
+    );
+
+    expect(vissza(fajlok.get('feladas.002'))).toBe(
+      [
+        sor(21, { 1: '23456787', 2: '23456787-2-13', 9: 'HU', 10: 'Magyarország', 20: '1' }),
+        sor(21, { 1: '11111111', 2: '11111111-2-41', 9: 'HU', 10: 'Magyarország', 20: '1' }),
+        '',
+      ].join('\r\n'),
+    );
+  });
+
+  it('a gyártói minta 002-es sora ugyanígy áll: kód, adószám, …, HU, Magyarország, …, 1 (ÁFA-alany)', () => {
+    // Minta lap: „200;12345678-2-42;;;;;;;HU;Magyarország;1016;Budapest;Mészáros;utca;13.;;;;;1;;"
+    const minta = '200;12345678-2-42;;;;;;;HU;Magyarország;1016;Budapest;Mészáros;utca;13.;;;;;1;;'.split(';');
+    expect([minta[8], minta[9], minta[19]]).toEqual(['HU', 'Magyarország', '1']);
+  });
+
+  it('sztornó és helyesbítő akadály – az eredeti számla száma kellene', () => {
+    expect(kulcsEllenoriz({ ...BEJOVO, tipus: 'sztorno' })[0]).toMatch(/eredeti számla számát/);
+    expect(kulcsEllenoriz({ ...BEJOVO, tipus: 'helyesbito' })[0]).toMatch(/eredeti számla számát/);
+    expect(kulcsEllenoriz(BEJOVO)).toEqual([]);
+  });
+
+  it('kimenő előlegszámla a 4-es típus', async () => {
+    const eloleg = { ...KIMENO, tipus: 'eloleg' as const };
+    const fej = vissza(kicsomagol(await kulcs([eloleg], K, IKT)).get('feladas.csv')).split(';');
+    expect(fej[0]).toBe('4');
+  });
+
+  it('esedékesség napokban, a kelttől; hónaphatáron és visszafelé is', () => {
+    expect(napok('2026-09-10', '2026-09-18')).toBe(8);
+    expect(napok('2026-01-31', '2026-03-02')).toBe(30);
+    expect(napok('2026-03-28', '2026-03-30')).toBe(2); // téli–nyári átállás hete
+    expect(napok('2026-09-10', '2026-09-01')).toBe(0);
+  });
+});

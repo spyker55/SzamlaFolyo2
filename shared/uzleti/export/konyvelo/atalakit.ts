@@ -193,6 +193,20 @@ export function atalakit(
 }
 
 /**
+ * Az ÁFA esedékessége.
+ *
+ * - **Kimenő:** a teljesítés (Áfa tv. 55. §, általános szabály).
+ * - **Bejövő:** a levonási jog legkorábban akkor nyílik meg, amikor a
+ *   teljesítés megtörtént **és** a számla a birtokunkban van – a birtoklás
+ *   nem lehet a kelt előtt. A kettő közül a későbbi tehát a legkorábbi
+ *   biztosan helyes időpont.
+ */
+export function afaEsedekesseg(b: KonyveloiBizonylat): string {
+  if (b.irany === 'kimeno') return b.teljesites;
+  return b.kelt > b.teljesites ? b.kelt : b.teljesites;
+}
+
+/**
  * Fizetési mód a bizonylat szövegéből. Amit nem ismerünk fel, az `null` – a
  * hívó az alapértéket írja, és szól.
  */

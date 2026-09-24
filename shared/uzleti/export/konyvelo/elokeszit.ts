@@ -1,6 +1,8 @@
 import type { ExportBizonylat } from '../oszlopok.ts';
 import { atalakit, type KonyveloiBizonylat } from './atalakit.ts';
 import { beallitasHianyai, type AfaFajta, type KontirBeallitas, type Program } from './beallitas.ts';
+import { kulcsEllenoriz } from './kulcs.ts';
+import { novitaxEllenoriz } from './novitax.ts';
 import { rlbEllenoriz } from './rlb.ts';
 
 /**
@@ -24,9 +26,8 @@ export type Elokeszites = {
 
 const PROGRAM_ELLENORZES: Record<Program, (b: KonyveloiBizonylat) => string[]> = {
   rlb: rlbEllenoriz,
-  // A Novitax- és a Kulcs-író a következő körben jön; addig a közös szabályok.
-  novitax: () => [],
-  kulcs: () => [],
+  novitax: novitaxEllenoriz,
+  kulcs: kulcsEllenoriz,
 };
 
 export function elokeszit(

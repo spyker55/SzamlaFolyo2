@@ -192,6 +192,8 @@ export function beallitasHianyai(
       hiany.push('Add meg a bejövő számlák NTAX-naplójának kódját.');
     if (igeny.kimeno && b.novitax.naplokodKi === '')
       hiany.push('Add meg a kimenő számlák NTAX-naplójának kódját.');
+    if (igeny.fajtak.has('mentes') && b.novitax.mentesTipus === '')
+      hiany.push('Van mentes tétel: add meg, hogy az NTAX-ban alanyi (AM) vagy tárgyi (TM) mentesként menjen.');
   }
 
   if (program === 'kulcs') {

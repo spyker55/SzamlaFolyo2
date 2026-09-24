@@ -8,6 +8,8 @@ import { bizonylatFajlnev, exportFajlnev, programFajlnev } from '@uzleti/export/
 import { PROGRAM_NEVEK, PROGRAMOK, type KontirBeallitas, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
 import type { KonyveloiBizonylat } from '@uzleti/export/konyvelo/atalakit.ts';
 import { rlb } from '@uzleti/export/konyvelo/rlb.ts';
+import { novitax } from '@uzleti/export/konyvelo/novitax.ts';
+import { kulcs } from '@uzleti/export/konyvelo/kulcs.ts';
 import { ugyfele, ugyfelek, type UgyfelOpcio } from '@uzleti/export/ugyfel.ts';
 import { nap } from '@uzleti/ido.ts';
 import { naploz } from './naplo.ts';
@@ -240,7 +242,8 @@ export async function keszit(
     if (program === undefined || !ugyanazok(tetelek, program.bizonylatok)) {
       return { ok: false, hiba: 'A programfájl és a tétellista nem egyezik. Töltsd újra az oldalt.' };
     }
-    const f = programFajl(formatum, program);
+    const f = await programFajl(formatum, program);
+    if ('hiba' in f) return { ok: false, hiba: f.hiba };
     fajlnev = programFajlnev(program.nev, formatum, f.kiterjesztes, new Date());
     bajtok = f.bajtok;
   } else {
@@ -312,22 +315,48 @@ export async function keszit(
  * Amíg egy formátum nincs valódi programban kimérve (béta), ezzel lehet
  * kipróbálni úgy, hogy a tételek a listán maradnak.
  */
-export function probaFajl(program: Program, adat: ProgramAdat): { blob: Blob; fajlnev: string } {
-  const f = programFajl(program, adat);
+export async function probaFajl(
+  program: Program,
+  adat: ProgramAdat,
+): Promise<{ blob: Blob; fajlnev: string } | { hiba: string }> {
+  const f = await programFajl(program, adat);
+  if ('hiba' in f) return f;
   return {
     blob: new Blob([f.bajtok as BlobPart], { type: MIME[program] }),
     fajlnev: programFajlnev(adat.nev, program, f.kiterjesztes, new Date(), true),
   };
 }
 
-function programFajl(program: Program, adat: ProgramAdat): { bajtok: Uint8Array; kiterjesztes: string } {
-  switch (program) {
-    case 'rlb':
-      return { bajtok: rlb(adat.bizonylatok, adat.beallitas), kiterjesztes: 'csv' };
-    case 'novitax':
-    case 'kulcs':
-      throw new Error(`A(z) ${program} formátum még nem készült el.`);
+async function programFajl(
+  program: Program,
+  adat: ProgramAdat,
+): Promise<{ bajtok: Uint8Array; kiterjesztes: string } | { hiba: string }> {
+  if (program === 'rlb') {
+    return { bajtok: rlb(adat.bizonylatok, adat.beallitas), kiterjesztes: 'csv' };
   }
+
+  // A Novitax és a Kulcs a mi iktatószámunkkal azonosítja a bizonylatot. A
+  // szám a fájl **előtt** kell, és egyszer kiadva megmarad – egy újra
+  // exportált tétel ugyanazzal a számmal megy ki.
+  const ikt = await iktatoszamok(adat.bizonylatok.map((b) => b.id));
+  if (!(ikt instanceof Map)) return ikt;
+
+  const bajtok =
+    program === 'novitax'
+      ? await novitax(adat.bizonylatok, adat.beallitas, ikt)
+      : await kulcs(adat.bizonylatok, adat.beallitas, ikt);
+  return { bajtok, kiterjesztes: 'zip' };
+}
+
+async function iktatoszamok(idk: string[]): Promise<Map<string, number> | { hiba: string }> {
+  const { data, error } = await supabase.rpc('iktatoszam_kioszt', { dokumentum_idk: idk });
+  if (error !== null) return { hiba: error.message };
+
+  const ki = new Map<string, number>();
+  for (const sor of (data ?? []) as { id: string; szam: number | string }[]) ki.set(sor.id, Number(sor.szam));
+
+  // Mindenkinek kell szám – egy hiányzó a fájlban üres bizonylatszám volna.
+  return idk.every((id) => ki.has(id)) ? ki : { hiba: 'Nem minden tétel kapott iktatószámot. Próbáld újra.' };
 }
 
 function ugyanazok(tetelek: readonly Tetel[], bizonylatok: readonly KonyveloiBizonylat[]): boolean {

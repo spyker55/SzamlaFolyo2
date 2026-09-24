@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  AFA_FAJTAK,
   FIZETESI_MODOK,
   FIZMOD_CIMKEK,
+  PROGRAM_NEVEK,
+  type AfaFajta,
   type FizetesiMod,
   type KontirBeallitas,
+  type Program,
 } from '@uzleti/export/konyvelo/beallitas.ts';
 import type { Elokeszites } from '@uzleti/export/konyvelo/elokeszit.ts';
 import type { BeallitasForras } from '../lib/konyveloBeallitas.ts';
@@ -39,6 +43,7 @@ const FORRAS_SZOVEG: Record<BeallitasForras, string> = {
 };
 
 export function KontirPanel(props: {
+  program: Program;
   mentett: KontirBeallitas;
   forras: BeallitasForras;
   /** A kiválasztott ügyfél címkéje, vagy `null`, ha nincs kiválasztva. */
@@ -48,7 +53,7 @@ export function KontirPanel(props: {
   onMent: (b: KontirBeallitas, hatokor: 'ugyfel' | 'ceg') => Promise<string | null>;
   onPiszkos: (piszkos: boolean) => void;
 }) {
-  const { mentett, forras, ugyfelCimke, szerkeszthet, hianyok, onMent, onPiszkos } = props;
+  const { program, mentett, forras, ugyfelCimke, szerkeszthet, hianyok, onMent, onPiszkos } = props;
   const [vazlat, setVazlat] = useState<KontirBeallitas>(mentett);
   const [ment, setMent] = useState(false);
   const [uzenet, setUzenet] = useState<{ ok: boolean; szoveg: string } | null>(null);
@@ -148,6 +153,89 @@ export function KontirPanel(props: {
         </label>
       </div>
 
+      {program === 'novitax' && (
+        <>
+          <div className="mt-3 text-xs font-medium tracking-wide text-slate-500 uppercase">
+            {PROGRAM_NEVEK.novitax}
+          </div>
+          <div className="mt-1 grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="flabel" htmlFor="kontir-naplo-be">
+                Bejövő napló kódja
+              </label>
+              <input
+                id="kontir-naplo-be"
+                className="control"
+                maxLength={2}
+                value={vazlat.novitax.naplokodBe}
+                disabled={!szerkeszthet}
+                onChange={(e) => allit('novitax', { ...vazlat.novitax, naplokodBe: e.target.value.toUpperCase() })}
+              />
+            </div>
+            <div>
+              <label className="flabel" htmlFor="kontir-naplo-ki">
+                Kimenő napló kódja
+              </label>
+              <input
+                id="kontir-naplo-ki"
+                className="control"
+                maxLength={2}
+                value={vazlat.novitax.naplokodKi}
+                disabled={!szerkeszthet}
+                onChange={(e) => allit('novitax', { ...vazlat.novitax, naplokodKi: e.target.value.toUpperCase() })}
+              />
+            </div>
+            <div>
+              <label className="flabel" htmlFor="kontir-mentes">
+                Mentes tétel
+              </label>
+              <select
+                id="kontir-mentes"
+                className="control"
+                value={vazlat.novitax.mentesTipus}
+                disabled={!szerkeszthet}
+                onChange={(e) =>
+                  allit('novitax', { ...vazlat.novitax, mentesTipus: e.target.value as '' | 'AM' | 'TM' })
+                }
+              >
+                <option value="">Nincs megadva</option>
+                <option value="AM">Alanyi mentes (AM)</option>
+                <option value="TM">Tárgyi mentes (TM)</option>
+              </select>
+            </div>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            A naplót a feladás előtt az NTAX-ban fel kell venni, a jellemző és az ÁFA-számlaszámmal
+            együtt – az ÁFA főkönyvi számát a Novitax onnan veszi.
+          </p>
+        </>
+      )}
+
+      {program === 'kulcs' && (
+        <>
+          <div className="mt-3 text-xs font-medium tracking-wide text-slate-500 uppercase">
+            {PROGRAM_NEVEK.kulcs} – ÁFA-kulcsok
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            A kódot és a megnevezést úgy írd be, ahogy a te Kulcs-Könyvelésedben az ÁFA-kulcsoknál
+            szerepel. Csak a ténylegesen használt kulcsokat kéri a fájl.
+          </p>
+          <div className="mt-2 space-y-2">
+            {AFA_FAJTAK.map((fajta) => (
+              <KulcsAfakodSor
+                key={fajta}
+                fajta={fajta}
+                ertek={vazlat.kulcs.afakodok[fajta]}
+                szerkeszthet={szerkeszthet}
+                onValtozik={(uj) =>
+                  allit('kulcs', { afakodok: { ...vazlat.kulcs.afakodok, [fajta]: uj } })
+                }
+              />
+            ))}
+          </div>
+        </>
+      )}
+
       {szerkeszthet ? (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {ugyfelCimke !== null ? (
@@ -190,6 +278,39 @@ export function KontirPanel(props: {
         <p className="mt-3 text-xs text-slate-500">Megtekintő szerepben a beállítást nem módosíthatod.</p>
       )}
     </details>
+  );
+}
+
+function KulcsAfakodSor(props: {
+  fajta: AfaFajta;
+  ertek: { kod: string; nev: string };
+  szerkeszthet: boolean;
+  onValtozik: (uj: { kod: string; nev: string }) => void;
+}) {
+  const { fajta, ertek, szerkeszthet, onValtozik } = props;
+  const cimke = fajta === 'mentes' ? 'Mentes' : `${fajta}%`;
+  return (
+    <div className="grid grid-cols-[4rem_5rem_1fr] items-center gap-2">
+      <span className="text-sm text-slate-700">{cimke}</span>
+      <input
+        aria-label={`${cimke} – kód`}
+        className="control"
+        maxLength={3}
+        placeholder="Kód"
+        value={ertek.kod}
+        disabled={!szerkeszthet}
+        onChange={(e) => onValtozik({ ...ertek, kod: e.target.value })}
+      />
+      <input
+        aria-label={`${cimke} – megnevezés`}
+        className="control"
+        maxLength={20}
+        placeholder="Megnevezés"
+        value={ertek.nev}
+        disabled={!szerkeszthet}
+        onChange={(e) => onValtozik({ ...ertek, nev: e.target.value })}
+      />
+    </div>
   );
 }
 

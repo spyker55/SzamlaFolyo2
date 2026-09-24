@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { alapBeallitas, type KontirBeallitas } from './beallitas.ts';
 import type { KonyveloiBizonylat } from './atalakit.ts';
-import { afaEsedekesseg, RLB_FEJLEC, rlb, rlbEllenoriz } from './rlb.ts';
+import { afaEsedekesseg } from './atalakit.ts';
+import { RLB_FEJLEC, rlb, rlbEllenoriz } from './rlb.ts';
 
 const vissza = (b: Uint8Array) => new TextDecoder('windows-1250').decode(b);
 

@@ -46,6 +46,8 @@ const FORMATUMOK: { ertek: Formatum; cimke: string }[] = [
  */
 const PROGRAM_FORMATUMOK: { ertek: Program; cimke: string }[] = [
   { ertek: 'rlb', cimke: PROGRAM_NEVEK.rlb },
+  { ertek: 'novitax', cimke: PROGRAM_NEVEK.novitax },
+  { ertek: 'kulcs', cimke: PROGRAM_NEVEK.kulcs },
 ];
 
 const TIPUS_OPCIOK = opciok(DOKUMENTUM_TIPUSOK, tipusCimke);
@@ -158,15 +160,26 @@ export function Export() {
     return null;
   }
 
-  function probaLetoltes() {
+  async function probaLetoltes() {
     if (program === null || elokeszites === null) return;
-    const { blob, fajlnev } = probaFajl(program, {
+    setHiba(null);
+    const eredmeny = await probaFajl(program, {
       bizonylatok: elokeszites.mehet,
       beallitas: kontir.beallitas,
       nev: programNev,
     });
-    letolt(blob, fajlnev);
+    if ('hiba' in eredmeny) {
+      setHiba(eredmeny.hiba);
+      return;
+    }
+    letolt(eredmeny.blob, eredmeny.fajlnev);
   }
+
+  /**
+   * A Novitax- és a Kulcs-fájlhoz iktatószám kell, azt pedig csak szerkesztő
+   * adhat ki (állapotváltozás). Az RLB-próbafájl olvasás: bárki letöltheti.
+   */
+  const probaEngedett = program === 'rlb' || szerkeszthet;
 
   const allit = useCallback((mezo: keyof Szurok, ertek: string) => {
     setHiba(null);
@@ -377,6 +390,7 @@ export function Export() {
 
               {kontirBetoltve && (
                 <KontirPanel
+                  program={program}
                   mentett={kontir.beallitas}
                   forras={kontir.forras}
                   ugyfelCimke={ugyfelCimke}
@@ -425,12 +439,12 @@ export function Export() {
                 : `Eredeti bizonylatok letöltése (ZIP${meretCimke(eredetiMeret)})`}
             </button>
 
-            {programos && (
+            {programos && probaEngedett && (
               <button
                 type="button"
                 className="btn btn-secondary"
                 disabled={!programKesz || dolgozik !== null}
-                onClick={probaLetoltes}
+                onClick={() => void probaLetoltes()}
               >
                 Próbafájl letöltése
               </button>
