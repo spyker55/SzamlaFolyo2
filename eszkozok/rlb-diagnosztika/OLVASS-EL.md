@@ -1,29 +1,17 @@
-# RLB-import diagnosztika (ideiglenes)
+# RLB-import: kiegészítő próba (ideiglenes)
 
-Az RLB Kettős a SzámlaFolyó RLB-fájlját „A mezőelválasztások vagy adatok
-hibásak! Hibás sor: 1" hibával utasította el, a gyártói mintát
-(`Minta_tobbsoros_2021.csv`) viszont beolvasta. A keret (fejléc, elválasztó,
-Windows-1250, CRLF, 22 mező) bájtra azonos, tehát egy **adat** a hibás.
+Az első élesben kimért import (2026-09-24) egy bejövő, 27%-os számla volt; a
+diagnosztika részletei a `DONTESTORTENET.md`-ben. Ez a fájl a még nem látott
+eseteket hozza, a SzámlaFolyó saját generátorával (`rlb.ts`) legyártva:
 
-Mindegyik fájl egyetlen számla, és egy dologban tér el a `2_sajat.csv`-től:
-
-| Fájl | Mit próbál ki |
+| Bizonylat | Mit próbál ki |
 |---|---|
-| `1_gyartoi_szallito_2026.csv` | A gyártói minta szállítói számlája 2026-os dátumokkal – a könyvelési év |
-| `2_sajat.csv` | A SzámlaFolyó mai kimenete |
-| `3_cimmel.csv` | + partner irányítószám, város, cím |
-| `4_adoszam_nelkul.csv` | adószám üresen |
-| `5_adoszam_kotojel_nelkul.csv` | adószám `23456787213` alakban |
-| `6_tafadat_nelkul.csv` | tényleges teljesítés (TAFADAT) üresen |
-| `7_bevallasi_sorral.csv` | tételsorban bevallási sor `66` |
-| `8_minta_fokonyvei.csv` | főkönyvi számok 511 / 466 / 4541 (454 és 5211 helyett) |
-| `9_minden_elteres_visszaforditva.csv` | az összes fenti eltérés egyszerre |
-| `10_koltseg_52.csv` | a költség főkönyvi száma `52` (az éles, elutasított fájlban ez állt) |
-| `11_augusztusi_datumok.csv` | minden dátum 2026.08.17, mint az éles fájlban |
+| `KI-2026/001` | **kimenő** számla (`VF`/`VT`), készpénz, 911 / 467 / 311 |
+| `MS-2026/07` | alanyi **mentes** szállító (ÁFA-kód `4`) |
+| `PB-2026/0914-S` | **sztornó**, negatív összegekkel |
+| `NY-000123` | **nyugta** bankkártyával (fizetési mód `7`), vevő nélkül |
 
-**1. kör eredménye (2026-09-24):** az 1–9. mind átment (az RLB-ben a 2026-os
-év van nyitva). Az elutasított éles fájl ugyanezzel a kóddal készült; tőle a
-`2_sajat.csv` a `52`-es költségszámlában, a dátumokban és a partnerben tér
-el – ezt a 10. és a 11. dönti el.
+⚠️ Közvetlenül töltsd be (git pull után a mappából) – ne Drive-on, Excelen,
+Google Táblázaton keresztül: azok átírják az elválasztót és a kódolást.
 
-A mérés után ez a mappa törlődik; az eredmény a `DONTESTORTENET.md`-be kerül.
+A mérés után ez a mappa törlődik.

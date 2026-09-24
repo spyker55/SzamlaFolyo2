@@ -5502,3 +5502,27 @@ változott: az adathordozhatóság formátumai (XLSX, CSV, JSON) a garantáltak,
 a programfájl kényelmi többlet. Az adatkiadás `sema_verzio` 2 lett (új
 szakaszok: `konyvelo_beallitasok`, `iktatoszamok`, és a korábban kimaradt
 `keret_fedezetek`).
+
+### 📏 Az első valódi RLB-import (2026-09-24)
+
+Az első próbánál az RLB Kettős azt írta: „A mezőelválasztások vagy adatok
+hibásak! Hibás sor: 1". A gyártói mintát (sha256 `ce469d0b…`) ugyanez a
+telepítés beolvasta, ez volt a kontroll.
+
+Mérés: kilenc egyszámlás próbafájl, mindegyik egyetlen eltéréssel a
+mintához képest (partnercím, adószám és alakja, TAFADAT, bevallási sor,
+4541/511 főkönyv, 2026-os év). **Mind átment**, a mai kimenetünk is. Az
+elutasított éles fájlt az adatbázisból bájtra újragyártottuk (357 bájt,
+egyezik).
+
+**Az ok nem a formátum volt:** a fájl a Google Drive-on át jutott a
+Windowsos gépre, és a Drive átalakította (elválasztó, kódolás). Az
+Archívumból közvetlenül letöltve ugyanaz a fájl **átment** – az `52`-es
+gyűjtő költségszámlával együtt.
+
+Következmény: az Export képernyő és az Útmutató kimondja, hogy a
+programfájlt megnyitás és újramentés nélkül kell betölteni. Az RLB
+állapota: bejövő 27%-os számlával kimérve. A kimenő, a mentes, a sztornó
+és a nyugta esetét a `eszkozok/rlb-diagnosztika/12_kiegeszito.csv` méri,
+utána a mappa törlődik. A Novitax és a Kulcs még egyáltalán nincs
+kimérve.

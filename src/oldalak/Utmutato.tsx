@@ -350,10 +350,17 @@ export function Utmutato() {
           </li>
           <li>
             <strong>Könyvelőprogramba (béta):</strong> RLB Kettős, Novitax NTAX és
-            Kulcs-Könyvelés. A fájl a gyártók közzétett leírása és mintája szerint készül,{' '}
+            Kulcs-Könyvelés. A fájl a gyártók közzétett leírása és mintája szerint készül; az
+            RLB-fájlt egy valódi RLB Kettős már beolvasta, a másik kettő{' '}
             <strong>valódi programban még nincs kipróbálva</strong> – ezért van{' '}
             <strong>Próbafájl</strong> gomb, ami nem jelöli át a tételeket. Előbb egy próbacégbe
             töltsd be.
+          </li>
+          <li>
+            A programfájlt <strong>közvetlenül</strong> töltsd be, ahogy letöltötted. Ha
+            Excelben, Google Táblázatban vagy a Google Drive-on megnyitod és újramented (vagy
+            onnan töltöd le), az átírja az elválasztót és az ékezetek kódolását, és a program{' '}
+            „a mezőelválasztások vagy adatok hibásak” hibával elutasítja.
           </li>
           <li>
             Az <strong>eredeti fájlok</strong> (a PDF-ek és képek) egy gombbal ZIP-ben

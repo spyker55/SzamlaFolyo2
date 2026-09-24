@@ -44,6 +44,18 @@ const FORMATUMOK: { ertek: Formatum; cimke: string }[] = [
  * A könyvelőprogramok – **béta**: a gyártói leírás és minta szerint
  * készülnek, valódi programban még nincsenek kimérve.
  */
+/**
+ * Mennyire mért a formátum. Az RLB-t 2026-09-24-én egy valódi RLB Kettős
+ * beolvasta (DONTESTORTENET.md); a másik kettőt még senki nem töltötte be.
+ */
+const PROGRAM_ALLAPOT: Record<Program, string> = {
+  rlb: 'az RLB Kettős fájlját egy valódi RLB már beolvasta (bejövő számlákkal); a kimenő, sztornós és mentes eseteket még mérjük.',
+  novitax:
+    'a Novitax NTAX fájl a gyártó leírása és mintája szerint készül, valódi programban még nincs kipróbálva.',
+  kulcs:
+    'a Kulcs-Könyvelés fájl a gyártó leírása és mintája szerint készül, valódi programban még nincs kipróbálva.',
+};
+
 const PROGRAM_FORMATUMOK: { ertek: Program; cimke: string }[] = [
   { ertek: 'rlb', cimke: PROGRAM_NEVEK.rlb },
   { ertek: 'novitax', cimke: PROGRAM_NEVEK.novitax },
@@ -375,11 +387,16 @@ export function Export() {
           {program !== null && (
             <div className="space-y-3">
               <div className="alert alert-info">
-                <strong>Béta:</strong> a(z) {PROGRAM_NEVEK[program]} fájl a gyártó leírása és
-                mintája szerint készül, valódi programban még nincs kipróbálva. Először tölts le
+                <strong>Béta:</strong> {PROGRAM_ALLAPOT[program]} Először tölts le
                 <strong> próbafájlt</strong>, és egy próbacégbe töltsd be – az nem jelöli át a
                 tételeket.
               </div>
+
+              <p className="text-xs text-slate-500">
+                A letöltött fájlt <strong>közvetlenül</strong> töltsd be. Ne nyisd meg és ne mentsd
+                újra Excelben, Google Táblázatban vagy a Google Drive-on: azok átírják az
+                elválasztót és az ékezetek kódolását, és a program elutasítja a fájlt.
+              </p>
 
               {szurok.ugyfel === '' && (
                 <p className="text-xs text-slate-500">
