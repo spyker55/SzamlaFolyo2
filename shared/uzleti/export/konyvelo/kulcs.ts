@@ -17,8 +17,20 @@ import { ansiCsv, datum, szoveg } from './mezok.ts';
  * # A szerkezet
  *
  * Három, azonos alapnevű fájl: `feladas.csv` (számlafej, 33 mező),
- * `feladas.001` (tételek, 22 mező), `feladas.002` (partnerek, 21 mező). Fejléc
- * nélkül – a leírás szerint „tetszőlegesen lehet vagy nem lehet".
+ * `feladas.001` (tételek, 22 mező), `feladas.002` (partnerek, 21 mező).
+ * **Mindhárom fájl fejlécsorral kezdődik** (`KULCS_FEJLECEK`), bár a leírás
+ * szerint „tetszőlegesen lehet vagy nem lehet".
+ *
+ * Miért fejléccel? Az Adatimporter „Fejléc kihagyása" beállítása dönti el,
+ * hogy az első sort eldobja-e, és a két rossz eset nem egyformán rossz
+ * (használati útmutató, 4. és 12. oldal):
+ * - fejléc nélkül, bepipálva: az **első számla csendben kimarad** – egyetlen
+ *   számlánál „nem tartalmaz adatot", többnél a többi beolvasódik;
+ * - fejléccel, pipa nélkül: a tallózásnál **hibaüzenet** jön.
+ *
+ * A hangos hibát választjuk; a pipáról a betöltési lépés szól
+ * (`betoltes.ts`). 2026-09-24: az első demó-próba fejléc nélkül épp „nem
+ * tartalmaz adatot"-tal állt meg.
  * A fejet és a tételt a `szamlaid` köti össze, a fejet és a partnert az
  * `Ugyfelkod`. Egész forint („nincs fillér kezelés").
  *
@@ -32,6 +44,31 @@ import { ansiCsv, datum, szoveg } from './mezok.ts';
 
 /** A három fájl neve a ZIP-ben – a betöltési lépések (`betoltes.ts`) is ezt mondják. */
 export const KULCS_FAJLOK = { fej: 'feladas.csv', tetel: 'feladas.001', partner: 'feladas.002' } as const;
+
+/**
+ * A struktúraleírás (`új_03.xlsx`, „Leírás" lap) mezőnevei betű szerint – a
+ * fejlécsor tartalmát a program nem olvassa, de így a fájl önmagát írja le.
+ */
+export const KULCS_FEJLECEK = {
+  fej: [
+    'tipus', 'nev', 'Foszamla', 'szamlaid', 'iktatoszam', 'szamlaszam', 'fizmodnev', 'teljesites',
+    'kelt', 'esedekesseg', 'Elsz.id.záró dátum', 'valutabrutto', 'valutanem', 'arfolyam',
+    'reszlegszam', 'Munkaszam', 'irany', 'esed', 'afas', 'nettó', 'bruttó', 'rontott', 'storno',
+    'stornoszam', 'Stornomode', 'Ugyfelkod', 'Helyesbitoosszeg', 'Megjegyzés', 'EUAdos',
+    'Penzforgalmi', 'kezhezvetel', 'Projekt', 'Koltseghely - EGYEDI',
+  ],
+  tetel: [
+    'id', 'fokszamnetto', 'Valutaertek', 'afakulcs', 'fejid', 'fokszamafa', 'afakod', 'afanev',
+    'Helyesbito', 'Előleg számla száma\\ Kipontozandó számla száma', 'Megjegyzés', 'Részlegszám',
+    'Munkaszám', 'Másodlagos', 'Fordított', 'Projekt', 'VTSZKOD', 'VTSZSuly', 'Koltseghely - EGYEDI',
+    'Elhatarolasi idoszak kezdete', 'Elhatarolasi idoszak vege', 'Hibridvetomag',
+  ],
+  partner: [
+    'Ügyfélkod', 'Adoszam', 'Cím', 'Ugyintezo', 'Telefon', 'Email', 'Bankszamla', 'Euadoszam',
+    'ISOKOD', 'Orszag', 'Iranyitoszam', 'Varos', 'Kozterulet', 'Kozterulet jellege', 'Hazszam',
+    'Epulet', 'Lepcsohaz', 'Emelet', 'Ajto', 'Afaalany', 'Csoportazonosito',
+  ],
+} as const;
 
 const FEJ_MEZOK = 33;
 const TETEL_MEZOK = 22;
@@ -125,9 +162,13 @@ export async function kulcs(
   }
 
   return zip([
-    { nev: KULCS_FAJLOK.fej, tartalom: ansiCsv(fejek), tomorit: true },
-    { nev: KULCS_FAJLOK.tetel, tartalom: ansiCsv(tetelek), tomorit: true },
-    { nev: KULCS_FAJLOK.partner, tartalom: ansiCsv([...ugyfelek.values()]), tomorit: true },
+    { nev: KULCS_FAJLOK.fej, tartalom: ansiCsv([[...KULCS_FEJLECEK.fej], ...fejek]), tomorit: true },
+    { nev: KULCS_FAJLOK.tetel, tartalom: ansiCsv([[...KULCS_FEJLECEK.tetel], ...tetelek]), tomorit: true },
+    {
+      nev: KULCS_FAJLOK.partner,
+      tartalom: ansiCsv([[...KULCS_FEJLECEK.partner], ...ugyfelek.values()]),
+      tomorit: true,
+    },
   ]);
 }
 

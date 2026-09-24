@@ -5651,3 +5651,32 @@ A Kulcs béta marad.
   - béta Kulcs a lapon.
 - Aki újra mér: a demó NTAX csak 02.28. előtti számlát fogad (`novitax.ts`
   fejléce).
+
+### 📏 Az első Kulcs-import: a fejléc-pipa (2026-09-24)
+
+A tulajdonos demó Főkönyvi Adatimportert (2.2601.1.833) telepített. Az első
+szerkezeti próba egyetlen kimenő számla volt, fejléc nélkül, és a program
+ezzel állt meg: „A .CSV, a .001 vagy a .002 állományok valamelyike nem
+tartalmaz adatot”. A két társfájl ott volt mellette.
+
+A gyártói használati útmutató 4. oldala megadja az okot: „Fejléc kihagyása
+… ha ez az opció be van pipálva és nincs fejléc, a program az első sorban
+található számlaadatot nem fogja beolvasni!” Fájlonként egy sor volt, így
+mindhárom üresnek látszott.
+
+- **Mindhárom fájl fejlécsorral kezdődik** (`KULCS_FEJLECEK`, a
+  struktúraleírás mezőnevei betű szerint).
+- **Miért fejléc, és nem az, hogy „vedd ki a pipát”?** A két rossz eset nem
+  egyformán rossz:
+  - fejléc nélkül, pipával: több számlánál az **első csendben kimarad**,
+    ami adatvesztés;
+  - fejléccel, pipa nélkül: a tallózásnál **hibaüzenet** jön (útmutató, 12.
+    oldal).
+
+  A hangos hibát választjuk.
+- **A betöltési lépések** kimondják, hogy a pipa kell (jobb klikk a címsoron
+  → Beállítások). A beállítás csak rendszergazdaként futtatva mentődik el.
+  A tallózás menüútja az útmutató 5. oldala szerint.
+- **Eltörés-próba:** a `.001` fejlécét kivéve piros lett.
+- Következik a fejléces próba (`kulcs-proba-2-fejleccel.zip`), utána a
+  teljes próba a tulajdonos saját ÁFA-kódjaival.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { kicsomagol } from '../tesztZip.ts';
 import { alapBeallitas, type KontirBeallitas } from './beallitas.ts';
 import type { KonyveloiBizonylat } from './atalakit.ts';
-import { kulcs, kulcsEllenoriz, napok } from './kulcs.ts';
+import { KULCS_FAJLOK, KULCS_FEJLECEK, kulcs, kulcsEllenoriz, napok } from './kulcs.ts';
 
 const vissza = (b: Uint8Array | undefined) => new TextDecoder('windows-1250').decode(b);
 
@@ -80,6 +80,7 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
     const kozos = { 13: 'HUF', 14: '1', 22: '0', 23: '0', 25: '0', 29: '0', 30: '0' };
     expect(vissza(fajlok.get('feladas.csv'))).toBe(
       [
+        KULCS_FEJLECEK.fej.join(';'),
         sor(33, { ...kozos, 1: '2', 2: 'Példa Beszállító Kft.', 3: '454', 4: 'SZF17', 5: '17', 6: 'SZ-2026/14', 7: 'Átutalás', 8: '2026.09.08', 9: '2026.09.10', 10: '2026.09.18', 12: '17950', 17: 'B', 18: '8', 19: '1', 20: '15000', 21: '17950', 26: '23456787', 28: 'Irodaszer' }),
         sor(33, { ...kozos, 1: '1', 2: 'Vevő Bt.', 3: '311', 4: 'SZF18', 6: 'K-001', 7: 'Készpénz', 8: '2026.09.08', 9: '2026.09.10', 10: '2026.09.10', 12: '8000', 17: 'K', 18: '0', 19: '0', 20: '8000', 21: '8000', 26: '11111111' }),
         '',
@@ -88,6 +89,7 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
 
     expect(vissza(fajlok.get('feladas.001'))).toBe(
       [
+        KULCS_FEJLECEK.tetel.join(';'),
         sor(22, { 1: '1', 2: '5211', 3: '10000', 4: '27', 5: 'SZF17', 6: '466', 7: '1', 8: '27%-os levonható', 9: '0', 15: '0' }),
         sor(22, { 1: '2', 2: '5211', 3: '5000', 4: '5', 5: 'SZF17', 6: '466', 7: '3', 8: '5%-os levonható', 9: '0', 15: '0' }),
         sor(22, { 1: '3', 2: '911', 3: '8000', 4: '0', 5: 'SZF18', 6: '467', 7: 'AM', 8: 'Alanyi mentes', 9: '0', 15: '0' }),
@@ -97,6 +99,7 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
 
     expect(vissza(fajlok.get('feladas.002'))).toBe(
       [
+        KULCS_FEJLECEK.partner.join(';'),
         sor(21, { 1: '23456787', 2: '23456787-2-13', 9: 'HU', 10: 'Magyarország', 20: '1' }),
         sor(21, { 1: '11111111', 2: '11111111-2-41', 9: 'HU', 10: 'Magyarország', 20: '1' }),
         '',
@@ -116,9 +119,27 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
     expect(kulcsEllenoriz(BEJOVO)).toEqual([]);
   });
 
+  it('mindhárom fájl a saját fejlécével kezdődik, és alatta ott az adat – egy bizonylatnál is', async () => {
+    // A „Fejléc kihagyása" pipával az első sort a program eldobja; fejléc
+    // nélkül egyetlen számlánál „nem tartalmaz adatot" (2026-09-24, demó).
+    const fajlok = kicsomagol(await kulcs([KIMENO], K, IKT));
+    const parok = [
+      [KULCS_FAJLOK.fej, KULCS_FEJLECEK.fej, 33],
+      [KULCS_FAJLOK.tetel, KULCS_FEJLECEK.tetel, 22],
+      [KULCS_FAJLOK.partner, KULCS_FEJLECEK.partner, 21],
+    ] as const;
+    for (const [nev, fejlec, mezok] of parok) {
+      const sorok = vissza(fajlok.get(nev)).split('\r\n').filter((s) => s !== '');
+      expect(fejlec, nev).toHaveLength(mezok);
+      expect(sorok[0], nev).toBe(fejlec.join(';'));
+      expect(sorok, nev).toHaveLength(2);
+      expect(sorok[1]!.split(';'), nev).toHaveLength(mezok);
+    }
+  });
+
   it('kimenő előlegszámla a 4-es típus', async () => {
     const eloleg = { ...KIMENO, tipus: 'eloleg' as const };
-    const fej = vissza(kicsomagol(await kulcs([eloleg], K, IKT)).get('feladas.csv')).split(';');
+    const fej = vissza(kicsomagol(await kulcs([eloleg], K, IKT)).get('feladas.csv')).split('\r\n')[1]!.split(';');
     expect(fej[0]).toBe('4');
   });
 

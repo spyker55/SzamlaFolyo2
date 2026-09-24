@@ -23,7 +23,8 @@ export const BETOLTES: Record<Program, readonly string[]> = {
   ],
   kulcs: [
     'Bontsd ki a letöltött ZIP-et egy saját mappába (Windowson: jobb klikk → Összes kibontása).',
-    `A Kulcs-Könyvelés Főkönyvi Adatimporterében a mappából a „${KULCS_FAJLOK.fej}” fájlt válaszd.`,
+    'A Főkönyvi Adatimporter Beállításaiban (jobb klikk a címsoron → Beállítások) legyen bepipálva a „Fejléc kihagyása” – a fájlok első sora fejléc. A beállítás csak rendszergazdaként indítva mentődik el.',
+    `A Főkönyvi Adatimporterben: Kulcs-Számla felad Kulcs-Könyvelésnek → „Fájlból szeretném a feladást elvégezni”, és a mappából a „${KULCS_FAJLOK.fej}” fájlt tallózd be.`,
     `A „${KULCS_FAJLOK.tetel}” (tételek) és a „${KULCS_FAJLOK.partner}” (partnerek) maradjon mellette ugyanabban a mappában.`,
   ],
 };
