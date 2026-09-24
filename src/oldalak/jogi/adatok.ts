@@ -37,7 +37,7 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. szeptember 23.';
+export const hatalyos = '2026. szeptember 24.';
 
 /**
  * Ugyanaz a nap, **gépnek olvasható alakban** — és ez nem kényelmi másolat.
@@ -69,8 +69,14 @@ export const hatalyos = '2026. szeptember 23.';
  * már tartalmi: a hibás teljesítés és a kártérítés egységesítése (ÁSZF 9., 12.,
  * 13.), és a látogatásmérés múltjának kivétele (Adatkezelés 2.). Előfizető
  * ekkor még nem volt, a 15. pont szerinti előzetes értesítés senkit nem érint.
+ *
+ * `2026-09-24`: az Adatkezelés 2. pontjának táblázata egy sorral bővült – a
+ * „Honnan hallottál rólunk?" önkéntes, zárt listás válasza
+ * (`20260924000100_honnan_hallottal.sql`). Az ÁSZF és az Impresszum szövege
+ * nem változott, csak a közös hatálybalépési dátum. Élesben mérve ekkor is
+ * egyetlen cég volt, a tulajdonosé.
  */
-export const JOGI_VERZIO = '2026-09-23-3';
+export const JOGI_VERZIO = '2026-09-24';
 
 /**
  * Az illetékes békéltető testület.

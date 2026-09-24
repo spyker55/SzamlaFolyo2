@@ -402,6 +402,23 @@ export function Adatkezeles() {
             <td className="td">A szerződés megszűnéséig</td>
           </tr>
           <tr className="trow">
+            <td className="td">
+              A cég létrehozásakor adott, <strong>nem kötelező</strong> válasz arra, honnan
+              hallott a SzámlaFolyóról – egy előre megadott listából, szabad szöveg nélkül
+            </td>
+            <td className="td">
+              Annak mérése, melyik csatornán (ajánlás, keresés, hirdetés, közösségi oldal)
+              találnak ránk az előfizetők. Kizárólag összesítve használjuk; megkeresésre,
+              profilalkotásra nem
+            </td>
+            <td className="td">
+              Jogos érdek: a Szolgáltató marketingjének megalapozása sütis mérés nélkül. Az
+              érdekmérlegelés eredménye az, hogy a válasz önkéntes, csak listából választható –
+              így más személyről nem kerülhet be adat –, és tiltakozás esetén töröljük
+            </td>
+            <td className="td">A szerződés megszűnéséig – a cég adataival együtt törlődik</td>
+          </tr>
+          <tr className="trow">
             <td className="td">Előfizetés és fizetés adatai (Stripe-azonosító, állapot, időszak)</td>
             <td className="td">Az előfizetés kezelése, keretszámítás</td>
             <td className="td">Szerződés teljesítése</td>

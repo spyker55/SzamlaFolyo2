@@ -5419,3 +5419,38 @@ vevő onnan nem kapja meg. A kézzel kiállított belföldi számla adata is bek
 
 Nyitott: a `KONYVELO` kuponkód (Stripe-kupon + a checkoutban a promóciós kód
 engedélyezése) és a „Honnan hallottál rólunk?" mező – egyik sincs még kész.
+
+## 📣 „Honnan hallottál rólunk?" (2026-09-24)
+
+A cég létrehozásakor egy **nem kötelező, zárt listás** kérdés
+(`shared/uzleti/forras.ts`): könyvelő, ismerős, Google-keresés, online
+hirdetés, Facebook, Reddit, szakmai cikk/rendezvény, máshonnan – vagy „Nem
+szeretném megmondani" (`null`). A válasz a `companies.heard_from`-ba kerül.
+
+- **Miért itt, és nem a regisztrációnál:** a szerződés a cég létrehozásával
+  jön létre (ÁSZF 1.), és a válasz a céget írja le, nem a fiókot. A cég
+  törlésével együtt törlődik.
+- **Miért nincs szabad szöveg:** egy „egyéb, írd be" mezőbe harmadik személy
+  neve kerülne („X könyvelő ajánlotta"), akiről a tájékoztató nem szól.
+- **Utólag nem írható:** a `companies` oszlopszintű UPDATE-jogai közé nem
+  került be (élesben mérve: `has_column_privilege` → false).
+- **Sütis konverziómérés helyett:** az a jogi csomagot a hozzájárulással és
+  a sütiablakkal nyitotta volna újra; ez egy sor a tájékoztatóban.
+
+Jogi változat: `2026-09-24` – az Adatkezelés 2. pontjában egy új sor (cél:
+összesített csatornamérés; jogalap: jogos érdek; tiltakozásra töröljük). Az
+ÁSZF-ben csak a dátum változott, az Impresszum lenyomata ugyanaz.
+
+Élesben alkalmazva a push **előtt** (a `ceg_letrehozas()` az új
+jogiverzió-sort keresi). A régi háromparaméteres aláírás eldobva, az új
+negyedik paramétere elhagyható – a kint lévő régi felület a telepítésig is
+működik. Visszagörgetett mérés négy próbafelhasználóval: listabeli válasz →
+eltárolva; régi, háromparaméteres hívás → `null`; listán kívüli szöveg →
+„Ismeretlen válasz…" hibaüzenet; üres szöveg → `null`. Utána nem maradt
+semmi.
+
+**A kiértékelés** (a Supabase SQL-szerkesztőjében):
+
+    select heard_from, count(*) as ceg,
+           count(*) filter (where stripe_status = 'active') as fizeto
+    from public.companies group by 1 order by 2 desc;

@@ -9,6 +9,7 @@ import { hatralevoNap } from '@uzleti/meghivo.ts';
 import { szerepCimke } from '@uzleti/enumok.ts';
 import { FeltetelekPipa } from '../komponensek/FeltetelekPipa.tsx';
 import { JOGI_VERZIO } from '../oldalak/jogi/adatok.ts';
+import { FORRASOK, forrasKod } from '@uzleti/forras.ts';
 
 /**
  * Cég létrehozása. Első belépéskor ez az egyetlen elérhető képernyő — nincs
@@ -65,6 +66,8 @@ export function CegLetrehozas() {
   const [nev, setNev] = useState('');
   const [adoszam, setAdoszam] = useState('');
   const [feltetelek, setFeltetelek] = useState(false);
+  // Üres = nem válaszolt. Nem kötelező, és a gomb sem vár rá.
+  const [forras, setForras] = useState('');
   const [hiba, setHiba] = useState<string | null>(null);
   const [kuld, setKuld] = useState(false);
 
@@ -110,6 +113,8 @@ export function CegLetrehozas() {
       nev: nev.trim(),
       adoszam: formaz(adoszam) ?? adoszam.trim(),
       aszf_verzio: JOGI_VERZIO,
+      // Csak listabeli kód mehet; minden más – az üreset is beleértve – `null`.
+      forras: forrasKod(forras),
     });
 
     if (error !== null) {
@@ -165,6 +170,27 @@ export function CegLetrehozas() {
           <p className="mt-1 text-xs text-slate-400">
             Ebből tudja a rendszer, hogy egy bizonylaton te vagy a szállító vagy a vevő. A
             SzámlaFolyót vállalkozások használhatják, ezért kötelező.
+          </p>
+        </div>
+
+        {/*
+          „Honnan hallottál rólunk?" – önkéntes, zárt lista, szabad szöveg
+          nélkül (`shared/uzleti/forras.ts`). A tájékoztató 2. pontja írja le.
+        */}
+        <div>
+          <label className="flabel" htmlFor="forras">
+            Honnan hallottál rólunk? <span className="font-normal text-slate-400">(nem kötelező)</span>
+          </label>
+          <select id="forras" className="control" value={forras} onChange={(e) => setForras(e.target.value)}>
+            <option value="">Nem szeretném megmondani</option>
+            {FORRASOK.map((f) => (
+              <option key={f.kod} value={f.kod}>
+                {f.cimke}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-400">
+            Csak összesítve nézzük, hogy tudjuk, hol érdemes megjelennünk. Később nem módosítható.
           </p>
         </div>
 
