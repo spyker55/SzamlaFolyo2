@@ -5623,3 +5623,31 @@ fájlt.
 
   Iktatószámok `SZF9001–9004`, hogy ne ütközzenek. Ha átmegy,
   `KIMERVE.novitax = true`. A repóba nem kerül.
+
+### ✅ Novitax: kimérve, béta le (2026-09-24)
+
+A kiegészítő próbafájl is **átment** a demó NTAX-ban:
+- kimenő 27%;
+- kimenő mentes `AM`;
+- kimenő sztornó (`-` jel, abszolút tételösszeg);
+- bejövő vegyes 27% + 5%.
+
+Az éles bejövő számlával együtt ez minden eset, amit a Novitax-író ma gyárt.
+A mérce ugyanaz, mint az RLB-nél, a béta lejön: `KIMERVE.novitax = true`.
+A Kulcs béta marad.
+
+- A „Könyvelőknek” oldal mostantól így szól: „…vagy közvetlenül az RLB
+  Kettős vagy a Novitax NTAX könyvelőprogramba”. Az Útmutató formátumtáblájában
+  a `(béta)` helyére `(Kulcs-Könyvelés: béta)` került. Ez az RLB óta elavult
+  volt.
+- **Az őr egy gyenge pontja kiderült.** A „kimértet nem hallgatjuk el”
+  szabályt általánosítottam: minden `KIMERVE`-s programot meg kell nevezni.
+  Az eltörés-próbánál viszont a Novitaxot a lapról kivéve az őr **zöld
+  maradt**, mert a lap fejléc-megjegyzése is említette a Novitaxot, az őr
+  pedig a nyers forrást olvasta. Mostantól a program-őrök a megjegyzésektől
+  megtisztított szöveget nézik. Három eltörés-próba, mindhárom piros:
+  - Novitax le a lapról;
+  - `KIMERVE.novitax = false`, a lapon marad;
+  - béta Kulcs a lapon.
+- Aki újra mér: a demó NTAX csak 02.28. előtti számlát fogad (`novitax.ts`
+  fejléce).

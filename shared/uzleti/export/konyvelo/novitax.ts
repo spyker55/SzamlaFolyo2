@@ -29,9 +29,12 @@ import { ansiCsv, datum, szoveg } from './mezok.ts';
  * Tétel-ÁFA oszlop nincs: a program a nettóból és a kulcsból számolja. A fej
  * összesen-ÁFÁ-ja a bizonylaté.
  *
- * ⚠️ **Részben kimérve:** egy bejövő, 27%-os számla (új partnerrel, a
- * `partner.csv`-ből) valódi NTAX-ban beolvasódott (2026-09-24). A kimenő, a
- * mentes (`AM`/`TM`) és a sztornó (`-` jel) még nem – a felületen béta.
+ * ✅ **Kimérve valódi NTAX-ban (2026-09-24):** bejövő (vegyes kulccsal is, új
+ * partnerrel a `partner.csv`-ből), kimenő, mentes (`AM`), sztornó (`-` jel,
+ * abszolút tételösszeg). A `TM` nem futott át, de ugyanaz a mező.
+ *
+ * Aki újra mér: a **demó** NTAX csak 02.28. előtti számlát fogad, ezért a
+ * próbafájl dátuma februári legyen.
  */
 
 /**

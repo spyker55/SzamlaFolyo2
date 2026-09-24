@@ -34,14 +34,17 @@ export const PROGRAM_NEVEK: Record<Program, string> = {
  * - **RLB – igen (2026-09-24):** RLB Kettős, 2026-os év; bejövő (vegyes
  *   kulccsal is), kimenő, alanyi mentes, sztornó (negatív összeg), nyugta
  *   kártyával – minden eset, amit az író ma gyárt (`DONTESTORTENET.md`).
- * - **Novitax, Kulcs – nem:** a gyártói leírás szerint készülnek, valódi
- *   programban még senki nem töltötte be őket.
+ * - **Novitax – igen (2026-09-24):** demó NTAX; bejövő (vegyes kulccsal is,
+ *   új partnerrel a `partner.csv`-ből), kimenő, mentes (`AM`), sztornó (`-`
+ *   jel) – minden eset, amit az író ma gyárt.
+ * - **Kulcs – nem:** a gyártói leírás szerint készül, valódi programban még
+ *   senki nem töltötte be.
  *
  * Ez az egy igazság: az Export képernyő béta-jelvénye és a „Könyvelőknek"
  * oldal őre (`jogiSzovegek.test.ts`) is innen olvas. Igazra **csak valódi
  * próbaimport után** állítsd.
  */
-export const KIMERVE: Record<Program, boolean> = { rlb: true, novitax: false, kulcs: false };
+export const KIMERVE: Record<Program, boolean> = { rlb: true, novitax: true, kulcs: false };
 
 export const FIZETESI_MODOK = [
   'atutalas',

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { KIMERVE, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
+import { KIMERVE, PROGRAM_NEVEK, PROGRAMOK, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
 
 /**
  * A nyilvános szövegek elcsúszás-őre.
@@ -344,6 +344,11 @@ describe('a harmadik felülvizsgálat után sem térhetnek vissza', () => {
  */
 describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
   const konyveloknek = olvas('Konyveloknek.tsx');
+  // A lap *szövege*, megjegyzések nélkül. A fejléc-dokumentáció megnevezheti a
+  // programokat (miért nem ígérjük őket) – ha az őr azt is olvasná, egy
+  // megjegyzés hitelesíthetné a lapot. 2026-09-24-én pont ez történt: a
+  // Novitaxot a lapról kivéve az őr zöld maradt, mert a fejléc említette.
+  const konyvelokSzoveg = konyveloknek.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
   it('egyáltalán elolvasta', () => {
     expect(konyveloknek.length).toBeGreaterThan(3000);
@@ -373,7 +378,7 @@ describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
       ['Infotéka', null],
     ];
     for (const [nev, program] of nevek) {
-      if (!konyveloknek.includes(nev)) continue;
+      if (!konyvelokSzoveg.includes(nev)) continue;
       expect(
         program !== null && KIMERVE[program],
         `A lap a(z) ${nev} programot nevezi meg, de nincs kimérve – valódi próbaimport előtt nem ígérhetjük.`,
@@ -381,8 +386,10 @@ describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
     }
   });
 
-  it('az RLB-t megnevezi – a kimért programot nem hallgatjuk el', () => {
-    expect(konyveloknek).toContain('RLB Kettős');
+  it('minden kimért programot megnevez – a kimértet nem hallgatjuk el', () => {
+    for (const p of PROGRAMOK.filter((p) => KIMERVE[p])) {
+      expect(konyvelokSzoveg, `${PROGRAM_NEVEK[p]} kimérve, de a lap nem nevezi meg.`).toContain(PROGRAM_NEVEK[p]);
+    }
   });
 
   it('árat nem ír kézzel: minden forintösszeg a configból jön', () => {
