@@ -4,6 +4,7 @@ import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { useSzerkeszthet } from '../lib/auth.tsx';
 import {
   exportok,
+  formatumCimke,
   exportTetelei,
   exportUrl,
   visszahiv,
@@ -135,7 +136,7 @@ export function Archivum() {
             <div key={sor.id} className="card card-pad">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span className="font-medium text-slate-900">{sor.file_name}</span>
-                <span className="badge badge-semleges">{sor.format.toUpperCase()}</span>
+                <span className="badge badge-semleges">{formatumCimke(sor.format)}</span>
                 <span className="text-xs text-slate-500">{datumIdo(sor.created_at)}</span>
                 <span className="text-xs text-slate-400">{meret(sor.file_bytes)}</span>
 

@@ -9,6 +9,8 @@ import {
   keszit,
   letolt,
   osszefoglalo,
+  probaFajl,
+  programE,
   selejtezestBefejez,
   ugyfelLista,
   ugyfelre,
@@ -18,6 +20,11 @@ import {
 } from '../lib/export.ts';
 import { DOKUMENTUM_TIPUSOK, opciok, tipusCimke } from '@uzleti/enumok.ts';
 import { formaz } from '@uzleti/osszeg.ts';
+import { torzsszam } from '@uzleti/adoszam.ts';
+import { alapBeallitas, PROGRAM_NEVEK, type KontirBeallitas, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
+import { elokeszit } from '@uzleti/export/konyvelo/elokeszit.ts';
+import { beallitasBetolt, beallitasMent, type BeallitasForras } from '../lib/konyveloBeallitas.ts';
+import { Elokeszitesi, KontirPanel } from '../komponensek/KonyveloProgram.tsx';
 
 /**
  * Az export képernyő.
@@ -31,6 +38,14 @@ const FORMATUMOK: { ertek: Formatum; cimke: string }[] = [
   { ertek: 'xlsx', cimke: 'Excel (xlsx)' },
   { ertek: 'csv', cimke: 'CSV' },
   { ertek: 'json', cimke: 'JSON' },
+];
+
+/**
+ * A könyvelőprogramok – **béta**: a gyártói leírás és minta szerint
+ * készülnek, valódi programban még nincsenek kimérve.
+ */
+const PROGRAM_FORMATUMOK: { ertek: Program; cimke: string }[] = [
+  { ertek: 'rlb', cimke: PROGRAM_NEVEK.rlb },
 ];
 
 const TIPUS_OPCIOK = opciok(DOKUMENTUM_TIPUSOK, tipusCimke);
@@ -54,6 +69,14 @@ export function Export() {
   const [dolgozik, setDolgozik] = useState<'export' | 'zip' | null>(null);
   const [hiba, setHiba] = useState<string | null>(null);
   const [eredetikLetoltve, setEredetikLetoltve] = useState(false);
+  const [kontir, setKontir] = useState<{ beallitas: KontirBeallitas; forras: BeallitasForras }>(
+    () => ({ beallitas: alapBeallitas(), forras: 'nincs' }),
+  );
+  const [kontirBetoltve, setKontirBetoltve] = useState(false);
+  const [kontirPiszkos, setKontirPiszkos] = useState(false);
+
+  const program = programE(formatum) ? formatum : null;
+  const programos = program !== null;
 
   useEffect(() => {
     let elo = true;
@@ -86,6 +109,65 @@ export function Export() {
   const { darab, osszesites } = useMemo(() => osszefoglalo(tetelek), [tetelek]);
   const eredetiMeret = useMemo(() => eredetikMerete(tetelek), [tetelek]);
 
+  // Az irány annak a cégnek a szemszögéből, akinek a könyveléséről szó van:
+  // a kiválasztott ügyfélé, különben a fióké.
+  const sajatTorzsszam = szurok.ugyfel !== '' ? szurok.ugyfel : (torzsszam(ceg?.tax_number) ?? '');
+  const ugyfelCimke = ugyfelek.find((u) => u.torzsszam === szurok.ugyfel)?.cimke ?? null;
+
+  useEffect(() => {
+    if (!programos || ceg === null) return;
+    let elo = true;
+    setKontirBetoltve(false);
+    void (async () => {
+      const b = await beallitasBetolt(ceg.id, szurok.ugyfel === '' ? null : szurok.ugyfel);
+      if (elo) {
+        setKontir(b);
+        setKontirBetoltve(true);
+      }
+    })();
+    return () => {
+      elo = false;
+    };
+  }, [programos, ceg, szurok.ugyfel]);
+
+  const elokeszites = useMemo(
+    () => (program === null ? null : elokeszit(tetelek, program, sajatTorzsszam, kontir.beallitas)),
+    [program, tetelek, sajatTorzsszam, kontir.beallitas],
+  );
+
+  /**
+   * A programfájl akkor készülhet el, ha a kontír **mentett** (nem az
+   * alapérték, és nincs mentetlen változás), hiánytalan, és van mit kiírni.
+   */
+  const programKesz =
+    elokeszites !== null &&
+    kontirBetoltve &&
+    kontir.forras !== 'nincs' &&
+    !kontirPiszkos &&
+    elokeszites.beallitasHiany.length === 0 &&
+    elokeszites.mehet.length > 0;
+
+  const programNev = ugyfelCimke ?? ceg?.name ?? 'export';
+
+  async function kontirMentes(b: KontirBeallitas, hatokor: 'ugyfel' | 'ceg'): Promise<string | null> {
+    if (ceg === null) return 'Nincs cég.';
+    const ugyfel = hatokor === 'ugyfel' && szurok.ugyfel !== '' ? szurok.ugyfel : null;
+    const eredmeny = await beallitasMent(ugyfel, b);
+    if (!eredmeny.ok) return eredmeny.hiba ?? 'A mentés nem sikerült.';
+    setKontir(await beallitasBetolt(ceg.id, szurok.ugyfel === '' ? null : szurok.ugyfel));
+    return null;
+  }
+
+  function probaLetoltes() {
+    if (program === null || elokeszites === null) return;
+    const { blob, fajlnev } = probaFajl(program, {
+      bizonylatok: elokeszites.mehet,
+      beallitas: kontir.beallitas,
+      nev: programNev,
+    });
+    letolt(blob, fajlnev);
+  }
+
   const allit = useCallback((mezo: keyof Szurok, ertek: string) => {
     setHiba(null);
     setSzurok((elozo) => ({ ...elozo, [mezo]: ertek }));
@@ -110,11 +192,18 @@ export function Export() {
 
   async function exportal() {
     if (ceg === null) return;
+    if (programos && (elokeszites === null || !programKesz)) return;
 
+    const torles =
+      ceg.file_retention_days === 0 ? ' Az eredeti fájlok ezután törlődnek.' : '';
     const kerdes =
-      ceg.file_retention_days === 0
-        ? 'Elkészítjük az exportot. Az eredeti fájlok ezután törlődnek. Folytatod?'
-        : 'Elkészítjük az exportot. Folytatod?';
+      programos && elokeszites !== null
+        ? `Elkészítjük a(z) ${PROGRAM_NEVEK[program as Program]} fájlt ${elokeszites.mehet.length} tétellel` +
+          (elokeszites.elakadt.length > 0
+            ? `; ${elokeszites.elakadt.length} tétel a listán marad.`
+            : '.') +
+          `${torles} Folytatod?`
+        : `Elkészítjük az exportot.${torles} Folytatod?`;
 
     if (!window.confirm(kerdes)) {
       return;
@@ -123,7 +212,16 @@ export function Export() {
     setHiba(null);
     setDolgozik('export');
 
-    const eredmeny = await keszit(tetelek, formatum, szurok, ceg);
+    const eredmeny =
+      programos && elokeszites !== null
+        ? await keszit(
+            tetelek.filter((t) => elokeszites.mehet.some((b) => b.id === t.id)),
+            formatum,
+            szurok,
+            ceg,
+            { bizonylatok: elokeszites.mehet, beallitas: kontir.beallitas, nev: programNev },
+          )
+        : await keszit(tetelek, formatum, szurok, ceg);
 
     setDolgozik(null);
 
@@ -226,7 +324,11 @@ export function Export() {
 
           <div className="rounded-lg bg-slate-50 px-4 py-3">
             <div className="text-sm font-medium text-slate-800">
-              {betolt ? 'Egy pillanat…' : `${darab} tétel kerül exportba`}
+              {betolt
+                ? 'Egy pillanat…'
+                : elokeszites !== null
+                  ? `${elokeszites.mehet.length} tétel megy a fájlba, ${elokeszites.elakadt.length} a listán marad`
+                  : `${darab} tétel kerül exportba`}
             </div>
             {Object.entries(osszesites)
               .sort(([a], [b]) => a.localeCompare(b))
@@ -241,29 +343,53 @@ export function Export() {
 
           <div>
             <span className="flabel">Formátum</span>
-            <div className="flex flex-wrap gap-2">
+            <div className="text-xs text-slate-500">Táblázat</div>
+            <div className="mt-1 flex flex-wrap gap-2">
               {FORMATUMOK.map((f) => (
-                <label
-                  key={f.ertek}
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                    formatum === f.ertek
-                      ? 'border-blue-600 bg-blue-50 text-blue-900'
-                      : 'border-slate-300 bg-white'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="formatum"
-                    value={f.ertek}
-                    checked={formatum === f.ertek}
-                    onChange={() => setFormatum(f.ertek)}
-                    className="sr-only"
-                  />
-                  {f.cimke}
-                </label>
+                <FormatumGomb key={f.ertek} f={f} valasztott={formatum} onValaszt={setFormatum} />
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+              Könyvelőprogram <span className="badge badge-varakozo">béta</span>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {PROGRAM_FORMATUMOK.map((f) => (
+                <FormatumGomb key={f.ertek} f={f} valasztott={formatum} onValaszt={setFormatum} />
               ))}
             </div>
           </div>
+
+          {program !== null && (
+            <div className="space-y-3">
+              <div className="alert alert-info">
+                <strong>Béta:</strong> a(z) {PROGRAM_NEVEK[program]} fájl a gyártó leírása és
+                mintája szerint készül, valódi programban még nincs kipróbálva. Először tölts le
+                <strong> próbafájlt</strong>, és egy próbacégbe töltsd be – az nem jelöli át a
+                tételeket.
+              </div>
+
+              {szurok.ugyfel === '' && (
+                <p className="text-xs text-slate-500">
+                  A programfájl egy cég könyvelése. Könyvelőirodaként válaszd ki fent az
+                  ügyfelet – most a saját céged adószáma dönti el, mi bejövő és mi kimenő.
+                </p>
+              )}
+
+              {kontirBetoltve && (
+                <KontirPanel
+                  mentett={kontir.beallitas}
+                  forras={kontir.forras}
+                  ugyfelCimke={ugyfelCimke}
+                  szerkeszthet={szerkeszthet}
+                  hianyok={elokeszites?.beallitasHiany ?? []}
+                  onMent={kontirMentes}
+                  onPiszkos={setKontirPiszkos}
+                />
+              )}
+
+              {elokeszites !== null && <Elokeszitesi e={elokeszites} />}
+            </div>
+          )}
 
           {ceg !== null && ceg.file_retention_days === 0 ? (
             <div className="alert alert-figyelem">
@@ -299,11 +425,22 @@ export function Export() {
                 : `Eredeti bizonylatok letöltése (ZIP${meretCimke(eredetiMeret)})`}
             </button>
 
+            {programos && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={!programKesz || dolgozik !== null}
+                onClick={probaLetoltes}
+              >
+                Próbafájl letöltése
+              </button>
+            )}
+
             {szerkeszthet && (
               <button
                 type="button"
                 className="btn btn-primary"
-                disabled={darab === 0 || dolgozik !== null}
+                disabled={darab === 0 || dolgozik !== null || (programos && !programKesz)}
                 onClick={() => void exportal()}
               >
                 {dolgozik === 'export' ? 'Készül…' : 'Export elkészítése'}
@@ -324,6 +461,31 @@ export function Export() {
         </div>
       </div>
     </AppElrendezes>
+  );
+}
+
+function FormatumGomb(props: {
+  f: { ertek: Formatum; cimke: string };
+  valasztott: Formatum;
+  onValaszt: (f: Formatum) => void;
+}) {
+  const { f, valasztott, onValaszt } = props;
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+        valasztott === f.ertek ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-slate-300 bg-white'
+      }`}
+    >
+      <input
+        type="radio"
+        name="formatum"
+        value={f.ertek}
+        checked={valasztott === f.ertek}
+        onChange={() => onValaszt(f.ertek)}
+        className="sr-only"
+      />
+      {f.cimke}
+    </label>
   );
 }
 

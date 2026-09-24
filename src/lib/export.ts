@@ -4,7 +4,10 @@ import { ir as csvIr } from '@uzleti/export/csv.ts';
 import { ir as jsonIr } from '@uzleti/export/json.ts';
 import { fajl as xlsxFajl } from '@uzleti/export/xlsx.ts';
 import { egyediNev, zip, type ZipBejegyzes } from '@uzleti/export/zip.ts';
-import { bizonylatFajlnev, exportFajlnev } from '@uzleti/export/nevek.ts';
+import { bizonylatFajlnev, exportFajlnev, programFajlnev } from '@uzleti/export/nevek.ts';
+import { PROGRAM_NEVEK, PROGRAMOK, type KontirBeallitas, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
+import type { KonyveloiBizonylat } from '@uzleti/export/konyvelo/atalakit.ts';
+import { rlb } from '@uzleti/export/konyvelo/rlb.ts';
 import { ugyfele, ugyfelek, type UgyfelOpcio } from '@uzleti/export/ugyfel.ts';
 import { nap } from '@uzleti/ido.ts';
 import { naploz } from './naplo.ts';
@@ -22,7 +25,31 @@ import { naploz } from './naplo.ts';
  * és az adat is.
  */
 
-export type Formatum = 'xlsx' | 'csv' | 'json';
+/**
+ * A táblázatos formátumok és a könyvelőprogramok. A lista az adatbázisban is
+ * él (`exports_format_check`, `export_rogzit()`), a
+ * `konyvelo/migracio.test.ts` méri, hogy együtt mozognak.
+ */
+export type Formatum = 'xlsx' | 'csv' | 'json' | Program;
+
+export function programE(f: Formatum): f is Program {
+  return (PROGRAMOK as readonly string[]).includes(f);
+}
+
+/** Az Archívum címkéje: `XLSX`, `CSV`, `JSON` – vagy a program neve. */
+export function formatumCimke(f: string): string {
+  return (PROGRAMOK as readonly string[]).includes(f) ? PROGRAM_NEVEK[f as Program] : f.toUpperCase();
+}
+
+/**
+ * A programfájlhoz kell: az előellenőrzésen **átment** bizonylatok (lásd
+ * `elokeszit()`), a kontír, és a név, amire a fájl szól (ügyfél vagy cég).
+ */
+export type ProgramAdat = {
+  bizonylatok: readonly KonyveloiBizonylat[];
+  beallitas: KontirBeallitas;
+  nev: string;
+};
 
 export type Szurok = {
   tol: string;
@@ -184,6 +211,9 @@ const MIME: Record<Formatum, string> = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   csv: 'text/csv',
   json: 'application/json',
+  rlb: 'text/csv',
+  novitax: 'application/zip',
+  kulcs: 'application/zip',
 };
 
 export async function keszit(
@@ -195,19 +225,34 @@ export async function keszit(
   // azt sugallná, hogy a döntés itt születik. Egyszer már itt született, és
   // pont ez volt a baj.
   ceg: { id: string; name: string },
+  program?: ProgramAdat,
 ): Promise<ExportEredmeny> {
   if (tetelek.length === 0) {
     return { ok: false, hiba: 'Ebben az időszakban nincs exportálható tétel.' };
   }
 
-  const sorok = tetelek.map((t) => sor(t));
-  const fajlnev = exportFajlnev(ceg.name, formatum, new Date());
-  const bajtok = await tartalom(formatum, sorok, {
-    ceg: ceg.name,
-    keszult: new Date().toISOString(),
-    darab: tetelek.length,
-    osszesites: osszesites(tetelek),
-  });
+  let fajlnev: string;
+  let bajtok: Uint8Array;
+
+  if (programE(formatum)) {
+    // A programfájl és az átjelölt tételek **ugyanaz a halmaz** kell legyen:
+    // ami nincs a fájlban, az nem kaphat `export_id`-t.
+    if (program === undefined || !ugyanazok(tetelek, program.bizonylatok)) {
+      return { ok: false, hiba: 'A programfájl és a tétellista nem egyezik. Töltsd újra az oldalt.' };
+    }
+    const f = programFajl(formatum, program);
+    fajlnev = programFajlnev(program.nev, formatum, f.kiterjesztes, new Date());
+    bajtok = f.bajtok;
+  } else {
+    const sorok = tetelek.map((t) => sor(t));
+    fajlnev = exportFajlnev(ceg.name, formatum, new Date());
+    bajtok = await tartalom(formatum, sorok, {
+      ceg: ceg.name,
+      keszult: new Date().toISOString(),
+      darab: tetelek.length,
+      osszesites: osszesites(tetelek),
+    });
+  }
 
   const utvonal = `${ceg.id}/${crypto.randomUUID()}-${fajlnev}`;
   const blob = new Blob([bajtok as BlobPart], { type: MIME[formatum] });
@@ -261,8 +306,38 @@ export async function keszit(
   };
 }
 
+/**
+ * Próbafájl: ugyanaz a programfájl, **átjelölés és eredetitörlés nélkül**.
+ *
+ * Amíg egy formátum nincs valódi programban kimérve (béta), ezzel lehet
+ * kipróbálni úgy, hogy a tételek a listán maradnak.
+ */
+export function probaFajl(program: Program, adat: ProgramAdat): { blob: Blob; fajlnev: string } {
+  const f = programFajl(program, adat);
+  return {
+    blob: new Blob([f.bajtok as BlobPart], { type: MIME[program] }),
+    fajlnev: programFajlnev(adat.nev, program, f.kiterjesztes, new Date(), true),
+  };
+}
+
+function programFajl(program: Program, adat: ProgramAdat): { bajtok: Uint8Array; kiterjesztes: string } {
+  switch (program) {
+    case 'rlb':
+      return { bajtok: rlb(adat.bizonylatok, adat.beallitas), kiterjesztes: 'csv' };
+    case 'novitax':
+    case 'kulcs':
+      throw new Error(`A(z) ${program} formátum még nem készült el.`);
+  }
+}
+
+function ugyanazok(tetelek: readonly Tetel[], bizonylatok: readonly KonyveloiBizonylat[]): boolean {
+  if (tetelek.length !== bizonylatok.length) return false;
+  const idk = new Set(bizonylatok.map((b) => b.id));
+  return tetelek.every((t) => idk.has(t.id));
+}
+
 async function tartalom(
-  formatum: Formatum,
+  formatum: Exclude<Formatum, Program>,
   sorok: Record<string, unknown>[],
   meta: Record<string, unknown>,
 ): Promise<Uint8Array> {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { ugyfele, ugyfelek } from './ugyfel.ts';
-import { bizonylatFajlnev, biztonsagos, exportFajlnev } from './nevek.ts';
+import { bizonylatFajlnev, biztonsagos, exportFajlnev, programFajlnev } from './nevek.ts';
 
 /**
  * Az esetek a régi `tests/Feature/ExportUgyfelSzuroTest.php`-ból.
@@ -106,6 +106,16 @@ describe('nevek', () => {
   test('név nélküli cégnél is marad használható fájlnév', () => {
     expect(exportFajlnev('...', 'csv', new Date(2026, 0, 1, 0, 0))).toBe(
       'szamlafolyo-export-2026-01-01-0000.csv',
+    );
+  });
+
+  test('a programfájl neve az ügyfélé, a program jelével; a próbafájl külön jelet kap', () => {
+    const ido = new Date(2026, 8, 24, 9, 32);
+    expect(programFajlnev('Példa Kft. (12345676-2-42)', 'rlb', 'csv', ido)).toBe(
+      'szamlafolyo-Pelda-Kft-12345676-2-42-rlb-2026-09-24-0932.csv',
+    );
+    expect(programFajlnev('', 'kulcs', 'zip', ido, true)).toBe(
+      'szamlafolyo-export-kulcs-2026-09-24-0932-proba.zip',
     );
   });
 

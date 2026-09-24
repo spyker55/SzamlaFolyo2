@@ -33,6 +33,26 @@ export function exportFajlnev(cegNev: string, formatum: string, most: Date): str
 }
 
 /**
+ * Könyvelőprogram-fájl: `szamlafolyo-pelda-kft-rlb-2026-09-24-0932.csv`.
+ *
+ * A név az **ügyfélé**, ha kiválasztották: egy iroda ügyfelenként tölti be a
+ * fájlokat, és a letöltési mappában a cégnév mondja meg, melyik melyik. A
+ * próbafájl `-proba` jelet kap, hogy ne keveredjen össze egy valódi exporttal.
+ */
+export function programFajlnev(
+  nev: string,
+  program: string,
+  kiterjesztes: string,
+  most: Date,
+  proba = false,
+): string {
+  const ceg = biztonsagos(nev);
+  const ido = `${most.getFullYear()}-${ketJegy(most.getMonth() + 1)}-${ketJegy(most.getDate())}-${ketJegy(most.getHours())}${ketJegy(most.getMinutes())}`;
+
+  return `szamlafolyo-${ceg === '' ? 'export' : ceg}-${program}-${ido}${proba ? '-proba' : ''}.${kiterjesztes}`;
+}
+
+/**
  * Egy eredeti bizonylat neve a ZIP-ben.
  *
  * A bizonylatszám a beszédes név — az eredeti fájlnév gyakran `scan0012.pdf`.
