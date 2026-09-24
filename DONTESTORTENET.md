@@ -5275,3 +5275,30 @@ Amit ebből tudunk – és amit nem:
   kézírásos papíron a 3.8 Flash bekapcsolja a `nehezen_olvashato` zászlót.
   Hogy gondolkodás nélkül is bekapcsolja-e, azt ez a mérés nem mondja meg –
   ahhoz egy-két nehéz, valódi számla kell, alap és `low` mellett.
+
+## 📏 A második mérés: fényképezett, kétoldalas valódi számla (2026-09-24)
+
+A tulajdonos gépén, egy fényképezett, kétoldalas valódi számlán, 5–5 futás:
+
+| | alap | `effort: low` |
+|---|---|---|
+| siker / bukott | 5 / 0 | 5 / 0 |
+| gondolkodás (medián) | 1200 (1059–1334) | **0** |
+| kimenet (medián) | 1467 | 303 |
+| idő (medián) | 11,0 s | **4,2 s** |
+| költség össz. | $0,0377 | **$0,0158** (–58%) |
+| „nehezen olvasható" | 0/5 | 0/5 |
+| mezők, amik futásonként eltértek | Szállító, Vevő, Határidő | Vevő adószáma, Teljesítés, Határidő, **Nettó, ÁFA** |
+
+⚠️ **Itt még nem döntöttünk.** A `low` mellett a **nettó és az ÁFA** is
+ingadozott, miközben a bruttó mind az öt futásban ugyanaz volt; az alapnál
+csak nevek és a határidő. A „2 különböző érték" viszont nem mondja meg, hogy
+kerekítés, egy kimaradt mező vagy egy rossz szám-e – ezért az összevető most
+kiírja az eltérés **jellegét** (megoszlás, kimaradt-e, összegnél százalék,
+dátumnál nap, névnél csak írásmód-e) és a **bukott validátorokat**, értékek
+nélkül. A döntés ezen múlik: ha a rossz nettót a `nettó + ÁFA = bruttó`
+validátor megfogja, az a jóváhagyásnál pirosan az ember elé kerül; ha nem,
+csendben menne tovább.
+
+A zászló itt egyik beállításnál sem kapcsolt be – a fénykép tehát nem volt
+„nehezen olvasható" a modell szerint, erre a kérdésre ez a mérés sem felel.

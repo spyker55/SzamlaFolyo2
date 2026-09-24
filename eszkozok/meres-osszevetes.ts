@@ -18,6 +18,10 @@ import { basename } from 'node:path';
  * számlája). Minden más fájlnál – valódi számlánál – csak azt írja ki, mezőnként
  * hány **különböző** érték jött, magukat az értékeket nem: a kimenet
  * beszélgetésbe másolható, és egy valódi partner neve, adószáma ne kerüljön oda.
+ * Mellé az eltérés **jellegét** (megoszlás, kimaradt-e, összegnél százalék,
+ * dátumnál nap, szövegnél csak írásmód-e) és a bukott validátorokat – ezek sem
+ * árulnak el értéket. (2026-09-24: a nehéz valódi számlán a „2 különböző nettó"
+ * önmagában nem döntötte el, kerekítés-e vagy rossz szám.)
  *
  * A script a Node saját TypeScript-futtatásával indul (csak típustörlés):
  * paramétertulajdonság, `enum`, `namespace` itt nem használható – lásd
@@ -33,6 +37,8 @@ type Futas = {
     mezok: Record<string, string | null>;
     nehezenOlvashato?: boolean;
     tobbIratGyanu?: boolean;
+    /** A bukott validátorok: mező → indoklás. A mi szövegünk, nem a számla adata. */
+    validatorok?: Record<string, string>;
   };
 };
 
@@ -113,6 +119,61 @@ function egyezik(kapott: string | null | undefined, elvart: string | null): bool
   const e = Number(elvart);
   if (elvart.trim() !== '' && Number.isFinite(e) && Number.isFinite(k)) return k === e;
   return kapott.trim().toLocaleLowerCase('hu') === elvart.trim().toLocaleLowerCase('hu');
+}
+
+const OSSZEGEK = new Set(['net_amount', 'vat_amount', 'gross_amount', 'fizetendo']);
+const DATUMOK = new Set(['issue_date', 'fulfillment_date', 'due_date']);
+const ADOSZAMOK = new Set(['supplier_tax_number', 'customer_tax_number']);
+
+function ures(v: string | null): boolean {
+  return v === null || v.trim() === '';
+}
+
+/**
+ * Egy mező értékeinek eltérése **szavakban, az értékek nélkül** – vagy `null`,
+ * ha minden futás ugyanazt adta.
+ *
+ * - megoszlás: `4+1` (egy kilógó) vs `3+2` (bizonytalan);
+ * - `üres ×n`: n futás kihagyta a mezőt;
+ * - összegnél a legnagyobb eltérés a legnagyobbhoz viszonyítva, dátumnál
+ *   napban – a különbség nem árulja el az értéket;
+ * - szövegnél, adószámnál: csak írásmód-e (kis-nagybetű, szóköz, írásjel).
+ */
+export function elteresJellege(mezo: string, ertekek: (string | null)[]): string | null {
+  const db = new Map<string, number>();
+  for (const v of ertekek) {
+    const k = ures(v) ? '∅' : String(v);
+    db.set(k, (db.get(k) ?? 0) + 1);
+  }
+  if (db.size <= 1) return null;
+
+  const megoszlas = [...db.values()].sort((a, b) => b - a).join('+');
+  const uresDb = db.get('∅') ?? 0;
+  const kitoltott = [...db.keys()].filter((k) => k !== '∅');
+  const reszek = [megoszlas];
+  if (uresDb > 0) reszek.push(`üres ×${uresDb}`);
+
+  if (kitoltott.length > 1) {
+    if (OSSZEGEK.has(mezo)) {
+      const sz = kitoltott.map(Number).filter(Number.isFinite);
+      if (sz.length === kitoltott.length) {
+        const d = Math.max(...sz) - Math.min(...sz);
+        const alap = Math.max(...sz.map(Math.abs));
+        reszek.push(d <= 1 ? 'kerekítés (≤ 1)' : `eltérés ${alap === 0 ? '?' : Math.round((d / alap) * 100)}%`);
+      }
+    } else if (DATUMOK.has(mezo)) {
+      const ms = kitoltott.map((k) => Date.parse(k)).filter(Number.isFinite);
+      if (ms.length === kitoltott.length) {
+        reszek.push(`${Math.round((Math.max(...ms) - Math.min(...ms)) / 86_400_000)} nap eltérés`);
+      }
+    } else {
+      const normal = (k: string) =>
+        ADOSZAMOK.has(mezo) ? k.replace(/\D/g, '') : k.toLocaleLowerCase('hu').replace(/[\s.,\-–]/g, '');
+      reszek.push(new Set(kitoltott.map(normal)).size === 1 ? 'csak írásmód' : 'eltérő tartalom');
+    }
+  }
+
+  return reszek.join(', ');
 }
 
 function median(szamok: number[]): number | null {
@@ -249,6 +310,43 @@ export function osszevet(
           }),
         ),
       );
+    }
+
+    // Az eltérések **jellege** – érték nélkül. A „2 különböző" önmagában nem
+    // mond semmit: lehet egy kimaradt adószám, egy „Kft." pont nélkül, vagy egy
+    // rossz nettó. Ezen múlik a döntés, és egyik sem árul el adatot.
+    const jelleg: string[] = [];
+    for (const x of meresek) {
+      for (const [mezo, cimke] of ELLENORZOTT) {
+        const ertekek = x.m.futasok.map((f) => f.eredmeny.mezok[mezo] ?? null);
+        const leiras = elteresJellege(mezo, ertekek);
+        if (leiras !== null) jelleg.push(`  ${x.nev} · ${cimke}: ${leiras}`);
+      }
+    }
+    if (jelleg.length > 0) sorok.push('', 'AZ ELTÉRÉSEK JELLEGE (megoszlás; érték nélkül)', ...jelleg);
+  }
+
+  // A validátorok: ezek élesben is lefutnak, és a bukott mezőt pirossal az
+  // ember elé teszik. Ha egy rossz összeg itt megbukik, a jóváhagyásnál
+  // elkapjuk; ha nem, csendben menne tovább.
+  sorok.push('');
+  sorok.push(
+    sor(
+      'VALIDÁTOR bukott (futás)',
+      meresek.map((x) => {
+        const b = x.m.futasok.filter((f) => Object.keys(f.eredmeny.validatorok ?? {}).length > 0).length;
+        return `${b}/${x.m.futasok.length}`;
+      }),
+    ),
+  );
+  const cimkeje = new Map(ELLENORZOTT);
+  for (const x of meresek) {
+    const db = new Map<string, number>();
+    for (const f of x.m.futasok) {
+      for (const mezo of Object.keys(f.eredmeny.validatorok ?? {})) db.set(mezo, (db.get(mezo) ?? 0) + 1);
+    }
+    if (db.size > 0) {
+      sorok.push(`  ${x.nev}: ${[...db].map(([m, n]) => `${cimkeje.get(m) ?? m} ×${n}`).join(', ')}`);
     }
   }
 
