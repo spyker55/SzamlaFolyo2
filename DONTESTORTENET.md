@@ -5302,3 +5302,35 @@ csendben menne tovább.
 
 A zászló itt egyik beállításnál sem kapcsolt be – a fénykép tehát nem volt
 „nehezen olvasható" a modell szerint, erre a kérdésre ez a mérés sem felel.
+
+### ✅ Döntés (2026-09-24): a gondolkodás élesben **nem korlátozott**
+
+Az eltérések jellege ugyanarra a két mérésre (értékek nélkül):
+
+| | alap | `effort: low` |
+|---|---|---|
+| Nettó | mind az 5 futás ugyanazt adta | **4 futás üresen hagyta** (4+1) |
+| ÁFA | mind az 5 ugyanaz | **4 futás üresen hagyta** (4+1) |
+| Teljesítés | egyező | 3 futás üres |
+| Vevő adószáma | egyező | 2 futás üres |
+| Határidő | 3 üres | 4 üres |
+| Szállító / Vevő | 3+2 / 4+1, eltérő tartalom | egyező |
+| bukott validátor | 0/5 | 0/5 |
+
+A `low` tehát nem rossz számot ír, hanem **kihagyja**, amit a kétoldalas
+papíron keresni kellene – a nettó és az ÁFA összesítője jellemzően a második
+oldalon van. És ⚠️ ezt **semmi nem fogja meg**: a `nettó + ÁFA = bruttó`
+validátor csak akkor fut, ha mindhárom ki van töltve, a kulcsmezők
+(`kapuk.ts`: szállító, bizonylatszám, kelt, bruttó) között pedig a nettó és az
+ÁFA nincs benne. Bekapcsolt automatikus jóváhagyásnál egy ilyen bizonylat ÁFA
+nélkül menne a könyvelésbe – az ÁFA-levonáshoz épp az kell.
+
+A megtakarítás (fele idő, –58% költség, nulla elszaladás) ezt nem éri meg: az
+alap ezen a számlán ~$0,0075 futásonként. A `gondolkodas` kapcsoló a
+mérőeszközben marad, élesben nincs használva; az elszaladás költségét továbbra
+is a 4096-os `max_tokens` fogja be.
+
+Az alap mellett a szállító nevénél 3+2 tartalmi eltérés látszott – valószínűleg
+két, a papíron egyaránt szereplő cégnév (márkanév vs. cégjegyzékbeli név). Ez
+jóváhagyáskor látszik, és a mérés cégadat nélkül futott (`cegNev: null`), ami
+élesben segít a szállító és a vevő elválasztásában.
