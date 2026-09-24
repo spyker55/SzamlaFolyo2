@@ -18,5 +18,12 @@ Mindegyik fájl egyetlen számla, és egy dologban tér el a `2_sajat.csv`-től:
 | `7_bevallasi_sorral.csv` | tételsorban bevallási sor `66` |
 | `8_minta_fokonyvei.csv` | főkönyvi számok 511 / 466 / 4541 (454 és 5211 helyett) |
 | `9_minden_elteres_visszaforditva.csv` | az összes fenti eltérés egyszerre |
+| `10_koltseg_52.csv` | a költség főkönyvi száma `52` (az éles, elutasított fájlban ez állt) |
+| `11_augusztusi_datumok.csv` | minden dátum 2026.08.17, mint az éles fájlban |
+
+**1. kör eredménye (2026-09-24):** az 1–9. mind átment (az RLB-ben a 2026-os
+év van nyitva). Az elutasított éles fájl ugyanezzel a kóddal készült; tőle a
+`2_sajat.csv` a `52`-es költségszámlában, a dátumokban és a partnerben tér
+el – ezt a 10. és a 11. dönti el.
 
 A mérés után ez a mappa törlődik; az eredmény a `DONTESTORTENET.md`-be kerül.
