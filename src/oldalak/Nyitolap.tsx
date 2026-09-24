@@ -319,7 +319,7 @@ function Hero() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <FejlesztesAlattSav />
 
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-8">
+        <div className="grid items-center gap-12 xl:grid-cols-2 xl:gap-8">
           <div className="max-w-2xl">
             <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-sm font-semibold text-blue-700">
               <span className="relative flex h-2 w-2">
@@ -349,10 +349,19 @@ function Hero() {
             </p>
 
             <HeroGombok />
-            <ProbaAdatok />
           </div>
 
-          <HeroVideo />
+          {/*
+            A próbaidő adatai a videó alatt, nem a szöveg alatt: így a két
+            oszlop nagyjából egyforma magas (2026-09-24, a tulajdonos kérésére –
+            a bal oldal addig jóval hosszabb volt a videónál). Két oszlop csak
+            `xl`-től: 1024 px-en a keskeny oszlopban a cím annyi sorra tört,
+            hogy a szöveg kétszer olyan magas lett, mint a videó (mérve).
+          */}
+          <div>
+            <HeroVideo />
+            <ProbaAdatok />
+          </div>
         </div>
       </div>
     </section>
@@ -507,7 +516,7 @@ function HeroVideo() {
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none">
+    <div className="relative w-full max-w-2xl xl:max-w-none">
       <div className="overflow-hidden rounded-2xl border border-zsalya/20 bg-tinta shadow-2xl">
         <video
           ref={kicsiRef}
@@ -631,7 +640,7 @@ function Folyamat() {
     {
       cim: 'Ellenőrzés',
       szoveg:
-        'Alapértelmezés szerint minden bizonylat rád vár: gépi jóváhagyás csak akkor van, ha te kapcsolod be. A megjelölt mezőkkel – a bizonytalanokkal és az ellentmondásosakkal – van elsősorban dolgod, de a jelöletlen sem garancia: azt jelenti, nincs okunk gyanakodni.',
+        'Alapértelmezés szerint minden bizonylat rád vár: gépi jóváhagyás csak akkor van, ha te kapcsolod be.',
       ikon: <IkonPajzs className="h-8 w-8" />,
     },
     {
