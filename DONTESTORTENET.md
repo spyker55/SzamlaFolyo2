@@ -5338,3 +5338,17 @@ jóváhagyáskor látszik, és a mérés cégadat nélkül futott (`cegNev: null
 **Mellékdöntés (2026-09-24):** a nettó és az ÁFA **nem** kerül a kulcsmezők
 közé (`kapuk.ts`). Az ÁFA-bontás nélküli bizonylatok – nyugta, alanyi
 adómentes számla – különben mindig ember elé kerülnének. A tulajdonos döntése.
+
+## ✅ Zárások (2026-09-24)
+
+- **Saját Google-kulcs (BYOK): nem lesz.** A tulajdonos döntése: a Google Cloud
+  számlázása követhetetlen. A kiolvasás marad az OpenRouter saját kulcsán; a
+  429-ekre (a mérésekben ~17%) a meglévő védelem felel: az azonnali egy
+  újrapróbálás (`atmenetiHibanUjra`), a cron következő köre, és a Beérkező
+  „Újrapróbálom" gombja.
+- **A jogi csomag végleges.** Az ÁSZF, az Adatkezelési tájékoztató és a
+  mellékletek a `2026-09-23-3` változatban (`JOGI_VERZIO`) lezárva. Új változat
+  csak új jogi kör – és az mindig új archívum + `legal_versions` sor.
+- **Élesben igazolva:** a Beérkező „Újrapróbálom" / „Elvetem" gombja működik
+  (a beragadt hibás sort a tulajdonos eltüntette), és a
+  `tesztadat/harom-szamla-rendes.pdf` rendben háromfelé szedődött.
