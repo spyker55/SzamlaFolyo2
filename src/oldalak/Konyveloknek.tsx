@@ -15,7 +15,10 @@ import {
   IkonPipa,
   IkonVillam,
   Lablec,
+  MobilLinkek,
   Szekcio,
+  SzelesLinkek,
+  type FejlecLinkAdat,
 } from './Nyitolap.tsx';
 
 /**
@@ -101,25 +104,33 @@ const BEMUTATO_VIDEO = {
 function Fejlec() {
   return (
     <header className="sticky top-0 z-50 border-b border-zsalya/20 bg-vaszon/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 md:h-20 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:h-20 lg:px-8">
         <Link to="/" className="logo-link">
           <LogoSor jel="h-9 w-9 md:h-10 md:w-10" szoveg="text-xl md:text-2xl" />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          <Link to="/" className="text-sm font-medium text-slate-500 transition-colors hover:text-blue-600">
-            A nyitólapra
-          </Link>
+        <nav className="hidden items-center gap-8 lg:flex">
+          <SzelesLinkek linkek={FEJLEC_LINKEK} />
           <FejlecGombok />
         </nav>
 
-        <Link to="/bejelentkezes" className="btn btn-primary rounded-full px-5 shadow-lg shadow-blue-500/20 md:hidden">
+        <Link to="/bejelentkezes" className="btn btn-primary shrink-0 rounded-full px-4 shadow-lg shadow-blue-500/20 sm:px-5 lg:hidden">
           Bejelentkezés
         </Link>
       </div>
+
+      {/* Mobilon a linkek saját sorban, mint a nyitólapon (`MobilLinkek`). */}
+      <MobilLinkek linkek={FEJLEC_LINKEK} />
     </header>
   );
 }
+
+/** A fejléc linkjei – a széles és a mobil elrendezés is ebből rajzol. */
+const FEJLEC_LINKEK: readonly FejlecLinkAdat[] = [
+  { ut: '/', cimke: 'A nyitólapra' },
+  { hova: '#bemutato', cimke: 'Bemutató' },
+  { hova: '#kalkulator', cimke: 'Kalkulátor' },
+];
 
 // ---------------------------------------------------------------------------
 // Hero

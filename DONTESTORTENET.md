@@ -5836,3 +5836,34 @@ Mérve, nem feltételezve:
   bekötése után, felvétel előtt magától is piros lett);
 - a lap „egy perc alatt”-ot mond, ezért a videó hosszát az MP4 `mvhd`
   fejlécéből mérjük (69,5 mp), és 40–90 mp között engedjük.
+
+### 📱 Mobil fejléc: egy linklista mindkét elrendezésnek (2026-09-24)
+
+A tulajdonos mobilon vette észre a hiányzó linkeket:
+- a nyitólap mobil fejlécéből hiányzott a **Könyvelőknek** link;
+- a Könyvelőknek oldal mobil fejlécéből hiányzott az **„A nyitólapra”**.
+
+Az ok: a mobil sor a horgonylistából épült, a Könyvelőknek linket pedig csak
+a széles menübe írták be kézzel. A Könyvelőknek oldalnak mobilon második
+sora sem volt.
+
+A javítás:
+- lapszintenként egy `FEJLEC_LINKEK` lista, amiből a széles
+  (`SzelesLinkek`) és a mobil (`MobilLinkek`) menü is rajzol, így nem
+  csúszhatnak szét újra;
+- a Könyvelőknek oldal menüje: „A nyitólapra”, „Bemutató”, „Kalkulátor”.
+
+A mérés két régi hibát is kifogott, ezek is javítva:
+- **768 px:** a széles menü a nyitólapon nem fért ki, az „Ingyenes próba”
+  50 px-t kilógott. A váltás ezért `md` helyett `lg`-nél van, tabletig a
+  kétsoros fejléc marad, és a `scroll-margin` is `lg`-nél vált.
+- **320 px:** a Bejelentkezés gomb 9 px-t kilógott. Kisebb képernyőn
+  keskenyebb a padding és a hézag.
+
+Playwright a buildelt lapon, mindkét oldalon, 320, 360, 390, 768, 1024 és
+1440 px szélesen:
+- minden elvárt link látszik;
+- egyik sem törik két sorba;
+- nincs túllógás;
+- a horgonyra ugráskor a szakaszcím a fejléc alatt van;
+- oda-vissza navigáció mobilon.

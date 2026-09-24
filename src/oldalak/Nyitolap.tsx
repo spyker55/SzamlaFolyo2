@@ -154,7 +154,7 @@ function TorlesVisszajelzes() {
 function Fejlec() {
   return (
     <header className="sticky top-0 z-50 border-b border-zsalya/20 bg-vaszon/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 md:h-20 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:h-20 lg:px-8">
         {/*
           A logó **link marad**, nem gomb: így a középső gombbal új lapon
           nyitható, és a böngésző is helyesen mutatja, hova mutat. A kattintás
@@ -177,67 +177,98 @@ function Fejlec() {
           <LogoSor jel="h-9 w-9 md:h-10 md:w-10" szoveg="text-xl md:text-2xl" />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {HORGONYOK.map((h) => (
-            <a
-              key={h.hova}
-              href={h.hova}
-              className="text-sm font-medium text-slate-500 transition-colors hover:text-blue-600"
-            >
-              {h.cimke}
-            </a>
-          ))}
-          <Link to="/konyveloknek" className="text-sm font-medium text-slate-500 transition-colors hover:text-blue-600">
-            Könyvelőknek
-          </Link>
+        <nav className="hidden items-center gap-8 lg:flex">
+          <SzelesLinkek linkek={FEJLEC_LINKEK} />
           <FejlecGombok />
         </nav>
 
-        {/* Keskeny kijelzőn a horgonyok a második sorba kerülnek, ide csak a
+        {/* Keskeny kijelzőn a linkek a második sorba kerülnek, ide csak a
             belépés fér el. */}
-        <Link to="/bejelentkezes" className="btn btn-primary rounded-full px-5 shadow-lg shadow-blue-500/20 md:hidden">
+        <Link to="/bejelentkezes" className="btn btn-primary shrink-0 rounded-full px-4 shadow-lg shadow-blue-500/20 sm:px-5 lg:hidden">
           Bejelentkezés
         </Link>
       </div>
 
-      {/*
-        A horgonyok mobilon **saját sorban**, nem menü mögé rejtve. A terv itt
-        hamburger gombot rajzolt, az viszont az eredetiben sem nyílt ki — és egy
-        nyitólapon a menü mögé tett navigáció egy kattintással messzebb van,
-        miközben pont az a három link, amiért a látogató a fejlécre néz.
-
-        Az ár a fejléc magassága: mobilon 108 px ragad a képernyő tetején. Ezért
-        lett az első sor ott alacsonyabb (`h-16`), és ezért kapnak a horgonyos
-        szakaszok kétféle `scroll-margin`-t (`scroll-mt-27 md:scroll-mt-20`) —
-        különben a szakasz teteje a fejléc mögé érkezne.
-      */}
-      <nav className="flex border-t border-zsalya/20 md:hidden">
-        {HORGONYOK.map((h) => (
-          <a
-            key={h.hova}
-            href={h.hova}
-            className="flex-1 py-3 text-center text-xs font-medium text-slate-500 transition-colors hover:text-blue-600"
-          >
-            {h.cimke}
-          </a>
-        ))}
-      </nav>
+      <MobilLinkek linkek={FEJLEC_LINKEK} />
     </header>
   );
 }
 
 /**
- * A fejléc horgonyai — **egy forrásból** a széles és a keskeny elrendezésnek.
- *
- * A címkék a régi nyitólapról jönnek, a horgonyok is. Ha egyszer negyedik
- * szakasz kerül a lapra, egy helyen kell felvenni, és mindkét elrendezésben
- * megjelenik.
+ * Egy fejléclink: horgony a lapon belül (`hova`), vagy útvonal egy másik
+ * lapra (`ut`).
  */
-const HORGONYOK = [
+export type FejlecLinkAdat = { hova: `#${string}`; cimke: string } | { ut: string; cimke: string };
+
+/**
+ * A fejléc linkjei — **egy forrásból** a széles és a keskeny elrendezésnek.
+ *
+ * ⚠️ 2026-09-24-ig a Könyvelőknek link csak a széles menüben állt, kézzel
+ * beírva, a mobil sor pedig a horgonylistából épült – mobilon így egyszerűen
+ * nem volt Könyvelőknek link. Most mindkét elrendezés ebből a listából rajzol.
+ */
+const FEJLEC_LINKEK: readonly FejlecLinkAdat[] = [
   { hova: '#folyamat', cimke: 'Hogyan működik?' },
   { hova: '#elonyok', cimke: 'Előnyök' },
   { hova: '#arak', cimke: 'Árak' },
-] as const;
+  { ut: '/konyveloknek', cimke: 'Könyvelőknek' },
+];
+
+function FejlecLink({ link, className }: { link: FejlecLinkAdat; className: string }) {
+  return 'ut' in link ? (
+    <Link to={link.ut} className={className}>
+      {link.cimke}
+    </Link>
+  ) : (
+    <a href={link.hova} className={className}>
+      {link.cimke}
+    </a>
+  );
+}
+
+/** A széles fejléc linkjei – a `lg:flex` menübe, a gombok elé. */
+export function SzelesLinkek({ linkek }: { linkek: readonly FejlecLinkAdat[] }) {
+  return linkek.map((l) => (
+    <FejlecLink
+      key={l.cimke}
+      link={l}
+      className="text-sm font-medium whitespace-nowrap text-slate-500 transition-colors hover:text-blue-600"
+    />
+  ));
+}
+
+/**
+ * A fejléc linkjei mobilon: **saját sorban**, nem menü mögé rejtve. A terv itt
+ * hamburger gombot rajzolt, az viszont az eredetiben sem nyílt ki — és egy
+ * nyitólapon a menü mögé tett navigáció egy kattintással messzebb van,
+ * miközben pont ezekért a linkekért néz a látogató a fejlécre.
+ *
+ * Az ár a fejléc magassága: mobilon 108 px ragad a képernyő tetején. Ezért
+ * lett az első sor ott alacsonyabb (`h-16`), és ezért kapnak a horgonyos
+ * szakaszok kétféle `scroll-margin`-t (`scroll-mt-27 lg:scroll-mt-20`) —
+ * különben a szakasz teteje a fejléc mögé érkezne.
+ *
+ * `flex-auto`, nem `flex-1`: az egyforma szélesség 320 px-en a „Hogyan
+ * működik?"-et két sorba törné, így a hely a szöveg hosszával arányos.
+ *
+ * ⚠️ A váltás `lg`-nél van, nem `md`-nél: 768 px-en a széles menü nem fér ki
+ * (mérve, 2026-09-24: a nyitólapon az „Ingyenes próba" 50 px-t kilógott, és a
+ * feliratok két sorba törtek). Tableten ezért a kétsoros fejléc marad – és a
+ * `scroll-margin` is `lg`-nél vált, különben a szakasz a fejléc alá érkezne.
+ */
+export function MobilLinkek({ linkek }: { linkek: readonly FejlecLinkAdat[] }) {
+  return (
+    <nav className="flex border-t border-zsalya/20 lg:hidden">
+      {linkek.map((l) => (
+        <FejlecLink
+          key={l.cimke}
+          link={l}
+          className="flex-auto px-1 py-3 text-center text-xs font-medium whitespace-nowrap text-slate-500 transition-colors hover:text-blue-600"
+        />
+      ))}
+    </nav>
+  );
+}
 
 /**
  * ⚠️ Zárt regisztrációnál a fejléc nem kínál „Ingyenes próba" gombot — lásd a
@@ -791,7 +822,7 @@ function Arak() {
   ];
 
   return (
-    <section id="arak" className="scroll-mt-27 bg-tinta py-24 text-vaszon md:scroll-mt-20">
+    <section id="arak" className="scroll-mt-27 bg-tinta py-24 text-vaszon lg:scroll-mt-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto mb-16 max-w-3xl text-center">
           <p className="mb-3 text-sm font-bold tracking-widest text-mustar uppercase">Árazás</p>
@@ -1009,7 +1040,7 @@ export function Szekcio({
   return (
     <section
       id={id}
-      className={`scroll-mt-27 py-24 md:scroll-mt-20 ${halvany ? 'bg-slate-50' : 'bg-vaszon'}`}
+      className={`scroll-mt-27 py-24 lg:scroll-mt-20 ${halvany ? 'bg-slate-50' : 'bg-vaszon'}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto mb-16 max-w-3xl text-center">
