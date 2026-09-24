@@ -351,11 +351,9 @@ export function Utmutato() {
             nettó/ÁFA/bruttó összeget – érdemes ránézni, mielőtt kimegy.
           </li>
           <li>
-            <strong>Könyvelőprogramba:</strong> RLB Kettős – valódi RLB-ben kipróbálva (bejövő,
-            kimenő, mentes, sztornó, nyugta); Novitax NTAX – valódi NTAX-ban kipróbálva (bejövő,
-            kimenő, mentes, sztornó); Kulcs-Könyvelés – valódi Kulcs-Könyvelésben kipróbálva
-            (bejövő, kimenő, mentes, előleg, készpénz). Mindháromhoz van <strong>Próbafájl</strong>{' '}
-            gomb, ami nem jelöli át a tételeket – új beállításnál érdemes azzal kezdeni.
+            <strong>Könyvelőprogramba:</strong> RLB Kettős, Novitax NTAX és Kulcs-Könyvelés.
+            Mindháromhoz van <strong>Próbafájl</strong> gomb, ami nem jelöli át a tételeket – új
+            beállításnál érdemes azzal kezdeni.
           </li>
           <li>
             A Novitax és a Kulcs <strong>ZIP-et</strong> kap, mert több fájlt olvas egy mappából:

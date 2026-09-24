@@ -48,17 +48,6 @@ const FORMATUMOK: { ertek: Formatum; cimke: string }[] = [
   { ertek: 'json', cimke: 'JSON' },
 ];
 
-/**
- * Mennyire mért a formátum – a béta-doboz szövege. Hogy melyik béta, azt a
- * `KIMERVE` mondja meg (`beallitas.ts`), nem ez a lista.
- */
-const PROGRAM_ALLAPOT: Record<Program, string> = {
-  rlb: 'az RLB Kettős fájlját egy valódi RLB Kettős beolvasta: bejövő, kimenő, mentes, sztornó és nyugta is.',
-  novitax:
-    'a Novitax NTAX fájlját egy valódi NTAX beolvasta: bejövő (vegyes kulccsal is), kimenő, mentes (AM) és sztornó is.',
-  kulcs:
-    'a Kulcs-Könyvelés fájlját egy valódi Kulcs-Könyvelés beolvasta: kimenő, mentes, bejövő (vegyes kulccsal is), előleg és készpénzes számla is.',
-};
 
 const PROGRAM_FORMATUMOK: { ertek: Program; cimke: string }[] = [
   { ertek: 'rlb', cimke: PROGRAM_NEVEK.rlb },
@@ -388,14 +377,12 @@ export function Export() {
 
           {program !== null && (
             <div className="space-y-3">
-              {KIMERVE[program] ? (
+              {/* Kimért programnál nincs mit mondani; a doboz egy új, még ki nem
+                  próbált programnak való (`KIMERVE`, `beallitas.ts`). */}
+              {!KIMERVE[program] && (
                 <div className="alert alert-info">
-                  Kipróbálva: {PROGRAM_ALLAPOT[program]} Ha új irodai beállítással dolgozol, a{' '}
-                  <strong>próbafájl</strong> nem jelöli át a tételeket.
-                </div>
-              ) : (
-                <div className="alert alert-info">
-                  <strong>Béta:</strong> {PROGRAM_ALLAPOT[program]} Először tölts le
+                  <strong>Béta:</strong> a(z) {PROGRAM_NEVEK[program]} fájl a gyártó leírása és
+                  mintája szerint készül, valódi programban még nincs kipróbálva. Először tölts le
                   <strong> próbafájlt</strong>, és egy próbacégbe töltsd be – az nem jelöli át a
                   tételeket.
                 </div>
