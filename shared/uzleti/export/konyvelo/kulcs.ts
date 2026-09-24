@@ -1,5 +1,5 @@
 import { zip } from '../zip.ts';
-import { FIZMOD_CIMKEK, type KontirBeallitas } from './beallitas.ts';
+import { FIZMOD_CIMKEK, type AfaFajta, type KontirBeallitas } from './beallitas.ts';
 import type { KonyveloiBizonylat } from './atalakit.ts';
 import { ansiCsv, datum, szoveg } from './mezok.ts';
 
@@ -70,6 +70,29 @@ export const KULCS_FEJLECEK = {
   ],
 } as const;
 
+/**
+ * Az `afanev` mező: a Kulcs alap ÁFA-táblájának megnevezése irány szerint.
+ * A mező kötelező, de a párosítást **nem** befolyásolja – mérve: bejövő tétel
+ * `1`-es kóddal és „fiz.” névvel is kérdés nélkül ment be (2026-09-24). Ezért
+ * nem kérjük be; a fájlban csak olvashatóság miatt áll.
+ */
+export const KULCS_AFANEVEK: Readonly<Record<'kimeno' | 'bejovo', Record<AfaFajta, string>>> = {
+  kimeno: {
+    '27': '27%-os fiz.ÁFA',
+    '18': '18%-os fiz. ÁFA',
+    '5': '5%-os fiz.ÁFA',
+    '0': '0%-os fiz.ÁFA',
+    mentes: 'fiz.ÁFA mentes',
+  },
+  bejovo: {
+    '27': '27%-os lev.ÁFA',
+    '18': '18%-os lev. ÁFA',
+    '5': '5%-os lev.ÁFA',
+    '0': '0%-os lev.ÁFA',
+    mentes: 'lev.ÁFA mentes',
+  },
+};
+
 const FEJ_MEZOK = 33;
 const TETEL_MEZOK = 22;
 const UGYFEL_MEZOK = 21;
@@ -122,7 +145,8 @@ export async function kulcs(
     fej[13] = '1';
     fej[16] = bejovo ? 'B' : 'K';
     fej[17] = String(napok(b.kelt, b.esedekesseg));
-    fej[18] = b.sorok.some((s) => s.afa !== 0) ? '1' : '0';
+    const afas = afasE(b);
+    fej[18] = afas ? '1' : '0';
     fej[19] = String(b.netto);
     fej[20] = String(brutto);
     fej[21] = '0'; // rontott
@@ -134,17 +158,19 @@ export async function kulcs(
     fej[29] = k.penzforgalmi ? '1' : '0';
     fejek.push(fej);
 
+    const irany = bejovo ? 'bejovo' : 'kimeno';
     for (const s of b.sorok) {
-      const kod = k.kulcs.afakodok[s.fajta];
       const t: string[] = new Array(TETEL_MEZOK).fill('');
       t[0] = String(++tetelId);
       t[1] = bejovo ? k.koltseg : k.arbevetel;
       t[2] = String(s.netto);
       t[3] = s.fajta === 'mentes' ? '0' : s.fajta;
       t[4] = szamlaid;
-      t[5] = bejovo ? k.elozetesAfa : k.fizetendoAfa;
-      t[6] = kod.kod;
-      t[7] = kod.nev;
+      // „áfás = 0” fej mellett a tételen nem lehet ÁFA-kód, -név és -főkönyvi
+      // szám – az Adatimporter ezt hibának jelzi (mérve, 2026-09-24).
+      t[5] = afas ? (bejovo ? k.elozetesAfa : k.fizetendoAfa) : '';
+      t[6] = afas ? k.kulcs.afakodok[irany][s.fajta] : '';
+      t[7] = afas ? KULCS_AFANEVEK[irany][s.fajta] : '';
       t[8] = '0'; // Helyesbito
       t[14] = '0'; // Fordított
       tetelek.push(t);
@@ -170,6 +196,17 @@ export async function kulcs(
       tomorit: true,
     },
   ]);
+}
+
+/**
+ * A fej „afas” mezője: tartalmaz-e a számla ÁFÁ-t.
+ *
+ * ⚠️ Mérés alatt (2026-09-24): a csak mentes számla „afas = 0” fejjel és
+ * kódos tétellel hibát dob. Hogy az „afas = 1” + `6`-os kód (18a) vagy az
+ * „afas = 0” + üres tétel-ÁFA (18b) a jó, azt a demó dönti el.
+ */
+export function afasE(b: KonyveloiBizonylat): boolean {
+  return b.sorok.some((s) => s.afa !== 0);
 }
 
 /** A fizetési határidő napokban a kelttől (a Kulcs `esed` mezője). */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { kicsomagol } from '../tesztZip.ts';
-import { alapBeallitas, type KontirBeallitas } from './beallitas.ts';
+import { alapBeallitas, KULCS_ALAP_KODOK, type KontirBeallitas } from './beallitas.ts';
 import type { KonyveloiBizonylat } from './atalakit.ts';
 import { KULCS_FAJLOK, KULCS_FEJLECEK, kulcs, kulcsEllenoriz, napok } from './kulcs.ts';
 
@@ -10,13 +10,12 @@ const K: KontirBeallitas = {
   ...alapBeallitas(),
   koltseg: '5211',
   arbevetel: '911',
+  // A bejövő kódok szándékosan mások, mint a kimenők: így látszik, ha az író
+  // rossz irányból olvas.
   kulcs: {
     afakodok: {
-      '27': { kod: '1', nev: '27%-os levonható' },
-      '18': { kod: '', nev: '' },
-      '5': { kod: '3', nev: '5%-os levonható' },
-      '0': { kod: '', nev: '' },
-      mentes: { kod: 'AM', nev: 'Alanyi mentes' },
+      kimeno: { ...KULCS_ALAP_KODOK },
+      bejovo: { '27': '11', '18': '12', '5': '18', '0': '15', mentes: '16' },
     },
   },
 };
@@ -90,9 +89,11 @@ describe('Kulcs-Könyvelés Főkönyvi Adatimporter (új_03)', () => {
     expect(vissza(fajlok.get('feladas.001'))).toBe(
       [
         KULCS_FEJLECEK.tetel.join(';'),
-        sor(22, { 1: '1', 2: '5211', 3: '10000', 4: '27', 5: 'SZF17', 6: '466', 7: '1', 8: '27%-os levonható', 9: '0', 15: '0' }),
-        sor(22, { 1: '2', 2: '5211', 3: '5000', 4: '5', 5: 'SZF17', 6: '466', 7: '3', 8: '5%-os levonható', 9: '0', 15: '0' }),
-        sor(22, { 1: '3', 2: '911', 3: '8000', 4: '0', 5: 'SZF18', 6: '467', 7: 'AM', 8: 'Alanyi mentes', 9: '0', 15: '0' }),
+        // Bejövő: a bejövő lista kódja és „lev.” neve.
+        sor(22, { 1: '1', 2: '5211', 3: '10000', 4: '27', 5: 'SZF17', 6: '466', 7: '11', 8: '27%-os lev.ÁFA', 9: '0', 15: '0' }),
+        sor(22, { 1: '2', 2: '5211', 3: '5000', 4: '5', 5: 'SZF17', 6: '466', 7: '18', 8: '5%-os lev.ÁFA', 9: '0', 15: '0' }),
+        // Csak mentes kimenő: „áfás = 0” fej, a tételen nincs ÁFA-kód, -név, -főkönyv.
+        sor(22, { 1: '3', 2: '911', 3: '8000', 4: '0', 5: 'SZF18', 9: '0', 15: '0' }),
         '',
       ].join('\r\n'),
     );

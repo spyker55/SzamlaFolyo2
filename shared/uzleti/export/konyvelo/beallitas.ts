@@ -71,7 +71,30 @@ export const FIZMOD_CIMKEK: Record<FizetesiMod, string> = {
 export const AFA_FAJTAK = ['27', '18', '5', '0', 'mentes'] as const;
 export type AfaFajta = (typeof AFA_FAJTAK)[number];
 
-export type KulcsAfakod = { kod: string; nev: string };
+/** Irány → ÁFA-fajta → a Kulcs-Könyvelés ÁFA-kulcsának „Kód”-ja. */
+export type KulcsAfakodok = { kimeno: Record<AfaFajta, string>; bejovo: Record<AfaFajta, string> };
+
+/**
+ * A Kulcs-Könyvelés alap ÁFA-táblájának **„Kód”** oszlopa (Törzskarbantartás
+ * → Kimenő/Bejövő áfa-kulcsok) – nem az „Azonosító”, és nem a főkönyvi szám.
+ *
+ * Mérve (2026-09-24, demó Adatimporter 2.2601.1.833): a két lista kódjai
+ * ugyanezek; a `1`-es kóddal a 27% kérdés nélkül ment be mindkét irányban,
+ * a 18-as (Azonosító) és a 467-es (főkönyvi szám) Adategyeztetést kért, a
+ * betűs `K27` hibát. A kód **csak szám** lehet.
+ */
+export const KULCS_ALAP_KODOK: Readonly<Record<AfaFajta, string>> = {
+  '27': '1',
+  '18': '2',
+  '5': '8',
+  '0': '5',
+  mentes: '6',
+};
+
+/** 1–3 számjegy: az Adatimporter az `afakod` mezőben mást nem fogad. */
+export function kulcsKodE(ertek: string): boolean {
+  return /^\d{1,3}$/.test(ertek);
+}
 
 export type KontirBeallitas = {
   /** Bejövő számla nettója (pl. 51…, 52…). **Nincs alapértéke.** */
@@ -102,13 +125,16 @@ export type KontirBeallitas = {
     mentesTipus: '' | 'AM' | 'TM';
   };
   kulcs: {
-    /** A könyvelő Kulcs-Könyvelésében rögzített ÁFA-kulcsok kódja és neve. */
-    afakodok: Record<AfaFajta, KulcsAfakod>;
+    /**
+     * A könyvelő Kulcs-Könyvelésében rögzített ÁFA-kulcsok „Kód”-ja,
+     * irányonként – a kimenő és a bejövő lista két külön tábla. A nevet nem
+     * kérjük: mérten nem számít (lásd `KULCS_AFANEVEK`, `kulcs.ts`).
+     */
+    afakodok: KulcsAfakodok;
   };
 };
 
 export function alapBeallitas(): KontirBeallitas {
-  const ures = (): KulcsAfakod => ({ kod: '', nev: '' });
   return {
     koltseg: '',
     arbevetel: '',
@@ -120,7 +146,7 @@ export function alapBeallitas(): KontirBeallitas {
     alapFizmod: 'atutalas',
     novitax: { naplokodBe: '', naplokodKi: '', mentesTipus: '' },
     kulcs: {
-      afakodok: { '27': ures(), '18': ures(), '5': ures(), '0': ures(), mentes: ures() },
+      afakodok: { kimeno: { ...KULCS_ALAP_KODOK }, bejovo: { ...KULCS_ALAP_KODOK } },
     },
   };
 }
@@ -143,15 +169,26 @@ export function tisztit(nyers: unknown): KontirBeallitas {
     typeof ertek === 'string' ? ertek.trim().slice(0, max) : eredeti;
 
   const nov = (n['novitax'] ?? {}) as Record<string, unknown>;
-  const kul = ((n['kulcs'] ?? {}) as Record<string, unknown>)['afakodok'] as
-    | Record<string, unknown>
-    | undefined;
+  const kul = (((n['kulcs'] ?? {}) as Record<string, unknown>)['afakodok'] ?? {}) as Record<string, unknown>;
 
-  const afakodok = { ...alap.kulcs.afakodok };
-  for (const fajta of AFA_FAJTAK) {
-    const k = (kul?.[fajta] ?? {}) as Record<string, unknown>;
-    afakodok[fajta] = { kod: szoveg(k['kod'], 3, ''), nev: szoveg(k['nev'], 20, '') };
-  }
+  // Új alak: { kimeno: { '27': '1', … }, bejovo: { … } }. Régi alak (2026-09-24
+  // előtt): { '27': { kod, nev }, … } – egy kód mindkét irányra. Ami nem
+  // érvényes kód, az az alapérték lesz, nem üres: üresen a fájl nem készülne el,
+  // az alapérték pedig a Kulcs saját táblája.
+  const kod = (ertek: unknown, alapKod: string): string => {
+    const k = typeof ertek === 'string' ? ertek.trim() : '';
+    return kulcsKodE(k) ? k : alapKod;
+  };
+  const irany = (nyersIrany: unknown): Record<AfaFajta, string> => {
+    const ki = { ...KULCS_ALAP_KODOK };
+    for (const fajta of AFA_FAJTAK) {
+      const iranyos = (nyersIrany as Record<string, unknown> | undefined)?.[fajta];
+      const regi = (kul[fajta] as Record<string, unknown> | undefined)?.['kod'];
+      ki[fajta] = kod(typeof iranyos === 'string' ? iranyos : regi, KULCS_ALAP_KODOK[fajta]);
+    }
+    return ki;
+  };
+  const afakodok: KulcsAfakodok = { kimeno: irany(kul['kimeno']), bejovo: irany(kul['bejovo']) };
 
   const mentes = nov['mentesTipus'];
 
@@ -215,13 +252,18 @@ export function beallitasHianyai(
   }
 
   if (program === 'kulcs') {
-    for (const fajta of igeny.fajtak) {
-      const k = b.kulcs.afakodok[fajta];
-      if (k.kod === '' || k.nev === '') {
-        const nev = fajta === 'mentes' ? 'mentes' : `${fajta}%-os`;
-        hiany.push(
-          `Add meg a(z) ${nev} ÁFA-kulcs kódját és nevét, ahogy a Kulcs-Könyvelésben szerepel.`,
-        );
+    const iranyok = [
+      ...(igeny.kimeno ? [['kimeno', 'Kimenő'] as const] : []),
+      ...(igeny.bejovo ? [['bejovo', 'Bejövő'] as const] : []),
+    ];
+    for (const [irany, cimke] of iranyok) {
+      for (const fajta of igeny.fajtak) {
+        if (!kulcsKodE(b.kulcs.afakodok[irany][fajta])) {
+          const nev = fajta === 'mentes' ? 'mentes' : `${fajta}%-os`;
+          hiany.push(
+            `A(z) ${nev} ${cimke.toLowerCase()} ÁFA-kulcs Kulcs-kódja 1–3 számjegy legyen: a Kulcs-Könyvelés Törzskarbantartás → ${cimke} áfa-kulcsok „Kód” oszlopából (nem az Azonosító).`,
+          );
+        }
       }
     }
   }

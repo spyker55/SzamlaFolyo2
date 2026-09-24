@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alapBeallitas, beallitasHianyai, tisztit, type AfaFajta } from './beallitas.ts';
+import { alapBeallitas, beallitasHianyai, KULCS_ALAP_KODOK, tisztit, type AfaFajta } from './beallitas.ts';
 
 const semmi = new Set<AfaFajta>();
 
@@ -24,8 +24,9 @@ describe('kontír-beállítás', () => {
     expect(t.penzforgalmi).toBe(false);
     expect(t.alapFizmod).toBe('atutalas');
     expect(t.novitax).toEqual({ naplokodBe: 'BE', naplokodKi: '', mentesTipus: '' });
-    expect(t.kulcs.afakodok['27']).toEqual({ kod: 'A27', nev: '' });
-    expect(t.kulcs.afakodok.mentes).toEqual({ kod: '', nev: '' });
+    // Érvénytelen kód („A27X”) helyett a Kulcs alapkódja – üresen a fájl el sem készülne.
+    expect(t.kulcs.afakodok.kimeno['27']).toBe('1');
+    expect(t.kulcs.afakodok.bejovo.mentes).toBe('6');
     expect(tisztit(null)).toEqual(alapBeallitas());
   });
 
@@ -50,11 +51,39 @@ describe('kontír-beállítás', () => {
     ]);
   });
 
-  it('Kulcs: a használt ÁFA-fajták kódja és neve kell, a többi nem', () => {
+  it('Kulcs: az alapkódok betű szerint a demóban mért „Kód” oszlop (2026-09-24)', () => {
+    // Törzskarbantartás → Kimenő/Bejövő áfa-kulcsok, „Kód” oszlop – mindkét
+    // listában ugyanez. Az 1-es kóddal a 27% kérdés nélkül ment be.
+    expect(KULCS_ALAP_KODOK).toEqual({ '27': '1', '18': '2', '5': '8', '0': '5', mentes: '6' });
+    expect(alapBeallitas().kulcs.afakodok).toEqual({ kimeno: KULCS_ALAP_KODOK, bejovo: KULCS_ALAP_KODOK });
+  });
+
+  it('Kulcs: a régi alak (fajtánként kód + név) kódja mindkét irányba átjön', () => {
+    const t = tisztit({ kulcs: { afakodok: { '27': { kod: '21', nev: 'x' }, '5': { kod: '', nev: '' } } } });
+    expect(t.kulcs.afakodok.kimeno['27']).toBe('21');
+    expect(t.kulcs.afakodok.bejovo['27']).toBe('21');
+    expect(t.kulcs.afakodok.bejovo['5']).toBe('8');
+  });
+
+  it('Kulcs: az új alak irányonként külön olvasódik', () => {
+    const t = tisztit({ kulcs: { afakodok: { kimeno: { '27': '31' }, bejovo: { '27': '41' } } } });
+    expect(t.kulcs.afakodok.kimeno['27']).toBe('31');
+    expect(t.kulcs.afakodok.bejovo['27']).toBe('41');
+  });
+
+  it('Kulcs: csak a használt irány és fajta kódját nézi, és az csak 1–3 számjegy lehet', () => {
     const b = { ...alapBeallitas(), koltseg: '5211' };
-    const hiany = beallitasHianyai(b, 'kulcs', { bejovo: true, kimeno: false, fajtak: new Set<AfaFajta>(['27', 'mentes']) });
-    expect(hiany).toHaveLength(2);
-    expect(hiany[0]).toMatch(/27%-os ÁFA-kulcs/);
-    expect(hiany[1]).toMatch(/mentes ÁFA-kulcs/);
+    const igeny = { bejovo: true, kimeno: false, fajtak: new Set<AfaFajta>(['27', 'mentes']) };
+    expect(beallitasHianyai(b, 'kulcs', igeny)).toEqual([]);
+
+    const rossz = {
+      ...b,
+      kulcs: { afakodok: { kimeno: { ...KULCS_ALAP_KODOK, '27': 'K27' }, bejovo: { ...KULCS_ALAP_KODOK, mentes: '' } } },
+    };
+    const hiany = beallitasHianyai(rossz, 'kulcs', igeny);
+    // A kimenő 27%-os rossz kódja nem számít: nincs kimenő bizonylat.
+    expect(hiany).toHaveLength(1);
+    expect(hiany[0]).toMatch(/mentes bejövő ÁFA-kulcs Kulcs-kódja 1–3 számjegy/);
+    expect(hiany[0]).toMatch(/Bejövő áfa-kulcsok „Kód” oszlopából/);
   });
 });

@@ -217,18 +217,28 @@ export function KontirPanel(props: {
             {PROGRAM_NEVEK.kulcs} – ÁFA-kulcsok
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            A kódot és a megnevezést úgy írd be, ahogy a te Kulcs-Könyvelésedben az ÁFA-kulcsoknál
-            szerepel. Csak a ténylegesen használt kulcsokat kéri a fájl.
+            A Kulcs-Könyvelés alap ÁFA-táblájának kódjai vannak beírva. Ha nálad mások, a
+            Törzskarbantartás → Kimenő, illetve Bejövő áfa-kulcsok képernyő <strong>„Kód”</strong>{' '}
+            oszlopából írd át – nem az „Azonosító”-ból. Csak szám lehet.
           </p>
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 grid grid-cols-[4rem_1fr_1fr] items-center gap-2 text-sm">
+            <span />
+            <span className="text-xs text-slate-500">Kimenő kód</span>
+            <span className="text-xs text-slate-500">Bejövő kód</span>
             {AFA_FAJTAK.map((fajta) => (
               <KulcsAfakodSor
                 key={fajta}
                 fajta={fajta}
-                ertek={vazlat.kulcs.afakodok[fajta]}
+                kimeno={vazlat.kulcs.afakodok.kimeno[fajta]}
+                bejovo={vazlat.kulcs.afakodok.bejovo[fajta]}
                 szerkeszthet={szerkeszthet}
-                onValtozik={(uj) =>
-                  allit('kulcs', { afakodok: { ...vazlat.kulcs.afakodok, [fajta]: uj } })
+                onValtozik={(irany, uj) =>
+                  allit('kulcs', {
+                    afakodok: {
+                      ...vazlat.kulcs.afakodok,
+                      [irany]: { ...vazlat.kulcs.afakodok[irany], [fajta]: uj },
+                    },
+                  })
                 }
               />
             ))}
@@ -283,34 +293,30 @@ export function KontirPanel(props: {
 
 function KulcsAfakodSor(props: {
   fajta: AfaFajta;
-  ertek: { kod: string; nev: string };
+  kimeno: string;
+  bejovo: string;
   szerkeszthet: boolean;
-  onValtozik: (uj: { kod: string; nev: string }) => void;
+  onValtozik: (irany: 'kimeno' | 'bejovo', uj: string) => void;
 }) {
-  const { fajta, ertek, szerkeszthet, onValtozik } = props;
+  const { fajta, kimeno, bejovo, szerkeszthet, onValtozik } = props;
   const cimke = fajta === 'mentes' ? 'Mentes' : `${fajta}%`;
+  const mezo = (irany: 'kimeno' | 'bejovo', ertek: string, nev: string) => (
+    <input
+      aria-label={`${cimke} – ${nev} kód`}
+      className="control"
+      inputMode="numeric"
+      maxLength={3}
+      value={ertek}
+      disabled={!szerkeszthet}
+      onChange={(e) => onValtozik(irany, e.target.value.replace(/\D/g, ''))}
+    />
+  );
   return (
-    <div className="grid grid-cols-[4rem_5rem_1fr] items-center gap-2">
-      <span className="text-sm text-slate-700">{cimke}</span>
-      <input
-        aria-label={`${cimke} – kód`}
-        className="control"
-        maxLength={3}
-        placeholder="Kód"
-        value={ertek.kod}
-        disabled={!szerkeszthet}
-        onChange={(e) => onValtozik({ ...ertek, kod: e.target.value })}
-      />
-      <input
-        aria-label={`${cimke} – megnevezés`}
-        className="control"
-        maxLength={20}
-        placeholder="Megnevezés"
-        value={ertek.nev}
-        disabled={!szerkeszthet}
-        onChange={(e) => onValtozik({ ...ertek, nev: e.target.value })}
-      />
-    </div>
+    <>
+      <span className="text-slate-700">{cimke}</span>
+      {mezo('kimeno', kimeno, 'kimenő')}
+      {mezo('bejovo', bejovo, 'bejövő')}
+    </>
   );
 }
 
