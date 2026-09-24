@@ -13,7 +13,7 @@
 --  szerződés megszűnésétől számított harminc napon belül.
 --
 --  Ez a lekérdezés az a teljesítés. Egyetlen JSON dokumentumot ad vissza, a
---  cég MINDEN sorával a 12 cégfüggő táblából — állapottól függetlenül, tehát a
+--  cég MINDEN sorával a 15 cégfüggő táblából — állapottól függetlenül, tehát a
 --  félbemaradt és a hibára futott bizonylatok is benne vannak.
 --
 --  A szerkezet leírása: `eszkozok/adatkiadas/OLVASS-EL.md`. A két fájl együtt
@@ -75,7 +75,7 @@ select jsonb_pretty(jsonb_build_object(
   'kiadas', jsonb_build_object(
     'keszult', now(),
     'ceg_id', k.ceg_id,
-    'sema_verzio', '1',
+    'sema_verzio', '2',
     'leiras', 'eszkozok/adatkiadas/OLVASS-EL.md',
     'idozona', 'Minden időbélyeg UTC, ISO 8601 alakban.',
     'penznem', 'Az amount_ft és az overage_limit_ft forint. A cost USD. A credits darab.'
@@ -165,6 +165,29 @@ select jsonb_pretty(jsonb_build_object(
      where a.company_id = k.ceg_id
   ),
 
+  -- A könyvelőprogram-export kontírja: főkönyvi számok, napló- és ÁFA-kódok,
+  -- cégszinten (`ugyfel_torzsszam: null`) és ügyfelenként.
+  'konyvelo_beallitasok', (
+    select coalesce(jsonb_agg(to_jsonb(b) order by b.updated_at), '[]'::jsonb)
+      from public.konyvelo_beallitasok b
+     where b.company_id = k.ceg_id
+  ),
+
+  -- A könyvelőprogramoknak kiadott belső sorszámok (Novitax bizonylatszám,
+  -- Kulcs iktatószám). A bizonylattal együtt törlődnek.
+  'iktatoszamok', (
+    select coalesce(jsonb_agg(to_jsonb(i) order by i.szam), '[]'::jsonb)
+      from public.iktatoszamok i
+     where i.company_id = k.ceg_id
+  ),
+
+  -- A csomagváltások nyoma: a váltásig felhasznált kredit és a régi csomag.
+  'keret_fedezetek', (
+    select coalesce(jsonb_agg(to_jsonb(f) order by f.created_at), '[]'::jsonb)
+      from public.keret_fedezetek f
+     where f.company_id = k.ceg_id
+  ),
+
   -- Darabszámok. Nem a JSON kedvéért van benne: ez az, amivel a címzett (és a
   -- kiadó) egy pillantással ellenőrizni tudja, hogy a fájl teljes-e, anélkül
   -- hogy több ezer sort számolna meg kézzel.
@@ -180,7 +203,10 @@ select jsonb_pretty(jsonb_build_object(
       'tulhasznalat', (select count(*) from public.overage_charges x where x.company_id = k.ceg_id),
       'beerkezo_levelek', (select count(*) from public.inbound_emails x where x.company_id = k.ceg_id),
       'naplo', (select count(*) from public.activity_log x where x.company_id = k.ceg_id),
-      'aszf_elfogadasok', (select count(*) from public.terms_acceptances x where x.company_id = k.ceg_id)
+      'aszf_elfogadasok', (select count(*) from public.terms_acceptances x where x.company_id = k.ceg_id),
+      'konyvelo_beallitasok', (select count(*) from public.konyvelo_beallitasok x where x.company_id = k.ceg_id),
+      'iktatoszamok', (select count(*) from public.iktatoszamok x where x.company_id = k.ceg_id),
+      'keret_fedezetek', (select count(*) from public.keret_fedezetek x where x.company_id = k.ceg_id)
     )
   )
 

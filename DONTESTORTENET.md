@@ -5454,3 +5454,51 @@ semmi.
     select heard_from, count(*) as ceg,
            count(*) filter (where stripe_status = 'active') as fizeto
     from public.companies group by 1 order by 2 desc;
+
+## 🧾 Export könyvelőprogramba: RLB, Novitax, Kulcs – béta (2026-09-24)
+
+A tulajdonos összegyűjtötte a hazai könyvelőprogramok gyártói leírásait és
+mintáit (RLB, Novitax, Kulcs, Infotéka, Forint-Soft, WebTax, Makrodigit,
+Armada, Hessyn). **Az első kör: RLB Kettős, Novitax NTAX, Kulcs-Könyvelés**
+– tulajdonosi döntés. Próbaimportra még nincs könyvelő, ezért mindhárom
+**béta**, és kapott egy **Próbafájl** gombot, ami nem jelöl át semmit.
+
+**Ami mindhárom programnál hiányzott belőlünk, és honnan lett:**
+
+- **Irány** (bejövő/kimenő): a kiválasztott ügyfél törzsszámából, ügyfél
+  nélkül a fiókéból. Vevő-adószám nélkül bejövőnek vesszük, figyelmeztetéssel.
+- **Főkönyvi számok**: a könyvelő adja meg (`konyvelo_beallitasok`,
+  ügyfelenként vagy cégszinten). A 454/466/311/467 felkínált, a költség- és
+  az árbevételszámla **üres** – „valami 5-ös" találgatás volna. Első fájl
+  előtt menteni kell.
+- **Egész forint**: fillérben számolunk, soronként kerekítünk; a legfeljebb
+  soronként 1 Ft-os különbözet a legnagyobb sor nettójára kerül.
+- **Belső sorszám** a Novitaxnak (≤10 karakter) és a Kulcsnak
+  (iktatószám): `iktatoszamok` tábla, egyszer adjuk, megmarad, nem adjuk
+  újra. Külön táblában, mert a `documents`-en táblaszintű UPDATE-jog van.
+
+**Amit nem tippelünk, hanem akadály** (a tétel a listán marad, táblázatba
+exportálható): deviza (árfolyamot nem olvasunk ki); fordított adózás (a
+programok ügylettípus szerint kódolják, mi nem tudjuk, melyik); közösségi,
+export, ÁFA-körön kívüli sor; 0%-os sor kategória nélkül; a Kulcsnál sztornó
+és helyesbítő (az eredeti számla számát kéri – nem olvassuk ki); a
+Novitaxnál és a Kulcsnál partner érvényes magyar adószám nélkül (a
+partnerkód a törzsszám).
+
+**Kérdéses pontok, amiket csak a próbaimport dönt el:** a Kulcs kódolása (a
+leírás nem mondja; ANSI-t írunk, mint a másik kettőnél), a Kulcs
+fizetésimód-nevei (a magyar címkéket írjuk), a Novitax 40 mezős sora (a
+leírás 78-at sorol, a minta 40-et – a mintát követjük), és hogy az RLB a
+sztornó negatív összegét elfogadja-e.
+
+**Nem most:** Infotéka XML (XSD van hozzá), egyéni oszloprendes sablon
+(WebTax, Makrodigit), Forint-Soft DBF csak fizető igényre, Armada és Hessyn
+csak gyártói séma után, szállítónként megjegyzett költségfőkönyv, deviza
+MNB-árfolyammal, szállítói cím kiolvasása.
+
+A „Könyvelőknek" oldal őre („nem nevez meg könyvelőprogramot, amíg nincs
+kimérve") **marad** – az első valódi próbaimport oldja fel. Az ÁSZF nem
+változott: az adathordozhatóság formátumai (XLSX, CSV, JSON) a garantáltak,
+a programfájl kényelmi többlet. Az adatkiadás `sema_verzio` 2 lett (új
+szakaszok: `konyvelo_beallitasok`, `iktatoszamok`, és a korábban kimaradt
+`keret_fedezetek`).

@@ -349,11 +349,50 @@ export function Utmutato() {
             nettó/ÁFA/bruttó összeget – érdemes ránézni, mielőtt kimegy.
           </li>
           <li>
+            <strong>Könyvelőprogramba (béta):</strong> RLB Kettős, Novitax NTAX és
+            Kulcs-Könyvelés. A fájl a gyártók közzétett leírása és mintája szerint készül,{' '}
+            <strong>valódi programban még nincs kipróbálva</strong> – ezért van{' '}
+            <strong>Próbafájl</strong> gomb, ami nem jelöli át a tételeket. Előbb egy próbacégbe
+            töltsd be.
+          </li>
+          <li>
             Az <strong>eredeti fájlok</strong> (a PDF-ek és képek) egy gombbal ZIP-ben
             letölthetők. Ez külön művelet az exporttól, és érdemes vele élni: lásd a következő
             figyelmeztetést.
           </li>
         </Lista>
+        <P>
+          <strong>Mi kell a programfájlhoz.</strong> A program egy cég könyvelését kapja, ezért
+          könyvelőirodaként <strong>válaszd ki az ügyfelet</strong>: az ő adószáma dönti el, mi
+          bejövő és mi kimenő. A <strong>főkönyvi számokat</strong> (költség, előzetes ÁFA,
+          szállítók; árbevétel, fizetendő ÁFA, vevők) te adod meg, ügyfelenként vagy egyszer az
+          egész cégre – a SzámlaFolyó nem kontíroz helyetted, minden tétel ezekre a számlákra
+          megy, a programban átkontírozhatod. A Novitaxhoz a napló kódja, a Kulcshoz a saját
+          ÁFA-kulcsaid kódja és neve is kell. Első fájl előtt a beállítást menteni kell.
+        </P>
+        <P>
+          <strong>Ami nem megy programfájlba</strong>, az a listán marad, és a képernyő
+          tételenként megmondja, miért – táblázatba (Excel, CSV) továbbra is exportálható:
+        </P>
+        <Lista>
+          <li>devizás bizonylat (árfolyamot nem olvasunk ki, és nem találunk ki);</li>
+          <li>
+            fordított adózású, közösségi, export- és ÁFA-körön kívüli sor, valamint a 0%-os sor
+            ÁFA-kategória nélkül (mentes vagy nulla kulcsos? – ezt az Ellenőrzésben lehet
+            megadni);
+          </li>
+          <li>ha a nettó és az ÁFA nem adja ki a bruttót, vagy hiányzik a bizonylatszám;</li>
+          <li>átutalásos számla fizetési határidő nélkül;</li>
+          <li>
+            a Novitaxnál és a Kulcsnál a partner érvényes magyar adószám nélkül; a Kulcsnál a
+            sztornó és a helyesbítő számla (az eredeti számla számát kéri).
+          </li>
+        </Lista>
+        <P>
+          A Novitax és a Kulcs a bizonylatot egy <strong>belső sorszámmal</strong> azonosítja
+          (Novitaxban <code>SZF</code> + szám). Ezt az első programfájlnál kapja meg a tétel, és
+          megtartja: ha visszahívod és újra exportálod, ugyanazzal a számmal megy ki.
+        </P>
         <Figyelem>
           <strong>Az export lezárja a tételeket, és elindítja az eredeti fájlok óráját.</strong>{' '}
           Ami kiment, az az Archívumba kerül, és az eredeti PDF-ek a beállított megőrzési idő
@@ -609,6 +648,11 @@ export function Utmutato() {
             allapot="Jóváhagyott tételek"
             mit="XLSX (Office Open XML, ISO/IEC 29500), CSV vagy JSON (RFC 8259)"
             dolog="Az Export képernyőről, bármikor, bármennyiszer, időszakra és ügyfélre szűrve."
+          />
+          <Sor
+            allapot="Jóváhagyott tételek, könyvelőprogramba (béta)"
+            mit="RLB Kettős: pontosvesszős CSV. Novitax NTAX és Kulcs-Könyvelés: ZIP, benne pontosvesszős szövegfájlok. Windows-1250 kódolás."
+            dolog="Az Export képernyőről, a gyártók közzétett leírása szerint. Kényelmi többlet, nem helyettesíti a fenti formátumokat."
           />
           <Sor
             allapot="Eredeti fájlok"
@@ -871,6 +915,9 @@ const ADATKIADAS_SZAKASZOK: readonly (readonly [string, string])[] = [
   ['beerkezo_levelek', 'A beküldő címre érkezett levelek nyilvántartása (a levél szövege nélkül)'],
   ['naplo', 'A teljes tevékenységnapló'],
   ['aszf_elfogadasok', 'Ki, mikor, az ÁSZF melyik változatát fogadta el'],
+  ['konyvelo_beallitasok', 'A könyvelőprogram-export főkönyvi számai és kódjai, cégre és ügyfelekre'],
+  ['iktatoszamok', 'A könyvelőprogramoknak kiadott belső sorszám bizonylatonként'],
+  ['keret_fedezetek', 'Csomagváltások nyoma: a váltásig felhasznált kredit és a régi csomag'],
   ['darabszamok', 'Soronkénti darabszám szakaszonként, a teljesség ellenőrzéséhez'],
 ];
 

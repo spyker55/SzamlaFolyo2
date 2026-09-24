@@ -63,14 +63,14 @@ látszana.
 
 ## A szerkezet
 
-A kimenet **egyetlen JSON objektum**, 14 szakasszal. Minden időbélyeg **UTC**, ISO 8601
+A kimenet **egyetlen JSON objektum**, 17 szakasszal. Minden időbélyeg **UTC**, ISO 8601
 alakban. Az `amount_ft` és az `overage_limit_ft` **forint**, a `cost` **USD**, a `credits`
 **darab**.
 
 | Szakasz | Forrás (tábla) | Mit tartalmaz |
 |---|---|---|
-| `kiadas` | — | A kiadás fejléce: mikor készült, melyik cégről, `sema_verzio` (ma `1`), és ennek a leírásnak a helye |
-| `ceg` | `companies` | A cég törzsadatai és **minden beállítása**: megőrzési idő, automatikus jóváhagyás kapcsolója, túlhasználati plafon, beküldés kapcsolói, az előfizetés Stripe-oldali állapota és a számlázási ciklus |
+| `kiadas` | — | A kiadás fejléce: mikor készült, melyik cégről, `sema_verzio` (ma `2`), és ennek a leírásnak a helye |
+| `ceg` | `companies` | A cég törzsadatai és **minden beállítása**: megőrzési idő, automatikus jóváhagyás kapcsolója, túlhasználati plafon, beküldés kapcsolói, az előfizetés Stripe-oldali állapota és a számlázási ciklus, a „Honnan hallottál rólunk?" válasz (`heard_from`) és az utoljára kiadott iktatószám (`utolso_iktatoszam`) |
 | `tagok` | `company_members` | Ki tagja a cégnek, milyen szerepben (`tulajdonos` / `szerkeszto` / `megtekinto`), mikortól |
 | `meghivok` | `company_invites` | Kiküldött meghívók: cím, szerep, kiküldés, lejárat, elfogadás, visszavonás |
 | `fajlok` | `files` | A feltöltött fájlok **nyilvántartása**: eredeti fájlnév, MIME, méret, `sha256`, oldalszám, `forras_jelleg` (szövegréteg / szkennelt / strukturált XML / hibrid), `source` (feltöltés vagy e-mail), és a `file_deleted_at` — mikor törölte a megőrzési szabály az eredetit |
@@ -82,7 +82,10 @@ alakban. Az `amount_ft` és az `overage_limit_ft` **forint**, a `cost` **USD**, 
 | `beerkezo_levelek` | `inbound_emails` | A beküldő címre érkezett levelek nyilvántartása: feladó, tárgy, eredmény és annak indoka, csatolmányszám. **A levelek törzsét nem tároljuk**, tehát nincs is benne |
 | `naplo` | `activity_log` | A teljes tevékenységnapló: ki, mikor, mit csinált, emberi mondattal és géppel olvasható `context`-tel |
 | `aszf_elfogadasok` | `terms_acceptances` | Ki, mikor, az ÁSZF melyik változatát fogadta el |
-| `darabszamok` | — | Soronkénti darabszám mind a 11 szakaszra, a fájl teljességének ellenőrzéséhez |
+| `konyvelo_beallitasok` | `konyvelo_beallitasok` | A könyvelőprogram-export kontírja: főkönyvi számok, Novitax-napló, Kulcs-ÁFA-kódok; cégszinten (`ugyfel_torzsszam: null`) és ügyfelenként |
+| `iktatoszamok` | `iktatoszamok` | A könyvelőprogramoknak kiadott belső sorszám bizonylatonként (`document_id`, `szam`) |
+| `keret_fedezetek` | `keret_fedezetek` | Csomagváltások nyoma: a váltásig felhasznált kredit és a régi csomag – ebből számol a keret, hogy egy visszaváltás ne ejtse utólag túlhasználatba az elvégzett munkát |
+| `darabszamok` | — | Soronkénti darabszám mind a 14 szakaszra, a fájl teljességének ellenőrzéséhez |
 
 ### Két dolog, ami magyarázat nélkül félrevezetne
 
@@ -111,8 +114,11 @@ tapasztalatot ide visszaírni.
 
 ## Ha a séma változik
 
-A `sema_verzio` a kiadás fejlécében ma `1`. Ha a táblák oszlopai változnak, **a lekérdezés
+A `sema_verzio` a kiadás fejlécében ma `2`. Ha a táblák oszlopai változnak, **a lekérdezés
 és ez a leírás együtt lép tovább**, és a verziószám nő — így a címzett tudja, melyik
 leírás tartozik a kapott fájlhoz. Egy `to_jsonb(sor)` alapú kiadás magától követi az új
 oszlopokat; a leírás viszont nem, és az a rosszabb eset: a fájl teljes lesz, a
 dokumentáció meg hazudik.
+
+**Változások.** `2` (2026-09-24): új szakasz a `konyvelo_beallitasok`, az `iktatoszamok`
+és a `keret_fedezetek`; a `ceg` sorában új a `heard_from` és az `utolso_iktatoszam`.
