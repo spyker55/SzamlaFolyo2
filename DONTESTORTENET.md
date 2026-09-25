@@ -6027,3 +6027,62 @@ Ellenőrizve a buildelt lapon (320, 390, 768, 1024 és 1440 px):
 A bemutatóvideó zárókártyája („Próbáld ki egy ügyfél egy hónapjával.”) a régi
 zárómondatot idézi. Szándékosan nem vettük újra: a videó a folyamatot
 mutatja, a mondat pedig nem valótlan.
+
+### 📝 Használati útmutató: új szöveg, alfejezetek, lenyitható mezőlisták (2026-09-25)
+
+A tulajdonos átírta az útmutatót, három elvvel:
+- a felület nevei maradnak;
+- az ismétlődő magyarázatok összevonva: a beküldési cím titkossága eddig két
+  figyelmeztetésben állt, most egy alfejezet;
+- a technikai leírás külön alfejezetekben.
+
+13 fejezet és 51 alfejezet (h3) lett; a tartalomjegyzék és a sorszámok
+továbbra is egy `FEJEZETEK` listából jönnek.
+
+**Lenyitható mezőlisták.** „Az export mezői” (29 sor) és „A teljes
+adatkiadás szakaszai” (17 sor) `<details>` részbe került:
+- csukva 46 px, nyitva kb. 1200 px (mérve);
+- mindkettő a Data Act 26. cikke szerinti online formátumleírás része, ezért
+  a lapon marad, és a böngésző keresése a csukott részben is talál.
+
+**Hat felületi név nem egyezett a képernyővel.** A szövegfájl, és részben a
+régi útmutató is, rövidített nevet használt. Most a gomb valódi felirata áll:
+
+| Szövegfájl | Felület |
+|---|---|
+| „Próbafájl” | **Próbafájl letöltése** |
+| „Jóváhagyás és következő” | **Jóváhagyás**, és csak ha van még sorban álló bizonylat, **Jóváhagyás és következő** |
+| „letöltsd ZIP-ben” | **Eredeti bizonylatok letöltése (ZIP)** |
+| „visszaküldheted” | **Javításra** (Tételek) |
+| „Hívd vissza” | **Visszahívom** (Archívum) |
+| „bárkitől” | **Bárkitől, aki ismeri a címet** |
+
+Ezen felül nevesítve lett az **Új cím** gomb és a **Fiók törlése** link a
+Beállítások alján.
+
+**Új őr: „az útmutató a felület valódi neveit idézi”.** 16 név mindkét
+helyen:
+- az útmutató szövegében, kommentek nélkül;
+- a képernyő forrásában.
+
+Két irányból rontottuk el:
+- a felületen átnevezett „Visszahívom”: piros;
+- az útmutatóban rövidített „Próbafájl”: **elsőre zöld maradt**, mert a
+  fejkomment idézte a nevet. Ugyanaz a csapda, mint a Könyvelőknek oldal
+  őrénél; az őr azóta a kommentek nélküli szöveget olvassa, és így piros.
+
+**Az adatkiadás-őr is fogott egyet.** Az új állapottábla `['feltoltve', '…']`
+alakú sorai szakasznak látszottak neki. Az állapottábla objektumlista lett,
+az őr nem változott.
+
+A számok a configból jönnek:
+- méret- és mellékletkorlát, próbálkozások, próba, csomagok, plafon;
+- megőrzési napok, ÁSZF-bizonyíték és inaktív fiók;
+- a „3 oldalas = 1, 8 oldalas = 2 dokumentum” példa a `hatar()` és az
+  `oldalakbol()` függvényből.
+
+A mélylinkek (Beállítások → `#keret`, ÁSZF → `#adatformatumok`) élnek, és a
+fejléc alá érkeznek.
+
+Ellenőrizve a buildelt lapon (390 és 1440 px): nincs túllógás, nincs
+JS-hiba, és a tartalomjegyzék mind a 13 célja létezik.

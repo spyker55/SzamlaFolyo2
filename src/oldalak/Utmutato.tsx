@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { JogiOldal, P, Lista, Tablazat } from './jogi/JogiOldal.tsx';
 import { kapcsolatEmail } from '../lib/kornyezet.ts';
 import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
-import { szabaly } from '@uzleti/kredit.ts';
+import { hatar, oldalakbol } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
-import { allapotCimke, szerepCimke, SZEREPEK } from '@uzleti/enumok.ts';
+import { allapotCimke, szerepCimke, SZEREPEK, type DokumentumAllapot, type Szerep } from '@uzleti/enumok.ts';
 import { FEJLECEK, KULCSOK, SZAM_OSZLOPOK } from '@uzleti/export/oszlopok.ts';
 import { KULCS_FAJLOK } from '@uzleti/export/konyvelo/kulcs.ts';
 import { NOVITAX_FAJLOK } from '@uzleti/export/konyvelo/novitax.ts';
@@ -13,444 +13,586 @@ import { NOVITAX_FAJLOK } from '@uzleti/export/konyvelo/novitax.ts';
 /**
  * Használati útmutató.
  *
- * # Kinek szól, és miért nem „dokumentáció"
+ * # Kinek szól
  *
- * A címzett a **könyvelő**, nem a fejlesztő. Ezért a lap nem képernyőről
- * képernyőre halad, hanem **a bizonylat útját követi**: hogyan kerül be, mi
- * történik vele, mit kell megnézni rajta, hogyan megy ki. Aki először ül le a
- * rendszerhez, az ebben a sorrendben találkozik vele.
+ * A címzett a **felhasználó** – vállalkozó vagy könyvelő –, nem a fejlesztő.
+ * A lap **a bizonylat útját követi**: hogyan kerül be, mi történik vele, mit
+ * kell megnézni rajta, hogyan megy ki. Első használatkor elejétől, később a
+ * tartalomjegyzékből.
  *
- * # Három szabály, amihez a szöveg tartja magát
+ * # A 2026-09-25-i átírás
  *
- * 1. **Csak azt írja le, amit a rendszer tud.** Egy útmutató, ami a termék
- *    tervezett állapotát írja le, ugyanaz a hibaosztály, mint egy ígéret, amit
- *    a kód nem tart be — csak itt a felhasználó fedezi fel, munka közben. Ami
- *    ma nincs kész (cégváltó, éves fizetés), arról nem szól.
+ * A tulajdonos szövegei, három szerkesztési elvvel:
  *
- * 2. **A számok a configból jönnek, nem kézből.** A keretek, az árak, a
- *    megőrzési idők és a kredit szabálya ugyanabból a forrásból (
- *    `config/szamlafolyo.ts`, `@uzleti/kredit.ts`), amiből a nyitólap, az ÁSZF
- *    és maga a működés. Egy útmutató, amiben a tavalyi ár áll, rosszabb, mint
- *    ha nem lenne benne ár — az állapotok címkéit ugyanígy az `enumok.ts` adja,
- *    tehát a táblázat nem tud elcsúszni a Beérkező jelvényeitől.
+ * 1. **A felület nevei betű szerint.** Menüpont, kártyacím, gomb: ahogy a
+ *    képernyőn áll. Ahol a szövegfájl rövidített (pl. „Próbafájl"), ott a
+ *    gomb valódi felirata került be („Próbafájl letöltése"); a „Jóváhagyás és
+ *    következő" csak akkor ez, ha van még sorban álló bizonylat.
+ * 2. **Egy magyarázat egyszer.** A beküldési cím titkossága eddig két
+ *    figyelmeztetésben is állt; most egy alfejezet.
+ * 3. **A technikai leírás külön alfejezetben, a mezőlisták lenyitható
+ *    részben** (`Lenyithato`). Az „Az export mezői" és „A teljes adatkiadás
+ *    szakaszai" a Data Act 26. cikke szerinti online formátumleírás része, ezért
+ *    **a lapon marad** – csak nem takarja el a napi használathoz keresett
+ *    lépéseket. (A böngésző oldalon belüli keresése a csukott részben is talál,
+ *    és a Chromium ki is nyitja.)
  *
- * 3. **Nem ismétli meg a jogi szövegeket, hanem rájuk mutat.** Ahol
- *    kötelezettségről vagy adatkezelésről van szó, ott az ÁSZF és az
- *    Adatkezelési tájékoztató a mérvadó; két helyen leírva a kettő
- *    előbb-utóbb széttartana. Az útmutató azt mondja el, **mit csinálj**.
+ * # Szabályok, amihez a szöveg tartja magát
+ *
+ * - **Csak azt írja le, amit a rendszer tud.** Ami ma nincs kész (cégváltó,
+ *   éves fizetés), arról nem szól.
+ * - **A számok a configból jönnek, nem kézből:** keretek, árak, megőrzési
+ *   idők, próbálkozások, mellékletszám, az oldalhatár és a példái. Az állapot-
+ *   és szerepnevek az `enumok.ts`-ből, tehát nem csúszhatnak el a felülettől.
+ * - **A jogi szövegekre mutat, nem ismétli őket.** Ahol kötelezettségről vagy
+ *   adatkezelésről van szó, az ÁSZF és az Adatkezelési tájékoztató a mérvadó.
  *
  * # A keret
  *
- * A lap a jogi oldalak keretét (`JogiOldal`) használja: ugyanaz a ragadós
- * fejléc a visszaúttal, ugyanaz a szélesség, ugyanaz a lábléc. Nem azért, mert
- * jogi szöveg — nem az —, hanem mert ugyanaz a fajta lap: **hosszú, nyilvános,
- * olvasásra való**. Egy negyedik keret csak négyféleképpen tudna elromlani.
- *
- * # 2026. szeptember 20. — a jogi felülvizsgálat nyomai
- *
- * Négy helyen mondott az útmutató mást, mint a rendszer:
- *
- * - **Az „export után már nem" ellentmondás.** A Tételek fejezet azt írta, hogy
- *   export után nincs javítás, az Archívum fejezet meg azt, hogy a tétel
- *   visszahívható. A második az igaz.
- * - **„Ha a bizonylat maga hibás, javítsd a valós értékre."** Ez félrevezető
- *   volt: az alkalmazásban átírt adat a kibocsátott számlát nem helyesbíti. A
- *   szöveg most szétválasztja a kiolvasási hibát és a bizonylat hibáját.
- * - **Az XML és a keret.** A nyitólap „ingyen"-t hirdetett, az útmutató
- *   hallgatott róla. Mérve: a kredit az oldalszámból jön, nem a kiolvasás
- *   módjából — tehát az XML is fogyaszt keretet, csak modellköltsége nincs.
- * - **A könyvelőirodás használat.** Az „aki több cégnek könyvel" mondat marad,
- *   de mellé került, hogy az ügyfélszűrő nem hozzáférési korlát, és hogy ilyen
- *   használatnál az Előfizető maga is adatfeldolgozó.
+ * A lap a jogi oldalak keretét (`JogiOldal`) használja: hosszú, nyilvános,
+ * olvasásra való lap, ugyanaz a fejléc, szélesség és lábléc.
  */
 export function Utmutato() {
+  const h = hatar();
+  const rovid = Math.max(1, h - 2);
+  const hosszu = h + 3;
+
   return (
     <JogiOldal cim="Használati útmutató" datummal={false}>
       <P>
-        A SzámlaFolyó egyetlen dolgot csinál, azt viszont végig: a beérkező
-        bizonylatokból <strong>könyvelésre kész adatot</strong> készít. Te feltöltöd vagy
-        átküldöd a számlát, a rendszer kiolvassa, megjelöli, ami gyanús, te jóváhagyod, és
-        a végén egy táblázatot kapsz, amit a könyvelőprogram be tud olvasni.
+        A SzámlaFolyó segít feldolgozni a számlákat és nyugtákat, hogy kevesebb adatot kelljen
+        kézzel rögzítened. Feltöltöd vagy e-mailben beküldöd a bizonylatokat, a rendszer
+        kiolvassa az adatokat, te ellenőrzöd és jóváhagyod őket, majd elkészíted az exportot.
       </P>
       <P>
-        Ez az útmutató a <strong>bizonylat útját</strong> követi, nem a menüt. Ha most ülsz le
-        először, olvasd végig egyszer – nagyjából tíz perc, és utána minden képernyőn tudni
-        fogod, mit keresel.
+        Ez az útmutató ezen a folyamaton vezet végig. Első használatkor érdemes az elejéről
+        haladnod; később a tartalomjegyzékből közvetlenül a keresett részhez ugorhatsz.
       </P>
 
       <Tartalom />
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="elso-lepesek">
+        <Alcim>Add meg a céged adatait</Alcim>
         <P>
-          <strong>Fiók és cég.</strong> A belépés után a rendszer céget kér: a cég neve és az{' '}
-          <strong>adószáma</strong> kerül a bizonylatok mellé és az exportra. Az adószámot
-          ellenőrizzük: a <strong>törzsszám</strong> (az első nyolc jegy) utolsó
-          számjegye ellenőrző szám, tehát egy elgépelt adószám nem megy át. Ez szándékos
-          szigor: a cégadat egy helyen áll, és onnan mindenhova továbbmegy.
+          Az első belépés után add meg a cég nevét és adószámát. A rendszer ezeket használja a
+          bizonylatok feldolgozásakor és az exportokban, ezért ellenőrizd, hogy pontosan
+          szerepelnek-e.
         </P>
         <P>
-          <strong>Egy fiók egy céget kezel.</strong> Aki több cégnek könyvel, annak nem kell
-          több fiók: a bizonylatok ugyanabba a cégbe kerülnek, az exportot pedig{' '}
-          <strong>ügyfelenként</strong> lehet leválogatni (lásd a {pont('tetelek-export')}. pontot). Cégváltó nincs, és
-          ez nem elmaradás, hanem döntés.
+          A SzámlaFolyó ellenőrzi a magyar adószám első nyolc számjegyének, vagyis a
+          törzsszámnak az ellenőrző számjegyét. Ha hibát jelez, nézd át a megadott adószámot.
         </P>
-        <Figyelem>
-          <strong>Az ügyfélszűrő kényelmi szűrés, nem hozzáférési korlát.</strong> A cégben
-          mindenki a <em>teljes</em> bizonylatállományt látja, a szerepe szerinti jogokkal – nem
-          csak azt az ügyfelet, akivel dolgozik. Ha egy ügyfél iratait el kell különíteni a
-          többitől, ahhoz külön cég (és külön előfizetés) kell. Adatvédelmi oldalról is érdemes
-          tudni: amikor az ügyfeled megbízásából dolgozol, <em>te</em> vagy az ő adatfeldolgozója,
-          és a SzámlaFolyó al-adatfeldolgozó – ehhez az ügyfél felhatalmazása kell. A részletek az{' '}
-          <Link to="/aszf" className="underline">
-            ÁSZF 11. pontjában
-          </Link>{' '}
-          állnak.
-        </Figyelem>
+
+        <Alcim>Ha több ügyfélnek könyvelsz</Alcim>
         <P>
-          <strong>Kollégák meghívása.</strong> A Beállítások → <em>Tagok</em> kártyáján
-          e-mail-címre szól a meghívó; a meghívott a levélben kapott linken nyit fiókot, vagy
-          ha már van neki, azzal lép be. Hogy ki mit tehet, azt a szerepe dönti el – a{' '}
-          {pont('szerepek')}. pontban van a táblázat.
+          Egy felhasználói fiók egy céges munkaterülethez tartozik. Az iroda munkaterületén több
+          ügyfél bizonylatait is feldolgozhatjátok, majd az adatokat ügyfelenként
+          exportálhatjátok. A felületen nincs cégváltás.
         </P>
+        <P>
+          <strong>A munkaterület minden tagja látja az ott kezelt összes ügyfél bizonylatait.</strong>{' '}
+          Az ügyfélszűrő a tételek kiválogatására szolgál, a hozzáférést nem korlátozza.
+        </P>
+        <P>
+          Ha az ügyfelek adatait egymástól elkülönített hozzáféréssel szeretnéd kezelni, külön
+          céges munkaterületre és külön előfizetésre van szükség.
+        </P>
+        <P>
+          Ha az ügyfeled megbízásából, adatfeldolgozóként dolgozol, a SzámlaFolyó bevonásához
+          szükséges ügyfélfelhatalmazásról is gondoskodnod kell. A részleteket az{' '}
+          <JogiLink to="/aszf">ÁSZF 11. pontja</JogiLink> tartalmazza.
+        </P>
+
+        <Alcim>Hívd meg a munkatársaidat</Alcim>
+        <P>
+          A meghívást a <strong>Beállítások → Tagok</strong> résznél indíthatod.
+        </P>
+        <P>
+          Add meg a munkatárs e-mail-címét, és válaszd ki a szerepkörét. A meghívott az
+          e-mailben kapott linken regisztrálhat, vagy beléphet a meglévő fiókjával.
+        </P>
+        <P>A szerepkörök közötti különbségeket a {pont('szerepek')}. fejezetben találod.</P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="bekuldes">
+        <Alcim>Feltöltés a felületen</Alcim>
         <P>
-          <strong>Feltöltéssel.</strong> A Beérkezőben húzd a fájlokat a szaggatott keretre,
-          vagy válaszd ki őket a gombbal. Egyszerre több is mehet.
+          Nyisd meg a <strong>Beérkező</strong> képernyőt. Húzd a fájlokat a szaggatott keretbe,
+          vagy válaszd ki őket a feltöltés gombjával. Egyszerre több fájlt is feltölthetsz.
         </P>
+        <P>
+          <strong>Elfogadott fájltípusok:</strong> PDF, JPG, PNG, WEBP és e-számla XML.
+          <br />
+          <strong>Legnagyobb fájlméret:</strong> fájlonként{' '}
+          {Math.round(szamlafolyo.feltoltes.maxBajt / 1024 / 1024)} MB.
+        </P>
+        <P>
+          A rendszer a fájl tartalmából állapítja meg a típusát, ezért egy hibás
+          fájlkiterjesztés önmagában nem akadályozza meg a feldolgozást.
+        </P>
+
+        <Alcim>E-számlák és XML-fájlok</Alcim>
+        <P>A SzámlaFolyó az alábbi XML-formátumokat ismeri fel közvetlenül:</P>
         <Lista>
-          <li>
-            Elfogadott formátumok: <strong>PDF, JPG, PNG, WEBP</strong> és{' '}
-            <strong>e-számla XML</strong> (UBL, Factur-X/ZUGFeRD, NAV Online Számla és a régebbi
-            APEH-alak). A <strong>hibrid e-számlát</strong> – azt a PDF-et, amibe a kibocsátó az
-            XML-t is beletette (Factur-X, ZUGFeRD) – magától felismerjük, és a beágyazott
-            XML-ből olvassuk ki: neked ugyanúgy egy PDF-et kell feltöltened.
-          </li>
-          <li>
-            ⚠️ <strong>Ha egy XML nem a négy ismert alak valamelyike</strong>, nem utasítjuk el:
-            ugyanúgy feldolgozzuk, mint egy PDF-et – vagyis <strong>a modell olvassa ki</strong>.
-            A keretedbe ugyanannyi, a tartalma viszont így elhagyja a szervert. A
-            részletek az{' '}
-            <Link to="/adatkezeles" className="underline">
-              Adatkezelési tájékoztató 3. pontjában
-            </Link>{' '}
-            állnak.
-          </li>
-          <li>
-            Méret: legfeljebb <strong>{Math.round(szamlafolyo.feltoltes.maxBajt / 1024 / 1024)} MB</strong>{' '}
-            fájlonként.
-          </li>
-          <li>
-            A fájl típusát a <strong>tartalmából</strong> állapítjuk meg, nem a kiterjesztésből
-            – egy rosszul elnevezett fájl is bekerül, ha egyébként jó.
-          </li>
-          <li>
-            <strong>Ugyanaz a fájl kétszer nem kerül be.</strong> Ha egy bizonylat már bent van,
-            az új sor „{allapotCimke('duplikatum')}" jelzéssel áll meg, és egy kattintással
-            eldobható. Kreditbe nem kerül.
-          </li>
+          <li>UBL</li>
+          <li>Factur-X / ZUGFeRD, CII-formátumban</li>
+          <li>NAV Online Számla</li>
+          <li>A régebbi APEH-formátum</li>
         </Lista>
         <P>
-          <strong>E-mailben.</strong> A cégnek saját beküldő címe van a{' '}
+          A PDF-be ágyazott, támogatott XML-t is felismeri. Ilyenkor ugyanúgy a PDF-et kell
+          feltöltened, az adatokat pedig a rendszer a benne található XML-ből veszi át.
+        </P>
+        <P>
+          Ha az XML formátumát nem ismeri fel, a feldolgozást mesterséges intelligencia végzi.
+          Ebben az esetben a dokumentum tartalma külső feldolgozóhoz kerül, a PDF-ekhez és
+          képekhez hasonlóan. Erről az{' '}
+          <JogiLink to="/adatkezeles">Adatkezelési tájékoztató 3. pontjában</JogiLink> olvashatsz.
+        </P>
+
+        <Alcim>Ha ugyanazt a fájlt újra feltöltöd</Alcim>
+        <P>
+          A rendszer felismeri a már beküldött fájlt. Az új sor{' '}
+          <strong>{allapotCimke('duplikatum')}</strong> állapotot kap, és eltávolítható. Ez nem
+          csökkenti a dokumentumkeretedet.
+        </P>
+
+        <Alcim>Beküldés e-mailben</Alcim>
+        <P>
+          Az e-mailes beküldést a <strong>Beállítások → E-mailes beküldés</strong> résznél
+          kapcsolhatod be. Itt másolhatod ki a céged saját,{' '}
           <code className="rounded bg-slate-100 px-1">{szamlafolyo.bekuldes.domain}</code>{' '}
-          tartományon – a Beállítások → <em>E-mailes beküldés</em> kártyán kapcsolható be, és ott
-          is másolható ki. Amit oda küldesz, az úgy kerül a Beérkezőbe, mintha feltöltötted
-          volna.
+          végződésű beküldési címét is.
         </P>
-        <Figyelem>
-          <strong>A beküldő cím titok.</strong> Nincs rajta jelszó: aki ismeri, a ti
-          keretetekből költ. Ne tedd ki weboldalra vagy nyilvános aláírásba. Ha mégis
-          kiszivárgott, a Beállításokban egy gombbal lecserélhető – a régi cím azonnal
-          érvénytelen lesz.
-        </Figyelem>
-        <P>Amit a levelekről tudni érdemes:</P>
+        <P>
+          Az erre a címre küldött, feldolgozható mellékletek a <strong>Beérkező</strong> listába
+          kerülnek.
+        </P>
+        <P>A beküldésnél az alábbiakra figyelj:</P>
         <Lista>
           <li>
-            Alapból <strong>csak a cég tagjaitól</strong> fogadunk levelet (vagyis a saját
-            postafiókodból továbbküldött számla jön át). Ez átállítható „bárkitől"-re, ha azt
-            szeretnéd, hogy a szállítóid közvetlenül ide küldjenek.
+            Alapbeállítás szerint csak a munkaterület tagjainak e-mail-címéről érkező leveleket
+            fogadja a rendszer.
           </li>
           <li>
-            Ha a levélben van PDF vagy XML, a <strong>képekhez hozzá sem nyúlunk</strong> – így
-            az aláírásban ülő céglogóból nem lesz bizonylat.
+            Ha ügyfelektől vagy szállítóktól is szeretnél közvetlenül bizonylatokat fogadni, a
+            feladók beállítását átállíthatod a <strong>„Bárkitől, aki ismeri a címet”</strong>{' '}
+            értékre.
           </li>
           <li>
-            Egy levélből legfeljebb <strong>{szamlafolyo.bekuldes.maxMelleklet}</strong>{' '}
-            mellékletet dolgozunk fel.
+            Ha a levélben PDF- vagy XML-melléklet is van, a képmellékleteket a rendszer kihagyja.
+            Így például az aláírásban szereplő logó nem kerül feldolgozásra.
           </li>
           <li>
-            <strong>A feladó nem kap választ.</strong> Hogy mi lett egy levéllel – átment,
-            vagy miért nem –, azt a Beállítások ugyanezen kártyáján, a lap alján látod.
+            Egy levélből legfeljebb {szamlafolyo.bekuldes.maxMelleklet} mellékletet dolgoz fel.
+          </li>
+          <li>
+            A feladó nem kap automatikus választ a feldolgozás eredményéről. Az elfogadott és
+            elutasított leveleket a <strong>Beállítások → E-mailes beküldés</strong> rész alján
+            követheted.
           </li>
         </Lista>
-        <Figyelem>
-          <strong>A beküldő cím olyan, mint egy kulcs: aki ismeri, a te keretedből költ.</strong>{' '}
-          Ne tedd ki nyilvános helyre, és ne írd bele körlevélbe. Alapesetben csak a cég
-          tagjainak címéről fogadunk el levelet – ez átállítható „bárkitől" állásba, de tudd,
-          hogy a feladómező hamisítható, tehát ez a szűrés a véletlen ellen véd (hírlevél,
-          automata válasz), nem a szándékos visszaélés ellen. Ha a cím kiszivárog, a Beállítások
-          kártyáján <strong>cseréld le</strong> – a régi cím azonnal érvénytelen lesz.
-        </Figyelem>
+
+        <Alcim>A beküldési címet csak az érintettekkel oszd meg</Alcim>
+        <P>
+          Az erre a címre beküldött bizonylatok a te dokumentumkeretedet használják. Ne tedd
+          közzé a címet weboldalon, nyilvános aláírásban vagy körlevélben.
+        </P>
+        <P>
+          A feladó szerinti szűrés a véletlen beküldések kiszűrésében segít, de a feladómező
+          hamisítható. Ezért a cím bizalmas kezelése akkor is fontos, ha csak a tagoktól fogadsz
+          levelet.
+        </P>
+        <P>
+          Ha a cím illetéktelenhez került, cseréld le a Beállításokban az <strong>Új cím</strong>{' '}
+          gombbal. A régi cím azonnal érvénytelenné válik.
+        </P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="beerkezo">
         <P>
-          A feltöltés után a bizonylat sorba áll, és magától végigmegy a feldolgozáson. Nincs
-          „indítás" gomb; a Beérkező listája frissül, ahogy halad. Ami valamelyik állapotban
-          megakad, az ott is marad láthatóan – nem tűnik el csendben.
+          A beküldött fájl feldolgozása automatikusan elindul, külön indítógombot nem kell
+          megnyomnod. A <strong>Beérkező</strong> listában követheted, hol tart a folyamat.
         </P>
-        <Tablazat fejlec={['Állapot', 'Mit jelent', 'Van-e vele dolgod']}>
-          <Sor
-            allapot={allapotCimke('feltoltve')}
-            mit="A fájl megérkezett, a feldolgozásra vár."
-            dolog="Nincs. Percen belül továbblép."
-          />
-          <Sor
-            allapot={allapotCimke('feldolgozas_alatt')}
-            mit="Épp olvassuk ki. Egy PDF jellemzően 5–15 másodperc, egy e-számla XML a töredéke."
-            dolog="Nincs."
-          />
-          <Sor
-            allapot={allapotCimke('ellenorzesre_var')}
-            mit="Kiolvastuk, és rád vár a jóváhagyás."
-            dolog={`Igen – ez a ${pont('ellenorzes')}. pont.`}
-          />
-          <Sor
-            allapot={allapotCimke('hiba')}
-            mit="Három próbálkozás után sem sikerült kiolvasni (sérült fájl, jelszóval védett PDF, üres oldal)."
-            dolog="Nézd meg a fájlt, és töltsd fel újra. Kreditbe nem került."
-          />
-          <Sor
-            allapot={allapotCimke('duplikatum')}
-            mit="Ez a fájl már bent van."
-            dolog="Eldobhatod. Kreditbe nem került."
-          />
-          <Sor
-            allapot={allapotCimke('jovahagyva')}
-            mit="Jóváhagytad; az exportra vár."
-            dolog="A Tételek képernyőn találod."
-          />
-          <Sor
-            allapot={allapotCimke('exportalva')}
-            mit="Kiment egy exportban."
-            dolog="Az Archívumban találod."
-          />
+        <Tablazat fejlec={['Állapot', 'Mit jelent?', 'Mi a teendőd?']}>
+          {ALLAPOT_SOROK.map((s) => (
+            <Sor key={s.allapot} elso={allapotCimke(s.allapot)} mit={s.mit} dolog={s.dolog} />
+          ))}
         </Tablazat>
         <P>
-          <strong>Ha egy fájlban több bizonylat van</strong> – mert egyben szkennelted be a havi
-          paksamétát –, a rendszer megkeresi a határokat, és{' '}
-          <strong>külön bizonylatot csinál mindegyikből</strong>, oldalszám szerint. A fájlt nem
-          vágjuk szét, csak megjegyezzük, melyik bizonylat hol áll benne. A szétszedés maga nem
-          kerül külön kreditbe.
+          Egy PDF kiolvasása jellemzően 5–15 másodpercet vesz igénybe. A felismert
+          XML-formátumok feldolgozása ennél gyorsabb lehet. A sorban állás a teljes várakozási
+          időt növelheti.
+        </P>
+
+        <Alcim>Több bizonylat egy fájlban</Alcim>
+        <P>
+          Ha egy PDF több számlát vagy nyugtát tartalmaz, a rendszer megkeresi a bizonylatok
+          határait, és külön kezeli őket.
+        </P>
+        <P>
+          Az eredeti fájlt nem darabolja fel: azt tartja nyilván, hogy az egyes bizonylatok mely
+          oldalakon találhatók. A különválasztásért nem számol fel további dokumentumegységet.
         </P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="ellenorzes">
         <P>
-          Ez a rendszer szíve. Bal oldalon az eredeti bizonylat, jobb oldalon a kiolvasott
-          adatok. A feladatod nem az, hogy mindent begépelj, hanem hogy{' '}
-          <strong>megnézd, amit megjelöltünk</strong> – azzal a megszorítással, hogy a{' '}
-          <em>jelöletlen</em> mező sem garancia. Azt jelenti, hogy nincs okunk gyanakodni, nem
-          azt, hogy biztosan jó. A végösszeget és a bizonylatszámot érdemes akkor is ránézésre
-          összevetni az eredetivel.
+          Az <strong>Ellenőrzés</strong> képernyő bal oldalán az eredeti bizonylatot, jobb oldalán
+          a kiolvasott adatokat látod.
         </P>
         <P>
-          <strong>A mezők színe azt mondja meg, mennyire bízunk az adatban:</strong>
+          Hasonlítsd össze a mezőket a bizonylattal, és javítsd az esetleges eltéréseket. A
+          jelölések segítenek megtalálni a bizonytalan adatokat, de a jelöletlen mezők között is
+          lehet hiba. A bizonylatszámot, a végösszeget és a neveket is érdemes ellenőrizned.
         </P>
+
+        <Alcim>Mit jelentenek a mezők színei?</Alcim>
+        <Tablazat fejlec={['Jelölés', 'Jelentés', 'Teendő']}>
+          <Sor
+            elso="Jelöletlen mező"
+            mit="A rendszer nem észlelt bizonytalanságot vagy eltérést."
+            dolog="Ellenőrizd az adatot az eredeti bizonylat alapján. A jelölés hiánya nem garantálja a helyességet."
+          />
+          <Sor
+            elso="Sárga mező"
+            mit="A kiolvasott adat bizonytalan."
+            dolog="Vesd össze az eredetivel, és szükség esetén javítsd."
+          />
+          <Sor
+            elso="Piros mező"
+            mit="A kiolvasás erősen bizonytalan, vagy valamelyik ellenőrzés eltérést talált."
+            dolog="Olvasd el a mező alatti magyarázatot, és ellenőrizd az adatot."
+          />
+          <Sor
+            elso="Szürke mező, „nincs adat”"
+            mit="A rendszer nem talált ilyen adatot a bizonylaton."
+            dolog="Nézd meg, hogy valóban hiányzik-e. Ez önmagában nem hiba."
+          />
+        </Tablazat>
+
+        <Alcim>Milyen ellenőrzések futnak?</Alcim>
+        <P>A rendszer többek között összeveti:</P>
         <Lista>
-          <li>
-            <strong>Jelöletlen</strong> – magabiztos kiolvasás, és minden ellenőrzés rendben.
-            Nem azt jelenti, hogy biztosan jó; azt, hogy nincs okunk gyanakodni.
-          </li>
-          <li>
-            <strong>Sárga</strong> – bizonytalan. Vesd össze a papírral.
-          </li>
-          <li>
-            <strong>Piros</strong> – vagy nagyon bizonytalan a kiolvasás, vagy{' '}
-            <strong>megbukott egy ellenőrzés</strong>. A mező alatt ott a mondat, hogy mi a baj.
-          </li>
-          <li>
-            <strong>Szürke, „nincs adat"</strong> – ezt a mezőt nem találtuk a bizonylaton. Ez
-            nem hiba: egy nyugtán nincs vevő adószáma.
-          </li>
+          <li>A nettó, az áfa- és a bruttó összeget.</li>
+          <li>Az áfabontás sorait és a végösszegeket.</li>
+          <li>A magyar adószám ellenőrző számjegyét.</li>
+          <li>A bizonylaton szereplő dátumok egymáshoz való viszonyát.</li>
         </Lista>
         <P>
-          <strong>Az ellenőrzések számtaniak, nem gépi sejtések.</strong> Azt nézik, hogy a
-          bizonylat magával összhangban van-e: kiadja-e a nettó és az ÁFA a bruttót, stimmel-e
-          a tételsorok összege, érvényes-e az adószám ellenőrző számjegye, nem későbbi-e a
-          teljesítés a keltnél. Ha egy ilyen megbukik, az vagy kiolvasási hiba, vagy{' '}
-          <strong>a bizonylaton van eltérés</strong> – és a kettő közül a másodikat is jó időben
-          megtudni. A jelzés <strong>vizsgálandó eltérés, nem ítélet</strong>: a keltnél későbbi
-          teljesítés például teljesen szabályos lehet (időszakos elszámolásnál rendszeres is),
-          csak érdemes ránézni. A jelölés <strong>élő</strong>: ha átírsz egy számot, az ellenőrzés azonnal
-          újrafut a javított értékkel.
+          A jelzés azt mutatja, hogy az adatot érdemes megvizsgálni. Önmagában például a keltnél
+          későbbi teljesítési dátum nem jelenti azt, hogy a bizonylat hibás.
         </P>
-        <Figyelem>
-          <strong>A neveket senki nem tudja ellenőrizni.</strong> Összeget, dátumot, adószámot
-          számtan fog meg; egy szállítónevet semmi. Kézzel írott vagy rosszul szkennelt
-          bizonylatnál ezért a rendszer külön figyelmeztet, és olyankor{' '}
-          <strong>a jelöletlen mezőket is</strong> érdemes végigfutni – különösen a neveket.
-        </Figyelem>
+        <P>Ha módosítasz egy értéket, az ellenőrzések újrafutnak, és a jelölések frissülnek.</P>
+
+        <Alcim>Kézírás, gyenge képminőség és nevek</Alcim>
         <P>
-          <strong>A képernyő tetején az is ott van, ki olvasta ki a bizonylatot</strong> – és ez
-          megváltoztatja, mennyire kell gyanakodnod. Ha a fájlban strukturált e-számla volt (UBL,
-          Factur-X/ZUGFeRD, NAV Online Számla vagy a régebbi APEH-alak), akkor a mezők a
-          szállító rendszerének <strong>kiírt értékei</strong>: átvettük őket, nem olvastuk le
-          semmiről. Minden más esetben – papír, szkennelt kép, és a fel nem ismert alakú XML is –
-          a modell olvasta ki, tehát minden mező olvasat. A különbség a neveknél a legnagyobb:
-          átvett névnél nincs mit félreolvasni, olvasott névnél van. Ugyanez a jelzés ott áll a
-          Beérkező listájában is, a bizonylat sorában; ahol nincs kiírva, ott a bizonylat még nem
-          futott le. A számtani ellenőrzések mindkét úton futnak: egy rosszul kiállított
-          e-számla ugyanúgy megbukik rajtuk.
+          A kézzel írt vagy rosszul szkennelt bizonylatoknál a rendszer külön figyelmeztetést
+          adhat. Ilyenkor a jelöletlen mezőket is nézd át alaposan.
         </P>
         <P>
-          <strong>Az ÁFA-bontás</strong> külön szerkeszthető: kulcsonként a nettó és az ÁFA. Ez
-          megy az exportba kulcsonkénti oszlopokban, tehát itt érdemes rendbe tenni, nem a
-          táblázatban utólag.
+          A szállító vagy a vevő nevét a számtani ellenőrzések nem tudják igazolni, ezért ezeket
+          mindig az eredeti bizonylattal érdemes összevetni.
+        </P>
+
+        <Alcim>Honnan származnak a kiolvasott adatok?</Alcim>
+        <P>
+          A képernyő tetején és a <strong>Beérkező</strong> listában láthatod, hogyan történt a
+          feldolgozás.
         </P>
         <P>
-          A <strong>„Jóváhagyás és következő"</strong> gombbal menet közben nem kell
-          visszakattintanod a listára: a rendszer hozza a sorban következő bizonylatot. A
-          jóváhagyással a bizonylat a <strong>Tételek</strong> közé kerül.
+          <strong>Felismert e-számla esetén</strong> a rendszer közvetlenül az XML-ben tárolt
+          értékeket veszi át.
         </P>
         <P>
-          Amit javítasz, azt <strong>megjegyezzük</strong> (hogy melyik mezőt írtad át, mire).
-          Nem ellenőrzésképpen: ebből derül ki, hol pontatlan a kiolvasás – ez az egyetlen
-          visszajelzés, amiből a rendszer javítható.
+          <strong>Képek, szkennelt dokumentumok és fel nem ismert XML-ek esetén</strong>{' '}
+          mesterséges intelligencia olvassa ki az adatokat, ezért előfordulhat félreolvasás.
+        </P>
+        <P>
+          A számtani ellenőrzések mindkét esetben lefutnak. Ha még nem látszik a feldolgozás
+          módja, a kiolvasás nem fejeződött be.
+        </P>
+
+        <Alcim>Áfabontás javítása</Alcim>
+        <P>
+          Az áfabontásban áfakulcsonként szerkesztheted a nettó és az áfa összegét. Ezek az
+          értékek kerülnek az export megfelelő oszlopaiba, ezért a javításokat még jóváhagyás
+          előtt végezd el.
+        </P>
+
+        <Alcim>Jóváhagyás és továbblépés</Alcim>
+        <P>
+          Ha végeztél, kattints a <strong>Jóváhagyás</strong> gombra. Ha van még ellenőrzésre
+          váró bizonylat, a gomb felirata <strong>„Jóváhagyás és következő”</strong>.
+        </P>
+        <P>
+          A jóváhagyott bizonylat a <strong>Tételek</strong> közé kerül, és a rendszer megnyitja a
+          következő ellenőrzésre váró bizonylatot.
+        </P>
+        <P>
+          A módosításokat a rendszer naplózza: megőrzi, melyik mezőt mire javítottad. Ez a
+          változtatások visszakövetését és a kiolvasás működésének ellenőrzését szolgálja.
         </P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="tetelek-export">
+        <Alcim>A jóváhagyott bizonylatok</Alcim>
         <P>
-          A <strong>Tételek</strong> képernyőn a jóváhagyott, még ki nem exportált bizonylatok
-          állnak. Innen vissza lehet küldeni egyet javításra. Az export sem zárja le véglegesen:
-          egy kiment tétel az Archívumból <strong>visszahívható</strong>, javítható és újra
-          exportálható (lásd a {pont('archivum')}. pontot). Ami az exporttal{' '}
-          <strong>tényleg elindul</strong>, az az eredeti fájl órája – a bizonylat képe a
-          megőrzési idő után nem hívható vissza.
+          A <strong>Tételek</strong> képernyőn a jóváhagyott, még nem exportált bizonylatokat
+          találod. Ha valamelyiken javítani szeretnél, a <strong>Javításra</strong> gombbal
+          visszaküldheted ellenőrzésre.
+        </P>
+
+        <Alcim>Export előtt mentsd el az eredeti fájlokat</Alcim>
+        <P>
+          <strong>Alapbeállítás szerint az eredeti bizonylatfájlok az export után azonnal törlődnek.</strong>
         </P>
         <P>
-          Az <strong>Export</strong> képernyőn választod ki, mi menjen ki. Szűrni lehet
-          beérkezési dátumra, bizonylattípusra és <strong>ügyfélre</strong>. Az ügyfélszűrő az{' '}
-          <strong>adószám törzsszáma</strong> (az első nyolc jegy) szerint dolgozik, tehát akkor
-          is összetartja egy ügyfél bizonylatait, ha a cégnév írásmódja bizonylatonként
-          különbözik – és a kiválasztott ügyfél <strong>bejövő és kimenő</strong> bizonylatait
-          egyaránt hozza.
+          Ha szükséged van rájuk, az export elkészítése előtt töltsd le őket az{' '}
+          <strong>Eredeti bizonylatok letöltése (ZIP)</strong> gombbal. Ez az adatexporttól külön
+          művelet.
+        </P>
+        <P>
+          A <strong>Beállítások → Eredeti fájlok megőrzése</strong> résznél legfeljebb{' '}
+          {szamlafolyo.megorzes.maxNap} napos türelmi időt állíthatsz be. A megőrzési idő letelte
+          után az eredeti fájl nem állítható vissza a kiolvasott adatokból.
+        </P>
+        <P>
+          Ha egy fájl több bizonylatot tartalmaz, a törléshez kapcsolódó megőrzési idő csak akkor
+          indul el, amikor a fájlban szereplő összes bizonylatot exportáltad.
+        </P>
+
+        <Alcim>Válaszd ki az exportálandó tételeket</Alcim>
+        <P>
+          Az <strong>Export</strong> képernyőn az alábbiak szerint szűrhetsz:
         </P>
         <Lista>
+          <li>Beérkezési dátum</li>
+          <li>Bizonylattípus</li>
+          <li>Ügyfél</li>
+        </Lista>
+        <P>
+          Az ügyfélszűrő az adószám első nyolc számjegye alapján azonosítja az ügyfelet, így az
+          eltérő névírás nem választja külön a bizonylatait. A szűrés az ügyfél bejövő és kimenő
+          bizonylatait is megjeleníti.
+        </P>
+        <P>
+          Export előtt ellenőrizd a kiválasztott tételek számát és a pénznemenként összesített
+          nettó, áfa- és bruttó összegeket.
+        </P>
+
+        <Alcim>Export táblázatba vagy JSON-fájlba</Alcim>
+        <P>Az adatokat az alábbi formátumokban töltheted le:</P>
+        <Lista>
           <li>
-            Formátum: <strong>xlsx</strong> (Excel), <strong>csv</strong> vagy{' '}
-            <strong>json</strong>. A pénzoszlopok számként, az Excel saját nyelvi beállítása
-            szerinti formátumban – a dátumok szándékosan szöveges ISO alakban (
-            <code className="rounded bg-slate-100 px-1">2026-09-20</code>), mert azt semmilyen
-            táblázatkezelő nem írja át.
+            <strong>XLSX:</strong> Excelben és más táblázatkezelőkben használható fájl.
           </li>
           <li>
-            Export előtt látod, <strong>hány tétel</strong> kerül bele, és pénznemenként a
-            nettó/ÁFA/bruttó összeget – érdemes ránézni, mielőtt kimegy.
+            <strong>CSV:</strong> más rendszerekbe is átadható, szöveges táblázat.
           </li>
           <li>
-            <strong>Könyvelőprogramba:</strong> RLB Kettős, Novitax NTAX és Kulcs-Könyvelés.
-            Mindháromhoz van <strong>Próbafájl</strong> gomb, ami nem jelöli át a tételeket – új
-            beállításnál érdemes azzal kezdeni.
-          </li>
-          <li>
-            A Novitax és a Kulcs <strong>ZIP-et</strong> kap, mert több fájlt olvas egy mappából:
-            bontsd ki egy saját mappába, és a számlafájlt válaszd ki (Novitaxnál a{' '}
-            <code>{NOVITAX_FAJLOK.szamla}</code>, Kulcsnál a <code>{KULCS_FAJLOK.fej}</code>) – a
-            többi maradjon mellette. A lépéseket az Export képernyő programonként mutatja.
-          </li>
-          <li>
-            A programfájlt <strong>közvetlenül</strong> töltsd be, ahogy letöltötted. Ha
-            Excelben, Google Táblázatban vagy a Google Drive-on megnyitod és újramented (vagy
-            onnan töltöd le), az átírja az elválasztót és az ékezetek kódolását, és a program{' '}
-            „a mezőelválasztások vagy adatok hibásak” hibával elutasítja.
-          </li>
-          <li>
-            Az <strong>eredeti fájlok</strong> (a PDF-ek és képek) egy gombbal ZIP-ben
-            letölthetők. Ez külön művelet az exporttól, és érdemes vele élni: lásd a következő
-            figyelmeztetést.
+            <strong>JSON:</strong> további gépi feldolgozáshoz használható adatformátum.
           </li>
         </Lista>
         <P>
-          <strong>Mi kell a programfájlhoz.</strong> A program egy cég könyvelését kapja, ezért
-          könyvelőirodaként <strong>válaszd ki az ügyfelet</strong>: az ő adószáma dönti el, mi
-          bejövő és mi kimenő. A <strong>főkönyvi számokat</strong> (költség, előzetes ÁFA,
-          szállítók; árbevétel, fizetendő ÁFA, vevők) te adod meg, ügyfelenként vagy egyszer az
-          egész cégre – a SzámlaFolyó nem kontíroz helyetted, minden tétel ezekre a számlákra
-          megy, a programban átkontírozhatod. A Novitaxhoz a napló kódja kell; a Kulcshoz az
-          ÁFA-kulcsok „Kód”-ja, amit a Kulcs alaptáblájából előre kitöltünk. A Kulcs az új
-          partnert és a pénztárat első alkalommal egyszer párosíttatja – pipával, végigvitt
-          feladással megjegyzi. Első fájl előtt a beállítást menteni kell.
+          Az XLSX-fájlban a pénzösszegek számként szerepelnek. A dátumok <code>ÉÉÉÉ-HH-NN</code>{' '}
+          formátumú szövegként kerülnek az exportba, például: <code>2026-09-20</code>.
         </P>
-        <P>
-          <strong>Ami nem megy programfájlba</strong>, az a listán marad, és a képernyő
-          tételenként megmondja, miért – táblázatba (Excel, CSV) továbbra is exportálható:
-        </P>
+
+        <Alcim>Export könyvelőprogramba</Alcim>
+        <P>A SzámlaFolyó az alábbi programokhoz készít exportot:</P>
         <Lista>
-          <li>devizás bizonylat (árfolyamot nem olvasunk ki, és nem találunk ki);</li>
+          <li>RLB Kettős</li>
+          <li>Novitax NTAX</li>
+          <li>Kulcs-Könyvelés</li>
+        </Lista>
+        <P>
+          Első használatkor kezdd a <strong>Próbafájl letöltése</strong> gombbal. Ezzel
+          ellenőrizheted az importálást anélkül, hogy a tételek exportált állapotba kerülnének.
+        </P>
+
+        <Alcim>Könyvelőprogram-export beállítása</Alcim>
+        <P>
+          Könyvelőirodaként először válaszd ki az ügyfelet. A rendszer az ő adószáma alapján
+          határozza meg, mely bizonylatok bejövők és melyek kimenők.
+        </P>
+        <P>Ezután add meg a szükséges beállításokat:</P>
+        <Lista>
+          <li>A költség, az előzetes áfa és a szállítók főkönyvi számait.</li>
+          <li>Az árbevétel, a fizetendő áfa és a vevők főkönyvi számait.</li>
+          <li>Novitax esetén a naplókódot.</li>
           <li>
-            fordított adózású, közösségi, export- és ÁFA-körön kívüli sor, valamint a 0%-os sor
-            ÁFA-kategória nélkül (mentes vagy nulla kulcsos? – ezt az Ellenőrzésben lehet
-            megadni);
-          </li>
-          <li>ha a nettó és az ÁFA nem adja ki a bruttót, vagy hiányzik a bizonylatszám;</li>
-          <li>átutalásos számla fizetési határidő nélkül;</li>
-          <li>
-            a Novitaxnál és a Kulcsnál a partner érvényes magyar adószám nélkül; a Kulcsnál a
-            sztornó és a helyesbítő számla (az eredeti számla számát kéri).
+            Kulcs-Könyvelés esetén az áfakulcsokhoz tartozó kódokat. Ezeket a rendszer a Kulcs
+            alaptáblája alapján előre kitölti.
           </li>
         </Lista>
         <P>
-          A Novitax és a Kulcs a bizonylatot egy <strong>belső sorszámmal</strong> azonosítja
-          (Novitaxban <code>SZF</code> + szám). Ezt az első programfájlnál kapja meg a tétel, és
-          megtartja: ha visszahívod és újra exportálod, ugyanazzal a számmal megy ki.
+          A főkönyvi számokat az egész munkaterületre vagy ügyfelenként is megadhatod.{' '}
+          <strong>Az első programfájl elkészítése előtt mentsd el a beállításokat.</strong>
         </P>
-        <Figyelem>
-          <strong>Az export lezárja a tételeket, és elindítja az eredeti fájlok óráját.</strong>{' '}
-          Ami kiment, az az Archívumba kerül, és az eredeti PDF-ek a beállított megőrzési idő
-          (alapból <strong>0 nap</strong>, vagyis azonnal) után törlődnek a szerverről. Az{' '}
-          <strong>adatok megmaradnak</strong>, a bizonylat képe viszont nem hívható vissza. A
-          megőrzési kötelezettség a tiéd – ha kell a papír képe, <strong>töltsd le a ZIP-et az
-          export előtt</strong>, mert 0 napos megőrzésnél az export után már nincs mit letölteni.
-          Ha egy fájlban több bizonylat volt, az óra csak akkor indul, amikor{' '}
-          <strong>mindegyik</strong> kiment: egy részleges export nem viszi el a még
-          feldolgozatlan számlák forrását.
-        </Figyelem>
+        <P>
+          A SzámlaFolyó a megadott főkönyvi számokat használja az exportban; nem végez önálló
+          kontírozást. A szükséges módosításokat a könyvelőprogramban végezheted el.
+        </P>
+        <P>
+          A Kulcs-Könyvelésben az új partnereket és a pénztárat első alkalommal párosítani kell.
+          A kijelölést és a feladást végigvezetve a program megjegyzi a párosítást.
+        </P>
+
+        <Alcim>A letöltött fájl betöltése</Alcim>
+        <P>
+          Az <strong>RLB Kettős</strong> exportját közvetlenül töltsd be a programba.
+        </P>
+        <P>
+          A <strong>Novitax NTAX</strong> és a <strong>Kulcs-Könyvelés</strong> exportja
+          ZIP-csomagban érkezik:
+        </P>
+        <ol className="ml-5 list-decimal space-y-2 text-sm leading-relaxed text-slate-700">
+          <li>Bontsd ki a csomagot egy külön mappába.</li>
+          <li>Hagyd együtt a benne található fájlokat.</li>
+          <li>
+            Novitax esetén a <code>{NOVITAX_FAJLOK.szamla}</code>, Kulcs-Könyvelés esetén a{' '}
+            <code>{KULCS_FAJLOK.fej}</code> fájlt válaszd ki az importáláshoz.
+          </li>
+        </ol>
+        <P>
+          Az <strong>Export</strong> képernyő programonként is megmutatja a lépéseket.
+        </P>
+        <P>
+          <strong>A könyvelőprogramhoz készült fájlt ne mentsd újra táblázatkezelőben.</strong> Az
+          Excel vagy a Google Táblázatok megváltoztathatja a fájl elválasztóit és
+          karakterkódolását, ami importálási hibát okozhat. Az eredetileg letöltött fájlt
+          használd.
+        </P>
+
+        <Alcim>Mely tételek maradhatnak ki a könyvelőprogram-exportból?</Alcim>
+        <P>
+          A könyvelőprogramokhoz készített export feltételei szűkebbek a táblázatos exporténál. A
+          kimaradó tételek a listán maradnak, és a képernyő mindegyiknél megmutatja az okot.
+        </P>
+        <P>Nem kerülnek programfájlba:</P>
+        <Lista>
+          <li>A devizás bizonylatok, mert a rendszer nem olvas ki árfolyamot.</li>
+          <li>
+            A fordított adózású, közösségi, export- és áfakörön kívüli sorokat tartalmazó
+            bizonylatok.
+          </li>
+          <li>
+            Azok a bizonylatok, amelyeknél a 0%-os sor áfakategóriája nincs megadva. Ezt az{' '}
+            <strong>Ellenőrzés</strong> képernyőn pótolhatod.
+          </li>
+          <li>
+            Azok a tételek, amelyeknél a nettó és az áfa összege nem egyezik a bruttóval, vagy
+            hiányzik a bizonylatszám.
+          </li>
+          <li>A fizetési határidő nélküli átutalásos számlák.</li>
+          <li>
+            Novitax és Kulcs-Könyvelés esetén az érvényes magyar partneradószám nélküli
+            bizonylatok.
+          </li>
+          <li>
+            Kulcs-Könyvelés esetén a sztornó- és helyesbítő számlák, mert ezekhez a program az
+            eredeti számla számát is kéri.
+          </li>
+        </Lista>
+        <P>Ezek a tételek Excel- vagy CSV-fájlba továbbra is exportálhatók.</P>
+
+        <Alcim>Belső sorszámok</Alcim>
+        <P>
+          A Novitax és a Kulcs számára készített exportban a bizonylatok belső sorszámot kapnak. A
+          Novitaxban ez <code>SZF</code> előtaggal jelenik meg.
+        </P>
+        <P>
+          A tétel az első programfájl elkészítésekor kapja meg ezt az azonosítót, és későbbi
+          javítás vagy újraexportálás esetén is megtartja.
+        </P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="archivum">
         <P>
-          Ami kiment, az itt áll. Az export fájl{' '}
-          <strong>{szamlafolyo.megorzes.exportNap} napig</strong> újra letölthető; utána a fájl
-          törlődik, de <strong>a tételek megmaradnak</strong> – a Tételekből bármikor
-          készíthető új export ugyanazokról.
+          Az <strong>Archívumban</strong> találod az elkészült exportokat.
         </P>
         <P>
-          Egy tétel <strong>visszahívható</strong> az exportból a Tételek közé: ha kiderül, hogy
-          rossz adat ment ki, nem kell mellé magyarázat, hanem javítható és újra exportálható.
-          Az export sora ilyenkor megmutatja, hogy az eredeti darabszámból hány tétel van még
-          benne.
+          Az exportfájlt az elkészítésétől számított {szamlafolyo.megorzes.exportNap} napig
+          töltheted le újra. Ezután a fájl törlődik, de a hozzá tartozó tételek megmaradnak.
+        </P>
+
+        <Alcim>Ha javítani szeretnél egy exportált tételt</Alcim>
+        <ol className="ml-5 list-decimal space-y-2 text-sm leading-relaxed text-slate-700">
+          <li>
+            Keresd meg a tételt az <strong>Archívumban</strong>.
+          </li>
+          <li>
+            A <strong>Visszahívom</strong> gombbal hívd vissza a <strong>Tételek</strong> közé.
+          </li>
+          <li>
+            A <strong>Javításra</strong> gombbal küldd vissza ellenőrzésre, és javítsd az adatokat.
+          </li>
+          <li>Hagyd jóvá, majd exportáld újra.</li>
+        </ol>
+        <P>Az eredeti export mellett látható marad, hány tétel tartozik még hozzá.</P>
+        <P>
+          Ha a korábbi exportot már betöltötted a könyvelőprogramba, ott is ellenőrizd a javítás
+          kezelését. Egy új exportfájl elkészítése önmagában nem módosítja a könyvelőprogramban
+          szereplő adatokat.
+        </P>
+        <P>
+          <strong>
+            Az Archívum a korábbi exportok nyilvántartása. Az eredeti bizonylatok hosszú távú
+            megőrzéséről külön kell gondoskodnod.
+          </strong>
         </P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="keret">
+        <Alcim>Mi számít egy dokumentumnak?</Alcim>
+        <P>A dokumentumkeret felhasználását bizonylatonként számoljuk:</P>
+        <Lista>
+          <li>Az első {h} oldal egy dokumentum.</li>
+          <li>Minden további megkezdett {h} oldal újabb dokumentum.</li>
+          <li>A feldolgozott e-számla XML is beleszámít a keretbe.</li>
+          <li>
+            Ha egy fájl több bizonylatot tartalmaz, mindegyiket külön számoljuk, az oldalszámát is
+            figyelembe véve.
+          </li>
+        </Lista>
         <P>
-          <strong>A mértékegység a bizonylat, nem a fájl.</strong> {szabaly()} Ez az{' '}
-          <strong>e-számla XML-re is vonatkozik</strong>: azt ugyan gép olvassa ki, modellhívás
-          nélkül és másodperc alatt, de a havi keretedbe ugyanúgy beleszámít, mint bármelyik
-          másik bizonylat. Vagyis egy normál,
-          egy-három oldalas számla mindig egy dokumentum; egy hosszú köteg annyi, ahány bizonylat
-          van benne. Amiért <strong>nem</strong> számolunk fel semmit: a köteg szétszedése, a
-          duplikátum, és az a bizonylat, amit nem sikerült kiolvasni.
+          Például egy {rovid} oldalas számla {oldalakbol(rovid)} dokumentum, egy {hosszu} oldalas
+          számla {oldalakbol(hosszu)} dokumentum. Egy PDF-be összefűzött tíz egyoldalas számla 10
+          dokumentum.
+        </P>
+        <P>Nem csökkenti a keretedet:</P>
+        <Lista>
+          <li>A bizonylatok különválasztása.</li>
+          <li>A duplikátumként felismert fájl.</li>
+          <li>A sikertelenül kiolvasott bizonylat.</li>
+        </Lista>
+
+        <Alcim>Ingyenes próba</Alcim>
+        <P>
+          A próba{' '}
+          <strong>
+            {szamlafolyo.proba.napok} napig vagy {szamlafolyo.proba.dokumentumok} dokumentum
+            feldolgozásáig
+          </strong>{' '}
+          tart, attól függően, melyiket éred el előbb.
         </P>
         <P>
-          <strong>A próbaidő {szamlafolyo.proba.napok} nap vagy{' '}
-          {szamlafolyo.proba.dokumentumok} dokumentum</strong> – amelyik előbb elfogy –,{' '}
-          {szamlafolyo.proba.felhasznalok} felhasználóval, bankkártya nélkül.
+          A próba alatt {szamlafolyo.proba.felhasznalok} felhasználó dolgozhat együtt.
+          Bankkártyaadatok megadására nincs szükség.
         </P>
-        <Tablazat fejlec={['Csomag', 'Dokumentum / hó', 'Felhasználó', 'Havi díj', 'Keret fölött']}>
+
+        <Alcim>Előfizetési csomagok</Alcim>
+        <Tablazat
+          fejlec={['Csomag', 'Dokumentum havonta', 'Felhasználók', 'Havidíj', 'Kereten felüli feldolgozás']}
+        >
           {csomagSorrend.map((kulcs) => {
             const cs = szamlafolyo.csomagok[kulcs];
 
@@ -458,334 +600,480 @@ export function Utmutato() {
               <tr key={kulcs} className="trow">
                 <td className="td font-medium text-slate-900">{cs.nev}</td>
                 <td className="td">{cs.dokumentumok}</td>
-                <td className="td">{cs.felhasznalok ?? 'korlátlan'}</td>
-                <td className="td">{formaz(cs.arHavi)} Ft</td>
-                <td className="td">{cs.extraFt} Ft / dokumentum</td>
+                <td className="td">{cs.felhasznalok ?? 'Korlátlan'}</td>
+                <td className="td whitespace-nowrap">{formaz(cs.arHavi, 'Ft')}</td>
+                <td className="td whitespace-nowrap">{formaz(cs.extraFt, 'Ft')} / dokumentum</td>
               </tr>
             );
           })}
         </Tablazat>
         <P>
-          <strong>A keret fölött alapból megállunk.</strong> Váratlan számlát senki ne kapjon
-          attól, hogy egy hónapban többet dolgozott. Ha mégis azt szeretnéd, hogy a hónap vége
-          ne álljon meg, a Beállításokban bekapcsolható a túlhasználat – és{' '}
-          <strong>akkor is van felső határa</strong>: egy forintban megadott plafon (alapértéke{' '}
-          {formaz(szamlafolyo.tulhasznalat.alapPlafonFt)} Ft), ami fölött ugyanúgy megállunk. A
-          keret fölötti dokumentumok a <strong>következő havi számlán</strong> szerepelnek külön
-          tételként.
+          Az árak a fizetendő végösszegek. A szolgáltató alanyi adómentes, ezért további áfa nem
+          kerül rájuk.
         </P>
         <P>
-          <strong>A csomagváltás, a lemondás és a bankkártya cseréje</strong> a Beállítások →{' '}
-          <em>Előfizetés</em> kártyájáról indul, a <em>Számlázási portál</em> gombbal. Az a gomb
-          a Stripe oldalára visz: a bankkártyaadat és a számlatörténet ott van, nem nálunk.
+          A keret havonta újul meg. A fel nem használt mennyiség nem vihető át a következő
+          időszakra.
+        </P>
+
+        <Alcim>Mi történik, ha elfogy a kereted?</Alcim>
+        <P>
+          Alapbeállítás szerint a feldolgozás megáll, és a beküldött bizonylatok megvárják a
+          következő időszakot.
         </P>
         <P>
-          A Stripe lapján a csomagváltás az <strong>„Előfizetés frissítése"</strong> gomb mögött
-          van – ott lehet másik csomagot választani. Ugyanezen a lapon áll a lemondás, a
-          bankkártya cseréje és a korábbi <strong>fizetési bizonylatok</strong> letöltése. Amit
-          ott módosítasz, az pár másodpercen belül a Beállításokon is látszik.
-        </P>
-        <Figyelem>
-          <strong>A Stripe-nál letölthető bizonylat nem a számlád.</strong> Az a fizetési
-          szolgáltató saját dokumentuma a tranzakcióról. A <em>számlát</em> mi állítjuk ki, magyar
-          számlázóprogrammal, és e-mailben küldjük a megadott címedre – azt tedd a könyvelésbe,
-          ne a Stripe-ét.
-        </Figyelem>
-        <P>
-          <strong>A csomagváltás nem indítja újra a számlázási ciklust</strong>, és nem terhelünk
-          érte azonnal semmit: a fordulónap marad, ahol volt, és külön számlát sem kapsz róla. A{' '}
-          <strong>keret viszont azonnal változik</strong> – nagyobb csomagra váltva rögtön több,
-          kisebbre váltva rögtön kevesebb.
+          Ha folytatni szeretnéd a feldolgozást, nagyobb csomagra válthatsz, vagy aktív
+          előfizetés mellett bekapcsolhatod a <strong>Túlhasználat</strong> lehetőséget a
+          Beállításokban.
         </P>
         <P>
-          A pénzt a <strong>következő havi számla</strong> rendezi, napra arányosan, és{' '}
-          <strong>mindkét irányban</strong>. Nagyobb csomagra váltva a hátralévő napok
-          különbözete külön soron jelenik meg rajta; kisebbre váltva a már kifizetett, de fel nem
-          használt rész <strong>jóváírásként jön vissza</strong> – szintén külön soron. Minden
-          váltás a saját napjától számít: aki nagyobbra vált, majd vissza, annak a nagyobb
-          csomagban töltött napok díjkülönbözete megmarad.
+          A kereten felüli feldolgozáshoz forintban költési korlátot is megadsz. Ennek alapértéke{' '}
+          <strong className="whitespace-nowrap">
+            {formaz(szamlafolyo.tulhasznalat.alapPlafonFt, 'Ft')}
+          </strong>
+          . A korlát elérésekor a feldolgozás ismét megáll.
         </P>
-        <Figyelem>
-          <strong>Kisebb csomagra váltva a keret azonnal szűkül.</strong> Ha a hónapban addigra
-          már több bizonylatot dolgoztál fel, mint amennyi az új csomagba fér, a váltás
-          pillanatában kereten kívülre kerülsz – onnantól a következő fordulónapig várnak a
-          bizonylatok, hacsak be nem kapcsolod a túlhasználatot. A váltás{' '}
-          <strong>előtt</strong> feldolgozott bizonylatokért viszont utólag nem számolunk fel
-          túlhasználatot: azok a régi csomag keretéig fedezve maradnak. A különbözet a következő
-          számlán jóváíródik – ⚠️ de ha közben az előfizetést le is mondod, a fel nem használt
-          jóváírás nem jár vissza.
-        </Figyelem>
         <P>
-          A lemondás a <strong>kifizetett időszak végéig</strong> hagyja használni a rendszert, és
-          a fordulónapig <strong>visszavonható</strong> – szintén a portálon. Amíg a lemondás él,
-          a Beállítások kiírja, meddig fut még az előfizetés.
+          A kereten felüli dokumentumok díja a következő havi számlán, külön tételként jelenik meg.
         </P>
+
+        <Alcim>Előfizetés kezelése</Alcim>
+        <P>
+          Nyisd meg a <strong>Beállítások → Előfizetés</strong> részt, majd kattints a{' '}
+          <strong>Számlázási portál</strong> gombra.
+        </P>
+        <P>A megnyíló Stripe-felületen:</P>
+        <Lista>
+          <li>
+            Az <strong>„Előfizetés frissítése”</strong> gombbal csomagot válthatsz.
+          </li>
+          <li>Lemondhatod az előfizetést.</li>
+          <li>Módosíthatod a bankkártyádat.</li>
+          <li>Letöltheted a korábbi fizetési bizonylatokat.</li>
+        </Lista>
+        <P>
+          A módosítások rövid időn belül a SzámlaFolyó Beállítások képernyőjén is megjelennek.
+        </P>
+
+        <Alcim>Hol találod a számládat?</Alcim>
+        <P>
+          A szolgáltatásról kiállított számlát e-mailben küldjük a megadott címedre. A
+          könyveléshez ezt használd.
+        </P>
+        <P>
+          A Stripe portálján letölthető fizetési bizonylat a tranzakcióról szól; nem helyettesíti
+          az általunk kiállított számlát.
+        </P>
+
+        <Alcim>Mi történik csomagváltáskor?</Alcim>
+        <P>
+          A csomagváltás nem indít új számlázási időszakot, és nem jár azonnali terheléssel. A
+          fordulónap változatlan marad.
+        </P>
+        <P>A dokumentumkeret viszont azonnal az új csomaghoz igazodik.</P>
+        <P>A díjkülönbözetet a következő havi számlán, napra arányosan számoljuk el:</P>
+        <Lista>
+          <li>
+            Nagyobb csomagnál a hátralévő időszak díjkülönbözete külön tételként jelenik meg.
+          </li>
+          <li>Kisebb csomagnál az időarányos különbözet jóváírásként szerepel.</li>
+          <li>
+            Ha egy időszakon belül többször váltasz, minden csomag díja a benne töltött idő
+            alapján számít.
+          </li>
+        </Lista>
+
+        <Alcim>Kisebb csomagra váltás</Alcim>
+        <P>
+          A kisebb dokumentumkeret azonnal életbe lép. Ha az adott időszakban már ennél többet
+          dolgoztál fel, a további feldolgozás megáll, kivéve, ha engedélyezed a kereten felüli
+          használatot.
+        </P>
+        <P>
+          A váltás előtt, a korábbi csomag keretéből feldolgozott dokumentumokra utólag nem
+          számítunk fel többletdíjat.
+        </P>
+        <P>
+          Ha a csomagváltás után az előfizetést is lemondod, a fel nem használt jóváírást nem
+          térítjük vissza.
+        </P>
+
+        <Alcim>Előfizetés lemondása</Alcim>
+        <P>
+          Lemondás után a kifizetett időszak végéig használhatod a szolgáltatást. A
+          Beállításokban láthatod, meddig aktív az előfizetésed.
+        </P>
+        <P>A lemondást a fordulónapig visszavonhatod a számlázási portálon.</P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="beallitasok">
-        <Tablazat fejlec={['Kártya', 'Mit állít', 'Alapérték']}>
+        <P>Első használatkor érdemes áttekintened az alábbi beállításokat.</P>
+        <Tablazat fejlec={['Beállítás', 'Mire szolgál?', 'Alapbeállítás']}>
+          <Sor elso="A cég" mit="A cégnév és az adószám kezelése." dolog="A létrehozáskor megadott adatok." />
           <Sor
-            allapot="A cég"
-            mit="Cégnév és adószám – ez szerepel az exporton."
-            dolog="A regisztrációkor megadott adat."
-          />
-          <Sor
-            allapot="E-mailes beküldés"
-            mit="A cég beküldő címe, és hogy kitől fogadunk rá levelet."
+            elso="E-mailes beküldés"
+            mit="A beküldési cím és az engedélyezett feladók kezelése."
             dolog="Kikapcsolva."
           />
           <Sor
-            allapot="Automatikus jóváhagyás"
-            mit="Bekapcsolva az a bizonylat, amelyik minden ellenőrzésen átment, ember nélkül is továbbmehet a Tételekbe."
-            dolog="Kikapcsolva – minden bizonylat rád vár."
+            elso="Automatikus jóváhagyás"
+            mit="A feltételeknek megfelelő bizonylatok emberi jóváhagyás nélkül kerülhetnek a Tételek közé."
+            dolog="Kikapcsolva."
           />
           <Sor
-            allapot="Eredeti fájlok megőrzése"
-            mit={`Hány napig maradjon meg az eredeti PDF az export után (0–${szamlafolyo.megorzes.maxNap} nap).`}
-            dolog="0 nap – az export után azonnal törlődik."
+            elso="Eredeti fájlok megőrzése"
+            mit={`Az export utáni megőrzési idő beállítása 0–${szamlafolyo.megorzes.maxNap} nap között.`}
+            dolog="0 nap, vagyis azonnali törlés az export után."
           />
           <Sor
-            allapot="Túlhasználat"
-            mit="Megálljon-e a rendszer a havi keretnél, és ha nem, milyen forintösszegig."
-            dolog="Kikapcsolva (előfizetés nélkül nem is kapcsolható be)."
+            elso="Túlhasználat"
+            mit="A kereten felüli feldolgozás engedélyezése és költési korlátja."
+            dolog="Kikapcsolva. Csak aktív előfizetéssel kapcsolható be."
           />
           <Sor
-            allapot="Tagok"
-            mit="Meghívás, szerepek, eltávolítás."
-            dolog="Te vagy a tulajdonos."
+            elso="Tagok"
+            mit="Munkatársak meghívása, szerepkörök módosítása és tagok eltávolítása."
+            dolog="A cég létrehozója a tulajdonos."
           />
-          <Sor
-            allapot="Előfizetés"
-            mit="Csomagválasztás, számlázási portál, számlák."
-            dolog="Próbaidő."
-          />
+          <Sor elso="Előfizetés" mit="Csomagválasztás és a számlázási portál megnyitása." dolog="Próbaidő." />
         </Tablazat>
-        <P>
-          Az <strong>automatikus jóváhagyásról</strong> érdemes tudni, mit vállalsz vele, mert
-          alapból ki van kapcsolva, és ezt a nyilvános szövegeink is így ígérik. Ha
-          bekapcsolod: a cég első{' '}
-          <strong>{szamlafolyo.automatikusJovahagyas.bemelegitesDarab} bizonylata akkor is
-          hozzád kerül</strong> (a rendszernek előbb meg kell ismernie a cég szokásait), és utána
-          is minden{' '}
-          <strong>{szamlafolyo.automatikusJovahagyas.mintavetelMinden}.</strong> automatikusan
-          jóváhagyható bizonylatot elédteszünk – hogy legyen mihez mérni. Az így átment bizonylat{' '}
-          <strong>jelvényt kap az indokkal együtt</strong>, és az exportig visszahívható. Soha nem
-          írjuk rá, hogy „ellenőrizve", ha senki nem nézte meg.
-        </P>
-      </Fejezet>
 
-      <Fejezet id="szerepek">
-        <Tablazat fejlec={['Szerep', 'Mit tehet']}>
-          {SZEREPEK.map((szerep) => (
-            <tr key={szerep} className="trow">
-              <td className="td font-medium text-slate-900">{szerepCimke(szerep)}</td>
-              <td className="td">
-                {szerep === 'tulajdonos' &&
-                  'Mindent: feltöltés, jóváhagyás, export, és ezen felül a számlázás, a tagok kezelése és a cég adatai.'}
-                {szerep === 'szerkeszto' &&
-                  'Feltöltés, jóváhagyás, export, visszahívás. Számlázáshoz és tagokhoz nem fér hozzá.'}
-                {szerep === 'megtekinto' &&
-                  'Olvasás: megnézheti a bizonylatokat és letöltheti az eredetiket, de nem hagy jóvá és nem exportál.'}
-              </td>
-            </tr>
-          ))}
-        </Tablazat>
+        <Alcim>Automatikus jóváhagyás</Alcim>
+        <P>Alapbeállítás szerint minden bizonylat emberi jóváhagyásra vár.</P>
         <P>
-          A szűkítést <strong>az adatbázis kényszeríti ki</strong>, nem a képernyő: amit egy
-          megtekintő nem tehet meg, azt nem csak a gomb hiánya akadályozza meg. Más cég
-          bizonylatához pedig egyik szerep sem fér hozzá.
+          Ha bekapcsolod az automatikus jóváhagyást, a feltételeknek megfelelő bizonylatok
+          közvetlenül a <strong>Tételek</strong> közé kerülhetnek. Ilyenkor is marad rendszeres
+          kézi ellenőrzés:
         </P>
-      </Fejezet>
-
-      <Fejezet id="adatok">
         <Lista>
           <li>
-            Az adatok és a bizonylatok fájljai <strong>az Európai Unión belül</strong>,
-            frankfurti kiszolgálón vannak.
+            A cég első {szamlafolyo.automatikusJovahagyas.bemelegitesDarab} bizonylata mindenképpen
+            emberi jóváhagyásra vár.
           </li>
           <li>
-            Az <strong>eredeti fájl</strong> az export után a beállított megőrzési idővel
-            (0–{szamlafolyo.megorzes.maxNap} nap) törlődik. A kiolvasott adat megmarad.
-          </li>
-          <li>
-            Az <strong>export fájl</strong> {szamlafolyo.megorzes.exportNap} napig tölthető le
-            újra; a tételekből utána is készíthető új export.
-          </li>
-          <li>
-            A <strong>kiolvasáshoz</strong> a papír- és a szkennelt bizonylat tartalma elhagyja a
-            szervert: két, név szerint megnevezett közreműködőn át jut el a modellhez (OpenRouter,
-            majd a Google). A kérés kiköti, hogy a tartalmat ne tárolják és ne tanítsanak vele, és
-            <strong> nincs tartalék útvonal</strong> meg nem nevezett szolgáltatóhoz. A{' '}
-            <strong>felismert</strong> e-számla XML-je fel sem megy: azt a rendszer helyben
-            olvassa ki – és ez a hibrid e-számlára is áll, ahol az XML a PDF-be van ágyazva. Az
-            az XML viszont, amit a rendszer nem ismer fel, a modellhez kerül, mint egy PDF.
-          </li>
-          <li>
-            A <strong>fiók és a cég törlése</strong> a Beállításokból indítható, és
-            visszafordíthatatlan. Az egyedüli tulajdonos addig nem törölhet, amíg más is
-            dolgozik a cégben – előbb át kell adni a tulajdonosi szerepet vagy el kell távolítani
-            a tagokat. A törlés után az ÁSZF elfogadásának nyoma (melyik változatot, mikor, ki
-            fogadta el) {szamlafolyo.megorzes.aszfBizonyitekEv} évig megmarad.
-          </li>
-          <li>
-            Az a fiók, amelyhez nem tartozik cég, és{' '}
-            {szamlafolyo.megorzes.inaktivFiokNap} napja nem lépett be senki,{' '}
-            <strong>magától törlődik</strong>.
+            Ezután minden {szamlafolyo.automatikusJovahagyas.mintavetelMinden}. automatikusan
+            jóváhagyható bizonylatot is ellenőrzésre ad a rendszer.
           </li>
         </Lista>
         <P>
-          A részletek – jogalap, adatfeldolgozók, a kiolvasás útja – az{' '}
-          <Link to="/adatkezeles" className="text-blue-700 underline hover:text-blue-900">
-            Adatkezelési tájékoztatóban
-          </Link>{' '}
-          állnak, a szolgáltatás feltételei pedig az{' '}
-          <Link to="/aszf" className="text-blue-700 underline hover:text-blue-900">
-            ÁSZF-ben
-          </Link>
-          . Ez az útmutató azoknál nem mond sem többet, sem mást.
+          Az automatikusan jóváhagyott bizonylatok külön jelölést és rövid indoklást kapnak.
+          Export előtt visszaküldheted őket javításra.
+        </P>
+        <P>
+          Az automatikus jóváhagyás nem jelent emberi ellenőrzést; az adatok helyességét továbbra
+          is neked kell biztosítanod.
         </P>
       </Fejezet>
 
+      {/* ------------------------------------------------------------------ */}
+      <Fejezet id="szerepek">
+        <Tablazat fejlec={['Szerepkör', 'Jogosultságok']}>
+          {SZEREPEK.map((szerep) => (
+            <tr key={szerep} className="trow">
+              <td className="td font-medium whitespace-nowrap text-slate-900">{szerepCimke(szerep)}</td>
+              <td className="td">{SZEREP_JOGOK[szerep]}</td>
+            </tr>
+          ))}
+        </Tablazat>
+        <P>A jogosultságokat a rendszer a műveleteknél is ellenőrzi.</P>
+        <P>
+          A munkaterület minden tagja látja az ott kezelt teljes bizonylatállományt. Más céges
+          munkaterület adataihoz egyik szerepkör sem ad hozzáférést.
+        </P>
+      </Fejezet>
+
+      {/* ------------------------------------------------------------------ */}
+      <Fejezet id="adatok">
+        <Alcim>Hol tároljuk az adatokat?</Alcim>
+        <P>Az adatbázist és a bizonylatfájlokat Frankfurtban, az Európai Unión belül tároljuk.</P>
+        <P>
+          A mesterséges intelligenciával végzett kiolvasásnál a bizonylat tartalma az OpenRouter
+          közvetítésével a Google szolgáltatásához kerül. Ez Unión kívüli feldolgozással jár. Az
+          e-mailes beküldés szolgáltatójánál szintén történik Unión kívüli tárolás.
+        </P>
+        <P>
+          A kiolvasási kérés előírja a tartalom megőrzésének mellőzését, és kizárja a
+          modelltanításra történő felhasználást megengedő végpontokat. Ha a megnevezett
+          feldolgozó nem érhető el, a rendszer nem továbbítja a bizonylatot más, meg nem nevezett
+          szolgáltatóhoz.
+        </P>
+
+        <Alcim>E-számlák feldolgozása</Alcim>
+        <P>
+          A felismert XML-formátumokból a rendszer közvetlenül olvassa ki az adatokat, ezért a
+          tartalmukat nem küldi ki mesterséges intelligenciával végzett feldolgozásra. Ez a
+          felismert, PDF-be ágyazott XML-re is érvényes.
+        </P>
+        <P>A fel nem ismert XML-formátumokat viszont a külső kiolvasó szolgáltatás dolgozza fel.</P>
+
+        <Alcim>Meddig érhetők el a fájlok és az adatok?</Alcim>
+        <Tablazat fejlec={['Adat vagy fájl', 'Megőrzés']}>
+          <Sor2
+            elso="Eredeti bizonylatfájlok"
+            masodik={`Az export után a beállított 0–${szamlafolyo.megorzes.maxNap} napos időtartamig. Alapbeállítás szerint azonnal törlődnek.`}
+          />
+          <Sor2
+            elso="Elkészült exportfájlok"
+            masodik={`Az elkészítéstől számított ${szamlafolyo.megorzes.exportNap} napig.`}
+          />
+          <Sor2
+            elso="Kiolvasott és jóváhagyott adatok"
+            masodik="A szerződés megszűnéséhez kapcsolódó törlésig, az adatkezelési tájékoztató szerint. Ezekből új adatexport készíthető."
+          />
+        </Tablazat>
+        <P>
+          A bizonylatok saját megőrzéséről neked kell gondoskodnod. Az eredeti fájlok törlése
+          után a kiolvasott adatokból a bizonylat képe nem állítható vissza.
+        </P>
+
+        <Alcim>Fiók és céges munkaterület törlése</Alcim>
+        <P>
+          A törlést a <strong>Beállítások</strong> alján, a <strong>Fiók törlése</strong> linkkel
+          indíthatod. A művelet visszafordíthatatlan, ezért előtte mentsd el a szükséges adatokat
+          és a még elérhető fájlokat.
+        </P>
+        <P>
+          Ha te vagy az egyetlen tulajdonos, és a munkaterületnek más tagjai is vannak, előbb át
+          kell adnod a tulajdonosi szerepet, vagy el kell távolítanod a tagokat.
+        </P>
+        <P>
+          A céges adatok törlése után az ÁSZF elfogadásának nyilvántartása a szerződés
+          megszűnésétől számított {szamlafolyo.megorzes.aszfBizonyitekEv} évig megmarad.
+        </P>
+        <P>
+          Az a fiók, amelyhez nem tartozik cég, {szamlafolyo.megorzes.inaktivFiokNap} napos
+          belépés nélküli időszak után automatikusan törlődik.
+        </P>
+        <P>
+          A részletes adatkezelési szabályokat az{' '}
+          <JogiLink to="/adatkezeles">Adatkezelési tájékoztató</JogiLink>, a szolgáltatás
+          feltételeit az <JogiLink to="/aszf">ÁSZF</JogiLink> tartalmazza.
+        </P>
+      </Fejezet>
+
+      {/* ------------------------------------------------------------------ */}
       <Fejezet id="adatformatumok">
         <P>
-          Ez a fejezet az adatszolgáltatásokról szóló (EU) 2023/2854 rendelet (Data Act) 26.
-          cikke szerinti tájékoztatás: <strong>milyen formátumban és szerkezetben</strong>{' '}
-          vihető el minden adat, ha másik szolgáltatóra vagy saját rendszerre állnál át. A
-          váltás menetét és határidőit az{' '}
-          <Link to="/aszf" className="text-blue-700 underline hover:text-blue-900">
-            ÁSZF 16. pontja
-          </Link>{' '}
-          írja le; a váltás díjmentes.
+          Az adataidat letöltheted, ha másik szolgáltatóval vagy saját rendszerben szeretnél
+          tovább dolgozni.
         </P>
-        <Tablazat fejlec={['Mi', 'Formátum', 'Hogyan']}>
-          <Sor
-            allapot="Jóváhagyott tételek"
-            mit="XLSX (Office Open XML, ISO/IEC 29500), CSV vagy JSON (RFC 8259)"
-            dolog="Az Export képernyőről, bármikor, bármennyiszer, időszakra és ügyfélre szűrve."
-          />
-          <Sor
-            allapot="Jóváhagyott tételek, könyvelőprogramba"
-            mit="RLB Kettős: pontosvesszős CSV. Novitax NTAX és Kulcs-Könyvelés: ZIP, benne pontosvesszős szövegfájlok. Windows-1250 kódolás."
-            dolog="Az Export képernyőről, a gyártók közzétett leírása szerint. Kényelmi többlet, nem helyettesíti a fenti formátumokat."
-          />
-          <Sor
-            allapot="Eredeti fájlok"
-            mit="ZIP, benne a feltöltött fájlok eredeti alakjukban (PDF, JPG, PNG, WEBP, XML)"
-            dolog="Az export mellé, amíg a megőrzési idő alatt a szerveren vannak."
-          />
-          <Sor
-            allapot="Minden más adat"
-            mit="Egyetlen JSON-állomány, UTF-8"
-            dolog="Kérésre, e-mailben: a teljes adatkiadás (lent). Szolgáltatóváltásnál díjmentes."
-          />
-        </Tablazat>
         <P>
-          <strong>A három exportformátum ugyanazokat az oszlopokat viszi</strong>, ugyanabban a
-          sorrendben. A dátum mindenhol <code>ÉÉÉÉ-HH-NN</code> (ISO 8601), budapesti nap
-          szerint. A <strong>CSV</strong> UTF-8 kódolású (bájtsorrend-jellel), a mezőelválasztó
-          pontosvessző, a tizedesjel vessző, a sorvég CRLF – így nyitja meg helyesen a magyar
-          Excel. Az <strong>XLSX</strong> a számokat számként tárolja. A <strong>JSON</strong>{' '}
-          a számot számként, a hiányzó értéket <code>null</code>-ként adja, és a táblázatos
-          oszlopok mellett a bizonylat teljes ÁFA-bontását is tartalmazza (
-          <code>afa_bontas</code>), kategóriakóddal.
+          A szolgáltatóváltás díjmentes. Menetét és határidőit az{' '}
+          <JogiLink to="/aszf">ÁSZF 16. pontja</JogiLink> részletezi. Ez a fejezet az
+          adatszolgáltatásokról szóló (EU) 2023/2854 rendelet, a Data Act 26. cikke szerinti
+          adatformátum-tájékoztatást is tartalmazza.
         </P>
-        <Tablazat fejlec={['JSON-kulcs', 'Fejléc (XLSX, CSV)', 'Típus']}>
-          {KULCSOK.map((kulcs) => (
-            <tr key={kulcs} className="trow">
-              <td className="td">
-                <code>{kulcs}</code>
-              </td>
-              <td className="td">{FEJLECEK[kulcs]}</td>
-              <td className="td">
-                {SZAM_OSZLOPOK.includes(kulcs)
-                  ? 'szám'
-                  : DATUM_OSZLOPOK.includes(kulcs)
-                    ? 'dátum'
-                    : 'szöveg'}
-              </td>
-            </tr>
-          ))}
-        </Tablazat>
-        <P>
-          <strong>A teljes adatkiadás</strong> azt is tartalmazza, amit a felületi export nem:
-          a még jóváhagyásra váró és a hibára futott bizonylatokat, a kiolvasási futásokat (a
-          modell nyers válaszával, amíg az megvan), a javítások naplóját, a cég beállításait, a
-          tevékenységnaplót és a beküldött levelek nyilvántartását. Egyetlen JSON-objektum,
-          ezekkel a szakaszokkal:
-        </P>
-        <Tablazat fejlec={['Szakasz', 'Mit tartalmaz']}>
-          {ADATKIADAS_SZAKASZOK.map(([nev, mit]) => (
-            <tr key={nev} className="trow">
-              <td className="td">
-                <code>{nev}</code>
-              </td>
-              <td className="td">{mit}</td>
-            </tr>
-          ))}
-        </Tablazat>
-        <P>
-          Minden időbélyeg UTC, ISO 8601 alakban; az összegek forintban, a modellhívás
-          költsége (<code>cost</code>) dollárban. Két dolog szándékosan kimarad, mert{' '}
-          <strong>élő kulcs</strong>: a cég titkos beküldő címe és a meghívók jelei – aki
-          ismeri őket, a cég nevében tudna eljárni. A helyükön magyarázó szöveg áll.
-        </P>
-      </Fejezet>
 
-      <Fejezet id="mi-van-ha">
-        <Tablazat fejlec={['Amit látsz', 'Mi történt', 'Mit tegyél']}>
+        <Alcim>Milyen adatot hogyan tölthetsz le?</Alcim>
+        <Tablazat fejlec={['Adatok', 'Formátum', 'Elérés']}>
           <Sor
-            allapot={'„Hiba” a Beérkezőben'}
-            mit="Háromszor sem sikerült kiolvasni: jelszóval védett vagy sérült PDF, üres szkennelés."
-            dolog="Nyisd meg a fájlt, és töltsd fel újra. Kreditbe nem került."
+            elso="Jóváhagyott tételek"
+            mit="XLSX, CSV vagy JSON"
+            dolog="Az Export képernyőn, időszakra és ügyfélre szűrve. A korábban exportált tételeket szükség esetén visszahívhatod."
           />
           <Sor
-            allapot="A számok nem stimmelnek"
-            mit="Piros mező, alatta az ellenőrzés mondata. Két különböző dolog lehet mögötte."
-            dolog={
-              'Ha a kiolvasás olvasta félre a papírt: írd át arra, ami a bizonylaton áll – ' +
-              'a jelölés azonnal frissül. Ha viszont maga a bizonylat hibás, azt itt nem ' +
-              'lehet megjavítani: az alkalmazásban átírt adat a kibocsátott számlát nem ' +
-              'helyesbíti. Ilyenkor a kibocsátótól kell helyesbítő vagy sztornó számlát ' +
-              'kérni; hogy addig mi kerüljön a könyvelésbe, azt a könyvelővel egyeztesd.'
+            elso="Könyvelőprogramokhoz készített export"
+            mit="RLB: CSV. Novitax és Kulcs: ZIP-csomag."
+            dolog="Az Export képernyőn."
+          />
+          <Sor
+            elso="Eredeti bizonylatfájlok"
+            mit="ZIP, a feltöltött fájlok eredeti formátumával."
+            dolog="Amíg a fájlok a megőrzési időn belül elérhetők."
+          />
+          <Sor
+            elso="Teljes adatkiadás"
+            mit="UTF-8 kódolású JSON-fájl."
+            dolog="E-mailben kérhető. Szolgáltatóváltáskor díjmentes."
+          />
+        </Tablazat>
+        <P>
+          Teljes adatkiadáshoz írj az{' '}
+          <a href={`mailto:${kapcsolatEmail}`} className="text-blue-700 underline hover:text-blue-900">
+            {kapcsolatEmail}
+          </a>{' '}
+          címre.
+        </P>
+
+        <Alcim>Technikai részletek: a normál export</Alcim>
+        <P>
+          Az XLSX-, CSV- és JSON-export alapmezői megegyeznek. A dátumok <code>ÉÉÉÉ-HH-NN</code>{' '}
+          formátumúak, budapesti nap szerint.
+        </P>
+        <Tablazat fejlec={['Formátum', 'Technikai jellemzők']}>
+          <Sor2 elso="XLSX" masodik="Office Open XML, ISO/IEC 29500. A számértékeket számként tárolja." />
+          <Sor2
+            elso="CSV"
+            masodik="UTF-8 kódolás bájtsorrend-jellel, pontosvesszős mezőelválasztás, vesszős tizedesjel, CRLF sorvég."
+          />
+          <Sor2
+            elso="JSON"
+            masodik={
+              <>
+                RFC 8259. A számértékek számként, a hiányzó értékek <code>null</code> értékkel
+                szerepelnek. Az <code>afa_bontas</code> mező a teljes áfabontást is tartalmazza,
+                kategóriakóddal.
+              </>
             }
           />
-          <Sor
-            allapot="Nem érkezett meg az e-mailben küldött számla"
-            mit="A beküldés ki van kapcsolva, idegen feladó, vagy a melléklet nem feldolgozható típus."
-            dolog="A Beállítások → E-mailes beküldés kártya alján ott a levél és az elutasítás oka."
-          />
-          <Sor
-            allapot={'„Elfogyott a havi kereted”'}
-            mit="A csomag dokumentumkerete betelt, és a túlhasználat ki van kapcsolva."
-            dolog="Válts nagyobb csomagra, vagy kapcsold be a túlhasználatot – plafonnal."
-          />
-          <Sor
-            allapot="Rossz adat ment ki az exportban"
-            mit="Az export nem végleges."
-            dolog="Az Archívumban hívd vissza a tételt, javítsd, és exportáld újra."
-          />
-          <Sor
-            allapot="Több bizonylat egy fájlban, de nem szedtük szét"
-            mit="A határok nem voltak egyértelműek, ezért nem vágtunk vaktában."
-            dolog="A kiolvasott adat az első bizonylaté. A többit töltsd fel külön."
-          />
         </Tablazat>
+        <P>
+          A könyvelőprogramokhoz készített fájlok ettől eltérnek: pontosvesszővel tagolt,
+          Windows-1250 kódolású szövegfájlok. Novitax és Kulcs esetén ezeket ZIP-csomag
+          tartalmazza.
+        </P>
+
+        <Alcim>Az export mezői</Alcim>
+        <Lenyithato cim={`Az export ${KULCSOK.length} mezője`}>
+          <Tablazat fejlec={['JSON-kulcs', 'XLSX- és CSV-fejléc', 'Adattípus']}>
+            {KULCSOK.map((kulcs) => (
+              <tr key={kulcs} className="trow">
+                <td className="td">
+                  <code>{kulcs}</code>
+                </td>
+                <td className="td">{FEJLECEK[kulcs]}</td>
+                <td className="td">
+                  {SZAM_OSZLOPOK.includes(kulcs) ? 'Szám' : DATUM_OSZLOPOK.includes(kulcs) ? 'Dátum' : 'Szöveg'}
+                </td>
+              </tr>
+            ))}
+          </Tablazat>
+        </Lenyithato>
+
+        <Alcim>Mit tartalmaz a teljes adatkiadás?</Alcim>
+        <P>
+          A teljes adatkiadás a normál exporton túl a rendszerben még elérhető egyéb adatokat is
+          tartalmazza: például az ellenőrzésre váró vagy hibás bizonylatokat, a javítási
+          előzményeket és a beállításokat.
+        </P>
+        <P>Az adatokat egy JSON-fájlban adjuk át, az alábbi szakaszokkal.</P>
+        <Lenyithato cim={`A teljes adatkiadás ${ADATKIADAS_SZAKASZOK.length} szakasza`}>
+          <Tablazat fejlec={['Szakasz', 'Tartalom']}>
+            {ADATKIADAS_SZAKASZOK.map(([nev, mit]) => (
+              <tr key={nev} className="trow">
+                <td className="td">
+                  <code>{nev}</code>
+                </td>
+                <td className="td">{mit}</td>
+              </tr>
+            ))}
+          </Tablazat>
+        </Lenyithato>
+        <P>
+          A teljes adatkiadás időbélyegei UTC szerinti, ISO 8601 formátumú értékek. Az elszámolási
+          összegek forintban, a modellhívások <code>cost</code> mezői dollárban szerepelnek.
+        </P>
+        <P>
+          A titkos beküldési címet és a meghívók hozzáférést biztosító azonosítóit biztonsági okból
+          nem adjuk ki. Ezek helyén magyarázó szöveg található.
+        </P>
       </Fejezet>
 
-      <Fejezet id="kerdes">
+      {/* ------------------------------------------------------------------ */}
+      <Fejezet id="gyik">
+        <Alcim>„{allapotCimke('hiba')}” állapotot látok a Beérkezőben</Alcim>
         <P>
-          Írj nekünk:{' '}
-          <a
-            href={`mailto:${kapcsolatEmail}`}
-            className="text-blue-700 underline hover:text-blue-900"
-          >
+          A rendszer {szamlafolyo.kiolvasas.maxProbalkozas} próbálkozás után sem tudta kiolvasni a
+          fájlt.
+        </P>
+        <P>
+          Nyisd meg az eredetit, és ellenőrizd, hogy olvasható-e, nem sérült-e, illetve nincs-e
+          jelszóval védve. Javítsd a problémát, majd tölts fel egy olvasható változatot.
+        </P>
+        <P>A sikertelen kiolvasás nem csökkenti a dokumentumkeretedet.</P>
+
+        <Alcim>Nem egyeznek az összegek</Alcim>
+        <P>Nézd meg a piros mező alatti magyarázatot, majd vesd össze az adatokat a bizonylattal.</P>
+        <P>
+          Ha a rendszer olvasta félre az adatot, javítsd a mezőt az eredetin szereplő értékre. Az
+          ellenőrzés azonnal újrafut.
+        </P>
+        <P>
+          Ha az eltérés az eredeti bizonylaton is szerepel, a SzámlaFolyóban végzett módosítás nem
+          javítja ki a kiállított számlát. A szükséges helyesbítést egyeztesd a kibocsátóval, a
+          könyvelési teendőket pedig a könyvelővel.
+        </P>
+
+        <Alcim>Nem látom az e-mailben beküldött számlát</Alcim>
+        <P>
+          Ellenőrizd, hogy az e-mailes beküldés be van-e kapcsolva, és a megfelelő címre küldted-e
+          a levelet.
+        </P>
+        <P>
+          A <strong>Beállítások → E-mailes beküldés</strong> rész alján nézd meg a levelek
+          nyilvántartását. Ha a rendszer elutasította a levelet, itt láthatod az okát.
+        </P>
+        <P>Gyakori ok az engedélyezetlen feladó vagy a nem feldolgozható melléklet.</P>
+
+        <Alcim>Elfogyott a havi keretem</Alcim>
+        <P>Három lehetőséged van:</P>
+        <Lista>
+          <li>Megvárod a következő időszakot.</li>
+          <li>Nagyobb csomagra váltasz.</li>
+          <li>
+            Aktív előfizetés mellett engedélyezed a <strong>Túlhasználat</strong> lehetőséget, és
+            beállítod a költési korlátot.
+          </li>
+        </Lista>
+
+        <Alcim>Hibás adat került az exportba</Alcim>
+        <P>
+          Az <strong>Archívumban</strong> hívd vissza az érintett tételt, javítsd, hagyd jóvá, majd
+          exportáld újra.
+        </P>
+        <P>Ha az előző fájlt már betöltötted a könyvelőprogramba, a javítást ott is kezeld.</P>
+
+        <Alcim>Nem váltak külön az egy fájlban lévő bizonylatok</Alcim>
+        <P>
+          Ha a bizonylatok határai nem egyértelműek, a rendszer nem választja külön őket. Ilyenkor
+          a kiolvasott adatok az első bizonylathoz tartoznak.
+        </P>
+        <P>A többi bizonylatot töltsd fel külön fájlban.</P>
+
+        <Alcim>Nem tudom letölteni az eredeti fájlt</Alcim>
+        <P>
+          Nézd meg, hogy a bizonylatot exportáltad-e már, és letelt-e az eredeti fájlokhoz
+          beállított megőrzési idő.
+        </P>
+        <P>
+          Alapbeállítás szerint az eredeti fájl az export után azonnal törlődik. A törölt fájl nem
+          állítható vissza; ezért a szükséges eredetiket mindig az export előtt mentsd el.
+        </P>
+
+        <Alcim>A könyvelőprogram hibásnak jelzi az importfájlt</Alcim>
+        <P>Próbáld az eredetileg letöltött, változtatás nélkül megőrzött fájlt használni.</P>
+        <P>
+          Novitax és Kulcs esetén ellenőrizd, hogy kibontottad-e a ZIP-et, és az összes mellékelt
+          fájl ugyanabban a mappában maradt-e.
+        </P>
+        <P>
+          Új beállításnál először a <strong>Próbafájl letöltése</strong> lehetőséggel ellenőrizd az
+          importot.
+        </P>
+      </Fejezet>
+
+      {/* ------------------------------------------------------------------ */}
+      <Fejezet id="kapcsolat">
+        <P>
+          Ha elakadtál, írj az{' '}
+          <a href={`mailto:${kapcsolatEmail}`} className="text-blue-700 underline hover:text-blue-900">
             {kapcsolatEmail}
-          </a>
-          . Ha egy bizonylattal van baj, a bizonylatszám és a feltöltés ideje sokat segít.{' '}
-          <strong>Az eredeti fájlt ne küldd el</strong> – amíg a rendszerben van, magunk is
-          megnézzük. ⚠️ Egy kivétel: az eredetik az <strong>export után törlődnek</strong>{' '}
-          (a {pont('archivum')}. pont szerint), tehát egy már exportált bizonylat fájlja lehet,
-          hogy nálunk sincs meg. Ha ilyenről kérdezel, és nálad megvan, mellékeld.
+          </a>{' '}
+          címre.
+        </P>
+        <P>A gyorsabb segítséghez írd meg:</P>
+        <Lista>
+          <li>Melyik képernyőn jelentkezett a probléma.</li>
+          <li>Mit szerettél volna elvégezni.</li>
+          <li>Milyen hibaüzenetet látsz.</li>
+          <li>Bizonylathoz kapcsolódó kérdésnél a bizonylatszámot és a feltöltés időpontját.</li>
+        </Lista>
+        <P>Ha az eredeti fájl még elérhető a rendszerben, nem szükséges e-mailben is elküldened.</P>
+        <P>
+          Ha már exportált bizonylatról kérdezel, előfordulhat, hogy az eredeti fájl nálunk már
+          törlődött. Ilyenkor, ha nálad megvan és szükséges a hiba megvizsgálásához, mellékeld a
+          levélhez.
         </P>
       </Fejezet>
     </JogiOldal>
@@ -798,47 +1086,26 @@ export function Utmutato() {
 
 /**
  * A fejezetek — **egyetlen listából** a tartalomjegyzék, a fejezetcímek
- * sorszáma és a szövegközi hivatkozások („lásd az 5. pontot") is.
+ * sorszáma és a szövegközi hivatkozások („a 9. fejezetben") is.
  *
  * Ez nem esztétika: az első változatban a sorszámokat kézzel írtam a
  * fejezetcímekbe, és a tartalomjegyzékhez képest **már az első összeolvasásra
- * elcsúsztak** — a tartalom 6. tétele az Archívum volt, a cím fölötte 7. Egy
- * útmutató, ami rossz pontra hivatkozik, rosszabb, mint ami nem hivatkozik
- * sehova. Így a számozás nem is tud elcsúszni: a sorrend maga a forrás.
- *
- * A `hosszu` a fejezet fölé kerülő cím, a `cimke` a tartalomjegyzéké — ott egy
- * hosszabb címsor csak nehezebben átfutható listát adna.
+ * elcsúsztak**. Így a számozás nem is tud elcsúszni: a sorrend maga a forrás.
  */
 const FEJEZETEK = [
-  { id: 'elso-lepesek', cimke: 'Az első lépések' },
-  { id: 'bekuldes', cimke: 'Hogyan kerül be egy bizonylat' },
-  {
-    id: 'beerkezo',
-    cimke: 'A Beérkező és az állapotok',
-    hosszu: 'A Beérkező: mi történik a bizonylattal',
-  },
-  {
-    id: 'ellenorzes',
-    cimke: 'Az Ellenőrzés képernyő',
-    hosszu: 'Az Ellenőrzés képernyő – itt dolgozol',
-  },
-  { id: 'tetelek-export', cimke: 'Tételek és Export' },
-  { id: 'archivum', cimke: 'Archívum' },
-  { id: 'keret', cimke: 'Keret, csomagok, túlhasználat' },
-  {
-    id: 'beallitasok',
-    cimke: 'Beállítások',
-    hosszu: 'Beállítások – amit érdemes egyszer végigmenni',
-  },
-  { id: 'szerepek', cimke: 'Ki mit tehet' },
-  { id: 'adatok', cimke: 'Az adataitok', hosszu: 'Az adataitok: hol vannak és meddig' },
-  {
-    id: 'adatformatumok',
-    cimke: 'Adatformátumok',
-    hosszu: 'Adatformátumok és szolgáltatóváltás',
-  },
-  { id: 'mi-van-ha', cimke: 'Mi van, ha…' },
-  { id: 'kerdes', cimke: 'Ha valami nem világos' },
+  { id: 'elso-lepesek', cim: 'Első lépések' },
+  { id: 'bekuldes', cim: 'Bizonylatok feltöltése és beküldése' },
+  { id: 'beerkezo', cim: 'A Beérkező és a feldolgozási állapotok' },
+  { id: 'ellenorzes', cim: 'Adatok ellenőrzése és jóváhagyása' },
+  { id: 'tetelek-export', cim: 'Tételek és export' },
+  { id: 'archivum', cim: 'Korábbi exportok és javítások' },
+  { id: 'keret', cim: 'Dokumentumkeret, csomagok és számlázás' },
+  { id: 'beallitasok', cim: 'Beállítások' },
+  { id: 'szerepek', cim: 'Felhasználói szerepkörök' },
+  { id: 'adatok', cim: 'Adatkezelés és megőrzés' },
+  { id: 'adatformatumok', cim: 'Adatformátumok és szolgáltatóváltás' },
+  { id: 'gyik', cim: 'Gyakori kérdések és megoldások' },
+  { id: 'kapcsolat', cim: 'Segítség és kapcsolat' },
 ] as const;
 
 type FejezetId = (typeof FEJEZETEK)[number]['id'];
@@ -849,26 +1116,10 @@ function pont(id: FejezetId): number {
 }
 
 /**
- * A fejezet fölé kerülő cím.
- *
- * A `as const` miatt a lista **unió típus**, aminek nem minden ága ismeri a
- * `hosszu` mezőt — ezért kell a tágabb alak. Cserébe a `FejezetId` szűk marad:
- * egy elgépelt horgonyt a fordító fog meg, nem az olvasó.
- */
-function fejezetCim(id: FejezetId): string {
-  const fejezet: { cimke: string; hosszu?: string } | undefined = FEJEZETEK.find(
-    (f) => f.id === id,
-  );
-
-  return fejezet?.hosszu ?? fejezet?.cimke ?? '';
-}
-
-/**
  * Tartalomjegyzék.
  *
- * Egy tízperces olvasmányhoz nem kell — **de ez nem egyszer elolvasandó lap**,
- * hanem az, amit valaki munka közben nyit meg, mert az ÁFA-bontásról akar
- * valamit. Annak a görgetés a rossz válasz.
+ * Ez nem egyszer elolvasandó lap, hanem az, amit valaki munka közben nyit meg,
+ * mert az áfabontásról akar valamit. Annak a görgetés a rossz válasz.
  */
 function Tartalom() {
   return (
@@ -878,7 +1129,7 @@ function Tartalom() {
         {FEJEZETEK.map((f, i) => (
           <li key={f.id} className="text-sm text-slate-700">
             <a href={`#${f.id}`} className="hover:text-blue-700 hover:underline">
-              <span className="text-slate-400">{i + 1}.</span> {f.cimke}
+              <span className="text-slate-400">{i + 1}.</span> {f.cim}
             </a>
           </li>
         ))}
@@ -894,17 +1145,86 @@ function Tartalom() {
  * tartalomjegyzékből érkező olvasó a cím helyett a fejléc alá esne.
  */
 function Fejezet({ id, children }: { id: FejezetId; children: ReactNode }) {
+  const cim = FEJEZETEK.find((f) => f.id === id)?.cim ?? '';
+
   return (
     <section id={id} className="scroll-mt-20 space-y-3">
-      <h2 className="text-lg font-semibold text-slate-900">
-        {pont(id)}. {fejezetCim(id)}
+      <h2 className="pt-2 text-lg font-semibold text-slate-900">
+        {pont(id)}. {cim}
       </h2>
       {children}
     </section>
   );
 }
 
-/** Az export dátumoszlopai — a típusoszlop ebből mondja, hogy „dátum". */
+/** Alfejezetcím – a napi használatban keresett lépések címe. */
+function Alcim({ children }: { children: ReactNode }) {
+  return <h3 className="pt-2 text-base font-semibold text-slate-800">{children}</h3>;
+}
+
+/** Link a jogi szövegekre – egy helyen a stílus. */
+function JogiLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link to={to} className="text-blue-700 underline hover:text-blue-900">
+      {children}
+    </Link>
+  );
+}
+
+/**
+ * Lenyitható rész a technikai mezőlistáknak (2026-09-25, a tulajdonos
+ * kérésére): a lista a lapon marad – a Data Act 26. cikke szerinti online
+ * leírás része –, de csukva nem takarja a napi használat lépéseit.
+ */
+function Lenyithato({ cim, children }: { cim: string; children: ReactNode }) {
+  return (
+    <details className="group rounded-lg border border-slate-200 bg-white">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+        <span>{cim}</span>
+        <span className="text-xs font-normal text-blue-700">
+          <span className="group-open:hidden">Megnyitás</span>
+          <span className="hidden group-open:inline">Bezárás</span>
+        </span>
+      </summary>
+      <div className="border-t border-slate-200 p-2">{children}</div>
+    </details>
+  );
+}
+
+/** A Beérkező állapottáblája: állapot → mit jelent, mi a teendő. A címke az `enumok.ts`-ből jön. */
+const ALLAPOT_SOROK: readonly { allapot: DokumentumAllapot; mit: string; dolog: string }[] = [
+  { allapot: 'feltoltve', mit: 'A fájl megérkezett, és feldolgozásra vár.', dolog: 'Várd meg, amíg elindul a feldolgozás.' },
+  { allapot: 'feldolgozas_alatt', mit: 'A rendszer éppen kiolvassa az adatokat.', dolog: 'Nincs teendőd.' },
+  {
+    allapot: 'ellenorzesre_var',
+    mit: 'A kiolvasás elkészült, a bizonylat jóváhagyásra vár.',
+    dolog: 'Nyisd meg, és ellenőrizd az adatokat.',
+  },
+  {
+    allapot: 'hiba',
+    mit: `A kiolvasás ${szamlafolyo.kiolvasas.maxProbalkozas} próbálkozás után sem sikerült.`,
+    dolog: 'Ellenőrizd a fájlt, javítsd a problémát, majd töltsd fel újra. A sikertelen kiolvasás nem csökkenti a keretedet.',
+  },
+  {
+    allapot: 'duplikatum',
+    mit: 'Ugyanez a fájl már szerepel a rendszerben.',
+    dolog: 'Az ismételten beküldött sort eltávolíthatod. Nem csökkenti a keretedet.',
+  },
+  { allapot: 'jovahagyva', mit: 'A bizonylat jóváhagyást kapott, és exportálható.', dolog: 'A Tételek képernyőn találod.' },
+  { allapot: 'exportalva', mit: 'A bizonylat bekerült egy exportba.', dolog: 'Az exportot az Archívumban találod.' },
+];
+
+/** A szerepkörök jogai – kulcs szerint, hogy új szerep ne maradhasson ki. */
+const SZEREP_JOGOK: Record<Szerep, string> = {
+  tulajdonos:
+    'Feltölthet, jóváhagyhat, exportálhat és visszahívhat tételeket. Kezelheti a cég adatait, a beállításokat, a tagokat és a számlázást.',
+  szerkeszto:
+    'Feltölthet, jóváhagyhat, exportálhat és visszahívhat tételeket. A számlázást és a tagokat nem kezelheti.',
+  megtekinto:
+    'Megnézheti a bizonylatokat és letöltheti a még elérhető eredeti fájlokat. Nem tölthet fel, nem hagyhat jóvá és nem készíthet exportot.',
+};
+
+/** Az export dátumoszlopai — a típusoszlop ebből mondja, hogy „Dátum". */
 const DATUM_OSZLOPOK: readonly string[] = ['kelt', 'teljesites', 'fizetesi_hatarido', 'beerkezes'];
 
 /**
@@ -916,37 +1236,42 @@ const DATUM_OSZLOPOK: readonly string[] = ['kelt', 'teljesites', 'fizetesi_hatar
  * — egy új szakasz a lekérdezésben itt is meg kell jelenjen.
  */
 const ADATKIADAS_SZAKASZOK: readonly (readonly [string, string])[] = [
-  ['kiadas', 'A kiadás fejléce: mikor készült, melyik cégről, a szerkezet verziója'],
-  ['ceg', 'A cég törzsadatai és minden beállítása, az előfizetés állapota'],
-  ['tagok', 'A cég felhasználói és szerepkörük'],
-  ['meghivok', 'A kiküldött meghívók: cím, szerep, kiküldés, lejárat, elfogadás'],
-  ['fajlok', 'A feltöltött fájlok nyilvántartása: név, típus, méret, lenyomat, törlés ideje'],
-  ['bizonylatok', 'Minden bizonylat, állapottól függetlenül, a kiolvasott mezőkkel'],
-  ['kiolvasasok', 'Minden kiolvasási futás: ki olvasta ki, nyers válasz, költség, kredit'],
-  ['javitasok', 'Mit írt át ember a gépi kiolvasás után: mező, régi és új érték'],
-  ['exportok', 'Az elkészült exportok: formátum, szűrők, tételszám'],
-  ['tulhasznalat', 'A kereten felüli felhasználás elszámolása időszakonként'],
-  ['beerkezo_levelek', 'A beküldő címre érkezett levelek nyilvántartása (a levél szövege nélkül)'],
-  ['naplo', 'A teljes tevékenységnapló'],
-  ['aszf_elfogadasok', 'Ki, mikor, az ÁSZF melyik változatát fogadta el'],
-  ['konyvelo_beallitasok', 'A könyvelőprogram-export főkönyvi számai és kódjai, cégre és ügyfelekre'],
-  ['iktatoszamok', 'A könyvelőprogramoknak kiadott belső sorszám bizonylatonként'],
-  ['keret_fedezetek', 'Csomagváltások nyoma: a váltásig felhasznált kredit és a régi csomag'],
-  ['darabszamok', 'Soronkénti darabszám szakaszonként, a teljesség ellenőrzéséhez'],
+  ['kiadas', 'A kiadás időpontja, az érintett cég és az adatszerkezet verziója.'],
+  ['ceg', 'Cégadatok, beállítások és az előfizetés állapota.'],
+  ['tagok', 'Felhasználók és szerepkörök.'],
+  ['meghivok', 'Meghívók címei, szerepkörei és időpontjai.'],
+  ['fajlok', 'A fájlok neve, típusa, mérete, lenyomata és törlési ideje.'],
+  ['bizonylatok', 'A bizonylatok és kiolvasott adataik, állapottól függetlenül.'],
+  ['kiolvasasok', 'A kiolvasások adatai, költsége és keretfelhasználása; a nyers válasz, amíg elérhető.'],
+  ['javitasok', 'A módosított mezők, valamint a korábbi és új értékek.'],
+  ['exportok', 'Az exportok formátuma, szűrői és tételszáma.'],
+  ['tulhasznalat', 'A kereten felüli feldolgozás időszakonkénti elszámolása.'],
+  ['beerkezo_levelek', 'A beérkezett levelek nyilvántartása, a levélszöveg nélkül.'],
+  ['naplo', 'Tevékenységnapló.'],
+  ['aszf_elfogadasok', 'Az elfogadott ÁSZF-változat, az elfogadó és az időpont.'],
+  ['konyvelo_beallitasok', 'A könyvelőprogram-exporthoz megadott főkönyvi számok és kódok.'],
+  ['iktatoszamok', 'A bizonylatok könyvelőprogramokhoz kiadott belső sorszámai.'],
+  ['keret_fedezetek', 'A csomagváltásokhoz kapcsolódó korábbi keretek és felhasználás.'],
+  ['darabszamok', 'Az egyes szakaszok sorainak száma, a teljesség ellenőrzéséhez.'],
 ];
 
-/** Háromoszlopos táblázatsor — a három nagy táblázat ugyanazt az alakot viszi. */
-function Sor({ allapot, mit, dolog }: { allapot: string; mit: string; dolog: string }) {
+/** Háromoszlopos táblázatsor — az első oszlop kiemelt, nem törik. */
+function Sor({ elso, mit, dolog }: { elso: string; mit: string; dolog: string }) {
   return (
     <tr className="trow">
-      <td className="td font-medium whitespace-nowrap text-slate-900">{allapot}</td>
+      <td className="td font-medium text-slate-900">{elso}</td>
       <td className="td">{mit}</td>
       <td className="td">{dolog}</td>
     </tr>
   );
 }
 
-/** Kiemelt figyelmeztetés — a meglévő `alert` osztályokból, új CSS nélkül. */
-function Figyelem({ children }: { children: ReactNode }) {
-  return <div className="alert alert-figyelem text-sm leading-relaxed">{children}</div>;
+/** Kétoszlopos táblázatsor. */
+function Sor2({ elso, masodik }: { elso: string; masodik: ReactNode }) {
+  return (
+    <tr className="trow">
+      <td className="td font-medium text-slate-900">{elso}</td>
+      <td className="td">{masodik}</td>
+    </tr>
+  );
 }

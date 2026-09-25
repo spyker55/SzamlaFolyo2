@@ -462,3 +462,46 @@ describe('a nyitólap árai a configból jönnek', () => {
     }
   });
 });
+
+describe('az útmutató a felület valódi neveit idézi', () => {
+  /**
+   * 2026-09-25: az útmutató átírásakor hat név nem egyezett a képernyővel
+   * („Próbafájl" a „Próbafájl letöltése" helyett, „Jóváhagyás és következő",
+   * ami csak akkor ez, ha van még sorban álló bizonylat, stb.). Egy útmutató,
+   * ami olyan gombot keres, ami nincs, munka közben hagyja cserben az olvasót.
+   * Ez a lista azt méri, hogy minden idézett név **mindkét helyen** áll: az
+   * útmutatóban és a képernyő forrásában.
+   */
+  const NEVEK: readonly (readonly [string, string])[] = [
+    ['Próbafájl letöltése', '../komponensek/KonyveloProgram.tsx|../kepernyok/Export.tsx'],
+    ['Eredeti bizonylatok letöltése (ZIP', '../kepernyok/Export.tsx'],
+    ['Javításra', '../kepernyok/Tetelek.tsx'],
+    ['Visszahívom', '../kepernyok/Archivum.tsx'],
+    ['Jóváhagyás', '../kepernyok/Ellenorzes.tsx'],
+    ['és következő', '../kepernyok/Ellenorzes.tsx'],
+    ['Bárkitől, aki ismeri a címet', '../kepernyok/Beallitasok.tsx'],
+    ['Új cím', '../kepernyok/Beallitasok.tsx'],
+    ['Fiók törlése', '../kepernyok/Beallitasok.tsx'],
+    ['Számlázási portál', '../kepernyok/Beallitasok.tsx'],
+    ['E-mailes beküldés', '../kepernyok/Beallitasok.tsx'],
+    ['Eredeti fájlok megőrzése', '../kepernyok/Beallitasok.tsx'],
+    ['Automatikus jóváhagyás', '../kepernyok/Beallitasok.tsx'],
+    ['Túlhasználat', '../kepernyok/Beallitasok.tsx'],
+    ['Tagok', '../kepernyok/Beallitasok.tsx'],
+    ['Előfizetés', '../kepernyok/Beallitasok.tsx'],
+  ];
+
+  // Az útmutató *szövege*, megjegyzések nélkül: a fejkomment is idézi a
+  // neveket, és ha az őr azt is olvasná, egy megjegyzés hitelesítené a lapot
+  // (mérve: így a lapról kivett „Próbafájl letöltése" mellett zöld maradt).
+  const utmutatoSzoveg = utmutato.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  it.each(NEVEK)('„%s" az útmutatóban és a felületen is áll', (nev, fajlok) => {
+    expect(utmutatoSzoveg, `Az útmutató nem idézi: „${nev}"`).toContain(nev);
+    const forras = fajlok
+      .split('|')
+      .map((f) => (existsSync(GYOKER + f) ? readFileSync(GYOKER + f, 'utf8') : ''))
+      .join('\n');
+    expect(forras, `A felületen nincs „${nev}" (${fajlok}) – átnevezték? Akkor az útmutatót is.`).toContain(nev);
+  });
+});
