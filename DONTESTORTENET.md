@@ -6320,3 +6320,64 @@ választ:
 Az Adatkezelési tájékoztató 5. pontjának „kezdeményezzük” mondata ezzel
 igaz. **Nyitott:** a válasz még nem jött meg. Ha megjön, az 5. pontot a
 tényleges eredményhez kell igazítani, új jogi változatban.
+
+## 📣 Új hirdetéscsomag: Meta + Google (2026-09-25)
+
+A régi `marketing/meta/` csomag törölve. A szövegei a 2026-09-22-i
+nyitólapra épültek, és több helyen elavultak:
+- „könyvelésre kész adat”, „percek alatt”;
+- a Vercel Analytics még szerepelt benne;
+- a nyitólap mintakártyája azóta kikerült;
+- a könyvelőprogram-export még nem volt benne.
+
+Az új csomag: `marketing/hirdetes/`.
+
+**Egy forrás, minden ebből gyártva.** A `szovegek.ts` tartalma:
+- **Meta:** 7 üzenet, mindegyikhez címsorok, leírások, rövid és hosszú fő
+  szöveg.
+- **Google Keresés:** 2 kampány (vállalkozások, könyvelők), 15 címsor és 4
+  leírás hirdetésenként, kulcsszavak, kizárók, webhelylinkek, kiemelések és
+  kiegészítő részletek.
+- **Performance Max:** egy eszközcsoport.
+
+Az árak és a próba számai a configból jönnek. A `keszit.ts` gyártja a
+képeket, a `SZOVEGEK.md`-t és a két Google Ads Editor CSV-t:
+- 28 Meta-kép;
+- 15 Google-kép és 2 logó.
+
+**Mérve, nem becsülve** (`hirdetes.test.ts`, 31 teszt, az `npm test` része):
+- Karakterkorlát minden szövegre. Az első futás négy túl hosszú szöveget
+  fogott meg: három Meta fő szöveg 130–131 karakteres volt a 125 helyett, egy
+  Google-kiemelés 26 a 25 helyett.
+- Tiltott ígéretek.
+- Minden forintösszeg a configból való.
+- A céloldalak és a horgonyok léteznek.
+- A könyvelőprogram-exportot csak kimért programra hirdetjük (`KIMERVE`).
+- A képek felületszövegei az alkalmazásból valók: a validátor mondata, az
+  állapotcímkék és a nyitólap bizonylatlistája. A kitalált adószám a valódi
+  `ervenyes()`-en is átmegy.
+- A gyártott fájlok naprakészek.
+
+Mind a tíz szándékos rontásra piros lett.
+
+**A képek illesztése mérésből jön.** A fekvő formátumban az első futás 52–69%-ra
+kicsinyített. A fekvő elrendezés azóta alcím nélküli, sűrű kártyás, és
+kicsinyítés nélkül fér el. A 9:16-os képeken felül 270, alul 360 képpont
+szabad marad, mert ott a Meta felülete takar.
+
+**Amit a csomag nem old meg, és ezért az OLVASS-EL elöl mondja:**
+- **Nincs pixel és nincs Google-címke.** Az Adatkezelési tájékoztató 2. pontja
+  ígéri, hogy nincs hirdetési kód. A kampánycél ezért:
+  - Meta: céloldal-megtekintés;
+  - Google: kattintások maximalizálása.
+
+  A Performance Max anyaga kész, de mérés nélkül nem ajánlott indítani.
+- **Az oldal semmilyen látogatásmérést nem futtat.** A kampányhatás saját
+  jelzése a „Honnan hallottál rólunk?” válasz, összesítve (*Google-keresés*,
+  *Online hirdetés*, *Facebook*).
+- **Harmadik fél védjegyei** (RLB, Novitax, Kulcs) a hirdetésszövegben:
+  jogosulti panasz esetén a Google korlátozhatja őket.
+- A két bemutatóvideó 16:9-es (44 és 70 mp, az MP4-fejlécből mérve), álló
+  változat nincs.
+- A CSV-oszlopnevek az Ads Editor angol felületéhez igazodnak. A konténerből
+  nem tudtam kipróbálni, ezért közzététel előtt az előnézetet át kell nézni.

@@ -32,6 +32,9 @@ export default defineConfig({
       // `shared/uzleti/`-ben: aki egy árat átír, annak ott akadjon meg a szeme
       // rajta. E sor nélkül az a teszt **némán sosem futna le**.
       'config/**/*.test.ts',
+      // A hirdetéscsomag őre: karakterkorlátok és tiltott ígéretek, feltöltés
+      // előtt. E sor nélkül némán sosem futna le.
+      'marketing/**/*.test.ts',
       'shared/**/*.test.ts',
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
