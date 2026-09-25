@@ -356,13 +356,19 @@ describe('a Könyvelőknek oldal sem ígér többet, mint a kód', () => {
 
   it('nem ígér feltétlen emberi jóváhagyást, és nem ígéri, hogy az adat végig az Unióban marad', () => {
     expect(konyveloknek).not.toMatch(/Minden bizonylatot\s+(<strong[^>]*>\s*)?te hagysz/);
-    expect(konyveloknek).toContain('Alapértelmezés szerint minden bizonylat rád vár');
+    expect(konyveloknek).toContain('Alapbeállítás szerint minden bizonylat a te vagy egy munkatársad jóváhagyására vár');
     expect(konyveloknek).not.toContain('végig az Unión belül');
-    expect(konyveloknek).toContain('a bizonylat a Google modelljéhez kerül');
+    // 2026-09-25 óta a lap a közvetítőt is megnevezi, és kimondja, hogy ez
+    // Unión kívüli feldolgozás – mindkét fele kell, nem csak a Google neve.
+    expect(konyveloknek).toContain('az OpenRouter közvetítésével a Google szolgáltatásához kerül');
+    expect(konyveloknek).toContain('Unión kívüli adatfeldolgozással jár');
   });
 
   it('kimondja, hogy az ügyfélszűrő nem jogosultság (Adatkezelés 1. pont)', () => {
-    expect(konyveloknek).toContain('Az ügyfélszűrő nem jogosultság');
+    // 2026-09-25 óta tárgyilagos megfogalmazásban: a szűrő válogat, a
+    // hozzáférést nem korlátozza – és az ügyfélként meghívottra is igaz.
+    expect(konyvelokSzoveg).toContain('a hozzáférést nem korlátozza');
+    expect(konyvelokSzoveg).toContain('Ez az ügyfélként meghívott felhasználókra is igaz');
   });
 
   it('csak olyan könyvelőprogramot nevez meg, amit valódi példány beolvasott (KIMERVE)', () => {

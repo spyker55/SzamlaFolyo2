@@ -1132,11 +1132,16 @@ export function Lablec() {
               tárolódnak." Ez 2026 szeptembere óta **nem igaz** — és pont ez az
               a mondat, amit egy nyitólapon a legkönnyebb bennfelejteni, mert
               érvnek hangzik. Az igaz alak sem gyengébb: a kiolvasás az, ami
-              Unión kívülre megy, és arról az Adatkezelési tájékoztató szól.
+              Unión kívülre megy, és arról az Adatkezelési tájékoztató szól – ezért
+              mutat rá a mondat második fele (2026-09-25).
             */}
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              Az adatokat és az eredeti bizonylatfájlokat az Európai Unión belül, frankfurti
-              kiszolgálón tároljuk.
+              Az adatbázist és a bizonylatfájlokat frankfurti kiszolgálón tároljuk. A
+              feldolgozásban részt vevő szolgáltatókról az{' '}
+              <Link to="/adatkezeles" className="underline transition-colors hover:text-blue-600">
+                adatkezelési tájékoztatóban
+              </Link>{' '}
+              olvashatsz.
             </p>
           </div>
 

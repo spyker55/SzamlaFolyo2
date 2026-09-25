@@ -5960,3 +5960,70 @@ Ellenőrizve a buildelt lapon (390, 1024, 1280 és 1440 px):
 - a kártyák soronként 3 sort mutatnak, a közös lista egyszer szerepel;
 - nincs túllógás és nincs JS-hiba;
 - a hero oszlopai 1440 px-en 641/551 px magasak.
+
+### 📝 Könyvelőknek: új szövegek, feladatközpontú NAV-tábla, kalkulátortábla (2026-09-25)
+
+A tulajdonos átírta a „Könyvelőknek” oldal szövegeit, három elvvel:
+1. **A könyvelőprogramok elöl.** Az RLB Kettős, a Novitax NTAX és a
+   Kulcs-Könyvelés már a heróban áll, kiemelt sorban.
+2. **Tárgyilagos, nem védekező hang.** Kikerült a „nem hiányzó funkció”, a
+   „Jobb, ha most tudod meg” és az „Idegen cégek számláiról van szó. Tudjuk.”
+   A helyükre leírás került arról, hogyan használható a rendszer.
+3. **A működési feltételek egyértelműen a lapon maradnak:**
+   - a munkaterület tagjai minden ügyfél bizonylatát látják, az ügyfélként
+     meghívottak is;
+   - a fájlok az export után törlődnek.
+
+**A NAV-tábla feladatközpontú lett.** Eddig „NAV: igen/nem – SzámlaFolyó:
+igen” volt, most „Mivel dolgozol? – Miben segít a SzámlaFolyó?”.
+
+**A tábla egy mondata a kódhoz igazodott.** A szövegfájl azt írta: „nyomon
+követhetővé teszi, ki hagyta jóvá a bizonylatot”:
+- a rendszer ezt rögzíti (`documents.approved_by`), de ma **sehol nem
+  mutatja**, sem a felületen, sem az exportban;
+- a régi lap „Jóváhagyás: ki nézte át” sora ugyanezt ígérte, ez régi adósság
+  volt;
+- a tulajdonos döntése: a mondat íródik át („exportba csak a jóváhagyott
+  bizonylat kerül”), a funkció nem készül el.
+
+**A kalkulátor táblázat lett:**
+- széles nézetben összehasonlító tábla hét sorral, a legolcsóbb oszlop
+  kiemelve „A megadott mennyiséghez a legkedvezőbb havi díj” jelöléssel;
+- mobilon kártyák ugyanazokkal a sorokkal: egy `KALK_SOROK` lista rajzolja
+  mindkettőt;
+- `table-fixed`, mert a hosszú jelölés a kiemelt oszlopot kétszer olyan
+  szélesre húzta (mérve);
+- a korábbi feltételes figyelmeztetés („nálatok ennél több kell”) helyett a
+  szöveg szerinti állandó mondat áll: a költési korlátnak fedeznie kell a
+  kereten felüli díjat.
+
+A példa (25 ügyfél × 30 bizonylat) a lapon ugyanazt adja, mint a
+szövegfájl:
+- havidíj: 39 900 / 31 900 / 27 400 Ft;
+- bizonylatonként: 53 / 43 / 37 Ft.
+
+A számok a configból jönnek; az őr („árat nem ír kézzel”) zöld.
+
+**Egyéb:**
+- A fejléc linkjei: Főoldal · Bemutató · Költségkalkulátor. 320 px-en
+  mindhárom egy sorban fér el.
+- A lábléc közös, ezért a tárolási mondat **mindkét lapon** az új lett: „Az
+  adatbázist és a bizonylatfájlokat frankfurti kiszolgálón tároljuk. A
+  feldolgozásban részt vevő szolgáltatókról az adatkezelési tájékoztatóban
+  olvashatsz.” A tájékoztatóra link mutat.
+- A linknevek rövidek maradtak (ÁSZF, Adatkezelés).
+- Az őrök az új megfogalmazást figyelik, az állítás ugyanaz:
+  - „Alapbeállítás szerint … jóváhagyására vár”;
+  - a Google-hez kerülés **és** az „Unión kívüli adatfeldolgozással jár”;
+  - „a hozzáférést nem korlátozza” **és** hogy ez az ügyfélként
+    meghívottra is igaz.
+
+  Mindhárom rontásra piros lett.
+
+Ellenőrizve a buildelt lapon (320, 390, 768, 1024 és 1440 px):
+- nincs túllógás, nincs JS-hiba;
+- a „Költségkalkulátor” horgony a fejléc alá érkezik.
+
+A bemutatóvideó zárókártyája („Próbáld ki egy ügyfél egy hónapjával.”) a régi
+zárómondatot idézi. Szándékosan nem vettük újra: a videó a folyamatot
+mutatja, a mondat pedig nem valótlan.
