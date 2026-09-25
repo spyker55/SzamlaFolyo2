@@ -5942,10 +5942,11 @@ szerint igazítva:
   is.
 - A „Milyen bizonylatokat kezel?” szakasz felcímet kapott.
 - Az Előnyök alá került a „nem szűrnek ki minden hibát” mondat.
-- A lábléc linkjei a nyitólapon (és a Könyvelőknek lapon) kiírt névvel
-  állnak: „Általános szerződési feltételek”, „Adatkezelési tájékoztató”. A
-  tulajdonos döntése szerint máshol a rövid név marad; ezt a
-  `LablecLinkek teljesNev` kapcsolója intézi.
+- A lábléc linkjei a szövegfájlban kiírt névvel álltak („Általános
+  szerződési feltételek”, „Adatkezelési tájékoztató”). Egy körig így is
+  voltak a nyitólapon, aztán a tulajdonos visszakérte a rövid neveket
+  („ÁSZF”, „Adatkezelés”). A közös `LABLEC_LINKEK` így minden láblécben
+  ugyanaz maradt.
 - Az `index.html` keresőleírása a régi herót idézte („te csak azt
   ellenőrzöd, amiben nem biztos”), ez is az új szövegre állt.
 - A fejléc „Ingyenes próba” gombja marad: a szövegfájl csak a menüt

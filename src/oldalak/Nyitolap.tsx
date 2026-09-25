@@ -1163,7 +1163,7 @@ export function Lablec() {
             <Link to="/konyveloknek" className="transition-colors hover:text-blue-600">
               Könyvelőknek
             </Link>
-            <LablecLinkek osztaly="transition-colors hover:text-blue-600" teljesNev />
+            <LablecLinkek osztaly="transition-colors hover:text-blue-600" />
           </nav>
         </div>
 

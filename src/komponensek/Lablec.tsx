@@ -20,12 +20,12 @@ import { Link } from 'react-router-dom';
  * - **Kapcsolat** (`mailto:`) — a cím megvan az Impresszumban és a Használati
  *   útmutató végén is, vagyis nem tűnik el, csak nem a láblécben áll.
  */
-export const LABLEC_LINKEK: readonly { ut: string; cimke: string; teljes?: string }[] = [
+export const LABLEC_LINKEK = [
   { ut: '/utmutato', cimke: 'Használati útmutató' },
-  { ut: '/aszf', cimke: 'ÁSZF', teljes: 'Általános szerződési feltételek' },
-  { ut: '/adatkezeles', cimke: 'Adatkezelés', teljes: 'Adatkezelési tájékoztató' },
+  { ut: '/aszf', cimke: 'ÁSZF' },
+  { ut: '/adatkezeles', cimke: 'Adatkezelés' },
   { ut: '/impresszum', cimke: 'Impresszum' },
-];
+] as const;
 
 /**
  * A linkek maguk, keret nélkül.
@@ -39,20 +39,8 @@ export const LABLEC_LINKEK: readonly { ut: string; cimke: string; teljes?: strin
  * A keretet (a `<nav>`-ot és a tipográfiát) a hívó adja: a nyitólap láblécében
  * félkövér, a belépett felületen halvány apróbetű. A **lista** viszont közös —
  * az a része, ami elromolhat.
- *
- * A `teljesNev` a nyitólap (és a Könyvelőknek lap) láblécének kérése: ott a
- * kiírt név áll („Általános szerződési feltételek”), máshol a rövid, mert a
- * belépett felület apróbetűs sorában a hosszú alak csak helyet foglalna.
  */
-export function LablecLinkek({
-  osztaly,
-  ujLapon = false,
-  teljesNev = false,
-}: {
-  osztaly?: string;
-  ujLapon?: boolean;
-  teljesNev?: boolean;
-}) {
+export function LablecLinkek({ osztaly, ujLapon = false }: { osztaly?: string; ujLapon?: boolean }) {
   return (
     <>
       {LABLEC_LINKEK.map((elem) => (
@@ -62,7 +50,7 @@ export function LablecLinkek({
           className={osztaly}
           {...(ujLapon ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
         >
-          {teljesNev ? (elem.teljes ?? elem.cimke) : elem.cimke}
+          {elem.cimke}
           {ujLapon && <span className="sr-only"> (új lapon nyílik)</span>}
         </Link>
       ))}
