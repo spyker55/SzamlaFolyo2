@@ -5910,3 +5910,52 @@ mozgással is:
 A felvevő szkript két változatú lett (`felvetel.mjs konyveloknek|nyitolap`).
 A könyvelős változatot egy próbamappába újra felvettük, hogy az átírás nem
 törte-e el.
+
+### 📝 Nyitólap: új szövegek, közös funkciók egyszer (2026-09-25)
+
+A tulajdonos átírta a nyitólap minden szövegét (szakaszról szakaszra, a
+fejléctől a láblécig). A szöveg mind az ő fájljából jön, két házszabály
+szerint igazítva:
+- **Nagykötőjel (–) a hosszú gondolatjel (—) helyett.** A látható szövegben
+  ezt a `gondolatjel.test.ts` őrzi, és a fájl három helyén piros is lett.
+- **A számok nem íródnak be kézzel:**
+  - a próba napjai és dokumentumai, a csomagárak, a keretek és a kereten
+    felüli díjak a `config/szamlafolyo.ts`-ből jönnek;
+  - a „Mi számít egy dokumentumnak?” példáinak oldalhatárai a `hatar()`-ból
+    („1–5”, „6–10”).
+
+**Szerkezeti változás az áraknál:**
+- a csomagkártyán csak a három választási szempont áll: a havi keret, a
+  felhasználók száma és a kereten felüli díj;
+- a hat közös funkció **egyszer** áll, a kártyák alatt, „Mindhárom csomag
+  tartalmazza” címmel. Addig mindhárom kártyán megismétlődött;
+- alatta három kérdés-válasz blokk:
+  - mennyit fizetsz;
+  - mi van, ha elfogy a keret;
+  - mi számít egy dokumentumnak;
+- mindhárom gomb „Kipróbálom ingyen”;
+- a jellemzés két sornyi helyet kap, így a hosszabb Pro-szöveg sem tolja
+  lejjebb az árat (mérve).
+
+**Egyéb:**
+- A hero bemutatóvideója látható leírást kapott, ugyanez az `aria-label`
+  is.
+- A „Milyen bizonylatokat kezel?” szakasz felcímet kapott.
+- Az Előnyök alá került a „nem szűrnek ki minden hibát” mondat.
+- A lábléc linkjei a nyitólapon (és a Könyvelőknek lapon) kiírt névvel
+  állnak: „Általános szerződési feltételek”, „Adatkezelési tájékoztató”. A
+  tulajdonos döntése szerint máshol a rövid név marad; ezt a
+  `LablecLinkek teljesNev` kapcsolója intézi.
+- Az `index.html` keresőleírása a régi herót idézte („te csak azt
+  ellenőrzöd, amiben nem biztos”), ez is az új szövegre állt.
+- A fejléc „Ingyenes próba” gombja marad: a szövegfájl csak a menüt
+  sorolta.
+
+Őr: a nyitólap forrásában nincs beégetett havidíj, `Havi N dokumentum` és
+`N Ft / dokumentum`. Mindhárom rontásra piros lett.
+
+Ellenőrizve a buildelt lapon (390, 1024, 1280 és 1440 px):
+- minden kulcsmondat a lapon van;
+- a kártyák soronként 3 sort mutatnak, a közös lista egyszer szerepel;
+- nincs túllógás és nincs JS-hiba;
+- a hero oszlopai 1440 px-en 641/551 px magasak.

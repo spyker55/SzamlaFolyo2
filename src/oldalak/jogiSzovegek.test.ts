@@ -441,3 +441,18 @@ describe('a nyitólap bemutatóvideója', () => {
     }
   });
 });
+
+describe('a nyitólap árai a configból jönnek', () => {
+  /**
+   * 2026-09-25 óta a csomagkártyán csak a keret, a fejszám és a kereten felüli
+   * díj áll – pont a három szám, amit egy kézzel írt szövegcsere a
+   * legkönnyebben beéget. Egy áremelés után a lap nem mutathat régit.
+   */
+  const kod = nyitolap.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  it('nincs beégetett havidíj, dokumentumkeret vagy kereten felüli díj', () => {
+    for (const minta of [/\b(4|9|19)[\s ]?900\b/, /Havi\s+\d+\s+dokumentum/, /\b\d+\s*Ft\s*\/\s*dokumentum/]) {
+      expect(kod, `A nyitólap forrásában kézzel írt csomagszám áll (${minta}) – a config/szamlafolyo.ts-ből jöjjön.`).not.toMatch(minta);
+    }
+  });
+});

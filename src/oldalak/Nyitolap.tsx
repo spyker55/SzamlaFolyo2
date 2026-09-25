@@ -5,8 +5,8 @@ import { FejlesztesAlattSav } from '../komponensek/FejlesztesAlatt.tsx';
 import { FejlesztesAlattAblak } from '../komponensek/FejlesztesAlattAblak.tsx';
 import { LablecLinkek } from '../komponensek/Lablec.tsx';
 import { kapcsolatEmail, regisztracioNyitva } from '../lib/kornyezet.ts';
-import { csomagSorrend, szamlafolyo } from '@config/szamlafolyo.ts';
-import { szabaly } from '@uzleti/kredit.ts';
+import { csomagSorrend, szamlafolyo, type CsomagKulcs } from '@config/szamlafolyo.ts';
+import { hatar } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { tetejereUszik } from '../lib/gorgetes.ts';
 import { allapotCimke } from '@uzleti/enumok.ts';
@@ -45,30 +45,22 @@ import { allapotCimke } from '@uzleti/enumok.ts';
  * - **A villám alakú logójel.** Van valódi szóvédjegyünk és jelünk
  *   (`komponensek/Logo.tsx`), az marad.
  *
- * # A hero szövege: vissza az eredetihez
+ * # A szövegek
  *
- * Egy korábbi körben a **gépi jóváhagyás** lett a lap fő ígérete („Csak azt
- * kapod kézhez, amivel tényleg dolgod van"). Az élesben végigvitt folyamat
- * után a döntés megfordult: **minden bizonylat emberi jóváhagyásra vár**, és
- * ez a helyes működés. A gépezet megmarad, de alapból kikapcsolva
- * (`20260915000100_auto_jovahagyas_alapbol_ki.sql`), és **egyetlen szöveg sem
- * ígéri** — ezért állt vissza ide a régi lap hero-szövege.
+ * 2026-09-25 óta a lap minden szövege a tulajdonos átírt szövegfájljából jön
+ * (szakaszról szakaszra, a DONTESTORTENET „📝 Nyitólap: új szövegek” pontja).
+ * Két szabály változatlanul él benne, és ezeket egy újraírás se vigye el:
  *
- * ## Két szándékos eltérés a régi laptól
+ * - **A jóváhagyás mindig „alapbeállítás szerint” a tiéd**, soha nem
+ *   feltétel nélkül: a gépi jóváhagyás létező, bekapcsolható funkció
+ *   (`20260915000100_auto_jovahagyas_alapbol_ki.sql`). Őr:
+ *   `jogiSzovegek.test.ts`, 9. pont.
+ * - **A feltöltés áll elöl, az e-mailes beküldés másodikként**: a beküldés
+ *   alapból kikapcsolva érkezik, a cégnek egyszer be kell kapcsolnia.
  *
- * 1. ~~**„Küldd tovább a számlát" → „Töltsd fel…".**~~ **Ez az eltérés
- *    megszűnt** (`20260915000200_email_bekuldes.sql`): az e-mailes beküldés
- *    elkészült, webhookkal. A hero mondata ezért mindkét utat mondja — a
- *    feltöltés áll elöl, mert a beküldés **alapból kikapcsolva** érkezik, és a
- *    cégnek egyszer be kell kapcsolnia a Beállításokban. Egy hero, ami az
- *    alapállapotban nem létező utat hirdetne elsőként, ugyanaz a hazugság
- *    lenne, mint amit ez a kör máshol javít.
- * 2. **A kiemelt szó színe.** A régi lapon a „könyvelésre kész adat" két színű
- *    volt, a második szó mustárral. A mustár ezen a háttéren **mérve
- *    olvashatatlan**: `#dfb671` a `#f6ede4` vásznon ~1,6:1, a WCAG nagy betűre
- *    is 3:1-et kér. Ezért a meglévő terrakotta színátmenet viszi mindkét szót
- *    — ránézésre ugyanaz a kétszínű hatás, csak olvasható. A mustár ott marad,
- *    ahol dísz: a háttérfoltokon és az „Ajánlott" jelvényen.
+ * A kiemelt szó (most: „rendezett adatok”) a terrakotta színátmenetet kapja,
+ * nem a mustárt: `#dfb671` a `#f6ede4` vásznon ~1,6:1, a WCAG nagy betűre is
+ * 3:1-et kér. A mustár ott marad, ahol dísz.
  *
  * Ami a lábléc „Az adatok magyar szervereken tárolódnak" mondatát illeti: az
  * **nem tér vissza**. Az adat 2026 szeptembere óta Frankfurtban van, és ez az
@@ -77,8 +69,8 @@ import { allapotCimke } from '@uzleti/enumok.ts';
  *
  * # Amit nem írunk újra
  *
- * A számok mind a `config/szamlafolyo.ts`-ből jönnek, a fair-use mondat a
- * `szabaly()`-ból, az állapotnevek az `enumok.ts`-ből, a forintformázás a
+ * A számok mind a `config/szamlafolyo.ts`-ből jönnek (az oldalhatár is, a
+ * `hatar()`-on át), az állapotnevek az `enumok.ts`-ből, a forintformázás a
  * `formaz()`-ból (**nem** `toLocaleString`-ből: az a fejléc nélküli
  * böngészőkben nem csoportosít).
  */
@@ -326,26 +318,27 @@ function Hero() {
                 <span className="absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75 motion-safe:animate-ping" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
               </span>
-              A legtisztább számlafeldolgozó munkafolyamat
+              <span className="tracking-wide uppercase">Vállalkozóknak és könyvelőknek</span>
             </p>
 
             <h1 className="mb-6 text-4xl leading-tight font-extrabold text-slate-800 sm:text-5xl lg:text-6xl">
-              Dokumentumból ellenőrzött,{' '}
+              Számlákból{' '}
               <span className="bg-linear-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">
-                könyvelésre kész adat
-              </span>{' '}
-              percek alatt.
+                rendezett adatok
+              </span>
+              , kevesebb kézi munkával.
             </h1>
 
-            <p className="mb-8 text-lg leading-relaxed text-slate-500 sm:text-xl">
+            <p className="mb-4 text-lg leading-relaxed text-slate-500 sm:text-xl">
               <strong className="font-bold text-slate-800">
-                Töltsd fel a számlát vagy a nyugtát – vagy küldd tovább e-mailben. A
-                SzámlaFolyó kiolvassa.
+                Töltsd fel a számlákat és nyugtákat, vagy továbbítsd őket e-mailben.
               </strong>{' '}
-              <strong className="font-bold text-slate-800">Alapértelmezés szerint minden
-              bizonylatot te hagysz jóvá</strong> – a rendszer megjelöli, amiben bizonytalan,
-              tehát elsősorban azzal van dolgod. Export, és kész. Nem funkciókat halmozunk, hanem a legkisebb,
-              leggyorsabb munkafolyamatot adjuk.
+              A SzámlaFolyó kiolvassa az adatokat, és megjelöli, ahol ellenőrzésre van szükség. Te
+              átnézed, jóváhagyod, majd letöltöd őket a könyveléshez.
+            </p>
+            <p className="mb-8 text-lg leading-relaxed text-slate-500 sm:text-xl">
+              Vállalkozóként egyszerűbben készítheted elő a bizonylatokat a könyvelődnek.
+              Könyvelőként kevesebb időt tölthetsz az adatok kézi rögzítésével.
             </p>
 
             <HeroGombok />
@@ -386,7 +379,7 @@ function HeroGombok() {
             <IkonNyil className="h-5 w-5" />
           </Link>
           <a href="#folyamat" className="btn btn-secondary rounded-full border-zsalya/30 px-8 py-4 text-lg font-semibold">
-            Nézzük, hogyan működik
+            Megnézem, hogyan működik
           </a>
         </div>
         <p className="mt-4 text-sm text-slate-500">
@@ -406,7 +399,7 @@ function HeroGombok() {
         <IkonNyil className="h-5 w-5" />
       </Link>
       <a href="#folyamat" className="btn btn-secondary rounded-full border-zsalya/30 px-8 py-4 text-lg font-semibold">
-        Nézzük, hogyan működik
+        Megnézem, hogyan működik
       </a>
     </div>
   );
@@ -420,9 +413,12 @@ function HeroGombok() {
  */
 function ProbaAdatok() {
   const adatok = [
-    { szam: `${szamlafolyo.proba.napok} nap`, mit: 'próbaidő, kötelezettség nélkül' },
-    { szam: `${szamlafolyo.proba.dokumentumok} dokumentum`, mit: 'ingyen, teljes funkcionalitással' },
-    { szam: 'Nincs bankkártya', mit: 'a próbához nem kérjük' },
+    { szam: `${szamlafolyo.proba.napok} napos ingyenes próba`, mit: 'Kötelezettség nélkül.' },
+    {
+      szam: `${szamlafolyo.proba.dokumentumok} dokumentum feldolgozása`,
+      mit: 'A próba alatt minden funkció elérhető.',
+    },
+    { szam: 'Bankkártya nélkül', mit: 'A kipróbáláshoz nem kérünk kártyaadatokat.' },
   ];
 
   return (
@@ -439,6 +435,7 @@ function ProbaAdatok() {
 
 /** A nyitólap bemutatóvideója (`scripts/bemutato-video/`, `nyitolap` változat). */
 const HERO_VIDEO = {
+  leiras: 'Egy számla útja a feltöltéstől az ellenőrzésen át az exportig.',
   mp4: '/bemutato/nyitolap.mp4',
   webm: '/bemutato/nyitolap.webm',
   poszter: '/bemutato/nyitolap-poszter.jpg',
@@ -525,7 +522,7 @@ function HeroVideo() {
           playsInline
           preload="metadata"
           poster={HERO_VIDEO.poszter}
-          aria-label="Bemutató: egy számla feltöltése, ellenőrzése, jóváhagyása és exportja"
+          aria-label={`Bemutató: ${HERO_VIDEO.leiras}`}
           className="aspect-video w-full"
         >
           <source src={HERO_VIDEO.mp4} type="video/mp4" />
@@ -533,7 +530,9 @@ function HeroVideo() {
         </video>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3">
+      <p className="mt-3 text-sm text-slate-500">{HERO_VIDEO.leiras}</p>
+
+      <div className="mt-2 flex items-center justify-between gap-3">
         <button type="button" className="btn btn-ghost btn-sm" onClick={valt}>
           {megy ? (
             <>
@@ -607,7 +606,7 @@ function FormatumSav() {
     <section className="border-y border-zsalya/20 bg-vaszon py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="mb-6 text-center text-sm font-bold tracking-widest text-slate-500 uppercase">
-          Az adatot úgy kapod meg, ahogy a rendszered kéri
+          Az adatokkal a saját rendszeredben dolgozhatsz tovább
         </p>
         <div className="flex flex-wrap items-center justify-center gap-8 text-slate-700 opacity-70 md:gap-16">
           <span className="font-mono text-xl font-bold">.XLSX</span>
@@ -620,32 +619,33 @@ function FormatumSav() {
 }
 
 // ---------------------------------------------------------------------------
-// A munkafolyamat
+// Hogyan működik?
 // ---------------------------------------------------------------------------
 
 function Folyamat() {
   const lepesek = [
     {
-      cim: 'Beküldés',
+      cim: 'Töltsd fel vagy küldd tovább',
       szoveg:
-        'Húzd be a fájlokat a Beérkezőbe – PDF, kép vagy e-számla XML, egyszerre több is. Vagy küldd tovább őket a céged saját beküldő címére.',
+        'Húzd a PDF-eket, képeket vagy e-számla XML-fájlokat a Beérkezőbe – akár egyszerre többet is. E-mailben kaptad a számlát? Továbbítsd a céged saját beküldési e-mail-címére.',
       ikon: <IkonFeltoltes className="h-8 w-8" />,
     },
     {
-      cim: 'Kiolvasás',
+      cim: 'A SzámlaFolyó kiolvassa az adatokat',
       szoveg:
-        'Az e-számla XML-jét gép olvassa, modell nélkül – másodperc alatt. Papír vagy szkennelt PDF esetén jön az AI.',
+        'A fotózott és szkennelt bizonylatok adatait mesterséges intelligencia ismeri fel. A támogatott XML-formátumú e-számlákból a rendszer közvetlenül veszi át az adatokat.',
       ikon: <IkonVillam className="h-8 w-8" />,
     },
     {
-      cim: 'Ellenőrzés',
+      cim: 'Ellenőrizd és hagyd jóvá',
       szoveg:
-        'Alapértelmezés szerint minden bizonylat rád vár: gépi jóváhagyás csak akkor van, ha te kapcsolod be.',
+        'A rendszer megjelöli a bizonytalan adatokat és az észlelt eltéréseket, így látod, mire érdemes külön figyelned. Alapbeállítás szerint minden bizonylat a te jóváhagyásodra vár.',
       ikon: <IkonPajzs className="h-8 w-8" />,
     },
     {
-      cim: 'Export',
-      szoveg: 'Egy kattintás, és letöltöd XLSX, CSV vagy JSON formátumban a könyveléshez.',
+      cim: 'Töltsd le az adatokat',
+      szoveg:
+        'A jóváhagyott bizonylatok adatait XLSX, CSV vagy JSON formátumban exportálhatod a további feldolgozáshoz.',
       ikon: <IkonLetoltes className="h-8 w-8" />,
     },
   ];
@@ -653,9 +653,9 @@ function Folyamat() {
   return (
     <Szekcio
       id="folyamat"
-      felcim="A munkafolyamat"
-      cim="Nem kell mindent túlbonyolítani."
-      alcim="A SzámlaFolyó azért készült, hogy elvégezze helyetted az adatrögzítést. A kevesebb gomb néha több szabadidőt jelent."
+      felcim="Hogyan működik?"
+      cim="Feltöltéstől az exportig, négy lépésben."
+      alcim="A SzámlaFolyó kiolvassa a bizonylatok adatait, és segít az ellenőrzésben. Alapbeállítás szerint minden bizonylatot te hagysz jóvá az export előtt."
       halvany
     >
       <ol className="relative grid gap-8 md:grid-cols-4">
@@ -682,7 +682,7 @@ function Folyamat() {
 }
 
 // ---------------------------------------------------------------------------
-// Minden bizonylat egy folyamatban
+// Milyen bizonylatokat kezel?
 // ---------------------------------------------------------------------------
 
 /**
@@ -693,21 +693,25 @@ function Folyamat() {
  * amit a rendszer valóban kiír.
  */
 function EgyFolyamatban() {
-  const allitasok = [
+  const allitasok: { cim: string; bekezdesek: readonly string[] }[] = [
     {
-      cim: 'Vegyes bizonylatok',
-      szoveg:
-        'Belföldi számla, nyugta, külföldi bizonylat, fotózott blokk és e-számla XML – egy folyamatban, egy exportban.',
+      cim: 'Többféle bizonylat, közös kezelés',
+      bekezdesek: [
+        'Belföldi és külföldi számlák, nyugták, fotózott bizonylatok és e-számla XML-fájlok adatait is kezelheted, majd együtt exportálhatod.',
+      ],
     },
     {
-      cim: 'E-számla XML modellhívás nélkül',
-      szoveg:
-        'Az UBL-t, a CII-t (Factur-X, ZUGFeRD) és a magyar formátumokat gép olvassa ki: másodperc alatt, AI nélkül. A darabkeretbe ugyanúgy beleszámít, mint bármelyik bizonylat.',
+      cim: 'Közvetlen adatátvétel az e-számlákból',
+      bekezdesek: [
+        'A támogatott XML-formátumokból a SzámlaFolyó közvetlenül olvassa ki az adatokat, képfelismerés nélkül. Ide tartozik az UBL, a CII – köztük a Factur-X és a ZUGFeRD –, valamint a támogatott magyar XML-formátumok.',
+        'Az XML-fájlok feldolgozása is beleszámít a dokumentumkeretbe.',
+      ],
     },
     {
-      cim: 'Rendszerfüggetlenség',
-      szoveg:
-        'Nincs bezártság. Az adatot úgy kapod meg (XLSX, CSV, JSON), ahogy a saját rendszered kéri – és az eredetit ZIP-ben mellé.',
+      cim: 'Letölthető adatok és eredeti bizonylatok',
+      bekezdesek: [
+        'Az adatokat XLSX, CSV vagy JSON formátumban viheted tovább. Az eredeti bizonylatfájlokat ZIP-csomagban is letöltheted.',
+      ],
     },
   ];
 
@@ -716,12 +720,16 @@ function EgyFolyamatban() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-16 lg:grid-cols-2">
           <div>
+            <p className="mb-3 text-sm font-bold tracking-widest text-blue-600 uppercase">
+              Milyen bizonylatokat kezel?
+            </p>
             <h2 className="mb-6 text-3xl font-extrabold text-slate-800">
-              Minden bizonylat egy helyen, egy folyamatban.
+              Számlák, nyugták, külföldi bizonylatok – egy helyen.
             </h2>
             <p className="mb-8 text-lg leading-relaxed text-slate-500">
-              A hangsúly nem csak a hazai számlákon van. Legyen éttermi blokk, külföldi bizonylat
-              vagy vegyesen beszkennelt PDF – a SzámlaFolyó szétválogatja és értelmezi.
+              Egy e-mailben érkezett számla, egy lefotózott éttermi nyugta vagy több bizonylatot
+              tartalmazó PDF: a SzámlaFolyóban ugyanazon a folyamaton mennek végig. A közös fájlba
+              szkennelt bizonylatokat a rendszer különválasztja és feldolgozza.
             </p>
 
             <ul className="space-y-5">
@@ -732,9 +740,11 @@ function EgyFolyamatban() {
                   </span>
                   <span>
                     <span className="block font-bold text-slate-800">{a.cim}</span>
-                    <span className="mt-1 block text-sm leading-relaxed text-slate-500">
-                      {a.szoveg}
-                    </span>
+                    {a.bekezdesek.map((b) => (
+                      <span key={b} className="mt-1 block text-sm leading-relaxed text-slate-500">
+                        {b}
+                      </span>
+                    ))}
                   </span>
                 </li>
               ))}
@@ -752,7 +762,7 @@ function BeerkezoMinta() {
   const sorok = [
     {
       fajl: 'e-szamla.xml',
-      mit: 'XML-ből kiolvasva • modellhívás nélkül',
+      mit: 'Az adatok közvetlenül az XML-fájlból származnak.',
       allapot: allapotCimke('jovahagyva'),
       jelveny: 'badge-kesz',
       ikon: <IkonFajl className="h-6 w-6" />,
@@ -760,7 +770,7 @@ function BeerkezoMinta() {
     },
     {
       fajl: 'etterem_blokk.jpg',
-      mit: 'Egy mező nem megy át az ellenőrzésen',
+      mit: 'Egy adat ellenőrzést igényel.',
       allapot: allapotCimke('ellenorzesre_var'),
       jelveny: 'badge-varakozo',
       ikon: <IkonKep className="h-6 w-6" />,
@@ -768,7 +778,7 @@ function BeerkezoMinta() {
     },
     {
       fajl: 'aws_invoice_08.pdf',
-      mit: 'Külföldi, fordított adózás • minden mező átment az ellenőrzéseken',
+      mit: 'Külföldi, fordított adózású számla. Az automatikus ellenőrzések nem jeleztek eltérést.',
       allapot: allapotCimke('jovahagyva'),
       jelveny: 'badge-kesz',
       ikon: <IkonKartya className="h-6 w-6" />,
@@ -813,34 +823,34 @@ function BeerkezoMinta() {
 }
 
 // ---------------------------------------------------------------------------
-// Nem hisszük el a gépnek, amit mond
+// Előnyök: az ellenőrzés
 // ---------------------------------------------------------------------------
 
 function Elonyok() {
   const kartyak = [
     {
       ikon: <IkonRacs className="h-6 w-6" />,
-      cim: 'Az adószám matematikája',
+      cim: 'Ellenőrzi az adószám ellenőrző számjegyét',
       szoveg:
-        'A magyar adószám ellenőrző számjegye vagy stimmel, vagy nem. Ez nem vélemény kérdése, és nem a modell mondja meg.',
+        'A magyar adószám ellenőrző számjegyét a rendszer számítással vizsgálja. Ha eltérést talál, jelzi, hogy érdemes összevetned az adatot a bizonylattal.',
     },
     {
       ikon: <IkonSzamologep className="h-6 w-6" />,
-      cim: 'Nettó + ÁFA = bruttó',
+      cim: 'Összeveti a nettó, az áfa- és a bruttó összegeket',
       szoveg:
-        'Az ÁFA-bontás soronként is számol: ha a sorok nem adják ki a végösszeget, azt jelezzük – akkor is, ha a modell magabiztos volt.',
+        'A rendszer ellenőrzi az összegek összefüggéseit és az áfabontás sorait. Ha az adatok nem adják ki a végösszeget, figyelmeztet az eltérésre.',
     },
     {
       ikon: <IkonToll className="h-6 w-6" />,
-      cim: 'Kézírás külön elbírálás alá esik',
+      cim: 'Külön jelzi a kézzel írt bizonylatokat',
       szoveg:
-        'A kézzel írt bizonylatnál a szállító nevét nem lehet ellenőrizni semmivel – a modell pedig ilyenkor talál ki neveket a legmagabiztosabban. Ezért a kézírást külön megjelöljük.',
+        'A kézírás nehezebben olvasható, ezért az ilyen bizonylatok külön jelölést kapnak. Így tudod, hol érdemes alaposabban átnézned a felismert adatokat.',
     },
     {
       ikon: <IkonPajzs className="h-6 w-6" />,
-      cim: 'Az utolsó szó a tiéd',
+      cim: 'A jóváhagyás nálad marad',
       szoveg:
-        'Alapból minden bizonylat jóváhagyásra vár: semmi nem kerül exportba úgy, hogy egy ember rá ne bólintott volna. A gépi jóváhagyás külön bekapcsolható lehetőség, alapból ki van kapcsolva. És amit nem jelöltünk meg, az is lehet hibás – a nevekre nincs számtani ellenőrzés.',
+        'Alapbeállítás szerint csak az általad jóváhagyott bizonylatok kerülhetnek az exportba. Az automatikus jóváhagyás külön bekapcsolható.',
     },
   ];
 
@@ -848,8 +858,8 @@ function Elonyok() {
     <Szekcio
       id="elonyok"
       felcim="Előnyök"
-      cim="Nem hisszük el a gépnek, amit mond."
-      alcim="Egy kiolvasó modell akkor is magabiztos, amikor téved. Ezért minden bizonylat átmegy olyan ellenőrzéseken is, amelyeknek semmi közük a modellhez."
+      cim="Az adatkiolvasás mellett az ellenőrzésben is segít."
+      alcim="A kiolvasott adatokat a SzámlaFolyó külön szabályok alapján is ellenőrzi. Jelzi például az adószám ellenőrző számjegyének hibáját vagy az összegek közötti eltérést, hogy ezeket könnyebb legyen észrevenned."
       halvany
     >
       <div className="grid gap-6 sm:grid-cols-2">
@@ -866,6 +876,17 @@ function Elonyok() {
           </div>
         ))}
       </div>
+
+      {/*
+        Ez a mondat nem apróbetűs mentegetőzés, hanem a termék igaz határa: a
+        nevekre nincs számtani ellenőrzés. Ezért áll a kártyák alatt, nem
+        elrejtve.
+      */}
+      <p className="mx-auto mt-10 max-w-3xl text-center text-sm leading-relaxed text-slate-500">
+        Az automatikus ellenőrzések segítik az átnézést, de nem szűrnek ki minden hibát. A neveket
+        és más szöveges adatokat akkor is érdemes összevetned az eredetivel, ha a rendszer nem
+        jelzett problémát.
+      </p>
     </Szekcio>
   );
 }
@@ -877,31 +898,47 @@ function Elonyok() {
 /**
  * A terv sötét árszakasza, kiemelt középső csomaggal.
  *
+ * # Mi áll a kártyán, és mi alatta
+ *
+ * A kártyán **csak az, ami alapján választani kell**: a havi dokumentumkeret,
+ * a felhasználók száma és a kereten felüli díj. Ami mindhárom csomagban
+ * ugyanaz, az egyszer áll, a kártyák alatt (2026-09-25, a tulajdonos kérésére).
+ * Addig a hat közös sor mindhárom kártyán megismétlődött, és a három
+ * különbség elveszett közöttük.
+ *
  * ⚠️ A terv havi/éves kapcsolója **nincs itt**, és ez nem kifelejtés: éves
  * fizetés nincs a termékben, az indokát a `config/szamlafolyo.ts` írja le. Egy
  * kapcsoló, ami mögött nincs termék, ugyanaz a hazugság, mint egy kitalált
  * képernyőkép.
+ *
+ * A „Mi számít egy dokumentumnak?" szöveg nem a `szabaly()` mondatát
+ * használja (az ÁSZF, az Útmutató és a Beállítások igen), hanem a saját,
+ * példás megfogalmazását – a határ viszont itt is a `hatar()`-ból jön, így egy
+ * configváltás után a példák sem mondhatnak régit.
  */
 function Arak() {
-  const jellemzok = [
-    'Feltöltés a Beérkezőbe vagy beküldés e-mailben',
-    'Számla, nyugta, külföldi bizonylat',
-    'E-számla XML modellhívás nélkül',
-    'Bizonytalan mezők megjelölése',
-    'Export: XLSX / CSV / JSON',
+  const kozos = [
+    'Fájlfeltöltés és beküldés e-mailben',
+    'Számlák, nyugták és külföldi bizonylatok feldolgozása',
+    'Támogatott XML-formátumú e-számlák adatainak közvetlen kiolvasása',
+    'Bizonytalan adatok és észlelt eltérések jelölése',
+    'A bizonylatok ellenőrzése és jóváhagyása',
+    'Adatexport XLSX, CSV és JSON formátumban',
   ];
+  const h = hatar();
 
   return (
     <section id="arak" className="scroll-mt-27 bg-tinta py-24 text-vaszon lg:scroll-mt-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto mb-16 max-w-3xl text-center">
-          <p className="mb-3 text-sm font-bold tracking-widest text-mustar uppercase">Árazás</p>
+          <p className="mb-3 text-sm font-bold tracking-widest text-mustar uppercase">Árak</p>
           <h2 className="mb-4 text-3xl font-extrabold text-white md:text-4xl">
-            Fizess az értékért. Nincsenek rejtett költségek.
+            Válassz csomagot a havi bizonylatmennyiséghez.
           </h2>
           <p className="text-lg leading-relaxed text-vaszon/70">
-            A próba {szamlafolyo.proba.napok} napig tart, {szamlafolyo.proba.dokumentumok}{' '}
-            dokumentumig, és nem kér bankkártyát.
+            Próbáld ki a SzámlaFolyót {szamlafolyo.proba.napok} napig, legfeljebb{' '}
+            {szamlafolyo.proba.dokumentumok} dokumentummal. A próba alatt minden funkciót
+            használhatsz, bankkártya megadása nélkül.
           </p>
         </div>
 
@@ -926,13 +963,17 @@ function Arak() {
                 */}
                 {ajanlott && (
                   <span className="absolute top-0 right-8 -translate-y-1/2 rounded-full bg-mustar px-4 py-1.5 text-xs font-extrabold tracking-widest text-tinta uppercase shadow-lg">
-                    Ajánlott
+                    Ajánlott csomag
                   </span>
                 )}
 
                 <h3 className={`mb-2 font-extrabold ${ajanlott ? 'text-2xl text-white' : 'text-xl text-vaszon'}`}>
                   {cs.nev}
                 </h3>
+                {/* Két sornyi hely: a hosszabb jellemzés se tolja lejjebb az árat. */}
+                <p className={`text-sm md:min-h-10 ${ajanlott ? 'text-white/85' : 'text-vaszon/70'}`}>
+                  {CSOMAG_JELLEMZES[kulcs]}
+                </p>
 
                 {/*
                   A pénznem a `formaz()`-ból jön, nem külön elemből: a szomszédos
@@ -952,21 +993,21 @@ function Arak() {
                 <ul className={`mb-8 flex-1 space-y-4 text-sm ${ajanlott ? 'text-white/90' : 'text-vaszon/90'}`}>
                   <ArSor ajanlott={ajanlott}>
                     <strong className={ajanlott ? 'text-lg text-white' : 'text-vaszon'}>
-                      {cs.dokumentumok} dokumentum
-                    </strong>{' '}
-                    / hó
+                      Havi {cs.dokumentumok} dokumentum
+                    </strong>
                   </ArSor>
                   <ArSor ajanlott={ajanlott}>
                     <strong className={ajanlott ? 'text-white' : 'text-vaszon'}>
-                      {cs.felhasznalok === null ? 'Korlátlan' : cs.felhasznalok} felhasználó
+                      {cs.felhasznalok === null
+                        ? 'Korlátlan számú felhasználó'
+                        : `${cs.felhasznalok} felhasználó`}
                     </strong>
                   </ArSor>
-                  <ArSor ajanlott={ajanlott}>Extra dokumentum: {cs.extraFt} Ft</ArSor>
-                  {jellemzok.map((j) => (
-                    <ArSor key={j} ajanlott={ajanlott}>
-                      {j}
-                    </ArSor>
-                  ))}
+                  <ArSor ajanlott={ajanlott}>
+                    Kereten felüli feldolgozás:{' '}
+                    <span className="whitespace-nowrap">{formaz(cs.extraFt, 'Ft')} / dokumentum</span>, ha
+                    bekapcsolod
+                  </ArSor>
                 </ul>
 
                 {/* Zárt regisztrációnál nincs gomb — lásd a `HeroGombok` indoklását. */}
@@ -979,7 +1020,7 @@ function Arak() {
                         : 'block w-full rounded-xl bg-tinta px-4 py-3 text-center font-bold text-vaszon transition-colors hover:bg-slate-900'
                     }
                   >
-                    {ajanlott ? `Kipróbálom ${szamlafolyo.proba.napok} napig` : 'Kiválasztom'}
+                    Kipróbálom ingyen
                   </Link>
                 )}
               </div>
@@ -987,31 +1028,80 @@ function Arak() {
           })}
         </div>
 
-        <div className="mx-auto mt-12 max-w-3xl space-y-3 text-sm leading-relaxed text-vaszon/70">
-          <p>
-            Az árak a fizetendő végösszegek: a szolgáltató alanyi adómentes, áfa nem járul hozzájuk.
-            A keret minden csomagnál havi, és a következő időszakra nem gördül át.
-          </p>
-          <p>
-            Ha elfogy a havi keret, a feldolgozás <strong className="text-vaszon">alapból megáll</strong>{' '}
-            – a beküldött iratok megvárják a következő időszakot. Darabonkénti továbbszámlázás csak
-            akkor van, ha külön bekapcsolod, és akkor is{' '}
-            <strong className="text-vaszon">az általad megadott forintos határig</strong>: váratlan
-            számla nem érhet.
-          </p>
-          <p>
-            Egy dokumentum a fair-use szabály szerint:{' '}
-            <strong className="text-vaszon">{szabaly()}</strong> Egy szokásos, egy–három oldalas
-            számla vagy nyugta így <strong className="text-vaszon">egy</strong> dokumentum; egy
-            hosszú, sok tételsoros számla az oldalszáma szerint több – és egy vastag,
-            összefűzött köteg annyi, ahány bizonylat van benne. A köteg szétszedése nem kerül
-            külön kreditbe.
-          </p>
+        <div className="mx-auto mt-16 max-w-5xl rounded-2xl border border-tinta-lagy p-8">
+          <h3 className="mb-6 text-lg font-extrabold text-vaszon">Mindhárom csomag tartalmazza</h3>
+          <ul className="grid gap-x-8 gap-y-4 text-sm text-vaszon/90 sm:grid-cols-2">
+            {kozos.map((j) => (
+              <ArSor key={j} ajanlott={false}>
+                {j}
+              </ArSor>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mx-auto mt-12 grid max-w-5xl gap-10 text-sm leading-relaxed text-vaszon/70 md:grid-cols-3">
+          <div className="space-y-3">
+            <h3 className="text-base font-bold text-vaszon">Pontosan mennyit fizetsz?</h3>
+            <p>
+              A feltüntetett árak a fizetendő végösszegek. A szolgáltató alanyi adómentes, ezért az
+              árakra nem kerül további áfa.
+            </p>
+            <p>
+              A dokumentumkeret minden csomagnál havonta újul meg. A fel nem használt mennyiség nem
+              vihető át a következő időszakra.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-base font-bold text-vaszon">Mi történik, ha elfogy a havi kereted?</h3>
+            <p>
+              Alapbeállítás szerint a feldolgozás megáll, a beküldött bizonylatok pedig megvárják a
+              következő időszakot.
+            </p>
+            <p>
+              Ha szeretnéd folytatni a feldolgozást, külön bekapcsolhatod a kereten felüli
+              elszámolást. Ehhez forintban költési korlátot is megadsz, így te szabod meg, mennyit
+              fordítasz a további dokumentumokra.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-base font-bold text-vaszon">Mi számít egy dokumentumnak?</h3>
+            <p>
+              Bizonylatonként az első {h} oldal egy dokumentumnak számít. Minden további megkezdett{' '}
+              {h} oldal újabb dokumentumot jelent a keretből.
+            </p>
+            <p>Például:</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>
+                Egy 1–{h} oldalas számla: <strong className="text-vaszon">1 dokumentum</strong>
+              </li>
+              <li>
+                Egy {h + 1}–{2 * h} oldalas számla:{' '}
+                <strong className="text-vaszon">2 dokumentum</strong>
+              </li>
+              <li>
+                Egy PDF-be összefűzött tíz egyoldalas számla:{' '}
+                <strong className="text-vaszon">10 dokumentum</strong>
+              </li>
+            </ul>
+            <p>
+              Az összefűzött bizonylatok különválasztásáért nem számolunk fel további
+              dokumentumegységet.
+            </p>
+          </div>
         </div>
       </div>
     </section>
   );
 }
+
+/** A csomagkártyák egysoros jellemzése – kulcs szerint, hogy új csomag ne maradhasson ki. */
+const CSOMAG_JELLEMZES: Record<CsomagKulcs, string> = {
+  kicsi: 'Kisebb havi bizonylatmennyiséghez.',
+  kozepes: 'Rendszeres számlafeldolgozáshoz.',
+  nagy: 'Nagyobb bizonylatmennyiséghez és több munkatárshoz.',
+};
 
 function ArSor({ ajanlott, children }: { ajanlott: boolean; children: ReactNode }) {
   return (
@@ -1034,7 +1124,8 @@ export function Lablec() {
           <div className="max-w-sm">
             <LogoSor jel="h-8 w-8" szoveg="text-xl" />
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
-              Dokumentumból könyvelésre kész adat, percek alatt.
+              Számlák és nyugták feldolgozása, kevesebb kézi adatrögzítéssel. Vállalkozóknak és
+              könyvelőknek.
             </p>
             {/*
               ⚠️ A régi nyitólap itt azt írta: „Az adatok magyar szervereken
@@ -1044,8 +1135,8 @@ export function Lablec() {
               Unión kívülre megy, és arról az Adatkezelési tájékoztató szól.
             */}
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              Az adatok és a bizonylatok fájljai az Európai Unión belül, frankfurti kiszolgálón
-              tárolódnak.
+              Az adatokat és az eredeti bizonylatfájlokat az Európai Unión belül, frankfurti
+              kiszolgálón tároljuk.
             </p>
           </div>
 
@@ -1072,7 +1163,7 @@ export function Lablec() {
             <Link to="/konyveloknek" className="transition-colors hover:text-blue-600">
               Könyvelőknek
             </Link>
-            <LablecLinkek osztaly="transition-colors hover:text-blue-600" />
+            <LablecLinkek osztaly="transition-colors hover:text-blue-600" teljesNev />
           </nav>
         </div>
 
