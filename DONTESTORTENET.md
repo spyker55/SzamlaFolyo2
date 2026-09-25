@@ -6255,3 +6255,56 @@ szövegen). Mind a tíz szándékos rontásra piros lett, a Google-végpontoké 
 A `gondolatjel.test.ts` anti-vakság korlátja 300-ról 150-re került. A
 látható nagykötőjelek száma 287-re esett, mert az átírások sok közbevetést
 kivettek. A korlát dolga csak az, hogy egy üresen futó bejárás elbukjon.
+
+## 🪪 Impresszum: rövidebb, tárgyszerűbb (2026-09-25-3)
+
+Az Impresszum a tulajdonos tervezete szerint készült. A látogató gyorsan
+megtalálja, ki működteti a szolgáltatást, hogyan éri el, és hová fordulhat.
+
+**Tartalmi javítások (a bírálat négy pontja):**
+- **Békéltető testület.** A korábbi +36 46 501-090 nem a hivatalos szám. A
+  helyes elérhetőségek:
+  - új ügyekben +36 46 501-091;
+  - folyamatban lévő ügyekben +36 46 501-871;
+  - e-mail: bekeltetes@bokik.hu.
+
+  A testület oldala a konténerből nem érhető el. Az adatokat a bírálat és a
+  keresőindex egybehangzóan adja.
+- **Tárhelyszolgáltatók.** A link mellett látható adatvédelmi e-mail-cím is
+  áll (Ektv. 4. §). A címek a szolgáltatók saját DPA-jából, a 2026-09-22-i
+  mentésből származnak:
+  - Supabase: privacy@supabase.io;
+  - Vercel: privacy@vercel.com.
+
+  Új mezők: `adatvedelmiEmail` és `tarolasiRegio`. Csak ott vannak
+  kitöltve, ahol a forrás megvan.
+- **Békéltetés feltételesen.** A KKV-minőség önmagában nem tesz minden vitát
+  békéltethetővé. Kikerült a regionális rendszer ismételt magyarázata és a
+  ⚠️ jel.
+- **Szellemi tulajdon.** A jogok a szolgáltatót vagy az adott jogosultat
+  illetik meg. A licencek és a törvény által megengedett felhasználás is
+  szerepel.
+
+**Két eltérés a tervezettől:**
+- Az Adatkezelési tájékoztatóra mutató linkek pontszámot kaptak (5. és 8.
+  pont).
+- A testület címe „Szentpáli u. 1.” maradt, mert az ÁSZF is ezt az értéket
+  használja.
+
+**Új jogi változat: `2026-09-25-3`.**
+- Csak az Impresszum lenyomata új.
+- A `legal_versions` sor a push előtt élesben van.
+
+**Őrök.**
+- A régi „Melyik testület illetékes.” őr az Impresszumnál a tervezet
+  főszabály-mondatát nézi, és azt is, hogy a konkrét testület csak utána jön.
+- Új őrök figyelik:
+  - a testület számait és e-mail-címét, valamint a régi szám tilalmát;
+  - a két adatvédelmi címet;
+  - a feltételes békéltetést;
+  - a szellemi tulajdon szövegét;
+  - az emoji hiányát.
+- Minden rontásra piros lett. Egy kivétel volt: a látható telefonszám
+  kivétele forrásszinten zöld maradt, mert a `href` még hivatkozott a
+  mezőre. Ezért egy új őr a **renderelt HTML-en** is ellenőrzi a két számot
+  és a három e-mail-címet. Ez már piros lett.

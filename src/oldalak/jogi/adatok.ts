@@ -89,8 +89,13 @@ export const hatalyos = '2026. szeptember 25.';
  * kiszolgálónaplója; GDPR 22. cikk; feltételes érintetti jogok). Az ÁSZF és
  * az Impresszum szövege nem változott. Élesben továbbra is egyetlen cég van,
  * a tulajdonosé.
+ *
+ * `2026-09-25-3`: az Impresszum rövidebb, tárgyszerűbb szövege (a tulajdonos
+ * tervezete): a békéltető testület mai két telefonszáma és e-mail-címe, a
+ * tárhelyszolgáltatók adatvédelmi e-mail-címe, feltételes békéltetés,
+ * pontosított szellemi tulajdon. Az ÁSZF és az Adatkezelés nem változott.
  */
-export const JOGI_VERZIO = '2026-09-25-2';
+export const JOGI_VERZIO = '2026-09-25-3';
 
 /**
  * Az illetékes békéltető testület.
@@ -121,7 +126,12 @@ export const bekeltetoTestulet = {
   nev: 'Borsod-Abaúj-Zemplén Vármegyei Békéltető Testület',
   szekhely: '3525 Miskolc, Szentpáli u. 1.',
   levelcim: '3501 Miskolc, Pf. 376.',
-  telefon: '+36 46 501-090',
+  // Két szám, két célra (2026-09-25): a +36 46 501-090 már nem a testület
+  // hivatalos száma. Forrás: a jogi bírálat és a keresőindex egyezése a
+  // testület kapcsolati oldalával — a lap maga a konténerből nem érhető el.
+  telefonUjUgy: '+36 46 501-091',
+  telefonFolyamatban: '+36 46 501-871',
+  email: 'bekeltetes@bokik.hu',
   weboldal: 'bekeltetes.borsodmegye.hu',
   illetekesseg: 'Borsod-Abaúj-Zemplén, Heves és Nógrád vármegye',
 } as const;
@@ -208,6 +218,15 @@ export type Adatfeldolgozo = {
   /** Hol olvasható a szolgáltató adatvédelmi kötelezettségvállalása. */
   garanciaUrl: string;
   /**
+   * Adatvédelmi kapcsolattartási e-mail-cím, **a szolgáltató saját
+   * szerződéséből** (Ektv. 4. §: a tárhelyszolgáltató elérhetősége). Csak ott
+   * van kitöltve, ahol a szerződésben szerepel – kitalálni tilos. Ma az
+   * Impresszum használja, a két tárhelyszolgáltatónál.
+   */
+  adatvedelmiEmail?: string;
+  /** A szolgáltatáshoz választott tárolási régió, ha van ilyen (Impresszum). */
+  tarolasiRegio?: string;
+  /**
    * Az Unión kívüli továbbítás alapja, **a szolgáltató adatfeldolgozási
    * szerződéséből kiolvasva** (a 2026-09-22-én mentett példányokból). `null`,
    * ha nincs Unión kívüli továbbítás.
@@ -227,6 +246,9 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
       'kívüli hozzáférés nem zárható ki',
     unionBelul: false,
     garanciaUrl: 'https://supabase.com/legal/customer-resources/data-processing-addendum',
+    // A DPA 14. oldalán (2026-09-22-i mentés), az adatvédelmi kapcsolattartásnál.
+    adatvedelmiEmail: 'privacy@supabase.io',
+    tarolasiRegio: 'Frankfurt, Európai Unió',
     tovabbitasAlapja: 'Általános szerződési feltételek (az Európai Bizottság 2021/914/EU határozata)',
   },
   {
@@ -240,6 +262,8 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     hol: 'Amerikai Egyesült Államok (a kiszolgálás európai élhálózatról)',
     unionBelul: false,
     garanciaUrl: 'https://vercel.com/legal/dpa',
+    // A DPA kapcsolattartási adatainál (Key Contact, 2026-09-22-i mentés).
+    adatvedelmiEmail: 'privacy@vercel.com',
     tovabbitasAlapja: 'Általános szerződési feltételek (2021/914/EU)',
   },
   {

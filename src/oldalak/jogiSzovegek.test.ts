@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { KIMERVE, PROGRAM_NEVEK, PROGRAMOK, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
+import { renderel } from './jogi/archivum.tsx';
 
 /**
  * A nyilvános szövegek elcsúszás-őre.
@@ -283,11 +284,12 @@ describe('a harmadik felülvizsgálat után sem térhetnek vissza', () => {
   });
 
   it('7. pont: a békéltetésnél az általános szabály áll elöl', () => {
-    for (const [nev, szoveg] of Object.entries({ aszf, impresszum })) {
-      expect(szoveg, `${nev}: hiányzik az általános illetékességi szabály.`).toContain(
-        'Melyik testület illetékes.',
-      );
-    }
+    expect(aszf, 'aszf: hiányzik az általános illetékességi szabály.').toContain('Melyik testület illetékes.');
+    // Az Impresszum 2026-09-25-3 óta a tulajdonos szövegével mondja ugyanezt, és
+    // a konkrét testület csak utána jön.
+    const altalanos = impresszum.indexOf('Az illetékességet főszabály szerint az ügyfél lakóhelye');
+    expect(altalanos, 'impresszum: hiányzik az általános illetékességi szabály.').toBeGreaterThan(-1);
+    expect(impresszum.indexOf('<strong>{t.nev}</strong> jár el'), 'impresszum: a testület az általános szabály elé került.').toBeGreaterThan(altalanos);
     expect(impresszum).not.toContain('Hatvan (Heves vármegye) a fenti');
   });
 
@@ -612,5 +614,48 @@ describe('Adatkezelési tájékoztató, ötödik kör (2026-09-25)', () => {
 
   it('fogalom: munkaterület, nem munkatér', () => {
     expect(szoveg).not.toMatch(/munkat[eé]r(?!ület)/);
+  });
+});
+
+describe('Impresszum (2026-09-25-3)', () => {
+  const szoveg = impresszum
+    .slice(impresszum.indexOf('export function Impresszum'))
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/\s+/g, ' ');
+  const adatok = olvas('jogi/adatok.ts');
+
+  it('a békéltető testület mai elérhetőségei, a régi szám nélkül', () => {
+    expect(adatok).toContain("telefonUjUgy: '+36 46 501-091'");
+    expect(adatok).toContain("telefonFolyamatban: '+36 46 501-871'");
+    expect(adatok).toContain("email: 'bekeltetes@bokik.hu'");
+    expect(adatok.replace(/^\s*(\/\/|\*).*$/gm, ''), 'Visszatért a régi 501-090-es szám.').not.toContain('501-090');
+    expect(szoveg).toContain('t.telefonUjUgy');
+    expect(szoveg).toContain('t.telefonFolyamatban');
+    expect(szoveg).toContain('mailto:${t.email}');
+  });
+
+  it('a renderelt lapon ténylegesen látszik a két szám és a három e-mail-cím', () => {
+    // Forrásszinten egy `href` is „hivatkozik" a mezőre, a látható szöveg
+    // nélkül is (mérve: a szám kivétele így zöld maradt). A renderelt HTML nem.
+    const html = renderel('impresszum');
+    for (const latszik of ['>+36 46 501-091<', '>+36 46 501-871<', '>bekeltetes@bokik.hu<', '>privacy@supabase.io<', '>privacy@vercel.com<']) {
+      expect(html, `Az Impresszumon nem látszik: ${latszik}`).toContain(latszik);
+    }
+  });
+
+  it('a tárhelyszolgáltatóknál látható adatvédelmi e-mail-cím áll', () => {
+    expect(szoveg).toContain('a.adatvedelmiEmail');
+    for (const cim of ["adatvedelmiEmail: 'privacy@supabase.io'", "adatvedelmiEmail: 'privacy@vercel.com'"]) {
+      expect(adatok).toContain(cim);
+    }
+  });
+
+  it('a békéltetés feltételes, és a szerzői jog nem „minden a szolgáltatóé"', () => {
+    expect(szoveg).toContain('A kis- vagy középvállalkozási minőség önmagában nem tesz minden szerződéses vitát');
+    expect(szoveg, 'Visszatért a feltétel nélküli „nem zárjuk ki" mondat.').not.toContain('A békéltető testületi eljárást azonban nem zárjuk ki');
+    expect(szoveg).not.toContain('a szolgáltató szellemi tulajdona. Felhasználásukhoz');
+    expect(szoveg).toContain('a szolgáltatót vagy az adott jogosultat illetik meg');
+    expect(szoveg, 'Figyelmeztető emoji az Impresszumban.').not.toContain('⚠️');
   });
 });

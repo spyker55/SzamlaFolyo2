@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Adatsor, JogiOldal, Lista, P, Szakasz } from './JogiOldal.tsx';
+import { Adatsor, JogiOldal, P, Szakasz } from './JogiOldal.tsx';
 import { adatfeldolgozok, bekeltetoTestulet, NINCS_SZEKHELY, szolgaltato } from './adatok.ts';
 
 /**
@@ -11,24 +11,42 @@ import { adatfeldolgozok, bekeltetoTestulet, NINCS_SZEKHELY, szolgaltato } from 
  * A tárhely 2026 szeptemberétől a Supabase (Frankfurt) és a Vercel — ezt az
  * elektronikus kereskedelmi törvény szerint meg kell nevezni, és a régi mondat
  * ma egyszerűen nem igaz.
+ *
+ * # 2026. szeptember 25. — rövidebb, tárgyszerűbb (2026-09-25-3)
+ *
+ * A tulajdonos kérése: a látogató gyorsan találja meg, ki működteti a
+ * szolgáltatást, hogyan éri el, és hová fordulhat. A bírálat négy pontja:
+ *
+ * - **Békéltető testület:** a régi +36 46 501-090 helyett két szám (új ügy:
+ *   501-091, folyamatban lévő ügy: 501-871) és a bekeltetes@bokik.hu.
+ * - **Tárhelyszolgáltatók:** látható adatvédelmi e-mail-cím a link mellett
+ *   (Ektv. 4. §), a szolgáltatók saját DPA-jából (`adatvedelmiEmail`).
+ * - **Békéltetés feltételesen:** a KKV csak meghatározott ügyekben minősül
+ *   fogyasztónak (Fgytv. 2. § 10.), egy előfizetési vitára ez nem automatikus.
+ *   A regionális rendszer ismételt magyarázata és a ⚠️ kikerült.
+ * - **Szerzői jog:** a külső elemek licencei és a törvény által megengedett
+ *   felhasználás is ki van mondva.
+ *
+ * A „könyvelésre alkalmas formában" fordulat is kikerült: az ÁSZF 3. pontja
+ * 2026-09-25 óta „ellenőrzésre előkészített" adatról beszél.
  */
 export function Impresszum() {
   const tarhely = adatfeldolgozok.filter((a) => a.ki.startsWith('Supabase') || a.ki.startsWith('Vercel'));
+  const t = bekeltetoTestulet;
+  const alcim = 'pt-2 text-base font-semibold text-slate-800';
 
   return (
     <JogiOldal cim="Impresszum" datummal={false}>
-      <Szakasz cim="A szolgáltató">
+      <Szakasz cim="A szolgáltató adatai">
+        <P>A SzámlaFolyó weboldal és az online szolgáltatás üzemeltetője:</P>
         <dl>
           <Adatsor cimke="Név">{szolgaltato.nev}</Adatsor>
           <Adatsor cimke="Székhely">{szolgaltato.szekhely}</Adatsor>
           <Adatsor cimke="Nyilvántartásba vevő hatóság">{szolgaltato.hatosag}</Adatsor>
           <Adatsor cimke="Nyilvántartási szám">{szolgaltato.nyilvantartasiSzam}</Adatsor>
           <Adatsor cimke="Adószám">{szolgaltato.adoszam}</Adatsor>
-          <Adatsor cimke="Kamarai regisztráció">
-            {szolgaltato.kamara}
-            <br />
-            {szolgaltato.kamaraCim}
-          </Adatsor>
+          <Adatsor cimke="Kamarai regisztráció">{szolgaltato.kamara}</Adatsor>
+          <Adatsor cimke="Kamara címe">{szolgaltato.kamaraCim}</Adatsor>
           <Adatsor cimke="E-mail">
             <a className="underline" href={`mailto:${szolgaltato.email}`}>
               {szolgaltato.email}
@@ -39,22 +57,31 @@ export function Impresszum() {
               {szolgaltato.telefon}
             </a>
           </Adatsor>
-          <Adatsor cimke="Weboldal">{szolgaltato.weboldal}</Adatsor>
+          <Adatsor cimke="Weboldal">
+            <a className="underline" href={`https://${szolgaltato.weboldal}/`}>
+              {szolgaltato.weboldal}
+            </a>
+          </Adatsor>
         </dl>
       </Szakasz>
 
-      <Szakasz cim="A szolgáltatás">
+      <Szakasz cim="A szolgáltatásról">
         <P>
-          A SzámlaFolyó a {szolgaltato.weboldal} címen elérhető online szolgáltatás: bejövő
-          számlákat és bizonylatokat olvas ki gépi úton, és könyvelésre alkalmas formában ad
-          tovább.
+          A SzámlaFolyó vállalkozásoknak és könyvelőknek készült online számlafeldolgozó
+          szolgáltatás. Kiolvassa a beküldött számlák és bizonylatok adatait, lehetőséget ad
+          azok ellenőrzésére, majd a támogatott formátumokban exportot készít a könyvelési
+          munkához.
         </P>
         <P>
-          A szolgáltatást kizárólag vállalkozások vehetik igénybe. A használat feltételeit az{' '}
+          A szolgáltatást kizárólag vállalkozások vehetik igénybe, üzleti tevékenységükhöz
+          kapcsolódóan.
+        </P>
+        <P>
+          A használat részletes feltételeit az{' '}
           <Link to="/aszf" className="underline">
-            ÁSZF
+            Általános szerződési feltételek
           </Link>
-          , a személyes adatok kezelését az{' '}
+          , a személyes adatok kezelésére vonatkozó információkat az{' '}
           <Link to="/adatkezeles" className="underline">
             Adatkezelési tájékoztató
           </Link>{' '}
@@ -62,109 +89,143 @@ export function Impresszum() {
         </P>
       </Szakasz>
 
-      <Szakasz cim="Tárhely és üzemeltetés">
+      <Szakasz cim="Tárhely és technikai üzemeltetés">
+        <P>A weboldal működését és az adatok tárolását az alábbi szolgáltatók biztosítják.</P>
+        {tarhely.map((a) => (
+          <div key={a.ki}>
+            <h3 className={alcim}>{a.ki}</h3>
+            <dl>
+              <Adatsor cimke="Szolgáltató">{a.jogiSzemely ?? a.ki}</Adatsor>
+              <Adatsor cimke="Cím">{a.szekhely ?? NINCS_SZEKHELY}</Adatsor>
+              <Adatsor cimke="Feladat">{a.mit}</Adatsor>
+              {a.tarolasiRegio !== undefined && (
+                <Adatsor cimke="Adattárolási régió">{a.tarolasiRegio}</Adatsor>
+              )}
+              {a.adatvedelmiEmail !== undefined && (
+                <Adatsor cimke="Adatvédelmi kapcsolattartás">
+                  <a className="underline" href={`mailto:${a.adatvedelmiEmail}`}>
+                    {a.adatvedelmiEmail}
+                  </a>
+                </Adatsor>
+              )}
+              <Adatsor cimke="További információ">
+                <a
+                  className="underline"
+                  href={a.garanciaUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {a.ki} adatfeldolgozási feltételek
+                </a>
+              </Adatsor>
+            </dl>
+          </div>
+        ))}
         <P>
-          A Szolgáltatás kiszolgálását és adattárolását az alábbi szolgáltatók végzik. Az
-          elérhetőségük a saját oldalukon megadott adatvédelmi és kapcsolattartási címük.
+          Az adatbázis és a bizonylatfájlok tárolása Frankfurtban történik. Ez nem jelenti
+          azt, hogy a szolgáltatás minden adatfeldolgozási művelete az Európai Unión belül
+          zajlik: egyes közreműködők az Unión kívül is feldolgoznak adatokat, vagy
+          hozzáférhetnek azokhoz.
         </P>
-        <dl>
-          {tarhely.map((a) => (
-            <Adatsor key={a.ki} cimke={a.ki}>
-              {a.jogiSzemely ?? a.ki}
-              <br />
-              {a.szekhely ?? NINCS_SZEKHELY}
-              <br />
-              {a.mit} – {a.hol}
-              <br />
-              <a
-                className="underline"
-                href={a.garanciaUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                adatvédelmi feltételek és kapcsolat
-              </a>
-            </Adatsor>
-          ))}
-        </dl>
         <P>
-          Az adatbázis és a bizonylatok fájljai az Európai Unión belül, frankfurti kiszolgálón
-          tárolódnak. <strong>Több közreműködő azonban az Unión kívül dolgozza fel az adatot, vagy
-          fér hozzá:</strong> a tárhelyszolgáltató szerződő fele szingapúri, és Unión kívül
-          történik a gépi kiolvasás, a fizetés, a levelezés és magának a weboldalnak a
-          kiszolgálása is. A teljes felsorolás – jogi személlyel, székhellyel (ahol a szerződés
-          megadja), feladattal, feldolgozási országgal és a továbbítás alapjával – az{' '}
+          A további szolgáltatókat, feladataikat és az adattovábbítás feltételeit az{' '}
           <Link to="/adatkezeles" className="underline">
-            Adatkezelési tájékoztató 5. pontjában
+            Adatkezelési tájékoztató 5. pontja
           </Link>{' '}
-          található.
+          ismerteti.
         </P>
       </Szakasz>
 
-      <Szakasz cim="Panasz és vitarendezés">
+      <Szakasz cim="Kapcsolat és panaszkezelés">
         <P>
-          Panaszt a fenti e-mail címen lehet bejelenteni. A panaszt megvizsgáljuk, és legkésőbb
-          harminc napon belül írásban válaszolunk.
+          Ha kérdésed vagy panaszod van a szolgáltatással kapcsolatban, írj az{' '}
+          <a className="underline" href={`mailto:${szolgaltato.email}`}>
+            {szolgaltato.email}
+          </a>{' '}
+          címre.
         </P>
         <P>
-          A Szolgáltatást kizárólag vállalkozások vehetik igénybe, ezért a fogyasztókat megillető
-          elállási jog nem alkalmazandó.{' '}
-          <strong>
-            A békéltető testületi eljárást azonban nem zárjuk ki pusztán arra hivatkozva, hogy az
-            ügyfél vállalkozás
-          </strong>
-          : a fogyasztóvédelmi törvény fogyasztó-fogalma bizonyos kis- és középvállalkozásokat is
-          lefed – önmagában a KKV-minőség azonban nem elég hozzá.
+          A gyorsabb ügyintézéshez add meg a vállalkozásod nevét, a fiókodhoz tartozó
+          e-mail-címet és a probléma rövid leírását. Jelszót vagy teljes bankkártyaadatot ne
+          küldj.
         </P>
         <P>
-          <strong>Melyik testület illetékes.</strong> Főszabály szerint az a békéltető testület,
-          amelynek illetékességi területén a fogyasztónak minősülő ügyfél lakóhelye vagy
-          tartózkodási helye – nem természetes személy esetén a székhelye – található. Nem
-          minden ügyfélre ugyanaz a testület illetékes, és ez nem a Szolgáltató székhelyétől
-          függ. A <strong>Borsod-Abaúj-Zemplén, Heves és Nógrád</strong> vármegyei
-          illetékességi területen a <strong>{bekeltetoTestulet.nev}</strong> jár el:
-        </P>
-        <Lista>
-          <li>Székhely: {bekeltetoTestulet.szekhely}</li>
-          <li>Levelezési cím: {bekeltetoTestulet.levelcim}</li>
-          <li>Telefon: {bekeltetoTestulet.telefon}</li>
-          <li>
-            Weboldal:{' '}
-            <a
-              className="underline"
-              href={`https://${bekeltetoTestulet.weboldal}`}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              {bekeltetoTestulet.weboldal}
-            </a>
-          </li>
-          <li>Illetékességi területe: {bekeltetoTestulet.illetekesseg}</li>
-        </Lista>
-        <P>
-          ⚠️ A békéltető testületek 2024. január 1-je óta <strong>regionális</strong> alapon
-          működnek, és az illetékesség az ügyfél lakóhelyéhez, tartózkodási helyéhez vagy
-          székhelyéhez igazodik – nem a Szolgáltatóéhoz, és nem a Szolgáltató kamarai
-          tagságához. Az utóbbi külön kérdés: az a fenti {szolgaltato.kamara}.
+          A panaszokat megvizsgáljuk, és a beérkezéstől számított legfeljebb{' '}
+          <strong>30 napon belül írásban válaszolunk</strong>.
         </P>
         <P>
-          Az adatvédelmi tárgyú panaszokról az{' '}
-          <Link to="/adatkezeles" className="underline">
-            Adatkezelési tájékoztató 8. pontja
-          </Link>{' '}
-          szól. Egyebekben a vitákra az{' '}
+          A szolgáltatást üzleti célból igénybe vevő vállalkozások szerződéseire a fogyasztói
+          szerződésekhez kapcsolódó, indokolás nélküli elállási jog nem alkalmazandó. Az
+          előfizetés lemondásának és a szerződés megszüntetésének feltételeit az{' '}
           <Link to="/aszf" className="underline">
             ÁSZF
           </Link>{' '}
-          rendelkezései irányadók.
+          tartalmazza.
+        </P>
+
+        <h3 className={alcim}>Békéltető testületi eljárás</h3>
+        <P>
+          Ha az adott jogvitában teljesülnek a békéltető testületi eljárás jogszabályi
+          feltételei, az ügyfél az illetékes testülethez fordulhat. A kis- vagy
+          középvállalkozási minőség önmagában nem tesz minden szerződéses vitát békéltető
+          testület előtt rendezhetővé.
+        </P>
+        <P>
+          Az illetékességet főszabály szerint az ügyfél lakóhelye, tartózkodási helye, illetve
+          az alkalmazandó szabályok szerinti székhelye határozza meg.
+        </P>
+        <P>
+          {t.illetekesseg} területén a <strong>{t.nev}</strong> jár el.
+        </P>
+        <dl>
+          <Adatsor cimke="Székhely">{t.szekhely}</Adatsor>
+          <Adatsor cimke="Levelezési cím">{t.levelcim}</Adatsor>
+          <Adatsor cimke="Telefon – új ügyek">
+            <a className="underline" href={`tel:${t.telefonUjUgy.replace(/[\s-]/g, '')}`}>
+              {t.telefonUjUgy}
+            </a>
+          </Adatsor>
+          <Adatsor cimke="Telefon – folyamatban lévő ügyek">
+            <a className="underline" href={`tel:${t.telefonFolyamatban.replace(/[\s-]/g, '')}`}>
+              {t.telefonFolyamatban}
+            </a>
+          </Adatsor>
+          <Adatsor cimke="E-mail">
+            <a className="underline" href={`mailto:${t.email}`}>
+              {t.email}
+            </a>
+          </Adatsor>
+          <Adatsor cimke="Weboldal">
+            <a
+              className="underline"
+              href={`https://${t.weboldal}/`}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {t.weboldal}
+            </a>
+          </Adatsor>
+        </dl>
+        <P>
+          Az adatvédelmi panaszokról és jogorvoslati lehetőségekről az{' '}
+          <Link to="/adatkezeles" className="underline">
+            Adatkezelési tájékoztató 8. pontjában
+          </Link>{' '}
+          olvashatsz. A szerződéses jogvitákra egyebekben az ÁSZF és az alkalmazandó
+          jogszabályok rendelkezései irányadók.
         </P>
       </Szakasz>
 
-      <Szakasz cim="Szerzői jog">
+      <Szakasz cim="Szellemi tulajdon">
         <P>
-          A {szolgaltato.weboldal} oldalon megjelenő tartalom, a SzámlaFolyó név, a logó és a
-          szolgáltatást működtető szoftver a szolgáltató szellemi tulajdona. Felhasználásukhoz
-          előzetes írásbeli engedély szükséges.
+          A weboldalon található, jogi védelem alatt álló tartalmakhoz, a SzámlaFolyó
+          megjelöléshez, a logóhoz és a szolgáltatást működtető szoftverhez kapcsolódó jogok a
+          szolgáltatót vagy az adott jogosultat illetik meg.
+        </P>
+        <P>
+          Az ÁSZF, az alkalmazandó licencek vagy a jogszabályok által megengedett
+          felhasználáson túl ezek felhasználásához a jogosult előzetes írásbeli engedélye
+          szükséges.
         </P>
       </Szakasz>
     </JogiOldal>
