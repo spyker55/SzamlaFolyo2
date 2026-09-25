@@ -109,9 +109,12 @@ describe('gondolatjel a látható szövegben', () => {
   it('egyáltalán lát szöveget (anti-vakság)', () => {
     // Egy rossz mappanév vagy egy elrontott szűrő üres listát adna, és az üres
     // lista hibátlan. A számok 2026-09-23-i mérésből jönnek, bő tartalékkal.
+    // A nagykötőjelek száma 2026-09-25-én 287 volt: a szövegek átírása sok
+    // közbevetést kivett, ezért a korlát 300-ról 150-re került. A dolga csak
+    // annyi, hogy egy üresen futó bejárás elbukjon.
     expect(vizsgalt.length).toBeGreaterThan(100);
     expect(eredmenyek.reduce((s, e) => s + e.osszes, 0)).toBeGreaterThan(3000);
-    expect(eredmenyek.reduce((s, e) => s + e.nagy, 0)).toBeGreaterThan(300);
+    expect(eredmenyek.reduce((s, e) => s + e.nagy, 0)).toBeGreaterThan(150);
   });
 
   it('a TypeScript-szövegekben nincs hosszú gondolatjel', () => {

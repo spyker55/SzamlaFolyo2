@@ -33,6 +33,7 @@ const adatkezeles = olvas('jogi/Adatkezeles.tsx');
 const impresszum = olvas('jogi/Impresszum.tsx');
 const utmutato = olvas('Utmutato.tsx');
 const nyitolap = olvas('Nyitolap.tsx');
+const szamlafolyoForras = readFileSync(GYOKER + '../../config/szamlafolyo.ts', 'utf8');
 
 describe('a támogatott XML-alakok mindhárom helyen ugyanazok', () => {
   /**
@@ -538,5 +539,78 @@ describe('ÁSZF, negyedik kör (2026-09-25)', () => {
     expect(pipa).toContain('és megismertem az');
     expect(pipa, 'A pipa megint „elfogadja" az Adatkezelési tájékoztatót.').not.toMatch(/ÁSZF-et<[\s\S]*?<\/Link>\{' '\}\s*és az\{' '\}/);
     expect(aszfSzoveg).toContain('megismerve megadja a cég nevét és adószámát');
+  });
+});
+
+describe('Adatkezelési tájékoztató, ötödik kör (2026-09-25)', () => {
+  // A lap *szövege*, kommentek nélkül és egy szóközre húzott sortörésekkel: a
+  // fejkomment idézi a régi mondatokat, a JSX pedig bárhol eltörheti a sort.
+  const szoveg = adatkezeles
+    .slice(adatkezeles.indexOf('export function Adatkezeles'))
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/\s+/g, ' ');
+
+  it('4. pont: a közreműködők listája nem állítja, hogy rajtuk kívül senki nem fér hozzá', () => {
+    expect(szoveg, 'Visszatért az „aki nincs rajta, az nem fér hozzá" ígéret.').not.toMatch(
+      /aki nincs rajta,? az nem fér hozzá/,
+    );
+    expect(szoveg).toContain('A közreműködők további alvállalkozói.');
+    expect(szoveg).toContain('Hatósági megkeresés.');
+  });
+
+  it('1. pont: két külön táblázat – saját adatkezelés és adatfeldolgozás', () => {
+    const elso = szoveg.indexOf('2.1. Saját adatkezelésünk');
+    const masodik = szoveg.indexOf('2.2. Az Előfizető megbízásából végzett adatfeldolgozás');
+    expect(elso, 'Nincs meg a saját adatkezelés táblázata.').toBeGreaterThan(-1);
+    expect(masodik, 'A két táblázat sorrendje vagy léte változott.').toBeGreaterThan(elso);
+    expect(szoveg).toContain("'Kinek az utasítására?'");
+    // A bizonylat soron nem állhat a Szolgáltató saját jogalapja.
+    expect(szoveg.slice(elso, masodik), 'A bizonylatok sora visszakerült a saját adatkezelés közé.').not.toContain(
+      'Feltöltött vagy e-mailben beküldött bizonylatok',
+    );
+  });
+
+  it('1. pont: a böngészőtárolás indoka és a GDPR-jogalap külön áll', () => {
+    expect(szoveg).toContain('A tárolás az eszközön:');
+    expect(szoveg).toContain('A benne lévő személyes adat kezelése:');
+  });
+
+  it('5. pont: a Vercel kiszolgálónaplójának célja, jogalapja és megőrzési szempontja', () => {
+    const tabla = szoveg.slice(szoveg.indexOf('2.1. Saját adatkezelésünk'), szoveg.indexOf('2.2. Az Előfizető'));
+    expect(tabla).toContain('kiszolgálónaplóiban');
+    expect(tabla).toContain('Jogos érdek: a weboldal működtetése és biztonsága');
+    expect(tabla).toContain('A Vercel naplómegőrzése szerint');
+  });
+
+  it('5. pont: a három törlési szint és a soha nem exportált bizonylat', () => {
+    expect(szoveg).toContain('legfeljebb hét napon belül');
+    expect(szoveg).toContain('Külső szolgáltatóknál kezelt adatok: a saját feltételeik szerint.');
+    expect(szoveg).toContain('Soha nem exportált bizonylatok és fájlok:');
+    expect(szoveg).toContain('Tagság megszűnése és cég nélküli fiók.');
+  });
+
+  it('2. pont: az OpenRouter-szerződés szerepe és a „Sensitive Data" kikötés ki van mondva', () => {
+    expect(szoveg).toContain('Az OpenRouterrel kötött szerződés szerepei.');
+    expect(szoveg).toContain('2. modulja (adatkezelőtől adatfeldolgozóhoz)');
+    expect(szoveg).toContain('„Sensitive Data"');
+  });
+
+  it('3. pont: a két Google-végpont a kódból jön, és a ZDR meg a tanítás tilalma két feltétel', () => {
+    // A szöveg mindkét végpontot megnevezi; ha a kód szűkít vagy bővít, itt akad meg.
+    expect(szamlafolyoForras).toMatch(/szolgaltatok: \['google-ai-studio', 'google-vertex'\]/);
+    expect(szoveg).toContain('a Google AI Studio és a Google Cloud Vertex AI végpontját');
+    expect(szoveg).toContain('A megőrzés tilalma és a tanítás tilalma két külön feltétel');
+    expect(szoveg).toContain('és nem az OpenRouter garanciája');
+  });
+
+  it('6. pont: a gépi jóváhagyás nem GDPR 22. cikk szerinti döntés, a jogok feltételesek', () => {
+    expect(szoveg).toContain('Ez nem a GDPR 22. cikke szerinti automatizált döntéshozatal.');
+    expect(szoveg).toContain('Az adott adatkezelésre vonatkozó feltételek szerint kérheted:');
+    expect(szoveg).toContain('a jogos érdeken vagy jogi kötelezettségen alapuló kezelésekre nem');
+  });
+
+  it('fogalom: munkaterület, nem munkatér', () => {
+    expect(szoveg).not.toMatch(/munkat[eé]r(?!ület)/);
   });
 });

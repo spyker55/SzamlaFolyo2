@@ -6189,3 +6189,69 @@ szándékos rontásra piros lett:
 A `gazdatlanFajlok.test.ts` eddig a `selejtezheto` legutolsó definíciójának
 **pontos fájlnevét** is rögzítette, ezért a jogos újradefiniálásra elbukott.
 Most „legalább a 0900-as” a feltétel, a tartalmi ellenőrzés maradt.
+
+## 🔏 Adatkezelési tájékoztató, ötödik kör (2026-09-25-2)
+
+A tulajdonos új vázlata és egy hatpontos bírálat alapján a tájékoztató
+teljesen újra lett írva. A pontszámozás maradt (1–9.), mert az ÁSZF, az
+Impresszum, az Útmutató és a Könyvelőknek oldal ezekre hivatkozik.
+
+**A tulajdonos döntései:**
+- **OpenRouter: „szöveg most + levélvázlat”.**
+  - A DPA a Szolgáltatót „Customer = Controller”-ként kezeli, SCC 2.
+    modullal.
+  - A „Sensitive Data” fogalmába az adóazonosító („tax file number … or
+    similar identifier”) és a pénzügyi információ is beletartozik. A DPA
+    2.6. pontja szerint ezt csak kifejezett megállapodás alapján vállalja.
+  - A szöveg ezt ma is így mondja ki. A módosítást (3. modul, Sensitive
+    Data, EU-Only Processing Addendum) a tulajdonos kéri az OpenRoutertől,
+    levélvázlattal.
+  - ⚠️ **Nyitott szerződéses kockázat.** Az 5. pont „kezdeményezzük” mondata
+    csak addig igaz, amíg a levél tényleg elmegy.
+- **Google: „csak szövegben”.**
+  - A kód továbbra is mindkét végpontot engedi (`google-ai-studio`,
+    `google-vertex`).
+  - A szöveg ezt mondja. Azt is, hogy `zdr: true` mellett az OpenRouter
+    nyilvántartása dönti el, melyik szolgálhat ki, és hogy ez nem az
+    OpenRouter garanciája.
+  - A ZDR és a tanítási tilalom két külön feltétel.
+- **Fogalom: „munkaterület”**, nem „munkatér”.
+
+**A hat pont:**
+1. **Két táblázat.**
+   - 2.1.: a saját adatkezelésünk.
+   - 2.2.: az Előfizető megbízásából végzett adatfeldolgozás, „Kinek az
+     utasítására?” oszloppal.
+   - A munkamenetnél külön áll a böngészőtárolás indoka és a GDPR-jogalap.
+2. **OpenRouter-szerepek** és a „Sensitive Data” kikötés, lásd fent.
+3. **A Google-útvonal** pontosan.
+4. **Kikerült az „aki nincs rajta, az nem fér hozzá” mondat.** Helyette:
+   - a közreműködők al-adatfeldolgozói;
+   - hatósági megkeresés, az Előfizető értesítésével, ha jogszabály nem
+     tiltja.
+5. **Megőrzés három szinten:** aktív rendszer, mentés (hét nap), külső
+   szolgáltató.
+   - **Soha nem exportált bizonylat:** nincs rá automatikus határidő. A
+     felületről csak a duplikátum és a hibás vethető el
+     (`src/lib/feltoltes.ts`), a fájl gazdátlanként egy napon belül törlődik.
+   - **Tagság vége:** a fiók cég nélküli fiókként marad, és 180 nap belépés
+     nélkül törlődik.
+   - **Vercel kiszolgálónapló:** új sor. A megőrzési idejét nem tudtuk
+     megmérni, ezért a szöveg a szempontot mondja, nem egy számot.
+6. **A gépi jóváhagyás nem GDPR 22. cikk szerinti döntés.**
+   - A jogok „az adott adatkezelésre vonatkozó feltételek szerint” járnak.
+   - A hordozhatóság szűk.
+
+**Új jogi változat: `2026-09-25-2`.** Ugyanazon a napon ez a második, ezért
+`-2` utótagos, a `hatalyos` marad „2026. szeptember 25.”.
+- Az ÁSZF és az Impresszum lenyomata változatlan.
+- A `legal_versions` sor a push előtt élesben van
+  (`20260925000300_jogi_verzio_2026_09_25_2.sql`).
+
+**Őrök** (`jogiSzovegek.test.ts`, kommentek nélküli, egy szóközre húzott
+szövegen). Mind a tíz szándékos rontásra piros lett, a Google-végpontoké a
+`config/szamlafolyo.ts` rontására is.
+
+A `gondolatjel.test.ts` anti-vakság korlátja 300-ról 150-re került. A
+látható nagykötőjelek száma 287-re esett, mert az átírások sok közbevetést
+kivettek. A korlát dolga csak az, hogy egy üresen futó bejárás elbukjon.

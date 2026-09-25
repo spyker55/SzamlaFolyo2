@@ -82,8 +82,15 @@ export const hatalyos = '2026. szeptember 25.';
  * iktatása), és hozzá igazítva az Adatkezelés 4. és 6. pontja. Az Impresszum
  * nem változott. Élesben mérve ekkor is egyetlen cég volt, a tulajdonosé: a
  * 15. pont szerinti előzetes értesítés senkit nem érint.
+ *
+ * `2026-09-25-2`: az Adatkezelési tájékoztató teljes átírása (két táblázat:
+ * saját adatkezelés és adatfeldolgozás; OpenRouter-szerepek és „Sensitive
+ * Data"; a Google-végpontok és a ZDR; három törlési szint; a Vercel
+ * kiszolgálónaplója; GDPR 22. cikk; feltételes érintetti jogok). Az ÁSZF és
+ * az Impresszum szövege nem változott. Élesben továbbra is egyetlen cég van,
+ * a tulajdonosé.
  */
-export const JOGI_VERZIO = '2026-09-25';
+export const JOGI_VERZIO = '2026-09-25-2';
 
 /**
  * Az illetékes békéltető testület.
