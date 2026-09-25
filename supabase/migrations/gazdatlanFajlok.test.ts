@@ -28,7 +28,10 @@ describe('a selejtezés a gazdátlan fájlt is elviszi', () => {
   const t = utolsoTorzs();
 
   it('a legutolsó definíció a gazdátlan ágat is tartalmazza, egynapos türelemmel, csak a napi futásra', () => {
-    expect(t?.nev).toBe('20260923000900_gazdatlan_fajlok.sql');
+    // Nem pontos fájlnév: egy későbbi újradefiniálás (pl. 2026-09-25, a
+    // szolgáltatóváltás alatti felfüggesztés) jogos – az számít, hogy a
+    // legutolsó törzs sem régebbi a gazdátlan ágnál, és tartalmazza azt.
+    expect((t?.nev ?? '') >= '20260923000900_gazdatlan_fajlok.sql').toBe(true);
     expect(t?.torzs).toContain(
       "csak_ezek is null and not exists ( select 1 from public.documents m where m.file_id = f.id ) and f.created_at < now() - interval '1 day'",
     );

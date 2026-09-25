@@ -37,7 +37,7 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. szeptember 24.';
+export const hatalyos = '2026. szeptember 25.';
 
 /**
  * Ugyanaz a nap, **gépnek olvasható alakban** — és ez nem kényelmi másolat.
@@ -75,8 +75,15 @@ export const hatalyos = '2026. szeptember 24.';
  * (`20260924000100_honnan_hallottal.sql`). Az ÁSZF és az Impresszum szövege
  * nem változott, csak a közös hatálybalépési dátum. Élesben mérve ekkor is
  * egyetlen cég volt, a tulajdonosé.
+ *
+ * `2026-09-25`: az ÁSZF negyedik jogi köre (mind a 17 pont: Ptk. 6:152. §,
+ * a felelősségi korlát alsó határa, a szolgáltatóváltás alatti
+ * törlésfelfüggesztés, a módosítás elutasításának külön útja, a szerződés
+ * iktatása), és hozzá igazítva az Adatkezelés 4. és 6. pontja. Az Impresszum
+ * nem változott. Élesben mérve ekkor is egyetlen cég volt, a tulajdonosé: a
+ * 15. pont szerinti előzetes értesítés senkit nem érint.
  */
-export const JOGI_VERZIO = '2026-09-24';
+export const JOGI_VERZIO = '2026-09-25';
 
 /**
  * Az illetékes békéltető testület.

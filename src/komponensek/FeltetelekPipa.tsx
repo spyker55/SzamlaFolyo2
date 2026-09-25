@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom';
 
 /**
- * „Elfogadom az ÁSZF-et és az Adatkezelési tájékoztatót" — pipával.
+ * „Elfogadom az ÁSZF-et, és megismertem az Adatkezelési tájékoztatót" — pipával.
+ *
+ * ⚠️ **Az ÁSZF-et elfogadja, a tájékoztatót megismeri** (2026-09-25, jogi
+ * átnézés 7. pont). A tájékoztató nem szerződési feltétel, és egy „elfogadom"
+ * adatkezelési hozzájárulásnak tűnhetne – a jogalapok az Adatkezelési
+ * tájékoztató 2. pontjában állnak, és egyik sem hozzájárulás a pipából.
  *
  * # Miért külön komponens
  *
@@ -51,8 +56,8 @@ export function FeltetelekPipa({
           className="text-blue-700 hover:underline"
         >
           ÁSZF-et<span className="sr-only"> (új lapon nyílik)</span>
-        </Link>{' '}
-        és az{' '}
+        </Link>
+        , és megismertem az{' '}
         <Link
           to="/adatkezeles"
           target="_blank"

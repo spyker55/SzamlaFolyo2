@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { DOKUMENTUMOK, lenyomat, renderel } from './archivum.tsx';
-import { JOGI_VERZIO } from './adatok.ts';
+import { JOGI_VERZIO, hatalyos } from './adatok.ts';
 
 /**
  * A jogi szövegek archívumának őre.
@@ -78,4 +78,25 @@ describe('az archívum lenyomatai az adatbázisban', () => {
       });
     }
   }
+});
+
+describe('a kiírt hatálybalépési nap a verzióé', () => {
+  /**
+   * 2026-09-25: a `JOGI_VERZIO` új dátumra lépett, a lap tetején viszont még a
+   * régi „Hatályos: 2026. szeptember 24." állt – a `hatalyos` külön érték, és
+   * senki nem figyelte, hogy együtt mozogjon. Egy ÁSZF, ami rossz napot ír ki
+   * a hatálybalépésre, pont azt a bizonyítékot gyengíti, amiért az archívum van.
+   */
+  const HONAPOK = [
+    'január', 'február', 'március', 'április', 'május', 'június',
+    'július', 'augusztus', 'szeptember', 'október', 'november', 'december',
+  ];
+
+  it('a `hatalyos` a JOGI_VERZIO dátuma, magyarul', () => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:-\d+)?$/.exec(JOGI_VERZIO);
+    expect(m, `A JOGI_VERZIO (${JOGI_VERZIO}) nem ÉÉÉÉ-HH-NN[-n] alakú.`).not.toBeNull();
+    const [, ev, ho, nap] = m ?? [];
+    const vart = `${ev}. ${HONAPOK[Number(ho) - 1]} ${Number(nap)}.`;
+    expect(hatalyos, `A lapon kiírt hatálybalépési nap (${hatalyos}) nem a JOGI_VERZIO napja (${vart}).`).toBe(vart);
+  });
 });

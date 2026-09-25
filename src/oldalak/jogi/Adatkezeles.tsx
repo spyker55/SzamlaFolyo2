@@ -728,7 +728,8 @@ export function Adatkezeles() {
               ÁSZF 10. és 16. pont
             </Link>
             ): ha az Előfizető maga törli a céges munkaterületet, azonnal; ha a Szolgáltató mond
-            fel, a megszűnéstől számított harminc napon belül; szolgáltatóváltásnál az
+            fel, vagy az Előfizető az ÁSZF módosítását elutasítva szünteti meg a szerződést, a
+            megszűnéstől számított harminc napon belül; szolgáltatóváltásnál az
             adat-visszanyerési időszak végén.
           </li>
           <li>
@@ -756,6 +757,16 @@ export function Adatkezeles() {
             nem minden előfizetési technikai adatra.
           </li>
         </Lista>
+        <P>
+          <strong>Szolgáltatóváltás alatt nincs ütemezett törlés.</strong> A szolgáltatóváltási
+          kérés beérkezésétől az adat-visszanyerési időszak végéig a fenti határidők közül a cég
+          adataira vonatkozók – az eredeti fájlok, az exportfájlok, a nyers modellválasz, a
+          levélnapló és a lezárult meghívók törlése – szünetelnek (
+          <Link to="/aszf" className="underline">
+            ÁSZF 10. és 16. pont
+          </Link>
+          ). A kérés előtt már törölt fájlokat ez nem állítja vissza.
+        </P>
         <P>
           <strong>A fiók törlése</strong> a Beállítások képernyőről indítható, és{' '}
           <strong>azonnal</strong> megtörténik – nem kérelem, hanem művelet. A képernyő előbb
@@ -985,8 +996,8 @@ export function Adatkezeles() {
             senki nem nézte meg.</strong>
           </li>
           <li>
-            A gépi jóváhagyás <strong>nem vesz át felelősséget</strong>: a kiolvasott adat
-            helyességéért az Előfizető felel, ahogy az{' '}
+            A gépi jóváhagyás <strong>nem vesz át felelősséget</strong>: a kiolvasott adatok
+            összevetése az eredeti bizonylattal ilyenkor is az Előfizető feladata, ahogy az{' '}
             <Link to="/aszf" className="underline">
               ÁSZF 4. pontja
             </Link>{' '}

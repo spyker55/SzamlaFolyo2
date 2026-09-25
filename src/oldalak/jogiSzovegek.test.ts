@@ -505,3 +505,38 @@ describe('az útmutató a felület valódi neveit idézi', () => {
     expect(forras, `A felületen nincs „${nev}" (${fajlok}) – átnevezték? Akkor az útmutatót is.`).toContain(nev);
   });
 });
+
+describe('ÁSZF, negyedik kör (2026-09-25)', () => {
+  // A lap *szövege*, kommentek nélkül: a fejkomment idézi a régi fordulatokat,
+  // és ha az őr azt is olvasná, egy megjegyzés hitelesítené (vagy buktatná) a lapot.
+  const aszfSzoveg = aszf.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  it('13. pont: a kivétel a szándékos szerződésszegés (Ptk. 6:152. §, 2026. március 1-jétől)', () => {
+    expect(aszfSzoveg).toContain('szándékos szerződésszegés esetén');
+    expect(aszfSzoveg, 'Visszatért a régi „szándékosan okozott" fordulat.').not.toContain('szándékosan okozott');
+  });
+
+  it('13. pont: a felelősségi korlátnak alsó határa van, és az a configból jön', () => {
+    expect(aszfSzoveg).toContain('de legalább a legkisebb csomag');
+    expect(aszfSzoveg).toMatch(/formaz\(felelossegiMinimum, 'Ft'\)/);
+    expect(aszfSzoveg, 'Kézzel beírt alsó határ – a configból kell jönnie.').not.toMatch(/29[\s ]?400/);
+  });
+
+  it('8. pont: a költési korlát nem kapcsolható ki, csak a kereten felüli feldolgozás', () => {
+    expect(aszfSzoveg).not.toContain('módosíthat vagy kikapcsolhat');
+    expect(aszfSzoveg).toContain('költési korlát nélkül kereten felüli feldolgozás nem engedélyezhető');
+  });
+
+  it('16. pont: az adat-visszanyerés alatt a törlés felfüggesztése a leírás, nem egy „semmit nem töröl" ígéret', () => {
+    expect(aszfSzoveg).not.toContain('semmit nem töröl');
+    expect(aszfSzoveg).toContain('Szolgáltatóváltás alatt nincs automatikus törlés.');
+    expect(aszfSzoveg).toContain('felfüggeszti az automatikus törlést');
+  });
+
+  it('1. pont és a pipa: az ÁSZF-et elfogadja, a tájékoztatót megismeri', () => {
+    const pipa = olvas('../komponensek/FeltetelekPipa.tsx');
+    expect(pipa).toContain('és megismertem az');
+    expect(pipa, 'A pipa megint „elfogadja" az Adatkezelési tájékoztatót.').not.toMatch(/ÁSZF-et<[\s\S]*?<\/Link>\{' '\}\s*és az\{' '\}/);
+    expect(aszfSzoveg).toContain('megismerve megadja a cég nevét és adószámát');
+  });
+});

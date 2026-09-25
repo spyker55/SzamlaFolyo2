@@ -74,3 +74,31 @@ Csak azonosító, személyes adat nélkül (2026-09-23 óta).
 
 A közreműködőknél (Resend, Stripe) keletkezett nyomokat a helyreállítás nem érinti —
 azok nem a mi adatbázisunkban vannak.
+
+---
+
+## 3. Szolgáltatóváltás: a törlés felfüggesztése
+
+Az ÁSZF 10. és 16. pontja szerint egy szolgáltatóváltási kérés beérkezésétől az
+adat-visszanyerési időszak végéig **semmi nem törlődik automatikusan** a cég adataiból:
+se az eredeti fájlok, se az exportfájlok, se a levélnapló, a lezárult meghívók vagy
+a nyers modellválasz. Ezt egy cégszintű időpont kapcsolja
+(`companies.torles_felfuggesztve_eddig`, `20260925000100`). A felületről **nem**
+írható — csak itt, a Szolgáltató kezéből.
+
+| # | Lépés | Hol |
+|---|---|---|
+| 1 | **Azonosítsd a céget**, mint az 1. szakasz 1. lépésében. Kétszer olvasd el. | SQL Editor |
+| 2 | **Aznap, amikor a kérés beérkezik**, állítsd be a felfüggesztést az átállási időszak végére + legalább 30 napra (adat-visszanyerési időszak). Alapesetben a kérés + 30 nap átállás + 30 nap: `update public.companies set torles_felfuggesztve_eddig = now() + interval '60 days' where id = '<cég-azonosító>';` | SQL Editor |
+| 3 | **Ellenőrizd**, hogy a selejtezés tényleg áll: `select count(*) from belso.selejtezheto('<cég-azonosító>');` és `select count(*) from belso.selejtezheto_export('<cég-azonosító>');` — mindkettő `0`. | SQL Editor |
+| 4 | **Add ki a teljes adatkiadást** az átállási időszakon belül (`eszkozok/adatkiadas/`). | — |
+| 5 | **Ha az átállási időszak meghosszabbodik** (az Előfizető kéri, vagy technikai okból legfeljebb hét hónap), tolj ki a dátumot ugyanígy: az új átállási vég + 30 nap. | SQL Editor |
+| 6 | **Az adat-visszanyerési időszak végén** a céget az 1. szakasz szerint töröld. A felfüggesztést nem kell visszaállítani: a cégsor a törléssel együtt megszűnik. | 1. szakasz |
+
+⚠️ **Ami a kérés előtt szabályosan törlődött, azt a felfüggesztés nem hozza vissza** —
+az eredeti fájl az export után a cég türelmi ideje szerint már eltűnhetett. Az ÁSZF
+ezt ki is mondja; az adatkiadás a meglévő adatokra szól.
+
+Ha a váltást visszavonják, és a szerződés folytatódik:
+`update public.companies set torles_felfuggesztve_eddig = null where id = '<cég-azonosító>';`
+— a napi takarítás a következő futáskor pótolja, ami közben esedékessé vált.

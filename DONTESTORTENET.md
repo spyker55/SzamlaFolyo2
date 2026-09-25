@@ -6086,3 +6086,106 @@ fejléc alá érkeznek.
 
 Ellenőrizve a buildelt lapon (390 és 1440 px): nincs túllógás, nincs
 JS-hiba, és a tartalomjegyzék mind a 13 célja létezik.
+
+### ⚖️ ÁSZF, negyedik jogi kör + törlés felfüggesztése szolgáltatóváltáskor (2026-09-25)
+
+A tulajdonos átnézést kapott az ÁSZF mind a 17 pontjáról, jogszabályhelyekkel
+és célzott szövegjavaslatokkal. Ahol a szöveg a kódról állít valamit, ott a
+kód döntött, és egy helyen **a kód változott**.
+
+**A tulajdonos döntései:**
+1. **Felelősségi korlát (13. pont):** a megfizetett hathavi díj, de legalább
+   a legkisebb csomag hathavi díja (configból: 6 × 4 900 Ft). A „megfizetett
+   díj” próbaidőben 0 Ft, így a képlet ott teljes kizárást adott volna.
+2. **Ptk. 6:78. §:** marad az egy általános pipa. A véleményező újra külön
+   tájékoztatást és kifejezett elfogadást javasolt; ez nyitott jogi kockázat,
+   **az ügyvédnek jelezni kell**.
+3. **Az utolsó időszak túlhasználata** a munkaterület törlésekor továbbra sem
+   kerül kiszámlázásra. A visszaélést a költési korlát behatárolja.
+4. **Szolgáltatóváltás:** az automatikus törlés **kódban** áll meg.
+
+**A kód** (`20260925000100_valtas_torles_felfuggesztes.sql`):
+- **Új mező:** `companies.torles_felfuggesztve_eddig`. Amíg ez a jövőben van,
+  semmi nem selejtezhető:
+  - az eredeti fájlok (a napi futás és az export pillanata is);
+  - az exportfájlok;
+  - a levélnapló, a lezárult meghívók és a nyers modellválasz.
+- **A felületről nem írható.** Mérve: `has_column_privilege` UPDATE = false,
+  SELECT = true, így az export olvasása nem törik el.
+- **A tulajdonos állítja be SQL-lel,** az `eszkozok/torles/OLVASS-EL.md` 3.
+  szakasza szerint.
+- **Élesben mérve,** visszagörgetett tranzakcióban (a blokk szándékos hibával
+  zárult, semmi nem maradt): felfüggesztés nélkül egy gazdátlan fájl, egy 40
+  napos exportfájl és egy 100 napos levélnapló-sor selejtezhető, felfüggesztés
+  alatt egyik sem.
+- **A repó és az élő adatbázis betű szerint egyezik:** a három függvény
+  lenyomata azonos.
+- **Új őr:** a `config/torlesFelfuggesztes.test.ts` a három függvény
+  legutolsó definícióját olvassa. Egy későbbi, feltétel nélküli migrációval
+  elrontva piros lett.
+
+**Szöveg (ÁSZF, a pontszámok nem változtak):**
+- **1. pont:**
+  - A szerződést iktatjuk, és kérésre megküldjük (Eker. tv. 5. §). Kikerült a
+    „nem kereshető elő” és az „írásba foglalás nélkül”.
+  - Az ÁSZF-et elfogadja, a tájékoztatót megismeri. **A pipa szövege is
+    változott:** „Elfogadom az ÁSZF-et, és megismertem az Adatkezelési
+    tájékoztatót.”
+- **3–4. pont:**
+  - Ellenőrzésre előkészített adat, nem „könyvelésre alkalmas”.
+  - A három könyvelőprogram, a korlátaival; nincs önálló kontírozás.
+  - **Ügyfél** adószáma szerinti szűrés.
+  - A 4. pont nem érinti a 13. pont szerinti felelősséget.
+- **5. pont:** következetes fogalmak: felhasználói fiók, Előfizető, céges
+  munkaterület.
+- **6–7. pont:** a próba vége egyértelmű; „további áfa nem kerül
+  felszámításra”.
+- **8. pont:** a költési korlát nem kapcsolható ki, csak a kereten felüli
+  feldolgozás. A régi szöveg szerint a plafon „kikapcsolható” volt, a
+  Beállítások szerint viszont „nem opcionális”.
+- **9. pont:** kisebb csomagnál a meglévő felhasználók maradnak, új meghívó
+  nem megy át (a `20260920000200` két szabálya).
+- **10. pont:** a felfüggesztés, és negyedik megszűnési módként a módosítás
+  elutasítása.
+- **11. pont:** visszaadás vagy törlés az adatkezelő dokumentált utasítása
+  szerint (GDPR 28. cikk (3) g)).
+- **12. pont:** díjleszállítás kimaradáskor. A képlet (havidíj × kiesés órái
+  ÷ az időszak órái), a 30 napos igénybejelentés és a jóváírás **javasolt
+  alapérték**.
+- **13. pont:** Ptk. 6:152. §: *szándékos szerződésszegés*. Négyelemű
+  kivétellista, és a szavatossági igények külön állnak.
+- **14. pont:** az előfizető és harmadik személyek jogai maradnak, a
+  jogosultságért az Előfizető felel.
+- **15. pont:** külön út a fizetős előfizetés lemondására és a szerződés
+  e-mailes megszüntetésére a módosítás elutasítása miatt.
+- **16. pont:** a „semmit nem töröl” helyett a felfüggesztés. Az XML-ek és a
+  titkos beküldési cím úgy szerepelnek, ahogy az adatkiadás ténylegesen adja.
+- **17. pont:** a panaszkezelés és a jogvita külön bekezdésben.
+- **Nyelv:** kikerültek a tanácsadó fordulatok. Menet közben kiderült, hogy
+  négy helyen „a info@…” állt „az info@…” helyett, az 5. és a 16. pontban
+  régóta.
+
+**Az Adatkezelési tájékoztató** 4. és 6. pontja hozzá van igazítva.
+
+**Új jogi változat: `2026-09-25`.**
+- Az archívum és a `legal_versions` sor élesben van, még a felület telepítése
+  előtt. A lenyomatok egyeznek.
+- Élesben egyetlen cég van, a tulajdonosé, így a 15. pont szerinti előzetes
+  értesítés senkit nem érint.
+
+**A böngészős ellenőrzés talált egy hibát.** A lap tetején még
+„Hatályos: 2026. szeptember 24.” állt, mert a `hatalyos` külön érték, és
+eddig senki nem figyelte, hogy együtt mozogjon a `JOGI_VERZIO`-val. Javítva,
+és új őr figyeli (`archivum.test.tsx`); elrontva piros lett.
+
+**Őrök** (`jogiSzovegek.test.ts`, kommentek nélküli szövegen). Mind az öt
+szándékos rontásra piros lett:
+- szándékos szerződésszegés;
+- a korlát alsó határa a configból, kézzel írt „29 400” nincs;
+- a költési korlát nem kapcsolható ki;
+- nincs „semmit nem töröl”;
+- a pipa „megismertem” alakja.
+
+A `gazdatlanFajlok.test.ts` eddig a `selejtezheto` legutolsó definíciójának
+**pontos fájlnevét** is rögzítette, ezért a jogos újradefiniálásra elbukott.
+Most „legalább a 0900-as” a feltétel, a tartalmi ellenőrzés maradt.
