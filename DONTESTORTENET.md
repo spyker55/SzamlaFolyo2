@@ -6308,3 +6308,15 @@ megtalálja, ki működteti a szolgáltatást, hogyan éri el, és hová fordulh
   kivétele forrásszinten zöld maradt, mert a `href` még hivatkozott a
   mezőre. Ezért egy új őr a **renderelt HTML-en** is ellenőrzi a két számot
   és a három e-mail-címet. Ez már piros lett.
+
+### 📨 OpenRouter: a megkeresés elment (2026-09-25)
+
+A tulajdonos elküldte a levelet az OpenRouternek. Három kérdésben kér
+választ:
+- szerződésmódosítás a „Sensitive Data” miatt (adóazonosító, pénzügyi adat);
+- SCC 3. modul (adatfeldolgozó → adatfeldolgozó);
+- EU-Only Processing Addendum: elérhető-e, és milyen feltételekkel.
+
+Az Adatkezelési tájékoztató 5. pontjának „kezdeményezzük” mondata ezzel
+igaz. **Nyitott:** a válasz még nem jött meg. Ha megjön, az 5. pontot a
+tényleges eredményhez kell igazítani, új jogi változatban.
