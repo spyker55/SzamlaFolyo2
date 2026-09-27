@@ -6381,3 +6381,60 @@ szabad marad, mert ott a Meta felülete takar.
   változat nincs.
 - A CSV-oszlopnevek az Ads Editor angol felületéhez igazodnak. A konténerből
   nem tudtam kipróbálni, ezért közzététel előtt az előnézetet át kell nézni.
+
+## 📣 Megkeresési anyagok: könyvelőirodák és Facebook-csoportok (2026-09-27)
+
+A tulajdonos sok releváns emberrel szeretné megismertetni az oldalt. Két
+anyagot választott: **személyes üzenetek könyvelőirodáknak** és
+**Facebook-bejegyzések**. Új csomag: `marketing/megkereses/`, a hirdetéscsomag
+mintájára (`szovegek.ts` → `kimenet.ts` → `SZOVEGEK.md`, őr, kézikönyv).
+
+**A tartalom:**
+- **Könyvelőknek, magázva:**
+  - LinkedIn-kapcsolatkérés jegyzete;
+  - első üzenet elfogadás után;
+  - e-mail tárggyal;
+  - egyetlen emlékeztető;
+  - egy 10 perces bemutató vázlata.
+- **Facebook, tegezve:** 4 bejegyzés, amelyek egy-egy problémával kezdenek
+  (e-számla XML, e-mailes beküldés, ügyfelenkénti export, ellenőrzés
+  számítással), és egy kész válasz az árra.
+
+**Döntés: nincs tömeges kiküldés.** Reklámot természetes személynek (az EV is
+az) csak előzetes hozzájárulással lehet e-mailben küldeni (Grt. 6. §).
+- A szövegek egyenkénti megkeresésre készültek, a tulajdonos küldi őket a saját
+  nevében.
+- A levélben benne van a kiszállás mondata.
+- A kézikönyv táblázatban mutatja, kinek mehet: a Kft./Bt. nyilvános irodai
+  címének igen, az EV-nek csak ismeretség vagy kezdeményezés után, vásárolt
+  listának soha.
+- A törvényszöveget a konténerből nem értem el (jogszabály- és hatósági oldalak
+  blokkolva), ezért az OLVASS-EL azt javasolja, hogy az első éles kör előtt
+  kérdezzük meg az ügyvédet.
+
+**Valós címzett nincs a repóban.** A személyre szabott részek helyén zárt
+listából való helyőrző áll: `[Név]`, `[Személyes mondat]`.
+
+**Mért korlát:** a LinkedIn-jegyzet ingyenes fióknál legfeljebb 200 UTF-16
+egység, és havonta kb. 10 ilyen jegyzet mehet ki (webes forrás, 2026-09). Az őr
+25 karakteres névvel számol.
+
+**Az őr** (`megkereses.test.ts`, 31 teszt) méri:
+- a hosszakat;
+- a hirdetéscsomag `TILTOTT` ígéreteit;
+- hogy minden Ft-összeg és próbaszám a configból jön;
+- a `KIMERVE`-t;
+- a helyőrzőket: nincs ismeretlen, és nincs elavult listaelem;
+- a Facebook-bejegyzéseket: pontosan egy nyílt közlés („a SzámlaFolyót én
+  fejlesztem”), pontosan egy link;
+- a kiszállás mondatát;
+- hogy az aláírás a jogi oldalak szolgáltatói adataiból jön;
+- hogy minden link és horgony létezik;
+- hogy a „Legutóbbi levelek” lista a felületen is így hívják;
+- hogy a `SZOVEGEK.md` naprakész.
+
+Mind a 13 szándékos rontásra piros lett.
+
+**Mérés:** a „Honnan hallottál rólunk?” válaszai közül a `konyvelo`, a
+`facebook` és az `egyeb`. A LinkedIn ma az `egyeb` alá esik; ha fő csatorna
+lesz, külön kódot kap.
