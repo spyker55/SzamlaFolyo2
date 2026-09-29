@@ -6438,3 +6438,34 @@ Mind a 13 szándékos rontásra piros lett.
 **Mérés:** a „Honnan hallottál rólunk?” válaszai közül a `konyvelo`, a
 `facebook` és az `egyeb`. A LinkedIn ma az `egyeb` alá esik; ha fő csatorna
 lesz, külön kódot kap.
+
+## 🔎 robots.txt és sitemap.xml a Google Search Console-hoz (2026-09-29)
+
+A Search Console-hoz sitemap kell, és nem volt. **Élesben mérve:** a
+`/robots.txt` címen az `index.html` jött vissza (200, HTML), mert a
+`vercel.json` mindent oda irányít, amihez nincs fájl. A `public/` fájljait a
+Vercel a rewrite **előtt** szolgálja ki (a `/bemutato/…jpg` `image/jpeg`-ként
+jön), ezért elég a két fájlt a `public/`-ba tenni, a `vercel.json` nem változik.
+
+- **`public/sitemap.xml`:** a hat nyilvános oldal (nyitólap, Könyvelőknek,
+  Útmutató, ÁSZF, Adatkezelés, Impresszum), `lastmod` nélkül. Egy kézzel
+  karbantartott dátum hamar hazudna.
+- **`public/robots.txt`:** minden indexelhető, kivéve a belépéshez kötött
+  képernyőket, a fiókkezelő oldalakat és a `/meghivo/` linkeket (azok
+  személyesek).
+
+**Az őr** (`src/keresomotor.test.ts`) az `App.tsx` „Nyilvános” blokkjából
+dolgozik:
+- a sitemap pontosan a nyilvános oldalakat sorolja fel;
+- a robots.txt nyilvános oldalt nem tilt, minden más útvonalat tilt, és nincs
+  benne elavult tiltás;
+- a robots.txt a sitemapre mutat.
+
+Mind a 8 szándékos rontásra piros lett.
+
+**A Search Console ellenőrzése DNS-rekorddal történik, kódot nem kell a
+lapra tenni.** Így az Adatkezelési tájékoztató ígérete (nincs mérő- és
+hirdetési kód) változatlanul igaz. A domain DNS-e a Nethelynél van (a Vercel
+szerint a névszerverek `ns1/ns2.nethely.hu`), a TXT-rekord oda kerül. A
+Search Console a látogatókról személyes adatot nem gyűjt, csak összesített
+keresési adatot mutat.

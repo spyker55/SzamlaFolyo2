@@ -1,0 +1,24 @@
+# SzámlaFolyó – robots.txt
+#
+# A nyilvános oldalak (nyitólap, Könyvelőknek, Útmutató, jogi oldalak)
+# indexelhetők. Az alkalmazás belépéshez kötött képernyői és a
+# fiókkezelő oldalak nem valók a keresőbe: tartalmuk nincs, a meghívólink
+# pedig személyes. Az őr: src/keresomotor.test.ts.
+
+User-agent: *
+Allow: /
+Disallow: /meghivo/
+Disallow: /bejelentkezes
+Disallow: /regisztracio
+Disallow: /elfelejtett-jelszo
+Disallow: /jelszo-beallitas
+Disallow: /ceg-letrehozas
+Disallow: /fiok-torles
+Disallow: /beerkezo
+Disallow: /ellenorzes/
+Disallow: /tetelek
+Disallow: /export
+Disallow: /archivum
+Disallow: /beallitasok
+
+Sitemap: https://szamlafolyo.hu/sitemap.xml
