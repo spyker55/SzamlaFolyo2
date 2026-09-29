@@ -6469,3 +6469,12 @@ hirdetési kód) változatlanul igaz. A domain DNS-e a Nethelynél van (a Vercel
 szerint a névszerverek `ns1/ns2.nethely.hu`), a TXT-rekord oda kerül. A
 Search Console a látogatókról személyes adatot nem gyűjt, csak összesített
 keresési adatot mutat.
+
+**Kiegészítés (2026-09-29): HTML-fájlos ellenőrzés.** A tulajdonos végül a
+Google által adott HTML-fájllal ellenőrzi a tulajdont, nem DNS-sel. A fájl
+bájtra pontosan a `public/google8c85458d0ccfd79f.html` útvonalra került. Ez
+sem tesz kódot a lapokra: a Google időnként letölti a fájlt, a látogatókról
+semmit nem gyűjt. Ha a fájl kikerül, a Google visszavonja az ellenőrzést, ezért
+a `keresomotor.test.ts` őrzi a meglétét és a tartalmát (két szándékos
+rontásra piros). Ez a módszer URL-előtag-tulajdont igazol
+(`https://szamlafolyo.hu/`), nem az egész domaint.

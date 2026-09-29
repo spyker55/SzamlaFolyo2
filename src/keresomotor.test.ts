@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -75,5 +75,18 @@ describe('robots.txt', () => {
   it('nincs olyan tiltás, amihez nem tartozik útvonal', () => {
     const elotagok = utvonalak.map((u) => (u.includes('/:') ? u.slice(0, u.indexOf(':')) : u));
     for (const t of tiltott) expect(elotagok, `Elavult tiltás: ${t}`).toContain(t);
+  });
+});
+
+describe('Google Search Console', () => {
+  // A tulajdon ellenőrzése ezzel a fájllal történt (2026-09-29). Ha kikerül,
+  // a Google egy idő után visszavonja az ellenőrzést, és a Search Console
+  // adatai elérhetetlenné válnak. Kódot a lapra nem tesz: a Google időnként
+  // újra letölti a fájlt, a látogatókról semmit nem gyűjt.
+  it('az ellenőrző fájl megvan, és a tartalma a Google által adott alak', () => {
+    const fajlok = readdirSync(`${GYOKER}public`).filter((f) => /^google[0-9a-f]+\.html$/.test(f));
+    expect(fajlok).toEqual(['google8c85458d0ccfd79f.html']);
+    const tartalom = readFileSync(`${GYOKER}public/${fajlok[0]}`, 'utf8');
+    expect(tartalom).toBe(`google-site-verification: ${fajlok[0]}`);
   });
 });
