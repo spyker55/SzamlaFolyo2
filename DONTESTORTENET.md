@@ -6585,3 +6585,109 @@ mezőnként csak az utolsó sort vegye. Az ÁFA-bontás 2. körtől írt soraiba
 **Külön kör, ha lesz minta:** a négy bizonylat mindegyikén a pénznemet, háromnál
 a típust és a fizetési határidőt is javítani kellett. Ilyen egyöntetű hiba
 valószínűleg közös sablonra utal, de a tartalomba nem nézünk bele.
+
+## 🔐 Biztonsági átvilágítás (2026-10-01)
+
+Mit néztünk meg:
+- a Supabase biztonsági és teljesítmény-tanácsadóit;
+- minden tábla RLS-politikáját, tábla- és oszlopjogát;
+- a 22 SECURITY DEFINER függvényt (`search_path`, ki hívhatja, mit ellenőriz);
+- a tároló politikáit;
+- a 9 Edge Function hitelesítését (a három `verify_jwt: false` végpontnál az
+  aláírás- vagy jel-ellenőrzést);
+- hogy a telepített függvénykód egyezik-e a repóval (tranzitív modulgráf a
+  telepítési időpontokhoz mérve);
+- a buildelt csomagot titkok után kutatva, az `npm audit`-ot, az éles
+  válaszfejléceket, és az elmúlt 24 óra Edge Function-, API- és
+  adatbázis-naplóit.
+
+### Ami rendben volt
+
+- **Függvények:**
+  - minden SECURITY DEFINER függvénynek rögzített, üres `search_path`-ja van;
+  - a `belso` séma API-n át nem érhető el;
+  - a 11 nyilvános RPC mindegyike ellenőrzi a jogosultságot.
+- **Bejelentkezés nélkül hívható végpontok:**
+  - a `meghivo_adatok` egy ~118 bites titok birtokosának mutatja meg a
+    meghívó adatait, ez szándékos;
+  - a webhookok (Resend/Svix, Stripe) hiányzó titoknál zárva maradnak,
+    5 perc időbélyeg-tűréssel és konstans idejű összehasonlítással;
+  - a `meghivo-fiok` csak élő meghívóra, a megnevezett címre nyit fiókot.
+- **Tároló és tulajdonosi jogok:**
+  - a tárolók privátak, méret- és típuskorláttal;
+  - a `companies`-en a tulajdonos csak a biztonságos mezőket írhatja, a
+    Stripe- és próbaidő-mezőket nem.
+- **Csomag és függőségek:**
+  - a buildben nincs titok (az egyetlen találat a supabase-js
+    `"sb_secret_"` előtag-ellenőrzése volt);
+  - az éles függőségekben 0 sérülékenység van. A vitest 2 közepes
+    sérülékenysége csak a helyi tesztfuttatót érinti, és a javítás törő
+    verzióváltás (vitest 5) volna.
+- **Telepített kód:** viselkedésre egyezik a repóval. Ahol a repó azóta
+  változott, az vagy csak típusannotáció (`meghivo-fiok`, `stripe-checkout`),
+  vagy új config-kulcs, amit a régi kód nem olvas.
+- **Naplók:**
+  - egyetlen kiolvasási időtúllépés volt, a második kísérlet sikerült;
+  - egy 422-es regisztráció;
+  - a többi hiba a mai mérésekből jött.
+
+### Amit találtunk és javítottunk
+
+Mind ugyanaz a család: a politika a cégre szűr, de egy sor a saját cégén belül
+is mutathatott kifelé. Élesben, a tulajdonos jogaival, visszagörgetett
+tranzakcióban mérve **mind az öt támadás sikerült**, a kontroll (saját
+naplósor) szintén:
+
+| # | Rés | Javítás (`20261001000200_biztonsagi_szigoritas.sql`) |
+|---|---|---|
+| 1 | A tulajdonos meghívó nélkül, tetszőleges `user_id`-val és `created_at`-tel szúrhatott tagsági sort a cégébe. Régi dátummal így egy idegen fiók „aktuális cége” a támadóé lett volna, és a feltöltései oda kerültek volna. | Az INSERT politika és jog eltávolítva (a tagság csak a két RPC-ben születik). Egyedi index: egy fiók egy cég. |
+| 2 | A `files.storage_path` és az `exports.file_path` mutathatott más cég mappájába. A `kiolvas` és a `selejtez` ezt `service_role`-lal tölti le, illetve törli. | CHECK: az útvonal a sor saját cégének mappájában van. A fájloknál `..` sem lehet benne. |
+| 3 | Egy bizonylat mutathatott más cég fájljára, mert a külső kulcsot az RLS nem nézi. | Összetett külső kulcs: `(file_id, company_id)` → `files (id, company_id)`. |
+| 4 | A szerkesztő más tag nevében is írhatott naplósort. | A politika a `user_id = auth.uid()`-t is megköveteli. |
+
+Mellé jön egy index a `document_corrections (document_id, extraction_id)`-ra:
+ezt a ma bevezetett jóváhagyási lekérdezés használja. Mind az 1–3. résnek az
+volt a feltétele, hogy a támadó ismerjen egy idegen UUID-t. Kitalálni nem
+lehet, de egy továbbküldött előnézeti link vagy képernyőkép elárulhatja.
+
+**Az alkalmazás:** az MCP `apply_migration` háromszor is 60 másodperc után
+időtúllépéssel állt meg. Az SQL egyszer sem jutott el az adatbázisig: a
+naplóban nincs nyoma, és egyik eleme sem jött létre. A `drop policy` és a
+`revoke` jóváhagyást kér, és az nem ért célba. **A migráció az
+SQL-szerkesztőben fut le**, utána ugyanazzal a visszagörgetett méréssel
+ellenőrizzük.
+
+**Az őr** (`supabase/migrations/biztonsagiSzigoritas.test.ts`, 8 teszt) a
+lánc végét nézi. Mind a 7 szándékos rontásra piros lett:
+- visszatett politika;
+- visszaadott INSERT jog;
+- eldobott index;
+- eldobott útvonal-kényszer;
+- eldobott idegen-fájl kulcs;
+- lazított naplópolitika;
+- kivett `..`-tilalom.
+
+### Biztonsági fejlécek
+
+Az éles oldal a HSTS-en kívül semmit nem küldött. A `vercel.json` most minden
+útvonalra ezeket adja:
+- `X-Frame-Options: DENY` és CSP `frame-ancestors 'none'`: keretbe töltés
+  ellen, ami a fióktörlésnél is számít;
+- `X-Content-Type-Options: nosniff`;
+- `Referrer-Policy: strict-origin-when-cross-origin`;
+- `Permissions-Policy` (kamera, mikrofon, helymeghatározás, fizetés, USB tiltva).
+
+A CSP szándékosan csak olyat tilt, amit az alkalmazás nem használ. A teljes
+szabályzat (`script-src`, `connect-src` …) élesben törhet, ezért az külön
+körben, böngészőben mérve jöhet. Az előnézet iframe-je a Supabase-domainről
+tölt, ezt a tilalom nem érinti. Az őr (`src/biztonsagiFejlecek.test.ts`)
+mind az 5 szándékos rontásra piros lett.
+
+### Ami maradt (tudatosan)
+
+- **Teljes CSP:** külön kör.
+- **A vitest-sérülékenység:** csak fejlesztői, a javítás törő verzióváltás.
+- **14 index nélküli külső kulcs:** ekkora adatmennyiségnél nem számít.
+- **Hozzárendelő mezők:** a `corrected_by`, `uploaded_by`, `created_by` és
+  `approved_by` a cégen belül még kitölthető mással. Ezek nem az audit-nyom
+  részei, a naplóé (4.) igen.
