@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth.tsx';
 import { horgonyraUgrik, tetejereUgrik } from './lib/gorgetes.ts';
+import { oldalfej } from './lib/oldalfej.ts';
 import { Belepve, Ceggel, Vendeg } from './komponensek/Vedett.tsx';
 import { Bejelentkezes } from './kepernyok/auth/Bejelentkezes.tsx';
 import { Regisztracio } from './kepernyok/auth/Regisztracio.tsx';
@@ -68,6 +69,7 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <GorgetesVisszaall />
+        <OldalFej />
         <Routes>
           {/* Nyilvános */}
           <Route path="/" element={<Kezdolap />} />
@@ -238,6 +240,26 @@ function GorgetesVisszaall() {
 
     tetejereUgrik();
   }, [pathname, hash, navigacio]);
+
+  return null;
+}
+
+/**
+ * A böngészőfül címe és a keresőnek szóló leírás, útvonalanként.
+ *
+ * A szövegek a `lib/oldalfej.ts` táblájában vannak; itt csak a beállításuk.
+ * A `<meta name="description">` az `index.html`-ben már ott van – azt írjuk
+ * át, nem újat teszünk mellé, mert két leírásból a kereső bármelyiket
+ * választhatná.
+ */
+function OldalFej() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const { cim, leiras } = oldalfej(pathname);
+    document.title = cim;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', leiras);
+  }, [pathname]);
 
   return null;
 }

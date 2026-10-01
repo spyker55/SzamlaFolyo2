@@ -6478,3 +6478,32 @@ semmit nem gyűjt. Ha a fájl kikerül, a Google visszavonja az ellenőrzést, e
 a `keresomotor.test.ts` őrzi a meglétét és a tartalmát (két szándékos
 rontásra piros). Ez a módszer URL-előtag-tulajdont igazol
 (`https://szamlafolyo.hu/`), nem az egész domaint.
+
+## 🔎 Oldalankénti cím és leírás (2026-10-01)
+
+Eddig mind a hat nyilvános oldal ugyanazt a `<title>`-t („SzámlaFolyó”) és
+leírást kapta az `index.html`-ből. A keresőben így mindegyik egyformán
+nézett ki, és a Search Console az ismétlődő címeket jelezni szokta.
+
+- **`src/lib/oldalfej.ts`:** egy tábla útvonalanként (címmel és leírással), és
+  az `oldalfej()` függvény. Ez a `:token` és a `:id` paramétert is illeszti, ismeretlen
+  címre az alapot adja.
+- **`OldalFej` az `App.tsx`-ben:** útvonalváltáskor beállítja a
+  `document.title`-t, és **átírja** a meglévő `<meta name="description">`-t,
+  nem tesz mellé újat.
+- **Az `index.html` a főoldal sorát kapta, szó szerint.** A kódot nem futtató
+  linkelőnézetek (például a Facebook) ezt látják.
+- **A jogi oldalak komponensei nem változtak,** így az archivált lenyomatuk
+  is érintetlen maradt.
+
+**Az őr** (`src/lib/oldalfej.test.ts`, 16 teszt) ellenőrzi:
+- hogy a tábla pontosan az `App.tsx` útvonalait tartalmazza;
+- hogy a címek egyediek, és legfeljebb 60 karakteresek;
+- hogy a nyilvános leírások egyediek, és 70–155 karakteresek;
+- hogy a hirdetéscsomag `TILTOTT` ígéretei nem szerepelnek bennük;
+- hogy az `index.html` egyezik a táblával, és pontosan egy leírást tartalmaz;
+- a paraméteres és az ismeretlen címek illesztését.
+
+Mind a 9 szándékos rontásra piros lett. **Böngészőben mérve** (buildelt
+előnézet, Playwright): a közvetlen betöltés, a kattintásos navigáció és a
+„vissza” gomb is a helyes címet és leírást adja.
