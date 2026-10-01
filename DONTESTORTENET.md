@@ -6507,3 +6507,81 @@ nézett ki, és a Search Console az ismétlődő címeket jelezni szokta.
 Mind a 9 szándékos rontásra piros lett. **Böngészőben mérve** (buildelt
 előnézet, Playwright): a közvetlen betöltés, a kattintásos navigáció és a
 „vissza” gomb is a helyes címet és leírást adja.
+
+## 🕰️ Jóváhagyási idő a szerverről, javítási napló duplikátumok nélkül (2026-10-01)
+
+Az első külső felhasználó ma regisztrált, feltöltött és jóváhagyott négy
+bizonylatot. A tevékenységét összesítve néztük meg: darabszámok, időpontok,
+mezőnevek. Bizonylattartalmat, e-mail-címet, cégnevet nem olvastunk ki, és a
+„honnan hallottál” választ sem, mert egyetlen cégnél az „összesítés” maga az
+egyéni válasz volna. Két hibát találtunk.
+
+### 1. Az `approved_at` a böngésző órájából jött
+
+Az ellenőrző képernyő `new Date().toISOString()`-t küldött. A felhasználó
+gépének órája 7:43:42-vel késett. A négy bizonylata ezért **előbb lett
+jóváhagyva, mint feltöltve** (00:57 UTC, holott a feltöltés 08:27-kor volt).
+
+- **Javítás:** a `documents_approved_at` BEFORE trigger
+  (`20261001000100_jovahagyas_szerverido.sql`). Ha egy írás az
+  `approved_at`-et nem-NULL értékre állítja át, az értéket a `now()` váltja
+  fel. A NULL (visszaküldés) és a változatlanul visszaírt érték marad. A
+  kliens továbbra is küld értéket, de az csak azt jelzi, *hogy* jóváhagyás
+  történt.
+- **Helyreállítás, a trigger előtt:** 35 bizonylatból pontosan 4-nél volt
+  `approved_at < created_at`, mind a négy `jovahagyva` állapotú. Náluk az
+  `updated_at` 66–173 ms-mal az utolsó javítási sor után állt, vagyis az a
+  jóváhagyás szerverideje. Ez lett az új `approved_at`. Utána mérve:
+  0 lehetetlen sor, és a 4 érték ugyanazokkal a 66–173 ms-okkal áll a
+  javítások után.
+- **A trigger élesben mérve,** egy kivétellel visszagörgetett tranzakcióban:
+  - a 2000-es és a 2099-es érték helyére a szerver ideje került;
+  - a NULL NULL maradt;
+  - a változatlan visszaírás és a más oszlop írása a régi értéket hagyta.
+
+  Utána 0 mérési nyom maradt.
+- **Az őr** (`supabase/migrations/jovahagyasIdo.test.ts`) a függvény legutolsó
+  definícióját és a trigger lánc végi állapotát méri. Mindhárom szándékos
+  rontásra piros lett: `now()` helyett más érték, hiányzó „változatlan”
+  feltétel, egy későbbi `drop trigger`.
+
+### 2. A javítási napló minden újrajóváhagyáskor újraírta ugyanazt
+
+A `javitasok()` minden jóváhagyáskor a **gépi** értékhez hasonlított. A
+felhasználó mind a négy bizonylatot négyszer hagyta jóvá (jóváhagyás →
+visszaküldés → újra). Ebből **38 sor** lett, pedig csak **14 különböző
+(bizonylat, mező) pár** volt. Ez a napló „az egyetlen jel” arról, hogy a
+kapuk jól vannak-e beállítva.
+
+Az ÁFA-bontás ága ráadásul nem a gépihez, hanem a *tárolt* bontáshoz
+hasonlított, ezért a második körtől az előző emberi bontást nevezte gépinek.
+A gépi bontás ugyanis a kiolvasás `fields` oszlopába nem kerül be, csak a
+bizonylat `afa_bontas` oszlopában él, amíg az ember felül nem írja.
+
+- **Javítás:**
+  - **Mezőnkénti alap:** a viszonyítási alap az ugyanarra a bizonylatra és
+    kiolvasásra **legutóbb naplózott emberi érték**, és ha ilyen még nincs,
+    a gépi. A `jovahagy()` ezért előbb kiolvassa a korábbi sorokat, és ha ez
+    nem sikerül, megáll. Duplikátumot írni nem jobb, mint hibát jelezni.
+  - **A gépi bontás:** az első naplózott bontás-javítás `machine_value`-ja,
+    különben a tárolt bontás. A tárolt javítás híján még mindig a gépi.
+  - **Visszacsinált javítás:** az is sor lesz, `machine_value = human_value`
+    alakban. Ha nem lenne az, a régi javítás örökre ott állna. A végső állapot
+    így mezőnként az **utolsó** sor.
+- **Kiolvasó-módosítás és Edge Function újratelepítés nem kellett.**
+- **Tesztek:** öt új teszt a `urlap.test.ts`-ben, köztük a felhasználó
+  négykörös esetének visszajátszása, ami most `[4, 0, 0, 0]` sort ad. Mind a
+  négy szándékos rontásra piros lett:
+  - az alap mindig a gépi;
+  - a bontás gépi értéke mindig a tárolt;
+  - a bontás alapja mindig a gépi;
+  - az első naplózott sor az utolsó helyett.
+
+**Ami szándékosan maradt:** a ma keletkezett 38 sort nem töröltük, a napló
+csak bővül. Ha valaki ezekből elemez, bizonylatonként, kiolvasásonként és
+mezőnként csak az utolsó sort vegye. Az ÁFA-bontás 2. körtől írt soraiban a
+`machine_value` az előző emberi bontás, nem a gépi.
+
+**Külön kör, ha lesz minta:** a négy bizonylat mindegyikén a pénznemet, háromnál
+a típust és a fizetési határidőt is javítani kellett. Ilyen egyöntetű hiba
+valószínűleg közös sablonra utal, de a tartalomba nem nézünk bele.

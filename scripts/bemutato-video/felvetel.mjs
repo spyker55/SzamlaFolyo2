@@ -644,7 +644,10 @@ async function alszerver(utvonal, allapot, { fotoUt, kotegPdf }) {
     ]);
   }
 
-  if (ut === '/rest/v1/document_corrections') return utvonal.fulfill({ status: 201, body: '' });
+  // GET: a jóváhagyás előbb kiolvassa a korábbi javításokat (nincs ilyen).
+  if (ut === '/rest/v1/document_corrections') {
+    return keres.method() === 'GET' ? json([]) : utvonal.fulfill({ status: 201, body: '' });
+  }
 
   // Az export rögzítése: a tételek átkerülnek, az Archívum listázza.
   if (ut === '/rest/v1/rpc/export_rogzit') {

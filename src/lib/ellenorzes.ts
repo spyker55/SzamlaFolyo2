@@ -139,11 +139,28 @@ export type MentesBemenet = {
 export async function jovahagy(be: MentesBemenet): Promise<{ ok: boolean; hiba?: string }> {
   const bontas = be.bontas.length === 0 ? null : be.bontas;
 
+  // Az ugyanerre a kiolvasásra már naplózott javítások: egy visszaküldött és
+  // újra jóváhagyott bizonylat ezekhez mér, nem újra a gépi értékhez (lásd a
+  // `javitasok()` fejlécét).
+  const korabbiLekeres = supabase
+    .from('document_corrections')
+    .select('field, machine_value, human_value')
+    .eq('document_id', be.bizonylat.id)
+    .order('created_at', { ascending: true });
+  const { data: korabbiak, error: korabbiHiba } = await (be.kiolvasas === null
+    ? korabbiLekeres.is('extraction_id', null)
+    : korabbiLekeres.eq('extraction_id', be.kiolvasas.id));
+
+  if (korabbiHiba !== null) {
+    return { ok: false, hiba: korabbiHiba.message };
+  }
+
   const lista = javitasok(
     be.kiolvasas?.fields ?? {},
     be.mezok,
     be.bizonylat.afa_bontas,
     bontas,
+    korabbiak ?? [],
   );
 
   if (lista.length > 0) {
@@ -180,6 +197,9 @@ export async function jovahagy(be: MentesBemenet): Promise<{ ok: boolean; hiba?:
       // az azt rögzíti, hogyan került először jóváhagyott állapotba, és ez
       // utólag is igaz marad.
       approved_by: be.felhasznaloId,
+      // ⚠️ Ez csak jelzi, *hogy* jóváhagyás történt: az időt a
+      // `documents_approved_at` trigger a szerver órájára cseréli. A böngésző
+      // órája elállítható — 2026-10-01-én egy felhasználónál 7:43-at késett.
       approved_at: new Date().toISOString(),
     })
     .eq('id', be.bizonylat.id);

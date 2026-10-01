@@ -215,19 +215,52 @@ export type Javitas = {
   human_value: string | null;
 };
 
+/**
+ * # Egy javítás egyszer kerül a naplóba
+ *
+ * A viszonyítási alap mezőnként **a legutóbb naplózott emberi érték**, és csak
+ * ha ilyen még nincs, a gépi. Korábban mindig a gépi volt — és egy bizonylat,
+ * amit jóváhagytak, visszaküldtek, majd újra jóváhagytak, minden körben újra
+ * beírta ugyanazt a javítást. Mérve (2026-10-01, az első külső felhasználó):
+ * 4 bizonylat, mindegyik négy kör, **38 sor mindössze 14 különböző
+ * (bizonylat, mező) párra** — a mérőszám, amiért a tábla van, a többszörösére
+ * nagyított.
+ *
+ * A `korabbiak` tehát az **ugyanarra a bizonylatra és ugyanarra a kiolvasásra**
+ * már naplózott sorok, időrendben. Új kiolvasásnál az alap újra a gépi érték.
+ *
+ * Ha az ember egy javítást visszacsinál (a gépi értékre írja vissza), az is
+ * sor lesz, `machine_value = human_value` alakban. Enélkül a régi javítás
+ * örökre ott állna, mintha a gép tévedett volna. A végső állapot így mindig a
+ * mezőnként **utolsó** sor.
+ *
+ * # Az ÁFA-bontás gépi értéke
+ *
+ * A kiolvasás `fields` oszlopába a bontás nem kerül be — a gépi bontás csak a
+ * bizonylat `afa_bontas` oszlopában él, amíg az első emberi mentés felül nem
+ * írja. Ezért a gépi bontás: **az első naplózott bontás-javítás
+ * `machine_value`-ja**, és ha ilyen nincs, a tárolt (`taroltBontas`) — ami
+ * javítás híján még mindig a gépi, mert az ember azonosat mentett vissza.
+ * Korábban mindig a tárolt volt, és a második körtől az előző emberi bontást
+ * nevezte gépinek.
+ */
 export function javitasok(
   gepi: Record<string, unknown>,
   emberi: Record<Mezo, string | null>,
-  gepiBontas: unknown,
+  taroltBontas: unknown,
   emberiBontas: TarolhatoBontasSor[] | null,
+  korabbiak: readonly Javitas[],
 ): Javitas[] {
   const lista: Javitas[] = [];
+  const utolso = (mezo: string) => korabbiak.findLast((k) => k.field === mezo);
 
   for (const mezo of MEZOK) {
     const gepiErtek = gepi[mezo] ?? null;
     const emberiErtek = emberi[mezo];
+    const elozo = utolso(mezo);
+    const alap = elozo === undefined ? szoveg(gepiErtek) : szoveg(elozo.human_value);
 
-    if (szoveg(gepiErtek) === szoveg(emberiErtek)) continue;
+    if (szoveg(emberiErtek) === alap) continue;
 
     lista.push({
       field: mezo,
@@ -242,11 +275,15 @@ export function javitasok(
   //
   // Az összehasonlítás **normalizált**: a `JSON.stringify(27.0)` „27"-et ír,
   // tehát a tárolt kulcs számként jön vissza, és a nyers egyezésvizsgálat
-  // minden jóváhagyáskor fantomjavítást szülne.
-  const gepiSzoveg = bontasSzoveg(gepiBontas);
+  // minden jóváhagyáskor fantomjavítást szülne. A naplózott sorok már ebben
+  // az alakban vannak, ezért velük közvetlenül összevethető.
+  const elsoBontas = korabbiak.find((k) => k.field === 'afa_bontas');
+  const elozoBontas = utolso('afa_bontas');
+  const gepiSzoveg = elsoBontas === undefined ? bontasSzoveg(taroltBontas) : elsoBontas.machine_value;
+  const alapSzoveg = elozoBontas === undefined ? gepiSzoveg : elozoBontas.human_value;
   const emberiSzoveg = bontasSzoveg(emberiBontas);
 
-  if (gepiSzoveg !== emberiSzoveg) {
+  if (emberiSzoveg !== alapSzoveg) {
     lista.push({
       field: 'afa_bontas',
       machine_value: gepiSzoveg,

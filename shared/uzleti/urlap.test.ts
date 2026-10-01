@@ -3,6 +3,7 @@ import {
   bontastUrlapra,
   ellenorzottMezok,
   javitasok,
+  type Javitas,
   parseoltBontas,
   urlapraTolt,
   uresUrlap,
@@ -145,7 +146,7 @@ describe('javitasok — a mérőeszköz', () => {
     const gepi = { supplier_name: 'Pelda Kft', gross_amount: '6130.00' };
     const emberi = { ...uresUrlap(), supplier_name: 'Példa Kft.', gross_amount: '6130.00' } as never;
 
-    const lista = javitasok(gepi, emberi, null, null);
+    const lista = javitasok(gepi, emberi, null, null, []);
 
     expect(lista.map((j) => j.field)).toContain('supplier_name');
     expect(lista.map((j) => j.field)).not.toContain('gross_amount');
@@ -160,7 +161,7 @@ describe('javitasok — a mérőeszköz', () => {
     const gepi = [{ kulcs: 27, kategoria: 'S', netto: 1000, afa: 270 }];
     const emberi = [{ kulcs: 27, kategoria: 'S', netto: '1000.00', afa: '270.00' }];
 
-    const lista = javitasok({}, uresUrlap() as never, gepi, emberi as never);
+    const lista = javitasok({}, uresUrlap() as never, gepi, emberi as never, []);
 
     expect(lista.map((j) => j.field)).not.toContain('afa_bontas');
   });
@@ -169,14 +170,94 @@ describe('javitasok — a mérőeszköz', () => {
     const gepi = [{ kulcs: 27, kategoria: 'S', netto: 1000, afa: 270 }];
     const emberi = [{ kulcs: 27, kategoria: 'S', netto: '2000.00', afa: '540.00' }];
 
-    const lista = javitasok({}, uresUrlap() as never, gepi, emberi as never);
+    const lista = javitasok({}, uresUrlap() as never, gepi, emberi as never, []);
 
     expect(lista.map((j) => j.field)).toContain('afa_bontas');
   });
 
   test('az üres és a null bontás ugyanaz', () => {
-    expect(javitasok({}, uresUrlap() as never, null, []).map((j) => j.field)).not.toContain(
+    expect(javitasok({}, uresUrlap() as never, null, [], []).map((j) => j.field)).not.toContain(
       'afa_bontas',
     );
+  });
+});
+
+/**
+ * Egy javítás egyszer kerül a naplóba. Mérve 2026-10-01-én: az első külső
+ * felhasználó 4 bizonylatát négyszer hagyta jóvá (jóváhagyás → visszaküldés →
+ * újra), és 14 különböző (bizonylat, mező) párból 38 sor lett.
+ */
+describe('javitasok — újrajóváhagyáskor', () => {
+  const gepi = { doc_type: 'egyeb', currency: 'EUR', due_date: null };
+  const gepiBontas = [{ kulcs: 27, kategoria: 'S', netto: 1000, afa: 270 }];
+  const emberiBontas = [{ kulcs: 27, kategoria: 'S', netto: '2000.00', afa: '540.00' }] as never;
+
+  function emberi(felulir: Record<string, string> = {}) {
+    return { ...uresUrlap(), doc_type: 'szamla', currency: 'HUF', due_date: '2026-10-15', ...felulir } as never;
+  }
+
+  /** Egy kör: jóváhagyás a napló és a tárolt bontás aktuális állapotán. */
+  function kor(naplo: Javitas[], tarolt: unknown, urlapErtek: never, bontas: never) {
+    const lista = javitasok(gepi, urlapErtek, tarolt, bontas, naplo);
+    naplo.push(...lista);
+    return lista;
+  }
+
+  test('a négy kör ugyanazokkal a javításokkal: egyszer kerülnek be', () => {
+    const naplo: Javitas[] = [];
+    let tarolt: unknown = gepiBontas;
+
+    const korok = [1, 2, 3, 4].map(() => {
+      const lista = kor(naplo, tarolt, emberi(), emberiBontas);
+      tarolt = emberiBontas;
+      return lista.length;
+    });
+
+    expect(korok).toEqual([4, 0, 0, 0]);
+    expect(naplo.map((j) => j.field).sort()).toEqual(['afa_bontas', 'currency', 'doc_type', 'due_date']);
+  });
+
+  test('a későbbi körben tett további javítás bekerül, a gépi értékkel', () => {
+    const naplo: Javitas[] = [];
+    kor(naplo, gepiBontas, emberi(), emberiBontas);
+
+    const lista = kor(naplo, emberiBontas, emberi({ currency: 'USD' }), emberiBontas);
+
+    expect(lista).toEqual([{ field: 'currency', machine_value: 'EUR', human_value: 'USD' }]);
+  });
+
+  test('a visszacsinált javítás is sor, és utána csend', () => {
+    const naplo: Javitas[] = [];
+    kor(naplo, gepiBontas, emberi(), emberiBontas);
+
+    const vissza = kor(naplo, emberiBontas, emberi({ doc_type: 'egyeb' }), emberiBontas);
+    const utana = kor(naplo, emberiBontas, emberi({ doc_type: 'egyeb' }), emberiBontas);
+
+    expect(vissza).toEqual([{ field: 'doc_type', machine_value: 'egyeb', human_value: 'egyeb' }]);
+    expect(utana).toEqual([]);
+  });
+
+  /**
+   * A tárolt bontás a második körben már az emberé — korábban ezt nevezte a
+   * napló gépinek.
+   */
+  test('a bontás gépi értéke a második körben is a gépé, nem az előző emberi', () => {
+    const naplo: Javitas[] = [];
+    const [elso] = kor(naplo, gepiBontas, emberi(), emberiBontas).filter((j) => j.field === 'afa_bontas');
+
+    const masodik = [{ kulcs: 27, kategoria: 'S', netto: '3000.00', afa: '810.00' }] as never;
+    const lista = kor(naplo, emberiBontas, emberi(), masodik).filter((j) => j.field === 'afa_bontas');
+
+    expect(lista).toHaveLength(1);
+    expect(lista[0]?.machine_value).toBe(elso?.machine_value);
+    expect(lista[0]?.machine_value).toContain('"netto":1000');
+  });
+
+  test('ha a bontáshoz nem nyúlt, a második körben sem lesz belőle sor', () => {
+    const naplo: Javitas[] = [];
+    kor(naplo, gepiBontas, emberi(), gepiBontas as never);
+
+    expect(naplo.map((j) => j.field)).not.toContain('afa_bontas');
+    expect(kor(naplo, gepiBontas, emberi(), gepiBontas as never)).toEqual([]);
   });
 });
