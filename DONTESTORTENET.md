@@ -6653,9 +6653,38 @@ lehet, de egy továbbküldött előnézeti link vagy képernyőkép elárulhatja
 **Az alkalmazás:** az MCP `apply_migration` háromszor is 60 másodperc után
 időtúllépéssel állt meg. Az SQL egyszer sem jutott el az adatbázisig: a
 naplóban nincs nyoma, és egyik eleme sem jött létre. A `drop policy` és a
-`revoke` jóváhagyást kér, és az nem ért célba. **A migráció az
-SQL-szerkesztőben fut le**, utána ugyanazzal a visszagörgetett méréssel
-ellenőrizzük.
+`revoke` jóváhagyást kér, és az nem ért célba. **A migráció ezért az
+SQL-szerkesztőben futott le** („Success. No rows returned”), egy
+`begin`/`commit` pár között, megjegyzések nélkül.
+
+**Utána mérve**, ugyanazzal a visszagörgetett tranzakcióval, a tulajdonos
+jogaival:
+
+| Támadás | Előtte | Utána |
+|---|---|---|
+| a) idegen tagsági sor, régi dátummal | sikerült | `42501` (nincs jog) |
+| b) idegen tárolóútvonal | sikerült | `23514` (CHECK) |
+| b2) `<saját cég>/../<idegen cég>/…` | – | `23514` (CHECK) |
+| c) bizonylat idegen fájlra | sikerült | `23503` (külső kulcs) |
+| d) naplósor más nevében | sikerült | `42501` (RLS) |
+| e) idegen exportútvonal | sikerült | `23514` (CHECK) |
+
+**A kontrollok** továbbra is sikerülnek:
+- saját naplósor;
+- saját útvonal;
+- bizonylat a saját fájlra;
+- saját export.
+
+A tulajdonos szerepmódosítási joga (`role` UPDATE) megmaradt.
+
+A visszagörgetés után 0 mérési sor maradt. Az éles forgalomban a migráció
+óta nincs új adatbázishiba, és a biztonsági tanácsadó sem jelez újat.
+
+> Az első utómérés a `b`-t és két kontrollt tévesen mérte. A saját fájlt
+> `storage_path is not null` feltétellel kereste, de a tulajdonos minden
+> fájlja exportálva volt, és a fájlok már törlődtek. Nem talált sort, a
+> kontroll pedig `null` fájlazonosítót kapott. A javított mérés bármelyik
+> saját fájlsort veszi.
 
 **Az őr** (`supabase/migrations/biztonsagiSzigoritas.test.ts`, 8 teszt) a
 lánc végét nézi. Mind a 7 szándékos rontásra piros lett:
