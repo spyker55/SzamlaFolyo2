@@ -6350,6 +6350,17 @@ DPA 2.6. pontját nem oldja meg: az a szerződésen múlik, nem a régión.
 módosítás, a 3. modul, és hogy van-e EU-s végpontja a modellnek, illetve
 elég-e hozzá a Business csomag. A válaszra várunk.
 
+**Az értékesítés válasza (2026-10-06):**
+- Enterprise-hozzáférés csak havi 15 000 USD feletti forgalomtól van.
+- Ez alatt a Business csomag ad EU/US in-region routingot és **standard
+  DPA-t**. A platformdíj 5,5%-ról 8%-ra nő, minimum nincs.
+- A DPA 2.6. pontjáról (Sensitive Data) és a 3. modulról a válasz nem szól.
+  A standard DPA 2.6. pontja szerint az OpenRouter nem köteles Sensitive
+  Datát feldolgozni, és az Ügyfél köteles korlátozni a hozzáférését, hacsak
+  a felek másként nem állapodnak meg.
+- Gyakorlati olvasat: a mi forgalmunknál egyedi módosítás nincs. **A 2.6.
+  szerinti rés nyitva marad**, a döntés a tulajdonosé.
+
 ## 📣 Új hirdetéscsomag: Meta + Google (2026-09-25)
 
 A régi `marketing/meta/` csomag törölve. A szövegei a 2026-09-22-i
