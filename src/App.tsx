@@ -7,7 +7,9 @@ import {
   useLocation,
   useNavigationType,
 } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider, useAuth } from './lib/auth.tsx';
+import { esemenytSzur } from './lib/analitika.ts';
 import { horgonyraUgrik, tetejereUgrik } from './lib/gorgetes.ts';
 import { oldalfej } from './lib/oldalfej.ts';
 import { Belepve, Ceggel, Vendeg } from './komponensek/Vedett.tsx';
@@ -63,6 +65,15 @@ import { Impresszum } from './oldalak/jogi/Impresszum.tsx';
  * mérőkódot a Vercel szolgálja ki, és **a mi kiadásunk nélkül is változhat** —
  * vagyis a „mit olvas ki" kérdésre adott válasz csak a visszaolvasás napjára
  * igaz, és a jogalapot (hozzájárulás) ehhez kell igazítani, nem fordítva.
+ *
+ * # 2026. október 6. — a mérés visszajön, süti-ablak nélkül
+ *
+ * A tulajdonos döntése, a kockázat ismeretében: a mérés hozzájárulás nélkül
+ * fut, és **a szöveg mondja ki, amit a kód csinál** — az Adatkezelési
+ * tájékoztató 2. pontja azt is, hogy a mérőkód olvassa a böngészőtárolót. A
+ * fehérlista ugyanaz, mint szeptemberben, a Könyvelőknek oldallal bővítve.
+ * Hogy pontosan mit olvas és mit küld a script, az a `lib/analitika.ts`
+ * fejlécében áll, visszaolvasási dátummal.
  */
 export function App() {
   return (
@@ -70,6 +81,14 @@ export function App() {
       <BrowserRouter>
         <GorgetesVisszaall />
         <OldalFej />
+        {/*
+          Látogatásmérés — de **csak a nyilvános tölcsérre**. A szűrőt a
+          `lib/analitika.ts` adja, fehérlistával: ami nincs nevesítve benne,
+          arról esemény el sem indul. Így a bejelentkezés mögötti képernyők, a
+          meghívó tokenje és a jelszó-visszaállítás kimaradnak — az Adatkezelési
+          tájékoztató 2. pontja ugyanezt ígéri a látogatónak.
+        */}
+        <Analytics beforeSend={esemenytSzur} />
         <Routes>
           {/* Nyilvános */}
           <Route path="/" element={<Kezdolap />} />

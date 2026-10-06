@@ -37,7 +37,7 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. szeptember 25.';
+export const hatalyos = '2026. október 6.';
 
 /**
  * Ugyanaz a nap, **gépnek olvasható alakban** — és ez nem kényelmi másolat.
@@ -94,8 +94,16 @@ export const hatalyos = '2026. szeptember 25.';
  * tervezete): a békéltető testület mai két telefonszáma és e-mail-címe, a
  * tárhelyszolgáltatók adatvédelmi e-mail-címe, feltételes békéltetés,
  * pontosított szellemi tulajdon. Az ÁSZF és az Adatkezelés nem változott.
+ *
+ * `2026-10-06`: a látogatásmérés visszajön a nyilvános oldalakon, süti-ablak
+ * nélkül (a tulajdonos döntése). Az Adatkezelés 2. pontja új táblázatsorral és
+ * bekezdéssel kimondja, mit mér, hol fut, és hogy a mérőkód olvassa a
+ * böngészőtárolót; az 5. pont Vercel-sora és a 7. pont ehhez igazodik. Az ÁSZF
+ * és az Impresszum szövege nem változott, csak a közös hatálybalépési dátum –
+ * az ÁSZF 15. pontja szerinti előzetes értesítés ezért nem szükséges. Élesben
+ * ekkor két cég van: a tulajdonosé és az első külső felhasználóé.
  */
-export const JOGI_VERZIO = '2026-09-25-3';
+export const JOGI_VERZIO = '2026-10-06';
 
 /**
  * Az illetékes békéltető testület.
@@ -255,9 +263,11 @@ export const adatfeldolgozok: readonly Adatfeldolgozo[] = [
     ki: 'Vercel',
     jogiSzemely: 'Vercel Inc.',
     szekhely: '440 N. Barranca Ave #4133, Covina, CA 91723, Amerikai Egyesült Államok',
-    mit: 'A weboldal kiszolgálása',
+    mit: 'A weboldal kiszolgálása és a nyilvános oldalak látogatásmérése',
     adatkor:
       'A kiszolgáláshoz a böngésző kérésének adatai (IP-cím, böngészőazonosító). ' +
+      'A látogatásmérésből: a megnyitott nyilvános oldal címe, a hivatkozó oldal, az ország, ' +
+      'az eszköz és a böngésző típusa, valamint a kérésből képzett, nem tartós azonosító. ' +
       'Bizonylat nem megy át rajta',
     hol: 'Amerikai Egyesült Államok (a kiszolgálás európai élhálózatról)',
     unionBelul: false,

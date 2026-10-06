@@ -39,10 +39,11 @@ A `hirdetes.test.ts` (az `npm test` része) feltöltés előtt méri:
 
 ### 1. Az oldalon nincs Meta-pixel és Google-címke, és nem is tehető rá csendben
 
-Az Adatkezelési tájékoztató 2. pontja félkövérrel ígéri:
+Az Adatkezelési tájékoztató 2. pontja (2026-10-06 óta) ígéri:
 
-> „Látogatásmérés nincs, sütit mérésre vagy hirdetésre nem használunk. Hirdetési
-> kódrészlet nincs, profilalkotás nincs, és más webhelyeken sem követünk senkit."
+> „Látogatásmérés van – de csak a nyilvános oldalakon, és süti nélkül. […]
+> Hirdetési kódrészlet nincs, profilalkotás nincs, és más webhelyeken sem
+> követünk senkit."
 
 Ebből következik:
 
@@ -56,10 +57,14 @@ Ebből következik:
   - egy valódi hozzájárulás-kezelőt (süti-ablakot);
   - a hozzájárulás előtti néma állapotot.
 
-### 2. A saját oldalunk semmilyen látogatásmérést nem futtat
+### 2. A saját oldalunk csak a nyilvános oldalakat méri, kampányparaméter nélkül
 
-A Vercel Analytics 2026-09-23 óta ki van vezetve, és más mérőkód sincs. Az `utm_`
-paramétereket semmi nem olvassa, a kampányok szerinti bontás a platformok
+A Vercel Web Analytics 2026-10-06 óta újra fut, de csak a nyilvános oldalakon
+(`src/lib/analitika.ts`). A Vercel felületén látszik, hány látogató jön, mely
+oldalakat nézi, és **melyik webhelyről érkezik** (hivatkozó oldal) – egy
+Facebook- vagy Google-kattintás tehát ott megjelenik. Az `utm_` paraméterek
+viszont **nem**: a szűrő a cím „?” utáni részét mindig levágja, mert ugyanígy
+kerülne ki egy token is. A kampányok szerinti bontás ezért a platformok
 felületén marad.
 
 **Van viszont egy saját, sütimentes jelzés.** A cég létrehozásakor adott „Honnan

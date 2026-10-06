@@ -262,6 +262,25 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  *    adatkezelés feltételei szerint járnak, a hordozhatóság szűk.
  *
  * Fogalom: „munkaterület" (nem „munkatér"), mint a felületen. Őr figyeli.
+ *
+ * # 2026. október 6. — a látogatásmérés visszajön, süti-ablak nélkül
+ *
+ * A tulajdonos döntése, a kockázat ismeretében: a Vercel Web Analytics
+ * hozzájárulás nélkül fut a nyilvános oldalakon. A szeptember 23-i kivezetés
+ * oka – a mérőkód minden oldalmegnyitáskor olvassa a `localStorage`
+ * `__va_attribution` kulcsát – 2026-10-06-án visszaolvasva ugyanaz (v0.1.3).
+ * Ezért a szöveg nem azt állítja, hogy a mérés semmit nem olvas, hanem
+ * kimondja az olvasást, és azt is, hogy ehhez nem kérünk hozzájárulást.
+ *
+ * - **2. pont:** új táblázatsor (mit, miért, jogalap, megőrzés) és a „Hol
+ *   fut / Hol nem fut / Ki méri / Mit csinál az eszközödön” felsorolás. A
+ *   hivatkozó oldal azért szerepel, mert azt a mérőkód a szűrőnk megkerülésével
+ *   küldi (`lib/analitika.ts`).
+ * - **5. pont:** a Vercel sora és a felsorolás a méréssel bővült.
+ * - **7. pont:** a „látogatásmérőt nem használunk” kikerült.
+ *
+ * Az őr (`jogiSzovegek.test.ts`, 13. pont) a kódot és a szöveget együtt
+ * nézi, és a „Hol fut” felsorolást a fehérlistához köti.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
@@ -547,6 +566,26 @@ export function Adatkezeles() {
             </td>
             <td className="td">Kilépésig, illetve a munkamenet lejártáig</td>
           </tr>
+          <tr className="trow">
+            <td className="td">
+              Látogatásmérés a nyilvános oldalakon: a megnyitott oldal címe (a „?” és a „#”
+              utáni rész nélkül), a hivatkozó oldal, az ország, az eszköz, az operációs rendszer
+              és a böngésző típusa, az időpont, valamint a kérésből képzett, nem tartós azonosító
+            </td>
+            <td className="td">
+              Annak mérése, hányan találnak ide, honnan érkeznek és mit néznek meg, mielőtt
+              fiókot nyitnának. A bejelentkezés mögötti képernyőkről adat el sem indul
+            </td>
+            <td className="td">
+              Jogos érdek: a nyilvános oldalak és a marketing fejlesztése. Az adatot csak
+              összesítve látjuk, egyes látogatóhoz nem kötjük. Az eszköz tárolójának
+              olvasásáról lent
+            </td>
+            <td className="td">
+              A Vercel megőrzése szerint, a Szolgáltató csomagjára érvényes ideig – ez a
+              megőrzés meghatározásának szempontja
+            </td>
+          </tr>
         </Tablazat>
 
         <h3 className="pt-2 text-base font-semibold text-slate-800">
@@ -620,10 +659,41 @@ export function Adatkezeles() {
           tiltakozhatsz.
         </P>
         <P>
-          <strong>Látogatásmérés nincs, sütit mérésre vagy hirdetésre nem használunk.</strong>{' '}
-          Hirdetési kódrészlet nincs, profilalkotás nincs, és más webhelyeken sem követünk
-          senkit. Az oldal az eszközön egyetlen tárolást használ – a bejelentkezett állapotot, a
-          böngésző saját tárolójában –, ezért nem fogad süti-ablak.
+          <strong>Látogatásmérés van – de csak a nyilvános oldalakon, és süti nélkül.</strong>{' '}
+          Azt szeretnénk tudni, hányan találnak ide, honnan érkeznek és mit néznek meg, mielőtt
+          fiókot nyitnának. Hirdetési kódrészlet nincs, profilalkotás nincs, és más webhelyeken
+          sem követünk senkit.
+        </P>
+        <Lista>
+          <li>
+            <strong>Hol fut:</strong> a nyitólapon, a Használati útmutatón, a Könyvelőknek
+            oldalon, ezen a tájékoztatón, az ÁSZF-en, az Impresszumon, valamint a bejelentkező,
+            a regisztrációs és az elfelejtett jelszó űrlapon. Sehol máshol.
+          </li>
+          <li>
+            <strong>Hol nem fut:</strong> a bejelentkezés mögötti képernyőkön. Bizonylat
+            webcíme, meghívólink és jelszó-visszaállító cím soha nem kerül a mérésbe – ezt egy
+            engedélyezett címekből álló lista biztosítja: ami nincs rajta, arról adat el sem
+            indul. A mért címekből a „?” és a „#” utáni rész is lemarad.
+          </li>
+          <li>
+            <strong>Ki méri:</strong> a tárhelyszolgáltató, a Vercel (5. pont). A mérőkód az
+            oldal saját címéről töltődik be.
+          </li>
+          <li>
+            <strong>Mit csinál az eszközödön:</strong> sütit nem tesz, és a böngésződ
+            tárolójába nem ír. Minden oldalmegnyitáskor viszont <strong>kiolvas</strong> belőle
+            egy bejegyzést (<code>__va_attribution</code>). Ezt a mérőkód csak akkor írná oda, ha
+            a látogatót azonosítanánk – ezt nem tesszük, ezért ez a bejegyzés nálunk üres.
+          </li>
+        </Lista>
+        <P>
+          <strong>Ehhez az olvasáshoz nem kérünk hozzájárulást, ezért nincs süti-ablak.</strong>{' '}
+          Ezen kívül az oldal az eszközön egyetlen tárolást használ: a bejelentkezett
+          állapotot, a böngésző saját tárolójában (fenti táblázat). Mivel a mérés adatát csak
+          összesítve látjuk, egyes látogató adatát kikeresni nem tudjuk; ha nem szeretnéd, hogy
+          a látogatásodat mérjük, a mérőkódot a böngésződben letilthatod, például
+          tartalomblokkolóval.
         </P>
       </Szakasz>
 
@@ -969,8 +1039,9 @@ export function Adatkezeles() {
             <strong>tárolás és a naplózás viszont az Egyesült Államokban</strong>.
           </li>
           <li>
-            <strong>A weboldal kiszolgálása</strong> – a Vercelhez. Bizonylat nem megy át rajta,
-            a látogató kérésének technikai adatai igen (2.1. pont).
+            <strong>A weboldal kiszolgálása és a nyilvános oldalak látogatásmérése</strong> – a
+            Vercelhez. Bizonylat nem megy át rajta, a látogató kérésének technikai adatai és a
+            mérés adatai igen (2.1. pont).
           </li>
         </Lista>
         <P>
@@ -1085,9 +1156,11 @@ export function Adatkezeles() {
         <Lista>
           <li>A kapcsolat titkosított (HTTPS), a jelszavak visszafejthetetlen formában tárolódnak.</li>
           <li>
-            A betűtípusokat és minden más eszközt <strong>az oldal saját címéről</strong>{' '}
-            szolgáljuk ki: a böngésző az oldal megnyitásakor nem keres meg idegen kiszolgálót.
-            Külső betűszolgáltatót, látogatásmérőt és hirdetési kódot nem használunk.
+            A betűtípusokat és minden más eszközt – a nyilvános oldalak látogatásmérőjét is –{' '}
+            <strong>az oldal saját címéről</strong> szolgáljuk ki: a böngésző az oldal
+            megnyitásakor nem keres meg idegen kiszolgálót. Külső betűszolgáltatót és hirdetési
+            kódot nem használunk; a látogatásmérés a 2. pontban felsorolt nyilvános oldalakra
+            terjed ki, a bejelentkezés mögé nem.
           </li>
           <li>
             A munkaterületek adatai el vannak különítve egymástól, és ezt az{' '}

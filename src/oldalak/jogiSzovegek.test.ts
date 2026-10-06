@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { KIMERVE, PROGRAM_NEVEK, PROGRAMOK, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
 import { renderel } from './jogi/archivum.tsx';
+import { MERT_UTVONALAK } from '../lib/analitika.ts';
 
 /**
  * A nyilvános szövegek elcsúszás-őre.
@@ -200,18 +201,64 @@ describe('a felülvizsgálat után nem térhetnek vissza a valótlan mondatok', 
     }
   });
 
-  it('13. pont (2026-09-23 óta): látogatásmérés nincs, és a szöveg sem ígéri', () => {
-    // A mérés kikerült, mert a mérőkód a localStorage-ot olvasta (harmadik kör).
-    // Ha valaki visszahozza, a jogalapot (hozzájárulás) kell előbb rendezni —
-    // ez az őr ott akad meg, ahol a csomag vagy a komponens visszakerül.
+  /**
+   * # Látogatásmérés: a kód és a szöveg ugyanazt mondja (2026-10-06 óta)
+   *
+   * 2026-09-23-án a mérés kikerült, mert a mérőkód a `localStorage`-ot
+   * olvasta, a tájékoztató pedig azt ígérte, hogy semmit nem olvas ki.
+   * 2026-10-06-án a tulajdonos döntése: hozzájárulás nélkül visszajön, és a
+   * szöveg kimondja az olvasást. Ez az őr azt fogja meg, ha a kettő elválik —
+   * bármelyik irányban.
+   */
+  describe('13. pont: látogatásmérés', () => {
     const app = olvas('../App.tsx');
-    const csomag = readFileSync(GYOKER + '../../package.json', 'utf8');
+    const html = renderel('adatkezeles').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
-    expect(app, 'Az App.tsx megint betölti a Vercel Analyticset.').not.toContain('@vercel/analytics');
-    expect(csomag, 'A package.json megint tartalmazza a @vercel/analytics csomagot.').not.toContain(
-      '@vercel/analytics',
-    );
-    expect(adatkezeles).not.toContain('Látogatásmérés azonban van');
+    it('a mérés a fehérlistás szűrőn át fut', () => {
+      expect(app).toContain("from '@vercel/analytics/react'");
+      expect(app, 'A mérés szűrő nélkül fut.').toMatch(/<Analytics\s+beforeSend=\{esemenytSzur\}\s*\/>/);
+    });
+
+    it('a tájékoztató kimondja, hogy van mérés, és hogy olvassa a böngészőtárolót', () => {
+      expect(html).toContain('Látogatásmérés van');
+      expect(html).toContain('Minden oldalmegnyitáskor viszont kiolvas belőle');
+      expect(html).toContain('__va_attribution');
+      expect(html).toContain('nem kérünk hozzájárulást');
+      expect(html).toContain('a hivatkozó oldal');
+    });
+
+    it('a régi, „nincs mérés” mondatok nem térnek vissza', () => {
+      expect(html).not.toContain('Látogatásmérés nincs');
+      expect(html).not.toMatch(/látogatásmérőt (és|vagy) hirdetési kódot nem használunk/);
+      expect(html).not.toContain('semmit nem olvas ki');
+    });
+
+    /**
+     * A fehérlista útvonalakat tart, a tájékoztató magyar oldalneveket. A
+     * szótár kézzel készül, de **pontosan a fehérlista kulcsaival** kell
+     * egyeznie: egy új mért útvonal név nélkül piros, és a név nélkül a
+     * „Hol fut” felsorolás sem mehet át.
+     */
+    it('minden mért oldal név szerint szerepel a „Hol fut” felsorolásban', () => {
+      const nevek: Record<string, string> = {
+        '/': 'a nyitólapon',
+        '/utmutato': 'a Használati útmutatón',
+        '/konyveloknek': 'a Könyvelőknek oldalon',
+        '/aszf': 'az ÁSZF-en',
+        '/adatkezeles': 'ezen a tájékoztatón',
+        '/impresszum': 'az Impresszumon',
+        '/bejelentkezes': 'a bejelentkező',
+        '/regisztracio': 'a regisztrációs',
+        '/elfelejtett-jelszo': 'az elfelejtett jelszó űrlapon',
+      };
+      expect(Object.keys(nevek).sort()).toEqual([...MERT_UTVONALAK].sort());
+
+      const holFut = /Hol fut: (.*?) Sehol máshol\./.exec(html)?.[1] ?? '';
+      expect(holFut.length, 'Nincs „Hol fut” felsorolás.').toBeGreaterThan(50);
+      for (const nev of Object.values(nevek)) {
+        expect(holFut).toContain(nev);
+      }
+    });
   });
 });
 

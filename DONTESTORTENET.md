@@ -6767,3 +6767,65 @@ mind az 5 szándékos rontásra piros lett.
 - **Hozzárendelő mezők:** a `corrected_by`, `uploaded_by`, `created_by` és
   `approved_by` a cégen belül még kitölthető mással. Ezek nem az audit-nyom
   részei, a naplóé (4.) igen.
+
+## 📈 Látogatásmérés újra, süti-ablak nélkül (2026-10-06, `2026-10-06`)
+
+**A tulajdonos döntése, a kockázat ismeretében.** A Vercel Web Analytics
+visszajön a nyilvános oldalakon, hozzájárulás és süti-ablak nélkül. Három
+lehetőség közül választotta ezt: mérés hozzájárulással, mérés sáv nélkül
+vállalt kockázattal, vagy maradjon minden a régiben. Ő a sáv nélküli mérést
+választotta.
+
+**Miért kockázat?** A 2026-09-23-i kivezetés oka ma is áll. A mérőkódot
+(`/_vercel/insights/script.js`, v0.1.3, 2026-10-06-án a szamlafolyo.hu-ról és
+egy másik projektről visszaolvasva) a Vercel szolgálja ki. Minden
+oldalmegnyitáskor lefuttatja a `localStorage.getItem("__va_attribution")`-t.
+Sütit nem tesz. Írni csak `identify`, `group` vagy `reset` hívásra írna, és
+ezeket nem hívjuk. Az ePrivacy 5. cikk (3) bekezdése (nálunk az Eht. 155. §
+(4) bekezdése) az eszközön tárolt adat olvasására is vonatkozik, nem csak a
+sütire. Az EDPB 2/2023-as iránymutatása a `localStorage`-t kifejezetten
+idesorolja. A tájékoztató ezért nem azt állítja, hogy a mérés semmit nem olvas.
+Kimondja az olvasást, és azt is, hogy ehhez nem kérünk hozzájárulást.
+
+**Mi változott?**
+- **`src/lib/analitika.ts`:** a szeptemberi fehérlistás szűrő visszakerült, a
+  `/konyveloknek` oldallal bővítve. A fejléc leírja, mit olvas és mit küld a
+  script. Új tétel: a **hivatkozó oldalt** (`r`) a script a `beforeSend`
+  megkerülésével küldi, ezért a tájékoztató ezt is felsorolja.
+- **`App.tsx`:** `<Analytics beforeSend={esemenytSzur} />`.
+- **Adatkezelés:**
+  - 2. pont: új táblázatsor, valamint „Hol fut / Hol nem fut / Ki méri / Mit
+    csinál az eszközödön”;
+  - 5. pont: a Vercel-sor és a felsorolás a méréssel bővült;
+  - 7. pont: a „látogatásmérőt nem használunk” mondat kikerült.
+- **Új jogi változat:** `2026-10-06`. Archívum és `legal_versions`-sor
+  (`20261006000100`), élesen alkalmazva a push előtt. Az ÁSZF és az
+  Impresszum szövege nem változott, csak a közös dátum, ezért az ÁSZF 15.
+  pontja szerinti értesítés nem szükséges.
+- **Marketing:** az OLVASS-EL fájlok is igazodtak. A Vercel felületén a
+  hivatkozó webhely látszik, az `utm_` paraméter nem, mert a szűrő a „?”
+  utáni részt mindig levágja.
+
+**Őr:** a `jogiSzovegek.test.ts` régi „nincs mérés” tesztje helyett négy új
+teszt áll. Ezek a kódot és a szöveget együtt nézik:
+- a szűrő be van kötve;
+- az olvasás ki van mondva;
+- a régi mondatok nem térnek vissza;
+- a „Hol fut” felsorolás egy szótáron át a fehérlistához van kötve. A szótár
+  kulcsainak pontosan a fehérlistával kell egyezniük.
+
+Mind a hat szándékos rontásra piros lett:
+- szűrő nélküli `<Analytics />`;
+- hiányzó oldalnév;
+- új mért útvonal név nélkül;
+- elhallgatott olvasás;
+- a régi 7. pont mondata;
+- `/beerkezo` a fehérlistán.
+
+**Mérve a buildben:** a `va.vercel-scripts.com` hibakereső ága holt. A
+`window.vam` az éles csomagban feltétel nélkül `"production"`, ezért a mérőkód
+a saját címünkről jön.
+
+⚠️ **Amit nem mi döntünk el:** a scriptet a Vercel a mi kiadásunk nélkül is
+cserélheti. Ha egyszer írni kezd a tárolóba, a tájékoztatónak előbb kell
+változnia.

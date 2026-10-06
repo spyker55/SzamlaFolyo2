@@ -77,8 +77,10 @@ A vázlat a `SZOVEGEK.md`-ben van. Két tanács hozzá:
 
 ## Mérés
 
-Webes analitika nincs, a mérőműszer a „Honnan hallottál rólunk?” mező a
-cégalapításnál. Ebből a körből:
+A Vercel Web Analytics (2026-10-06 óta) a nyilvános oldalak látogatását és a
+hivatkozó webhelyet mutatja – egy LinkedIn- vagy Facebook-link tehát ott
+látszik, `utm_` paraméter nélkül. A regisztráció forrására a fő mérőműszer a
+„Honnan hallottál rólunk?” mező a cégalapításnál. Ebből a körből:
 - `konyvelo`: az iroda ügyfele, akinek a könyvelő ajánlotta;
 - `facebook`: a csoportbejegyzésekből;
 - `egyeb`: ide esik ma a LinkedIn. Ha az lesz a fő csatorna, külön kódot kap
