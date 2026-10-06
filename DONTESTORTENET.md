@@ -6321,6 +6321,30 @@ Az Adatkezelési tájékoztató 5. pontjának „kezdeményezzük” mondata ezz
 igaz. **Nyitott:** a válasz még nem jött meg. Ha megjön, az 5. pontot a
 tényleges eredményhez kell igazítani, új jogi változatban.
 
+### 📬 OpenRouter: az első válasz (2026-10-06)
+
+A támogatás visszaírt. A válasz nem döntés, csak továbbítás:
+- **DPA-módosítás (2.6., Sensitive Data) és SCC 3. modul:** ezt az
+  enterprise csapat intézi. A jegyen jelentkeznek, vagy közvetlenül az
+  `openrouter.ai/enterprise/form` űrlapon lehet hozzájuk fordulni.
+- **EU-n belüli feldolgozás:** a dokumentációjuk szerint a Business és az
+  Enterprise csomagban érhető el, az `eu.openrouter.ai` alap-URL-lel.
+  Webes keresés szerint (az `openrouter.ai` ebből a környezetből nem
+  érhető el) a Business önkiszolgáló: 8% platformdíj a kreditvásárláson,
+  havi minimum és szerződés nélkül. Ha egy modellnek nincs EU-s végpontja,
+  a kérés 404-gyel elbukik, nem megy ki a régióból. A Vertex `global`
+  végpontja nem számít EU-snak.
+
+**Döntés: az 5. pont nem változik.** A „kezdeményezzük” mondat igaz, mert a
+kérés folyamatban van, módosítás pedig még nincs. Új jogi változat akkor
+kell, ha az enterprise csapat érdemben válaszol, vagy ha átállunk az
+`eu.openrouter.ai`-ra.
+
+**Nyitott, nem mért:** van-e a `google/gemini-3.8-flash`-nek EU-s végpontja.
+Ezt a modelloldal „In-Region Routing: EU” szűrője vagy az
+`eu.openrouter.ai/api/v1/models` mutatja meg. Az EU-s útvonal önmagában a
+DPA 2.6. pontját nem oldja meg: az a szerződésen múlik, nem a régión.
+
 ## 📣 Új hirdetéscsomag: Meta + Google (2026-09-25)
 
 A régi `marketing/meta/` csomag törölve. A szövegei a 2026-09-22-i
