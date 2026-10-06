@@ -6345,6 +6345,11 @@ Ezt a modelloldal „In-Region Routing: EU” szűrője vagy az
 `eu.openrouter.ai/api/v1/models` mutatja meg. Az EU-s útvonal önmagában a
 DPA 2.6. pontját nem oldja meg: az a szerződésen múlik, nem a régión.
 
+**Elküldve (2026-10-06):** a tulajdonos kitöltötte az enterprise űrlapot
+(DPA + in-region routing, „Under $15K”). A három kérés: a 2.6. szerinti
+módosítás, a 3. modul, és hogy van-e EU-s végpontja a modellnek, illetve
+elég-e hozzá a Business csomag. A válaszra várunk.
+
 ## 📣 Új hirdetéscsomag: Meta + Google (2026-09-25)
 
 A régi `marketing/meta/` csomag törölve. A szövegei a 2026-09-22-i
