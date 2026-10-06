@@ -6361,6 +6361,13 @@ elég-e hozzá a Business csomag. A válaszra várunk.
 - Gyakorlati olvasat: a mi forgalmunknál egyedi módosítás nincs. **A 2.6.
   szerinti rés nyitva marad**, a döntés a tulajdonosé.
 
+**Visszakérdezés elküldve (2026-10-06).** Írásos igent kérünk arra, hogy a
+standard DPA alatt, Business csomagban vállalják a számlaadatot, és hogy ez
+számít a 2.6. szerinti megállapodásnak. Megkérdeztük azt is, van-e EU-s
+végpontja a `google/gemini-3.8-flash`-nek. **Határidő magunknak: 2026-10-20.**
+Ha addig nincs érdemi válasz, az 5. pont a mostani állapotot mondja ki, új
+jogi változatban.
+
 ## 📣 Új hirdetéscsomag: Meta + Google (2026-09-25)
 
 A régi `marketing/meta/` csomag törölve. A szövegei a 2026-09-22-i
