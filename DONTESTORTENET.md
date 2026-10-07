@@ -6829,3 +6829,47 @@ a saját címünkről jön.
 ⚠️ **Amit nem mi döntünk el:** a scriptet a Vercel a mi kiadásunk nélkül is
 cserélheti. Ha egyszer írni kezd a tárolóba, a tájékoztatónak előbb kell
 változnia.
+
+## 🚑 Hat napig nem indult a kiolvasás – a biztonsági migráció mellékhatása (2026-10-07)
+
+**Tünet (a tulajdonos jelezte):** a feltöltött számla nem jelent meg a
+Beérkezőben, és a kiolvasás nem indult el.
+
+**Ok:** a `20261001000200` (biztonsági szigorítás) hozzáadta az összetett
+kulcsot, `documents (file_id, company_id) → files (id, company_id)`. A régi
+`documents_file_id_fkey` viszont megmaradt mellette. Két kapcsolat a két tábla
+között a PostgREST-nek kétértelmű, ezért minden `files(…)` beágyazás
+**HTTP 300**-at kapott (PGRST201). Ez négy helyen érintette az alkalmazást:
+- a Beérkező listája;
+- az Ellenőrzés;
+- az Export;
+- a kiolvasó claim-je.
+
+A kiolvasó a 300-at nem hibának vette, hanem úgy kezelte, mintha más már
+elvitte volna a bizonylatot. Ezért **egyetlen hibaüzenet sem** került a
+naplóba.
+
+**Mérve az API-naplóban:**
+- a claim `PATCH`-e percenként 300-at kapott;
+- a bizonylat `feltoltve` állapotban állt, `attempts = 0`, `claimed_at` üres;
+- 10-01 óta ez az egyetlen érintett bizonylat. Az első felhasználó feltöltései
+  a migráció előtt mentek át.
+
+**Javítás (`20261007000100`):** a régi egyoszlopos kulcsot eldobtuk. Az
+összetett kulcs szigorúan erősebb: a `file_id` és a `company_id` is
+`NOT NULL`, és a kaszkád is ugyanaz. A migráció után `notify pgrst, 'reload
+schema'` frissíti a PostgREST sémáját.
+
+**Mérve utána:**
+- 10:26-kor még `PATCH | 300`, 10:27-kor már `PATCH | 200`;
+- a bizonylat 10:27:22-re `ellenorzesre_var` állapotba jutott, hiba nélkül.
+
+**Őr:** `biztonsagiSzigoritas.test.ts`. A lánc végén a
+`documents_file_id_fkey` utolsó utasítása az eldobás. A migráció nélkül piros.
+
+**A tanulság, és ez a lényeg:** a 10-01-i mérés az adatbázisban történt
+(SQL, `set local role authenticated`), a PostgREST-et megkerülve. A
+séma-kapcsolatokat viszont a REST-réteg értelmezi. Ezért ha egy migráció
+külső kulcsot vesz fel vagy dob el, utána **egy valódi REST-hívást is**
+végig kell nézni az API-naplóban: legalább egy `files(…)`-beágyazást és egy
+claim-et, 200-zal.

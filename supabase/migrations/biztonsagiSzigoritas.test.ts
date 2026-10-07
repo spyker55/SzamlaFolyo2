@@ -70,6 +70,19 @@ describe('2–3. idegen útvonalra és idegen fájlra nem mutathat sor', () => {
   it('a fájlútvonalban nincs „..”', () => {
     expect(utolso(/\bfiles_utvonal_a_ceg_mappajaban\b/)?.utasitas).toContain("strpos(storage_path, '..') = 0");
   });
+
+  /**
+   * ⚠️ 2026-10-01 és 10-07 között két külső kulcs kötötte a `documents`-et a
+   * `files`-hoz, és ettől minden `files(…)` beágyazás HTTP 300-at kapott a
+   * PostgREST-től — a Beérkező üres maradt, a kiolvasó nem vett fel semmit.
+   * A két tábla között **egy** kapcsolat lehet: az összetett.
+   */
+  it('a documents → files között egyetlen külső kulcs él: a régi egyoszlopos eldobva', () => {
+    const u = utolso(/\bdocuments_file_id_fkey\b/);
+    expect(u?.utasitas, `${u?.fajl}: a régi documents_file_id_fkey újra él — a files(…) beágyazás kétértelmű.`).toMatch(
+      /^alter table public\.documents drop constraint documents_file_id_fkey$/,
+    );
+  });
 });
 
 describe('4. naplósor csak a saját nevedben', () => {
