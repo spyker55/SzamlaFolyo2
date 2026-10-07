@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppElrendezes } from '../komponensek/Elrendezes.tsx';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
+import { EXPORT_LISTA_HIBA } from '../lib/betoltesHiba.ts';
 import {
   eredetikMerete,
   eredetikZip,
@@ -72,6 +73,9 @@ export function Export() {
   /** Az időszak sorai — **ügyfélszűrő nélkül**. Ebből áll össze az ügyféllista. */
   const [idoszak, setIdoszak] = useState<Tetel[]>([]);
   const [betolt, setBetolt] = useState(true);
+  // A tételek lekérdezése elbukott: ilyenkor nem „0 tétel”, hanem hiba látszik,
+  // és az export nem indítható (`lib/betoltesHiba.ts`).
+  const [listaHiba, setListaHiba] = useState(false);
   const [formatum, setFormatum] = useState<Formatum>('xlsx');
   const [dolgozik, setDolgozik] = useState<'export' | 'zip' | null>(null);
   const [hiba, setHiba] = useState<string | null>(null);
@@ -90,9 +94,10 @@ export function Export() {
 
     void (async () => {
       setBetolt(true);
-      const lista = await exportalhatok(szurok);
+      const lista = await idoszakBetolt(szurok);
       if (elo) {
-        setIdoszak(lista);
+        setIdoszak(lista ?? []);
+        setListaHiba(lista === null);
         setBetolt(false);
       }
     })();
@@ -247,7 +252,9 @@ export function Export() {
       setHiba(eredmeny.hiba ?? 'Az export nem készült el.');
       // A lista elavulhatott — ha közben változott, a felhasználó lássa a
       // jelenlegi állást, ne a régit.
-      setIdoszak(await exportalhatok(szurok));
+      const lista = await idoszakBetolt(szurok);
+      setIdoszak(lista ?? []);
+      setListaHiba(lista === null);
       return;
     }
 
@@ -344,7 +351,9 @@ export function Export() {
             <div className="text-sm font-medium text-slate-800">
               {betolt
                 ? 'Egy pillanat…'
-                : elokeszites !== null
+                : listaHiba
+                  ? EXPORT_LISTA_HIBA
+                  : elokeszites !== null
                   ? `${elokeszites.mehet.length} tétel megy a fájlba, ${elokeszites.elakadt.length} a listán marad`
                   : `${darab} tétel kerül exportba`}
             </div>
@@ -553,4 +562,13 @@ function honapUtolsoja(): string {
 
 function ketJegy(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+/** Az időszak tételei, vagy `null`, ha a lekérdezés elbukott – nem üres lista. */
+async function idoszakBetolt(szurok: Szurok): Promise<Tetel[] | null> {
+  try {
+    return await exportalhatok(szurok);
+  } catch {
+    return null;
+  }
 }

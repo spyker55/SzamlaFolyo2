@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.ts';
+import { BEERKEZO_LISTA_HIBA } from '../lib/betoltesHiba.ts';
 import { useAuth, useSzerkeszthet } from '../lib/auth.tsx';
 import { duplikatumotElvet, feltolt, hibasatElvet, hibasatUjraindit } from '../lib/feltoltes.ts';
 import { frissitesiUtem, frissitoHurok } from '../lib/frissitesiUtem.ts';
@@ -148,6 +149,10 @@ export function Beerkezo() {
   const [sorok, setSorok] = useState<Sor[]>([]);
   const [betolt, setBetolt] = useState(true);
   const [hibak, setHibak] = useState<string[]>([]);
+  // A lista lekérdezése elbukott. Ilyenkor **nem** ürítjük a listát: egy
+  // elbukott kérés nem jelenti azt, hogy nincs bizonylat (2026-10-07: hat
+  // napig üres Beérkező egy HTTP 300 miatt, hibajelzés nélkül).
+  const [listaHiba, setListaHiba] = useState(false);
   const [feltoltFolyik, setFeltoltFolyik] = useState(false);
   const [huzas, setHuzas] = useState(false);
   const [keret, setKeret] = useState<Keret | null>(null);
@@ -157,7 +162,16 @@ export function Beerkezo() {
   const bemenetRef = useRef<HTMLInputElement>(null);
 
   const betoltes = useCallback(async () => {
-    const { data } = await lista();
+    const { data, error } = await lista();
+
+    if (error !== null) {
+      console.error('beerkezo-lista', error.code, error.message);
+      setListaHiba(true);
+      setBetolt(false);
+      return;
+    }
+
+    setListaHiba(false);
 
     // A beágyazott `files` sok-az-egyhez kapcsolat: a PostgREST objektumot ad
     // vissza, a supabase-js generált típusok nélkül tömböt tippel. Mindkettőt
@@ -358,9 +372,15 @@ export function Beerkezo() {
         </div>
       )}
 
+      {listaHiba && (
+        <div className="alert alert-hiba mb-4">
+          {BEERKEZO_LISTA_HIBA}
+        </div>
+      )}
+
       {betolt ? (
         <div className="empty">Egy pillanat…</div>
-      ) : sorok.length === 0 ? (
+      ) : listaHiba && sorok.length === 0 ? null : sorok.length === 0 ? (
         <div className="empty">
             Itt jelennek meg a bizonylatok – akár feltöltöd, akár a cég beküldő címére küldöd
             őket.

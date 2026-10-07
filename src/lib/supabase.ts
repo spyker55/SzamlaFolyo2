@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { tarolasNelkul } from './tarolasNelkul.ts';
 
 /**
  * A Supabase-kliens.
@@ -27,4 +28,8 @@ export const supabase = createClient(url, kulcs, {
     // meghívó elfogadása ilyen linkkel érkezik.
     detectSessionInUrl: true,
   },
+  // Az adatbázis válasza sosem kerülhet a böngésző gyorsítótárába – egy
+  // beragadt hibaválasz napokig üres listát mutatott (`tarolasNelkul.ts`). A
+  // nyílfüggvény azért kell, hogy a `fetch` hívásidőben oldódjon fel.
+  global: { fetch: tarolasNelkul((...a) => fetch(...a)) },
 });

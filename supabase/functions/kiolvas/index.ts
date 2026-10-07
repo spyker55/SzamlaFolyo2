@@ -185,13 +185,17 @@ async function felvehetok(db: SupabaseClient, limit: number): Promise<string[]> 
     Date.now() - szamlafolyo.kiolvasas.claimIdokorlatPerc * 60 * 1000,
   ).toISOString();
 
-  const { data } = await db
+  const { data, error } = await db
     .from('documents')
     .select('id')
     .or(`status.eq.feltoltve,and(status.eq.feldolgozas_alatt,claimed_at.lt.${elakadt})`)
     .lt('attempts', szamlafolyo.kiolvasas.maxProbalkozas)
     .order('created_at', { ascending: true })
     .limit(limit);
+
+  if (error !== null) {
+    console.error(JSON.stringify({ esemeny: 'sor_lekerdezes_hiba', kod: error.code, hiba: error.message }));
+  }
 
   return (data ?? []).map((sor) => sor.id as string);
 }
@@ -209,7 +213,18 @@ async function feldolgoz(db: SupabaseClient, id: string): Promise<Record<string,
     return { id, allapot: 'keret_elfogyott', hiba: keret };
   }
 
-  const dokumentum = await claim(db, id);
+  let dokumentum: Awaited<ReturnType<typeof claim>>;
+
+  try {
+    dokumentum = await claim(db, id);
+  } catch (hiba) {
+    if (!(hiba instanceof ClaimHiba)) throw hiba;
+    // 2026-10-07: egy HTTP 300 (PGRST201) hat napig „kihagyva” lett, és a
+    // naplóba semmi nem került. Egy elbukott claim nem azonos azzal, hogy
+    // más vitte el a sort.
+    console.error(JSON.stringify({ esemeny: 'claim_hiba', dokumentum: id, kod: hiba.kod, hiba: hiba.message }));
+    return { id, allapot: 'claim_hiba', hiba: hiba.message };
+  }
 
   if (dokumentum === null) {
     // Valaki más már elvitte, vagy nincs felvehető állapotban. Ez nem hiba.
@@ -373,7 +388,7 @@ async function keretEllenoriz(db: SupabaseClient, dokumentumId: string): Promise
 async function claim(db: SupabaseClient, id: string) {
   const most = new Date().toISOString();
 
-  const { data: sorban } = await db
+  const { data: sorban, error: sorbanHiba } = await db
     .from('documents')
     .update({ status: 'feldolgozas_alatt', claimed_at: most })
     .eq('id', id)
@@ -381,6 +396,7 @@ async function claim(db: SupabaseClient, id: string) {
     .select('*, files(*), companies(name, tax_number, auto_jovahagyas_be)')
     .maybeSingle();
 
+  if (sorbanHiba !== null) throw new ClaimHiba(sorbanHiba);
   if (sorban !== null) return await attemptsNovel(db, sorban);
 
   // Elakadt futás felvétele: az állapot már `feldolgozas_alatt`, de a claim
@@ -389,7 +405,7 @@ async function claim(db: SupabaseClient, id: string) {
     Date.now() - szamlafolyo.kiolvasas.claimIdokorlatPerc * 60 * 1000,
   ).toISOString();
 
-  const { data: ujra } = await db
+  const { data: ujra, error: ujraHiba } = await db
     .from('documents')
     .update({ claimed_at: most })
     .eq('id', id)
@@ -398,7 +414,21 @@ async function claim(db: SupabaseClient, id: string) {
     .select('*, files(*), companies(name, tax_number, auto_jovahagyas_be)')
     .maybeSingle();
 
+  if (ujraHiba !== null) throw new ClaimHiba(ujraHiba);
   return ujra === null ? null : await attemptsNovel(db, ujra);
+}
+
+/**
+ * A claim lekérdezése **elbukott** – nem az, hogy nincs felvehető sor. A kettőt
+ * a hívó külön kezeli: az utóbbi csendes „kihagyva”, ez naplózott hiba.
+ */
+class ClaimHiba extends Error {
+  readonly kod: string;
+
+  constructor(hiba: { code: string; message: string }) {
+    super(hiba.message);
+    this.kod = hiba.code;
+  }
 }
 
 async function attemptsNovel(db: SupabaseClient, sor: Record<string, unknown>) {

@@ -116,6 +116,11 @@ const FAJL_MEZOK = 'files(original_filename, storage_path, file_deleted_at, sour
  * „Mind"-en keresztül lehetne visszajutni hozzájuk. A szűrést ezért a képernyő
  * végzi, memóriában — a halmaz amúgy is ott van, mert az összesítés és maga az
  * export is ezt kapja.
+ *
+ * ⚠️ **Elbukott lekérdezésre dob, nem üres listát ad.** 2026-10-07-ig a
+ * `data ?? []` egy HTTP 300-at (PGRST201) „0 tétel kerül exportba”-ként
+ * mutatott – a képernyő nem tudhatta, hogy nem az üres a halmaz, hanem a kérés
+ * nem ment át.
  */
 export async function exportalhatok(szurok: Szurok): Promise<Tetel[]> {
   let kerdes = supabase
@@ -140,7 +145,12 @@ export async function exportalhatok(szurok: Szurok): Promise<Tetel[]> {
     kerdes = kerdes.lte('created_at', `${eltol(szurok.ig, 1)}T23:59:59.999Z`);
   }
 
-  const { data } = await kerdes;
+  const { data, error } = await kerdes;
+
+  if (error !== null) {
+    console.error('exportalhatok', error.code, error.message);
+    throw new Error(error.message);
+  }
 
   const tetelek = ((data ?? []) as unknown as Record<string, unknown>[]).map((nyers) => {
     // A beágyazott relációt a PostgREST objektumként adja vissza, generált

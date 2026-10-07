@@ -6873,3 +6873,37 @@ séma-kapcsolatokat viszont a REST-réteg értelmezi. Ezért ha egy migráció
 külső kulcsot vesz fel vagy dob el, utána **egy valódi REST-hívást is**
 végig kell nézni az API-naplóban: legalább egy `files(…)`-beágyazást és egy
 claim-et, 200-zal.
+
+### 🧊 Ugyanaz a hiba, második felvonás: a böngésző eltette a 300-at (2026-10-07)
+
+A kulcs javítása után a tulajdonos ezt jelezte: az Export betöltéskor továbbra
+is „0 tétel”-t mutat, dátumváltás után viszont jó.
+
+**Mérve az API-naplóban:** a javítás után egyetlen alapértelmezett
+(október 1–31.) Export-lekérdezés sem érkezett be, csak a dátumváltások: más
+cím, friss kérés.
+
+**Az ok:** a Chromium a 300-as választ kifejezett lejárat nélkül is
+korlátlan ideig frissnek tekinti (mint a 301-et, 308-at és 410-et). A
+válaszban nem volt `Cache-Control`. A 10:20-as hibás választ a böngésző
+ezért eltette, és ugyanarra a címre többé ki sem ment.
+
+**Javítások (felület, push után élesek):**
+- **`lib/tarolasNelkul.ts`:** minden Supabase-hívás `cache: 'no-store'`-ral
+  megy, és a hívó sem kapcsolhatja vissza. A `no-store` a tárolt bejegyzést
+  sem olvassa, ezért a beragadt 300-at is megkerüli.
+- **Beérkező:** elbukott lekérdezésnél hibasávot mutat, és megtartja az előző
+  sorokat. Üres listát nem mutat.
+- **Export:** az `exportalhatok` elbukott lekérdezésre dob. A képernyő ilyenkor
+  hibaszöveget mutat a „0 tétel” helyett, és az exportgomb nem nyomható.
+
+**Javítás a kiolvasóban (`kiolvas` újratelepítéssel él):** az elbukott claim
+`claim_hiba` állapotot kap, nem `kihagyva`-t, és JSON-sorban a naplóba
+kerül. A sorlekérdezés hibája is naplózva van.
+
+**Őrök:** `tarolasNelkul.test.ts`, `betoltesHiba.test.ts`, `claimHiba.test.ts`
+(11 teszt). Mind a hét szándékos rontásra piros lett.
+
+**Tanulság:** a `data ?? []` minta egy elbukott kérést „nincs adat”-ként
+mutat. Ma kétszer is ez vitt félre: egyszer a képernyőn, egyszer a
+kiolvasóban.
