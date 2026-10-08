@@ -125,6 +125,24 @@ describe('két modell: ugyanazt olvasták-e ki', () => {
     expect(t).not.toContain('Titkos');
   });
 
+  it('a szóköz nem más érték: ≈ (a kézzel írt számla bizonylatszáma, 2026-10-08)', () => {
+    const szam = (nev: string, ertek: string): MeresJson => ({
+      fajl: { nev: 'szamla.pdf' },
+      beallitas: { modell: nev, gondolkodas: 'alap' },
+      futasok: [futas(0, { doc_number: ertek })],
+    });
+    const t = osszevet(
+      [
+        { nev: 'gemini', m: szam('g', 'ABCDE 1234567') },
+        { nev: 'haiku', m: szam('h', 'ABCDE1234567') },
+      ],
+      null,
+    );
+
+    expect(t).toMatch(/ {2}Bizonylatszám\s+–\s+≈/);
+    expect(t).not.toContain('1234567');
+  });
+
 });
 
 describe('az eltérés jellege', () => {

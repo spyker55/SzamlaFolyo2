@@ -7039,3 +7039,31 @@ arányában az AI-költség ~6%-ról ~1%-ra esne.
   ellenőrizendők az Adatkezelés 5. pontja miatt.
 
 **Állapot:** ígéretes, nem döntés. Éles változás nincs.
+
+### Harmadik kör: kézzel írt számla (a tulajdonos saját bizonylata, 2026-10-08)
+
+A PDF két oldalas: egy kézzel írt tömbszámla és egy teljesítésigazolás.
+
+| | Gemini | Haiku |
+|---|---|---|
+| költség / futás | 0,0070 $ | 0,0012 $ (5,8×) |
+| idő (med) | 11,2 s | 4,1 s |
+| nehezen olvasható / több irat | 3/3 / 3/3 | 3/3 / 3/3 |
+| állandóság | fizetési mód 3 futásban 3 írásmóddal | mind a 15 mező mindig ugyanaz |
+
+- **14/15 mezőben azonos a két modell.** A „több irat” jelzés mindkettőnél
+  jogos.
+- **A bizonylatszám ✗-et kapott, de csak szóköz volt a különbség.** A
+  tömbszámla nyomtatott sorszámában a betűcsoport és a számjegyek között
+  rés van (ellenőrizve a papíron). A Gemini szóközzel írta, a Haiku anélkül.
+  Mindkettő jól olvasta.
+  - Az összevető ezt mostantól `≈`-nek jelöli (csak írásmód), nem `✗`-nek.
+
+**⚠️ Ami ebből az éles rendszerre következik:** az előzménykapu
+(`elozmeny.ts`, `bizonylatszamMarLatott`) a bizonylatszámot **betű szerint**
+veti össze. Ha ugyanaz a számla egyszer szóközzel, egyszer anélkül kerül be,
+a „már láttuk ezt a számot” jelzés nem szól. Ez a mai modellnél is
+előfordulhat, mert a Gemini a fizetési módot is többféleképp írta. Modellcsere
+után pedig biztosan előjönne: a régi sorok Gemini-írásmódúak, az újak
+Haiku-írásmódúak. Javítás: írásmód nélküli összevetés. A tárolt alak marad,
+ami a papíron áll.

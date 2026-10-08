@@ -141,6 +141,15 @@ const OSSZEGEK = new Set(['net_amount', 'vat_amount', 'gross_amount', 'fizetendo
 const DATUMOK = new Set(['issue_date', 'fulfillment_date', 'due_date']);
 const ADOSZAMOK = new Set(['supplier_tax_number', 'customer_tax_number']);
 
+/**
+ * Szöveges mező írásmód nélkül: kis-nagybetű, szóköz, pont, vessző, kötőjel
+ * nem számít; adószámnál csak a számjegyek. Az „RHASA 8070268" és az
+ * „RHASA8070268" így ugyanaz (2026-10-08, kézzel írt számla).
+ */
+function irasmodNelkul(mezo: string, k: string): string {
+  return ADOSZAMOK.has(mezo) ? k.replace(/\D/g, '') : k.toLocaleLowerCase('hu').replace(/[\s.,\-–]/g, '');
+}
+
 function ures(v: string | null): boolean {
   return v === null || v.trim() === '';
 }
@@ -183,9 +192,7 @@ export function elteresJellege(mezo: string, ertekek: (string | null)[]): string
         reszek.push(`${Math.round((Math.max(...ms) - Math.min(...ms)) / 86_400_000)} nap eltérés`);
       }
     } else {
-      const normal = (k: string) =>
-        ADOSZAMOK.has(mezo) ? k.replace(/\D/g, '') : k.toLocaleLowerCase('hu').replace(/[\s.,\-–]/g, '');
-      reszek.push(new Set(kitoltott.map(normal)).size === 1 ? 'csak írásmód' : 'eltérő tartalom');
+      reszek.push(new Set(kitoltott.map((k) => irasmodNelkul(mezo, k))).size === 1 ? 'csak írásmód' : 'eltérő tartalom');
     }
   }
 
@@ -381,7 +388,7 @@ export function osszevet(
     // mindkettő magabiztosan mást. Igen/nem, érték nélkül.
     if (meresek.length > 1) {
       sorok.push('', sor('EGYEZIK AZ 1. OSZLOPPAL', []));
-      sorok.push('  (mezőnként a leggyakoribb érték; ✓ ugyanaz, ✗ más)');
+      sorok.push('  (mezőnként a leggyakoribb érték; ✓ ugyanaz, ≈ csak írásmód, ✗ más)');
       for (const [mezo, cimke] of ELLENORZOTT) {
         const alap = leggyakoribb(meresek[0]!.m, mezo);
         sorok.push(
@@ -391,7 +398,12 @@ export function osszevet(
               if (i === 0) return '–';
               const ez = leggyakoribb(x.m, mezo);
               if (ez === undefined || alap === undefined) return '–';
-              return egyezik(ez, alap) ? '✓' : '✗';
+              if (egyezik(ez, alap)) return '✓';
+              // Összegnél és dátumnál nincs „írásmód": ott a szám dönt.
+              const szoveges = !OSSZEGEK.has(mezo) && !DATUMOK.has(mezo);
+              return szoveges && ez !== null && alap !== null && irasmodNelkul(mezo, ez) === irasmodNelkul(mezo, alap)
+                ? '≈'
+                : '✗';
             }),
           ),
         );
