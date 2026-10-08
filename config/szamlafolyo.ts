@@ -226,9 +226,25 @@ export const szamlafolyo = {
    *
    * Vagyis a Lite pont azt a védelmet kapcsolja ki, amiért a v6-os prompt
    * megszületett. Ez a sor ne másszon vissza egy „olcsóbb lesz" mozdulattal.
+   *
+   * # 2026. október 8. — Claude Haiku 5.5, a Google Vertex végpontján
+   *
+   * A váltás **mérés után** jött, nem az ár miatt (a DONTESTORTENET
+   * „Claude Haiku 5.5" szakasza, `kiolvasas:proba` és `szetszedes:proba`):
+   * - **kiolvasás, 6 fájl:** Gemini-szintű pontosság. Két apró hiba, mindkettő
+   *   biztonságos irányban: üres mező, illetve bizonytalanként jelölt betű;
+   *   a kézzel írt számlán a `nehezen_olvashato` mindig bekapcsolt.
+   * - **szétszedés:** 9/9 helyes, mint a Geminié.
+   * - **3,3–6,6× olcsóbb, 2–5× gyorsabb**, és futásról futásra állandóbb.
+   *
+   * A modellt a **Google** szolgálja ki (Vertex), a mai szolgáltatói
+   * névsoron belül: az Anthropic saját végpontja a négy kikötéssel nem is
+   * érhető el (404). Ha ez a sor változik, az Adatkezelés 5. pontjának
+   * mondata a gyártót a `modellGyartoja()`-ból veszi – ismeretlen gyártóra a
+   * `jogiSzovegek.test.ts` megáll.
    */
   modell: {
-    alapertelmezett: 'google/gemini-3.8-flash',
+    alapertelmezett: 'anthropic/claude-haiku-5.5',
     alapUrl: 'https://openrouter.ai/api/v1',
     idokorlatMp: 90,
 

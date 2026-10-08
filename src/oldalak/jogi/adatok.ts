@@ -37,7 +37,7 @@ export const szolgaltato = {
  * működésre vonatkozik. Ha egyszer külön kell válniuk, az külön mezőt kap —
  * addig a közös dátum az igazat mondja.
  */
-export const hatalyos = '2026. október 6.';
+export const hatalyos = '2026. október 8.';
 
 /**
  * Ugyanaz a nap, **gépnek olvasható alakban** — és ez nem kényelmi másolat.
@@ -102,8 +102,32 @@ export const hatalyos = '2026. október 6.';
  * és az Impresszum szövege nem változott, csak a közös hatálybalépési dátum –
  * az ÁSZF 15. pontja szerinti előzetes értesítés ezért nem szükséges. Élesben
  * ekkor két cég van: a tulajdonosé és az első külső felhasználóé.
+ *
+ * `2026-10-08`: a kiolvasó modell a Google Gemini 3.8 Flash helyett az
+ * Anthropic Claude Haiku 5.5, a Google Cloud Vertex AI végpontján. Az
+ * Adatkezelés 3. pontjának mondata eddig „a Google modellje"-t írta; most a
+ * gyártót a configból vezeti le (`modellGyartoja()`), és kimondja, hogy a
+ * kérést továbbra is a Google kezeli. Az adatfeldolgozói lánc (OpenRouter →
+ * Google) nem változott, az ÁSZF és az Impresszum szövege sem – csak a
+ * közös hatálybalépési dátum, előzetes értesítés tehát nem kell. Élesben
+ * ekkor három cég van.
  */
-export const JOGI_VERZIO = '2026-10-06';
+export const JOGI_VERZIO = '2026-10-08';
+
+/**
+ * A modell gyártója a modellazonosító előtagjából – a tájékoztató mondatához.
+ *
+ * A gyártó és a feldolgozó **két külön állítás**: a Haiku az Anthropic
+ * modellje, de a kérést a Google Vertex végpontja szolgálja ki, és az adatot
+ * a Google kezeli. Ismeretlen előtagra `null` – a `jogiSzovegek.test.ts`
+ * ilyenkor megáll, mert egy kitalált gyártónév rosszabb a hiányzónál.
+ */
+export function modellGyartoja(modellAzonosito: string): { nev: string; nevelovel: string } | null {
+  const elotag = modellAzonosito.split('/')[0];
+  if (elotag === 'google') return { nev: 'Google', nevelovel: 'a Google' };
+  if (elotag === 'anthropic') return { nev: 'Anthropic', nevelovel: 'az Anthropic' };
+  return null;
+}
 
 /**
  * Az illetékes békéltető testület.

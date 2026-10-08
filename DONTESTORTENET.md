@@ -7174,3 +7174,41 @@ token volt (109, illetve 85), és mind a 9 futásban hibátlan határokat adott.
 - **Szétszedés:** 9/9 a 9/9 mellett, 3,3–6,6× olcsóbb, 2,7–3,5× gyorsabb.
 - **Jogi oldal:** a lánc nem változik. Élesítéskor egy Adatkezelés-mondat
   módosul, új jogi verzióval.
+
+## 🔁 Modellváltás: Claude Haiku 5.5 a Google Vertex végpontján (2026-10-08, `2026-10-08`)
+
+A tulajdonos döntése a négy mérési kör után. Közben egy devizás számlán is
+lefutott a próba, a tulajdonos szerint jó eredménnyel. Nyugtán még nem
+mértünk.
+
+- **`config/szamlafolyo.ts`:** `modell.alapertelmezett` értéke
+  `anthropic/claude-haiku-5.5`. A szolgáltatói névsor változatlan
+  (`google-ai-studio`, `google-vertex`). A kiolvasás és a szétszedés is
+  ezt használja.
+- **Adatkezelés 3. pont** (a korábbi bejegyzésekben tévesen „5. pont”): a
+  „a kiolvasást a Google modellje végzi” helyett:
+  > „a kiolvasást a Google végpontján futó modell végzi (jelenleg:
+  > anthropic/claude-haiku-5.5, az Anthropic modellje). A kérést ekkor is a
+  > Google szolgálja ki és kezeli, és a Google közzétett vállalása szerint a
+  > kérés tartalmát a modell fejlesztőjével (Anthropic) nem osztja meg.”
+
+  A gyártót a `modellGyartoja()` a configból vezeti le. Ismeretlen gyártóra
+  az őr megáll.
+- **Új jogi verzió:** `2026-10-08`, archívum és lenyomatok. A
+  `legal_versions` sort az MCP-n át **a push előtt** vettük fel, és
+  ellenőriztük.
+  - Az ÁSZF-ben csak a dátum változott, az Impresszum szó szerint azonos
+    (a lenyomata is). Előzetes értesítés nem kell.
+  - Élesben három cég van.
+- **Őrök** (`jogiSzovegek.test.ts`): a renderelt oldalon nézik a mondatot.
+  Mind a három szándékos rontásra piros lett:
+  - régi mondat;
+  - ismeretlen gyártó;
+  - kimaradó „nem osztja meg”.
+- **Élesítés:** a felület a pushsal élesedik. A modellcsere a `kiolvas`
+  újratelepítésével, amíg az nincs meg, a Gemini fut tovább. A kettő között
+  a tájékoztató egy rövid ideig előre szalad.
+
+**Visszaút:** egy configsor (`google/gemini-3.8-flash`), új jogi verzió és a
+`kiolvas` újratelepítése. A mondat a configból jön, tehát a szöveget nem kell
+kézzel visszaírni.

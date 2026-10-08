@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { JogiOldal, Lista, P, Szakasz, Tablazat } from './JogiOldal.tsx';
-import { adatfeldolgozok, NINCS_SZEKHELY, szolgaltato, unionKivuliDarab } from './adatok.ts';
+import { adatfeldolgozok, modellGyartoja, NINCS_SZEKHELY, szolgaltato, unionKivuliDarab } from './adatok.ts';
 import { szamlafolyo } from '@config/szamlafolyo.ts';
 
 /**
@@ -281,9 +281,23 @@ import { szamlafolyo } from '@config/szamlafolyo.ts';
  *
  * Az őr (`jogiSzovegek.test.ts`, 13. pont) a kódot és a szöveget együtt
  * nézi, és a „Hol fut” felsorolást a fehérlistához köti.
+ *
+ * # 2026. október 8. — a modell gyártója és feldolgozója két külön állítás
+ *
+ * A kiolvasó modell az Anthropic Claude Haiku 5.5 lett, a Google Cloud Vertex
+ * AI végpontján. A régi mondat („a kiolvasást a Google modellje végzi") ezzel
+ * valótlanná vált volna. Az új mondat a feldolgozót (Google) és a gyártót
+ * (`modellGyartoja()`, a configból) külön mondja ki; ha a gyártó nem a Google,
+ * azt is, hogy a kérést a Google kezeli, és a Google közzétett vállalása
+ * szerint a tartalmat a gyártóval nem osztja meg. Forrás: az Anthropic
+ * „Claude on Google Cloud" leírása („Data handling for this offering is
+ * governed by Google Cloud") és a Google partnermodell-oldala (a prompt és a
+ * válasz harmadik féllel, a partnermodellek gyártóját is beleértve, nem kerül
+ * megosztásra), 2026-10-08.
  */
 export function Adatkezeles() {
   const modell = szamlafolyo.modell.alapertelmezett;
+  const gyarto = modellGyartoja(modell);
   const maxNap = szamlafolyo.megorzes.maxNap;
   const exportNap = szamlafolyo.megorzes.exportNap;
   const meghivoNap = szamlafolyo.megorzes.meghivoNap;
@@ -730,8 +744,18 @@ export function Adatkezeles() {
           A PDF-ek, képek és a közvetlenül nem feldolgozható fájlok – köztük a{' '}
           <strong>fel nem ismert XML</strong> – adatainak kiolvasásához külső mesterséges
           intelligencia szolgáltatót veszünk igénybe. A kérést az <strong>OpenRouter</strong>{' '}
-          továbbítja, a kiolvasást a <strong>Google</strong> modellje végzi (jelenleg:{' '}
-          <code>{modell}</code>). A továbbított adatok közé a bizonylat tartalma, valamint a
+          továbbítja, a kiolvasást a <strong>Google</strong> végpontján futó modell végzi
+          (jelenleg: <code>{modell}</code>
+          {gyarto === null ? '' : `, ${gyarto.nevelovel} modellje`}).
+          {gyarto !== null && gyarto.nev !== 'Google' && (
+            <>
+              {' '}
+              A kérést ekkor is a Google szolgálja ki és kezeli, és a Google közzétett
+              vállalása szerint a kérés tartalmát a modell fejlesztőjével ({gyarto.nev}) nem
+              osztja meg.
+            </>
+          )}{' '}
+          A továbbított adatok közé a bizonylat tartalma, valamint a
           munkaterülethez tartozó cégnév és adószám tartozik – ez utóbbi azért, hogy a modell
           tudja, melyik oldalon állunk. <strong>A fiók adatait – a felhasználók nevét,
           e-mail-címét, jelszavát – nem küldjük el</strong>, a bizonylaton szereplő személyes

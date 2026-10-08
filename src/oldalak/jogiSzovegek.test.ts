@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { KIMERVE, PROGRAM_NEVEK, PROGRAMOK, type Program } from '@uzleti/export/konyvelo/beallitas.ts';
 import { renderel } from './jogi/archivum.tsx';
 import { MERT_UTVONALAK } from '../lib/analitika.ts';
+import { modellGyartoja } from './jogi/adatok.ts';
+import { szamlafolyo } from '@config/szamlafolyo.ts';
 
 /**
  * A nyilvános szövegek elcsúszás-őre.
@@ -651,6 +653,37 @@ describe('Adatkezelési tájékoztató, ötödik kör (2026-09-25)', () => {
     expect(szoveg).toContain('a Google AI Studio és a Google Cloud Vertex AI végpontját');
     expect(szoveg).toContain('A megőrzés tilalma és a tanítás tilalma két külön feltétel');
     expect(szoveg).toContain('és nem az OpenRouter garanciája');
+  });
+
+  /**
+   * 2026-10-08: a modell az Anthropic Claude Haiku 5.5 lett, a Google Vertex
+   * végpontján. A régi „a Google modellje végzi" ezzel valótlanná vált volna;
+   * a gyártó és a feldolgozó két külön állítás.
+   */
+  it('3. pont: a modell gyártója a configból jön, a feldolgozó a Google marad', () => {
+    const modell = szamlafolyo.modell.alapertelmezett;
+    const gyarto = modellGyartoja(modell);
+    // A renderelt oldal sima szövege: a modellnév és a gyártó csak itt áll össze.
+    const kesz = renderel('adatkezeles').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ');
+
+    // Ismeretlen gyártónál a mondat nem tudná megnevezni – inkább álljon meg.
+    expect(gyarto, `a(z) ${modell} gyártóját a modellGyartoja() nem ismeri`).not.toBeNull();
+    expect(kesz).toContain('a kiolvasást a Google végpontján futó modell végzi');
+    expect(kesz).toContain(`(jelenleg: ${modell}, ${gyarto!.nevelovel} modellje)`);
+    expect(kesz).not.toMatch(/a kiolvasást a Google modellje végzi/);
+
+    if (gyarto!.nev !== 'Google') {
+      expect(kesz).toContain(
+        'A kérést ekkor is a Google szolgálja ki és kezeli, és a Google közzétett vállalása ' +
+          `szerint a kérés tartalmát a modell fejlesztőjével (${gyarto!.nev}) nem osztja meg.`,
+      );
+    }
+  });
+
+  it('a gyártó előtagból jön, ismeretlenre null', () => {
+    expect(modellGyartoja('anthropic/claude-haiku-5.5')?.nevelovel).toBe('az Anthropic');
+    expect(modellGyartoja('google/gemini-3.8-flash')?.nevelovel).toBe('a Google');
+    expect(modellGyartoja('openai/valami')).toBeNull();
   });
 
   it('6. pont: a gépi jóváhagyás nem GDPR 22. cikk szerinti döntés, a jogok feltételesek', () => {

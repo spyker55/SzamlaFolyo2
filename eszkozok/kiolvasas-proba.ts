@@ -46,7 +46,7 @@ import { argumentumok, KapcsoloHiba, merj } from './meres.ts';
  * npm run kiolvasas:proba -- szamla.pdf --modell google/gemini-3.1-flash-lite
  * npm run --silent kiolvasas:proba -- szamla.pdf --json > meres.json
  * npm run kiolvasas:proba -- szamla.pdf --ismetles 10 --gondolkodas low
- * npm run kiolvasas:proba -- szamla.pdf --modell anthropic/claude-haiku-5.5 --szolgaltato anthropic
+ * npm run kiolvasas:proba -- szamla.pdf --modell google/gemini-3.8-flash
  * ```
  *
  * ## Másik gyártó modellje (2026-10-08, Claude Haiku 5.5)
@@ -61,6 +61,10 @@ import { argumentumok, KapcsoloHiba, merj } from './meres.ts';
  * a `tesztadat/` próbaszámláit és a saját bizonylataidat mérd, ügyfélét
  * soha. Először próbáld `--szolgaltato` nélkül: ha a modellt a Google is
  * kiszolgálja, a névsor változatlanul átengedi.
+ *
+ * Mérve, 2026-10-08: a Haiku 5.5-öt a Google (Vertex) kiszolgálja, a
+ * `--szolgaltato anthropic` viszont 10/10 futásban 404-et adott – az
+ * Anthropic saját végpontja a négy kikötéssel nem érhető el.
  *
  * ⚠️ Fájlba írásnál a `--silent` kell: nélküle az `npm run` a JSON elé a saját
  * fejlécét is kiírja (2026-09-23-án így készült három mérés; az

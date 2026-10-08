@@ -5,6 +5,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { VERZIO } from '../shared/uzleti/prompt.ts';
 import { FUGGVENY_NEV } from '../shared/uzleti/sema.ts';
 import type { Felderites } from '../supabase/functions/kiolvas/felderites.ts';
+import { szamlafolyo } from '../config/szamlafolyo.ts';
 
 describe('kapcsolók', () => {
   test('a fájl önmagában elég', () => {
@@ -198,7 +199,7 @@ describe('merj — a modellág', () => {
 
     const futas = await egyFutas(new Uint8Array([1, 2, 3]), 'image/png', 'nyugta.png', KEP, null);
 
-    expect(futas.olvaso).toBe('google/gemini-3.8-flash');
+    expect(futas.olvaso).toBe(szamlafolyo.modell.alapertelmezett);
     expect(futas.futtatottModell).toBe('google/gemini-3.8-flash-002');
     expect(futas.promptVerzio).toBe(VERZIO);
     expect(futas.bemenetToken).toBe(3457);
