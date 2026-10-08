@@ -7212,3 +7212,19 @@ mértünk.
 **Visszaút:** egy configsor (`google/gemini-3.8-flash`), új jogi verzió és a
 `kiolvas` újratelepítése. A mondat a configból jön, tehát a szöveget nem kell
 kézzel visszaírni.
+
+### Élesítés mérve (2026-10-08 07:33 UTC, `kiolvas` v34)
+
+A feltöltött forrás visszaolvasva: `alapertelmezett:
+'anthropic/claude-haiku-5.5'`, a névsor változatlan, a
+`bizonylatszamSzerepelt` benne van. A felület (`f794993`) READY.
+
+**Első éles fájl** (a tulajdonos próbája: számla és szállítólevél egy
+PDF-ben), a `document_extractions` szerint:
+- **szétszedés:** 0,000536 $, 85 kimeneti token, két bizonylat (1–1, 2–2);
+- **két kiolvasás:** 0,000859 $ és 0,001036 $, 3,4 s-on belül a szétszedés
+  után, párhuzamosan, első kísérletre, hiba nélkül;
+- **összesen ~0,0024 $.**
+
+Ugyanez a lánc aznap reggel a Geminivel ~0,020 $ volt, élesben tehát kb. 8×
+olcsóbb. `model_version` mindhárom soron `anthropic/claude-haiku-5.5`.
