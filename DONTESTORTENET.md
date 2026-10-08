@@ -7228,3 +7228,27 @@ PDF-ben), a `document_extractions` szerint:
 
 Ugyanez a lánc aznap reggel a Geminivel ~0,020 $ volt, élesben tehát kb. 8×
 olcsóbb. `model_version` mindhárom soron `anthropic/claude-haiku-5.5`.
+
+## 🪧 Elfogyott keret: a Beérkező sávja a teendőt mondja, nem a maradékot (2026-10-08)
+
+**Mérve, élesben (a tulajdonos képernyője):** az 50/50-re fogyott Start
+csomagnál a sáv ennyit írt: „Start: 0 bizonylat van hátra a 50-ből.” A
+feltöltött számla „Sorban áll” állapotban várt, `attempts = 0`. A
+`keretAllapot()` közben kiszámolta a jó `indok`-ot, de a `keretMondat()` azt
+csak a lejárt próbaidőre adta vissza. Előfizetésnél a maradékot mondta,
+akkor is, ha az nulla volt. A plafonra futott túlhasználatnál pedig a
+forintállást, nem azt, hogy elakadt.
+
+**Javítás (`shared/uzleti/keret.ts`):** ha `!mehet`, a mondat az `indok`.
+Előfizetésen hozzáteszi a fordulónapot is, és azt, hogy a sorban álló
+bizonylatok akkor maguktól folytatódnak. A tulajdonos helyzetére:
+> „Elfogyott a havi kereted (50 bizonylat). Válts nagyobb csomagra, vagy
+> engedélyezd a túlhasználatot a Beállításokban. A következő fordulónap:
+> 2026. 10. 21. – ekkor a keret újraindul, és a sorban álló bizonylatok
+> maguktól folytatódnak.”
+
+A Beállítások ugyanezt a függvényt használja, ott is ez jelenik meg. A
+`kiolvas` nem használja a mondatot, újratelepítés nem kell.
+
+**Őr:** két új teszt a `keret.test.ts`-ben (elfogyott keret; plafon). A régi
+viselkedésre mindkettő, a forduló nélküli mondatra az első piros lett.

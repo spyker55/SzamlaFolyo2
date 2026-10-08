@@ -1,4 +1,5 @@
 import { szamlafolyo, type CsomagKulcs } from '../../config/szamlafolyo.ts';
+import { datum } from './ido.ts';
 import { formaz } from './osszeg.ts';
 import { tulhasznalatSzamol, type Tulhasznalat } from './tulhasznalat.ts';
 
@@ -372,8 +373,19 @@ function probara(ceg: CegAllapot, felhasznalt: number, most: Date): Keret {
  * mondja — és ha két helyen fogalmaznánk meg, két különböző számot ígérnénk.
  */
 export function keretMondat(k: Keret): string {
-  if (k.allapot === 'lejart') {
-    return k.indok ?? 'A kereted elfogyott.';
+  // ⚠️ **Ha nem mehet tovább, az ok és a teendő számít, nem a maradék.**
+  // 2026-10-08-ig ez csak a lejárt próbaidőre volt igaz: egy előfizetésen
+  // elfogyott keretnél a Beérkező sávja „Start: 0 bizonylat van hátra a
+  // 50-ből." mondatot írt – a teendő (`indok`) nélkül, és anélkül, hogy a
+  // felhasználó megtudta volna, mi lesz a sorban álló bizonylatával.
+  if (!k.mehet) {
+    const ok = k.indok ?? 'A kereted elfogyott.';
+
+    // Előfizetésen a forduló magától megoldja – ezt is tudnia kell, aki nem
+    // akar se csomagot váltani, se túlhasználatot.
+    return k.allapot === 'elofizetes' && k.idoszakVege !== null
+      ? `${ok} A következő fordulónap: ${datum(k.idoszakVege)} – ekkor a keret újraindul, és a sorban álló bizonylatok maguktól folytatódnak.`
+      : ok;
   }
 
   if (k.allapot === 'proba') {

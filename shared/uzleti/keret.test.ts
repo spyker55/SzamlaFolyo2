@@ -432,6 +432,33 @@ describe('keretMondat', () => {
     expect(m).toContain(String(4 * szamlafolyo.csomagok.kicsi.extraFt));
   });
 
+  /**
+   * 2026-10-08, élesben: a Beérkező sávja „Start: 0 bizonylat van hátra a
+   * 50-ből." mondatot írt, a teendő nélkül.
+   */
+  test('előfizetésen elfogyott keretnél a teendőt és a fordulót mondja, nem a maradékot', () => {
+    const k = keretAllapot(elofizeto(), szamlafolyo.csomagok.kicsi.dokumentumok, MOST);
+    const m = keretMondat(k);
+
+    expect(k.mehet).toBe(false);
+    expect(m.startsWith(k.indok!)).toBe(true);
+    expect(m).toContain('Válts nagyobb csomagra, vagy engedélyezd a túlhasználatot');
+    expect(m).toContain('A következő fordulónap: 2026. 10. 01.');
+    expect(m).toContain('a sorban álló bizonylatok maguktól folytatódnak');
+    expect(m).not.toContain('van hátra');
+  });
+
+  test('a plafonra futott túlhasználatnál a plafont mondja, nem a forintállást', () => {
+    const k = keretAllapot(
+      elofizeto({ overage_enabled: true, overage_limit_ft: 200 }),
+      szamlafolyo.csomagok.kicsi.dokumentumok + 10,
+      MOST,
+    );
+
+    expect(k.mehet).toBe(false);
+    expect(keretMondat(k)).toContain('Elérted a túlhasználati plafont');
+  });
+
   test('lejárt keretnél magát az indokot mondja', () => {
     const k = keretAllapot(proba({ trial_ends_at: '2026-09-01T10:00:00Z' }), 0, MOST);
 
