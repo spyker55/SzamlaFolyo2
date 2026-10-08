@@ -6998,3 +6998,44 @@ kerülhet. Ezért kell a kép alapú és a háromszámlás próbafájl is a mér
 
   A tisztítás ezeket a kulcsokat eldobja, tehát a kiolvasást nem rontják,
   csak a költséget növelik.
+
+### Második kör: helyesség a három próbafájlon (2026-10-08)
+
+Mindkét modellt a Google szolgálta ki, mind a 26 futás sikerült.
+
+| fájl | futás | Gemini helyes | Haiku helyes | költség / futás G → H | idő (med) G → H |
+|---|---|---|---|---|---|
+| `egy-szamla-rendes.pdf` | 5–5 | 15/15 mind | 15/15 mind | 0,0063 → 0,0011 $ (5,8×) | 7,1 → 2,9 s |
+| `harom-szamla-rendes.pdf` | 3–3 | 15/15 mind | 15/15 mind | 0,0067 → 0,0020 $ (3,4×) | 7,7 → 7,2 s |
+| `csak-kep.pdf` | 5–5 | (nincs igazság) | mind ✓ a Geminivel | 0,0042 → 0,0008 $ (5,5×) | 6,1 → 1,3 s |
+
+**Az első gyengeség:** a kép alapú fájlon a Haiku **2/5 futásban üresen
+hagyta a bruttót**. A másik 3 futás a Geminivel egyező értéket adta. Az üres
+mező a kisebbik baj, mert az ember kitölti, de ez az a fajta bizonylat,
+amiből élesben sok van.
+
+**A ~2300 token rejtélye félig megoldva:**
+- A válasz mindössze ~840 karakter, sémán kívüli kulcs nincs.
+- Az egyszámlás fájlon a kimenet minden futásban pontosan 759 token.
+- A háromszámlás kötegen 3-ból 2 futás 2341 tokent ír ugyanakkora válasszal.
+  A ~1600 token többlet nem a válaszban van. Valószínűleg rejtett (adaptív)
+  gondolkodás, amit az OpenRouter nem jelent `reasoning_tokens`-ként. Ez
+  gyanú, nem mérés. Ki van fizetve, de a nehezebb bemeneten magától indul,
+  ami inkább jó jel.
+
+**Pénzben, a mai forgalommal** (46 kiolvasás / 30 nap): havi ~90 Ft
+megtakarítás. 10 000 bizonylat/hónapnál: ~63 $ helyett ~11 $. A díjak
+arányában az AI-költség ~6%-ról ~1%-ra esne.
+
+**Amit ez a három fájl nem bizonyít:**
+- Mind a három gépi nyomtatású, kitalált számla. A valódi különbség a
+  szkennelt, fotózott, kézzel írt, devizás bizonylatokon és a nyugtákon jön
+  elő. Az egyetlen kép alapú fájlon már meg is jelent.
+- **A kötegszétszedés** ugyanazt a modellt használja
+  (`szetszed()` → `modell.alapertelmezett`), és rá nincs mérőeszköz. Csere
+  előtt azt is mérni kell.
+- **A Vertex partnermodell-feltételei** (ki fér hozzá az adathoz, amikor
+  Anthropic-modell fut Google-infrastruktúrán) az élesítés előtt
+  ellenőrizendők az Adatkezelés 5. pontja miatt.
+
+**Állapot:** ígéretes, nem döntés. Éles változás nincs.
