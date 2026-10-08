@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
-    "kiolvasas:proba": "node --env-file-if-exists=.env eszkozok/kiolvasas-proba.ts"
+    "kiolvasas:proba": "node --env-file-if-exists=.env eszkozok/kiolvasas-proba.ts",
+    "szetszedes:proba": "node --env-file-if-exists=.env eszkozok/szetszedes-proba.ts"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.5",

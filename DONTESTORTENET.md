@@ -7090,3 +7090,62 @@ ami a papíron áll.
   - a vezető nullát eldobja;
   - üres szám egyezik.
 - **Élesítés:** a `kiolvas` újratelepítésével.
+
+### Kötegszétszedés mérőeszköze: `npm run szetszedes:proba` (2026-10-08)
+
+A szétszedés ugyanazt a modellt használja, mint a kiolvasás, mérőeszköz
+viszont eddig nem volt rá. Az új eszköz:
+- **ugyanazt futtatja, mint a `kiolvas`:** `szetszed()` +
+  `hatarokErtelmez()`, a besorolatlan oldalak pótlásával együtt.
+- **ugyanazon az úton jár, mint a `kiolvas`:** szövegréteges PDF-nél az
+  oldalak szövege megy, egyébként a fájl. A `--fajlkent` a szöveges PDF-et
+  is fájlként küldi, ez a szkennelt kötegek útja.
+  - Őr: a `kiolvas/index.ts` feltételei szó szerint egyeznek az
+    eszközéivel.
+- **egyoldalas és XML fájlért nem fizet**, mert élesben sem szednénk szét.
+- **több `--modell` egymás mellé kerül**, az `alap` a configban álló modell.
+- **a `harom-szamla-rendes.pdf` helyes határait magától tudja**
+  (1–1, 2–2, 3–3), más fájlnál `--vart 1-2,3-3`.
+- **csak oldalszámot és a saját indokainkat írja ki**, ezért a kimenete valódi
+  kötegnél is bemásolható.
+- **Őrök:** `szetszedesMeres.test.ts`, 20 teszt, hamis szolgáltatóval és
+  Node-indítással.
+  - Négy szándékos rontás: egyoldalas fájl is menne, `--fajlkent` hatástalan,
+    csak darabszám-egyezés, ismert határok nélkül.
+  - A harmadik **elsőre zöld maradt**: nem volt olyan eset, ahol a darabszám
+    stimmel, de a határ rossz. Pótolva, utána piros.
+
+### Vertex-feltételek: Claude a Google-nél (2026-10-08, elsődleges források)
+
+- **Ki kezeli az adatot:** az Anthropic saját leírása szerint a Claude on
+  Google Cloud esetén „Data handling for this offering is governed by Google
+  Cloud”. A feldolgozó a Google.
+  - A Google a partnermodellekről azt írja, hogy a promptot és a választ nem
+    osztja meg harmadik féllel, a partnermodellek gyártóját is beleértve.
+  - A Google naplózási szolgáltatása az Anthropic szerint sem a Google-nek,
+    sem az Anthropicnak nem ad hozzáférést a tartalomhoz.
+- **Kötelező megőrzés nincs:** a Haiku 5.5 **nem** „Covered Model”. A 30
+  napos kötelező megőrzés csak a Mythos- és Fable-osztályra vonatkozik. Ezzel
+  egyezik a mérés: a kérés `zdr: true`-val átment.
+- **Hely:** az újabb Claude-modellek a Vertexen csak globális vagy
+  multirégiós (`us`, `eu`) végponton futnak. Az OpenRouter által használt
+  végpont régióját nem ismerjük. A táblázat Google-sora ma is „Amerikai
+  Egyesült Államok, Unión kívüli hozzáférés nem kizárt”, és ez a gyengébb,
+  tehát igaz állítás. Ez marad.
+- **A lánc nem változik:** OpenRouter → Google (al-adatfeldolgozó). Az ÁSZF
+  és az Impresszum nem nevez meg modellt, tehát nem változik, és a 15 napos
+  értesítés sem kell.
+
+**Ha a Haiku élesbe megy, ez az egy mondat válik valótlanná** (Adatkezelés 5.
+pont): „a kiolvasást a **Google** modellje végzi (jelenleg: …)”. A Haiku az
+Anthropic modellje, csak a Google infrastruktúráján fut. Új szöveg kell (a
+Google Cloud Vertex AI-on futó modell, a gyártó megnevezésével), és új jogi
+verzió: archívum, lenyomat, `legal_versions`.
+
+**Ami nyitott marad, modelltől függetlenül:** az OpenRouter DPA §2.6
+(érzékeny adat) kérdése, határidő 2026-10-20.
+
+Források:
+- https://platform.claude.com/docs/en/build-with-claude/claude-on-vertex-ai
+- https://support.claude.com/en/articles/15425996-data-retention-practices-for-covered-models
+- https://docs.cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-partner-models
