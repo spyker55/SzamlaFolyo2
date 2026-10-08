@@ -7067,3 +7067,26 @@ előfordulhat, mert a Gemini a fizetési módot is többféleképp írta. Modell
 után pedig biztosan előjönne: a régi sorok Gemini-írásmódúak, az újak
 Haiku-írásmódúak. Javítás: írásmód nélküli összevetés. A tárolt alak marad,
 ami a papíron áll.
+
+### Javítás: a bizonylatszám írásmód nélkül vetődik össze (2026-10-08)
+
+- **`shared/uzleti/bizonylatszam.ts`:** két új függvény.
+  - `bizonylatszamKulcs()`: kis-nagybetű, szóköz (a nem törő is) és
+    elválasztó (kötőjelek, `_`, `.`, `/`, `\`) nélküli kulcs. NFKC-vel
+    normalizál.
+  - `bizonylatszamSzerepelt()`: ezzel a kulccsal nézi meg, szerepelt-e már a
+    szám.
+- **`kiolvas/elozmeny.ts`:** a `bizonylatszamMarLatott` ezt használja. A
+  tárolt érték nem változik, migráció nem kell.
+- **A vezető nulla számít:** `0012` ≠ `12`.
+- **Az üres szám soha nem „már látott”:** két hiányzó szám nem egyezés.
+- **Miért ebbe az irányba téved:** egy téves „már láttuk” csak emberhez viszi
+  a bizonylatot ellenőrzésre. Egy elmulasztott viszont automatikus átengedést
+  jelenthet.
+- **Őr:** `bizonylatszam.test.ts`, 15 teszt. Mind a négy szándékos rontásra
+  piros lett:
+  - betű szerinti összevetés vissza;
+  - a szóköz nem tűnik el;
+  - a vezető nullát eldobja;
+  - üres szám egyezik.
+- **Élesítés:** a `kiolvas` újratelepítésével.

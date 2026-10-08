@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { torzsszam } from '../../../shared/uzleti/adoszam.ts';
+import { bizonylatszamSzerepelt } from '../../../shared/uzleti/bizonylatszam.ts';
 import type { Elozmeny } from '../../../shared/uzleti/kapuk.ts';
 
 /**
@@ -103,9 +104,12 @@ export async function elozmenyt(
 
   return {
     ismertSzallito: true,
-    bizonylatszamMarLatott:
-      mezok.doc_number !== null &&
-      szallitoe.some((sor) => sor.doc_number === mezok.doc_number),
+    // Írásmódtól függetlenül: az `RHASA 8070268` és az `RHASA8070268`
+    // ugyanaz a szám (2026-10-08, lásd `bizonylatszam.ts`).
+    bizonylatszamMarLatott: bizonylatszamSzerepelt(
+      mezok.doc_number,
+      szallitoe.map((sor) => sor.doc_number),
+    ),
     osszegKilog: osszegKilog(mezok.gross_amount, szallitoe),
     keltKilog: keltKilog(mezok.issue_date),
     penznemSzokatlan: penznemSzokatlan(mezok.currency, korabbiak ?? []),
