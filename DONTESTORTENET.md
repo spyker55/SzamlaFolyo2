@@ -7149,3 +7149,28 @@ Források:
 - https://platform.claude.com/docs/en/build-with-claude/claude-on-vertex-ai
 - https://support.claude.com/en/articles/15425996-data-retention-practices-for-covered-models
 - https://docs.cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-partner-models
+
+### Negyedik kör: kötegszétszedés (2026-10-08)
+
+Modellenként 3 futás, mindent a Google szolgált ki.
+
+| fájl / út | Gemini helyes | Haiku helyes | költség / futás G → H | idő (med) G → H |
+|---|---|---|---|---|
+| `harom-szamla-rendes.pdf`, szöveg (mint élesben) | 3/3 | 3/3 | 0,0022 → 0,0003 $ (6,6×) | 3,2 → 0,9 s |
+| ugyanaz, `--fajlkent` | 3/3 | 3/3 | 0,0026 → 0,0008 $ (3,3×) | 3,3 → 1,2 s |
+| saját kétoldalas kézírásos (számla + teljesítésigazolás), kép | 3/3 | 3/3 | 0,0028 → 0,0005 $ (5,3×) | 6,5 → 2,3 s |
+
+A Haiku egyik futásban sem gondolkodott, a kimenete minden futásban ugyanannyi
+token volt (109, illetve 85), és mind a 9 futásban hibátlan határokat adott.
+
+### Összkép a negyedik kör után
+
+- **Kiolvasás, 6 fájl:**
+  - Gemini-szintű pontosság.
+  - Két apró hiba, mindkettő a biztonságos irányba:
+    - kép alapú PDF-en 2/5 futásban üres bruttó;
+    - béna szkennen egy betű, bizonytalanként jelölve.
+  - 3,4–5,8× olcsóbb, 1–5× gyorsabb, futásról futásra állandóbb.
+- **Szétszedés:** 9/9 a 9/9 mellett, 3,3–6,6× olcsóbb, 2,7–3,5× gyorsabb.
+- **Jogi oldal:** a lánc nem változik. Élesítéskor egy Adatkezelés-mondat
+  módosul, új jogi verzióval.
