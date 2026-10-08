@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   argumentumok,
   atmenetiHibanUjra,
@@ -556,5 +558,83 @@ describe('a 200-as válaszba csomagolt szolgáltatói hiba', () => {
       hiba = h;
     }
     expect((hiba as KiolvasasHiba).atmeneti).toBe(false);
+  });
+});
+
+/**
+ * # A mérési névsor (2026-10-08)
+ *
+ * A `kiolvasas:proba --szolgaltato` egy másik gyártó modelljének
+ * összeméréséhez kicseréli a szolgáltatói névsort. Két dolognak kell igaznak
+ * maradnia: a **másik három kikötés** ilyenkor is megy, és az éles kódút
+ * **soha** nem adja át a felülírást — különben a bizonylat olyan címzetthez
+ * kerülne, akit az Adatkezelési tájékoztató nem nevez meg.
+ */
+describe('mérési névsor', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  async function kikuldottSzolgaltato(szolgaltatok?: readonly string[] | null): Promise<Record<string, unknown>> {
+    const fetchHamis = vi.fn(async () => new Response(JSON.stringify(URES_VALASZ), { status: 200 }));
+    vi.stubGlobal('fetch', fetchHamis);
+
+    await kiolvas({
+      tartalom: new Uint8Array([37, 80, 68, 70]),
+      mime: 'application/pdf',
+      fajlnev: 'teszt.pdf',
+      apiKulcs: 'teszt',
+      ...(szolgaltatok === undefined ? {} : { szolgaltatok }),
+    }).catch(() => undefined);
+
+    const [, opciok] = fetchHamis.mock.calls[0] as unknown as [string, RequestInit];
+    return JSON.parse(opciok.body as string).provider as Record<string, unknown>;
+  }
+
+  it('felülírás nélkül a configban álló névsor megy', async () => {
+    expect(await kikuldottSzolgaltato()).toEqual({
+      only: [...szamlafolyo.modell.szolgaltatok],
+      allow_fallbacks: false,
+      zdr: true,
+      data_collection: 'deny',
+    });
+  });
+
+  it('felülírva csak a névsor cserélődik, a másik három kikötés marad', async () => {
+    const provider = await kikuldottSzolgaltato(['anthropic']);
+
+    expect(provider['only']).toEqual(['anthropic']);
+    expect(provider['allow_fallbacks']).toBe(false);
+    expect(provider['zdr']).toBe(true);
+    expect(provider['data_collection']).toBe('deny');
+  });
+
+  it('üres névsor nem „mindenki": megáll', () => {
+    expect(() => szolgaltatoiKikotes([])).toThrow(KiolvasasHiba);
+  });
+
+  it('az éles kódút sehol nem adja át a felülírást', () => {
+    const gyoker = join(import.meta.dirname, '..', '..');
+    const fajlok = (mappa: string): string[] =>
+      readdirSync(join(gyoker, mappa), { recursive: true, encoding: 'utf8' })
+        .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+        .map((f) => join(mappa, f));
+
+    const eles = [...fajlok('supabase/functions'), ...fajlok('shared'), ...fajlok('src')].filter(
+      (f) => f !== join('shared', 'uzleti', 'openrouter.ts'),
+    );
+
+    // „Talál-e egyáltalán": egy elromlott bejárás nulla fájlt nézne át, és a
+    // teszt zölden hazudna.
+    expect(eles).toContain(join('supabase', 'functions', 'kiolvas', 'index.ts'));
+    expect(eles.length).toBeGreaterThan(50);
+
+    const serto = eles.filter((f) => /\bszolgaltatok\b/.test(readFileSync(join(gyoker, f), 'utf8')));
+    expect(serto, 'az éles kód átadja a mérési szolgáltatói névsort').toEqual([]);
+  });
+
+  it('a válaszból kiderül, ki szolgálta ki', () => {
+    expect(valaszNyom({ provider: 'Anthropic', choices: [] }).szolgaltato).toBe('Anthropic');
+    expect(valaszNyom({ choices: [] }).szolgaltato).toBeNull();
   });
 });

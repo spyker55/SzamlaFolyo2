@@ -46,7 +46,21 @@ import { argumentumok, KapcsoloHiba, merj } from './meres.ts';
  * npm run kiolvasas:proba -- szamla.pdf --modell google/gemini-3.1-flash-lite
  * npm run --silent kiolvasas:proba -- szamla.pdf --json > meres.json
  * npm run kiolvasas:proba -- szamla.pdf --ismetles 10 --gondolkodas low
+ * npm run kiolvasas:proba -- szamla.pdf --modell anthropic/claude-haiku-5.5 --szolgaltato anthropic
  * ```
+ *
+ * ## Másik gyártó modellje (2026-10-08, Claude Haiku 5.5)
+ *
+ * A configban álló szolgáltatói névsor csak a Google két végpontját engedi,
+ * ezért egy más gyártójú modell kérése „nincs kiszolgáló végpont" hibával
+ * áll meg — ez szándékos. A `--szolgaltato` (ismételhető) **csak erre a
+ * mérésre** cseréli a névsort; a ZDR, a `data_collection: "deny"` és a
+ * tartalék útvonal tilalma ilyenkor is megy.
+ *
+ * ⚠️ Az Adatkezelési tájékoztató ezt a címzettet **nem nevezi meg**: így csak
+ * a `tesztadat/` próbaszámláit és a saját bizonylataidat mérd, ügyfélét
+ * soha. Először próbáld `--szolgaltato` nélkül: ha a modellt a Google is
+ * kiszolgálja, a névsor változatlanul átengedi.
  *
  * ⚠️ Fájlba írásnál a `--silent` kell: nélküle az `npm run` a JSON elé a saját
  * fejlécét is kiírja (2026-09-23-án így készült három mérés; az
@@ -59,7 +73,7 @@ import { argumentumok, KapcsoloHiba, merj } from './meres.ts';
 
 const HASZNALAT = `
 Használat:
-  npm run kiolvasas:proba <fájl> [--ismetles N] [--modell <azonosító>] [--json]
+  npm run kiolvasas:proba <fájl> [--ismetles N] [--modell <azonosító>] [--szolgaltato <slug>] [--json]
 
   --ismetles N   ugyanazt a fájlt N-szer olvastatja ki, és megmutatja, mely
                  mezők ingadoznak. N-szer annyiba is kerül. (alap: 1)
@@ -67,6 +81,10 @@ Használat:
   --gondolkodas <low|medium|high|N>
                  a modell gondolkodásának korlátozása (csak mérés; élesben
                  nincs beállítva). N: legfeljebb ennyi token.
+  --szolgaltato <slug>
+                 a configban álló szolgáltatói névsor helyett, csak erre a
+                 mérésre (ismételhető). Csak próbaszámlával vagy a saját
+                 bizonylatoddal – ügyfélével soha.
   --json         nyers mérés JSON-ban, összeméréshez
 `;
 

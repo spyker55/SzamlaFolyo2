@@ -29,6 +29,8 @@ import { basename } from 'node:path';
  */
 
 type Futas = {
+  /** 2026-10-08 előtti mérésben nincs. */
+  szolgaltato?: string | null;
   kimenetToken: number | null;
   gondolkodasToken: number | null;
   koltseg: number | null;
@@ -51,7 +53,7 @@ type Bukott = {
 
 export type MeresJson = {
   fajl: { nev: string };
-  beallitas?: { modell: string | null; gondolkodas: string } | null;
+  beallitas?: { modell: string | null; gondolkodas: string; szolgaltatok?: string } | null;
   futasok: Futas[];
   bukottFutasok?: Bukott[];
 };
@@ -194,6 +196,15 @@ function pad(s: string, n: number): string {
   return h >= n ? `${s} ` : s + ' '.repeat(n - h);
 }
 
+/**
+ * Ki szolgálta ki a sikeres futásokat – több is lehet, ha a névsorban több
+ * végpont áll. Régi mérésben (a mező előtt) `?`.
+ */
+function kiszolgalok(m: MeresJson): string {
+  const nevek = [...new Set(m.futasok.map((f) => f.szolgaltato ?? '?'))];
+  return nevek.length === 0 ? '–' : nevek.join(', ');
+}
+
 /** Az összevetés szövege. `elvart`: a helyes értékek, vagy `null`, ha nem ismertek. */
 export function osszevet(
   meresek: { nev: string; m: MeresJson }[],
@@ -206,6 +217,8 @@ export function osszevet(
 
   sorok.push(sor('', meresek.map((x) => x.nev)));
   sorok.push(sor('fájl', meresek.map((x) => x.m.fajl.nev)));
+  sorok.push(sor('modell', meresek.map((x) => x.m.beallitas?.modell ?? 'a configban álló')));
+  sorok.push(sor('kiszolgálta', meresek.map((x) => kiszolgalok(x.m))));
   sorok.push(sor('gondolkodás-beállítás', meresek.map((x) => x.m.beallitas?.gondolkodas ?? '?')));
 
   const bukottak = (m: MeresJson) => m.bukottFutasok ?? [];

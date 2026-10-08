@@ -6907,3 +6907,60 @@ kerül. A sorlekérdezés hibája is naplózva van.
 **Tanulság:** a `data ?? []` minta egy elbukott kérést „nincs adat”-ként
 mutat. Ma kétszer is ez vitt félre: egyszer a képernyőn, egyszer a
 kiolvasóban.
+
+## 🧪 Claude Haiku 5.5 a Gemini 3.8 Flash helyett? – mérőeszköz, az éles érintése nélkül (2026-10-08)
+
+**Kérdés:** a 2026-10-07-én megjelent Claude Haiku 5.5 jobban vagy olcsóbban
+olvas-e ki, mint a mostani `google/gemini-3.8-flash`?
+
+**Keret:** fut a Meta-hirdetés, az élő oldalhoz nem nyúlunk. A mérés a
+tulajdonos gépén fut, a meglévő `kiolvasas:proba` eszközzel. Adatbázist,
+tárolót és kreditet nem érint, és a `kiolvas` Edge Function változatlan.
+
+**Kiinduló szám (éles, 30 nap, 46 kiolvasás, csak összesítve):**
+
+| | Gemini 3.8 Flash |
+|---|---|
+| költség / kiolvasás | átlag 0,00771 $, medián 0,00646 $, max 0,0384 $ |
+| bemenet / kimenet / ebből gondolkodás | ~5 208 / ~1 014 / ~743 token |
+
+**A Haiku 5.5 listaára:** 0,10 $ / 0,50 $ per millió token (100 K-s prompt
+alatt), az OpenRouteren `anthropic/claude-haiku-5.5`. Becslés, nem mérés: ha
+a tokenszám hasonló, ez nagyjából az ötöde–hetede a mostaninak. Ezt a mérés
+dönti el, mert az Anthropic a PDF-oldalt képként **és** szövegként is
+számolja.
+
+**Az akadály:** a `szolgaltatoiKikotes()` csak a Google két végpontját
+engedi. Ez szándékos: az Adatkezelési tájékoztató csak a Google-t nevezi meg.
+
+**Megoldás – csak a mérőeszközben:**
+- **`--szolgaltato <slug>`** (ismételhető): csak erre a mérésre cseréli a
+  névsort. A ZDR, a `data_collection: "deny"` és az `allow_fallbacks: false`
+  ilyenkor is megy. Üres névsorra a kikötés megáll, mert az OpenRouternél az
+  üres lista „nincs szűrés”-t jelent.
+- **A jelentés kiírja, ki szolgálta ki** (az OpenRouter `provider` mezője). Az
+  összevetés két új sort kapott: `modell` és `kiszolgálta`.
+- **Őr** (`openrouter.test.ts`, „mérési névsor”, 5 teszt): az éles kódút
+  (`supabase/functions`, `shared`, `src`) sehol nem adja át a felülírást.
+  - Mind a négy szándékos rontásra piros lett: felülírás az Edge Functionben,
+    figyelmen kívül hagyott felülírás, üres névsor, ki nem olvasott
+    `provider`.
+
+**Adatvédelmi szabály a méréshez:** csak a `tesztadat/` próbaszámlái és a
+tulajdonos saját bizonylatai. Ügyfélbizonylat soha nem mehet, mert az
+Anthropic nincs megnevezve. A script minden ilyen futásnál figyelmeztet.
+
+**Ha a Haiku nyer**, az élesítés külön kör, és nem csak egy configsor:
+- új szolgáltató a névsorban;
+- Adatkezelés 5. pont és ÁSZF 11. pont: új al-adatfeldolgozó, új jogi
+  verzió;
+- az Anthropic DPA-ja;
+- `kiolvas` újratelepítés.
+
+A `--szolgaltato` nélküli próba előbb azt is megmutatja, kiszolgálja-e a
+Google (Vertex) a modellt. Ha igen, a címzett-kérdés egyszerűbb.
+
+**Viselkedési különbség, amit a mérés mutat meg:** a Haiku 5.5 a
+kikényszerített függvényhívásnál **nem gondolkodik**. A Gemini ugyanott
+~743 tokent gondolkodik. Olcsóbb, de a nehéz számlákon ez pontosságba
+kerülhet. Ezért kell a kép alapú és a háromszámlás próbafájl is a mérésbe.

@@ -21,6 +21,8 @@ export type Futas = {
   olvaso: string;
   /** Amit a szolgáltató ténylegesen futtatott. XML-ágon `null`. */
   futtatottModell: string | null;
+  /** **Ki** szolgálta ki (az OpenRouter `provider` mezője). XML-ágon `null`. */
+  szolgaltato: string | null;
   promptVerzio: string | null;
   bemenetToken: number | null;
   kimenetToken: number | null;
@@ -59,7 +61,7 @@ export type Meres = {
   /** Az elbukott modellfutások; üres vagy hiányzó, ha mind sikerült. */
   bukottFutasok?: readonly BukottFutas[];
   /** A mérés beállítása – a jelentés fejlécébe, hogy két mérés összevethető legyen. */
-  beallitas?: { modell: string | null; gondolkodas: string };
+  beallitas?: { modell: string | null; gondolkodas: string; szolgaltatok?: string };
 };
 
 const SAV_JEL: Record<Sav, string> = {
@@ -150,6 +152,7 @@ export function jelentes(meres: Meres): string {
       : [
           par('modell', meres.beallitas.modell ?? 'a configban álló'),
           par('gondolkodás', meres.beallitas.gondolkodas),
+          par('szolgáltatói névsor', meres.beallitas.szolgaltatok ?? 'a configban álló'),
         ]),
     '',
     ...felderitesSorok(meres.felderites),
@@ -222,6 +225,10 @@ function olvasoSorok(f: Futas): string[] {
     sorok.push(par('⚠️ ténylegesen futott', f.futtatottModell));
   } else if (f.futtatottModell !== null) {
     sorok.push(par('ténylegesen futott', f.futtatottModell));
+  }
+
+  if (f.szolgaltato !== null) {
+    sorok.push(par('kiszolgálta', f.szolgaltato));
   }
 
   if (f.promptVerzio !== null) {

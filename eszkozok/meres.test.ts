@@ -14,6 +14,7 @@ describe('kapcsolók', () => {
       modell: null,
       json: false,
       gondolkodas: null,
+      szolgaltatok: null,
     });
   });
 
@@ -24,6 +25,7 @@ describe('kapcsolók', () => {
       modell: 'x/y',
       json: true,
       gondolkodas: null,
+      szolgaltatok: null,
     });
   });
 
@@ -37,8 +39,18 @@ describe('kapcsolók', () => {
     // ⚠️ A `--modell --json` némán elnyelné a `--json`-t modellazonosítóként,
     // és a mérés utána mást mérne, mint amit kértek.
     ['modell érték nélkül', ['a.pdf', '--modell', '--json']],
+    ['szolgáltató érték nélkül', ['a.pdf', '--szolgaltato']],
+    ['szolgáltató helyén kapcsoló', ['a.pdf', '--szolgaltato', '--json']],
+    ['szolgáltató nagybetűvel', ['a.pdf', '--szolgaltato', 'Anthropic']],
   ])('megáll: %s', (_nev, argv) => {
     expect(() => argumentumok(argv)).toThrow(KapcsoloHiba);
+  });
+
+  test('--szolgaltato: ismételhető, és a sorrend megmarad', () => {
+    expect(
+      argumentumok(['a.pdf', '--modell', 'anthropic/claude-haiku-5.5', '--szolgaltato', 'anthropic', '--szolgaltato', 'google-vertex/europe'])
+        .szolgaltatok,
+    ).toEqual(['anthropic', 'google-vertex/europe']);
   });
 });
 
@@ -55,7 +67,7 @@ describe('merj — az XML-ág', () => {
     ['minta/nav-szabalyos.xml', 'xml/nav'],
     ['minta/apeh-szabalyos.xml', 'xml/apeh'],
   ])('%s → %s, nulla forintból', async (utvonal, olvaso) => {
-    const meres = await merj({ utvonal, ismetles: 1, modell: null, json: false, gondolkodas: null });
+    const meres = await merj({ utvonal, ismetles: 1, modell: null, json: false, gondolkodas: null, szolgaltatok: null });
     const futas = meres.futasok[0]!;
 
     expect(meres.felderites.jelleg).toBe('strukturalt_xml');
@@ -73,6 +85,7 @@ describe('merj — az XML-ág', () => {
       modell: null,
       json: false,
       gondolkodas: null,
+      szolgaltatok: null,
     });
 
     expect(meres.felderites.jelleg).toBe('beagyazott_xml');
@@ -88,6 +101,7 @@ describe('merj — az XML-ág', () => {
       modell: null,
       json: false,
       gondolkodas: null,
+      szolgaltatok: null,
     });
     const eredmeny = meres.futasok[0]!.eredmeny;
 
@@ -99,7 +113,7 @@ describe('merj — az XML-ág', () => {
   test('az ismétlés az XML-ágon egy futás marad', async () => {
     const uzenetek: string[] = [];
     const meres = await merj(
-      { utvonal: 'minta/ubl-szabalyos.xml', ismetles: 5, modell: null, json: false, gondolkodas: null },
+      { utvonal: 'minta/ubl-szabalyos.xml', ismetles: 5, modell: null, json: false, gondolkodas: null, szolgaltatok: null },
       (u) => uzenetek.push(u),
     );
 
@@ -108,7 +122,7 @@ describe('merj — az XML-ág', () => {
   });
 
   test('amit a feltöltés sem fogadna el, azt a mérés sem', async () => {
-    await expect(merj({ utvonal: 'package.json', ismetles: 1, modell: null, json: false, gondolkodas: null })).rejects.toThrow(
+    await expect(merj({ utvonal: 'package.json', ismetles: 1, modell: null, json: false, gondolkodas: null, szolgaltatok: null })).rejects.toThrow(
       ProbaHiba,
     );
   });
@@ -340,6 +354,7 @@ describe('a gondolkodás mérése', () => {
       modell: null,
       json: false,
       gondolkodas: { effort: 'low' },
+      szolgaltatok: null,
     });
 
     expect(meres.futasok).toHaveLength(1);
@@ -352,7 +367,7 @@ describe('a gondolkodás mérése', () => {
       koltseg: 0.017353,
       atmeneti: false,
     });
-    expect(meres.beallitas).toEqual({ modell: null, gondolkodas: 'effort: low' });
+    expect(meres.beallitas).toEqual({ modell: null, gondolkodas: 'effort: low', szolgaltatok: 'a configban álló' });
 
     const szoveg = jelentes(meres);
     expect(szoveg).toContain('ELBUKOTT FUTÁSOK (2)');
@@ -367,7 +382,7 @@ describe('a gondolkodás mérése', () => {
     process.env['OPENROUTER_API_KEY'] = 'proba';
     vi.stubGlobal('fetch', vi.fn(async () => ELSZALADT));
 
-    const meres = await merj({ utvonal: 'tesztadat/csak-kep.pdf', ismetles: 1, modell: null, json: false, gondolkodas: null });
+    const meres = await merj({ utvonal: 'tesztadat/csak-kep.pdf', ismetles: 1, modell: null, json: false, gondolkodas: null, szolgaltatok: null });
 
     expect(meres.futasok).toHaveLength(0);
     expect(jelentes(meres)).toContain('ELBUKOTT FUTÁSOK (1)');
@@ -376,7 +391,7 @@ describe('a gondolkodás mérése', () => {
   test('a kulcs hiánya továbbra is megállít – az nem mérési eredmény', async () => {
     vi.stubGlobal('fetch', vi.fn());
     await expect(
-      merj({ utvonal: 'tesztadat/csak-kep.pdf', ismetles: 3, modell: null, json: false, gondolkodas: null }),
+      merj({ utvonal: 'tesztadat/csak-kep.pdf', ismetles: 3, modell: null, json: false, gondolkodas: null, szolgaltatok: null }),
     ).rejects.toThrow(ProbaHiba);
   });
 

@@ -31,6 +31,12 @@ export type Kapcsolok = {
   json: boolean;
   /** `null`: nincs `reasoning` a kérésben – pontosan úgy, mint élesben. */
   gondolkodas: Gondolkodas | null;
+  /**
+   * `null`: a configban álló szolgáltatói névsor, mint élesben. Más érték
+   * csak másik gyártó modelljének összeméréséhez – lásd
+   * `szolgaltatoiKikotes()` és a `--szolgaltato` kapcsoló.
+   */
+  szolgaltatok: string[] | null;
 };
 
 /** A `Gondolkodas` olvasható alakja a jelentés fejlécébe. */
@@ -89,6 +95,13 @@ export async function merj(
     throw new ProbaHiba(tipus.hiba);
   }
 
+  if (kapcsolok.szolgaltatok !== null) {
+    figyelmeztet(
+      `⚠️ A szolgáltatói névsor most: ${kapcsolok.szolgaltatok.join(', ')}. Ezt a címzettet az ` +
+        'Adatkezelési tájékoztató nem nevezi meg – csak próbaszámlát vagy a saját bizonylatodat mérd így, ügyfélét soha.',
+    );
+  }
+
   const felderites = await felderit(bajtok, tipus.tipus.mime);
   const futasok: Futas[] = [];
   const bukottFutasok: BukottFutas[] = [];
@@ -105,6 +118,7 @@ export async function merj(
         kapcsolok.modell,
         figyelmeztet,
         kapcsolok.gondolkodas,
+        kapcsolok.szolgaltatok,
       );
     } catch (hiba) {
       if (!(hiba instanceof FutasHiba)) throw hiba;
@@ -126,7 +140,11 @@ export async function merj(
 
   return {
     fajl: { nev, bajt: bajtok.byteLength, mime: tipus.tipus.mime },
-    beallitas: { modell: kapcsolok.modell, gondolkodas: gondolkodasSzo(kapcsolok.gondolkodas) },
+    beallitas: {
+      modell: kapcsolok.modell,
+      gondolkodas: gondolkodasSzo(kapcsolok.gondolkodas),
+      szolgaltatok: kapcsolok.szolgaltatok === null ? 'a configban álló' : kapcsolok.szolgaltatok.join(', '),
+    },
     felderites,
     futasok,
     bukottFutasok,
@@ -149,6 +167,7 @@ export async function egyFutas(
   modellFelulirasa: string | null,
   figyelmeztet: (uzenet: string) => void = () => {},
   gondolkodas: Gondolkodas | null = null,
+  szolgaltatok: string[] | null = null,
 ): Promise<Futas> {
   const kezdet = Date.now();
 
@@ -159,6 +178,7 @@ export async function egyFutas(
       return {
         olvaso: eredmeny.nev,
         futtatottModell: null,
+        szolgaltato: null,
         promptVerzio: null,
         bemenetToken: null,
         kimenetToken: null,
@@ -193,11 +213,13 @@ export async function egyFutas(
       modell: modellFelulirasa,
       apiKulcs,
       gondolkodas,
+      szolgaltatok,
     });
 
     return {
       olvaso: valasz.modell,
       futtatottModell: valasz.futtatottModell,
+      szolgaltato: valasz.szolgaltato,
       promptVerzio: valasz.promptVerzio,
       bemenetToken: valasz.bemenetToken,
       kimenetToken: valasz.kimenetToken,
@@ -256,6 +278,7 @@ export function argumentumok(argv: readonly string[]): Kapcsolok {
   let modell: string | null = null;
   let json = false;
   let gondolkodas: Gondolkodas | null = null;
+  const szolgaltatok: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
     const darab = argv[i]!;
@@ -274,6 +297,14 @@ export function argumentumok(argv: readonly string[]): Kapcsolok {
         throw new KapcsoloHiba('A --modell után modellazonosító kell.');
       }
       modell = ertek;
+    } else if (darab === '--szolgaltato') {
+      const ertek = argv[++i];
+      // Az OpenRouter szolgáltatói azonosítója: kisbetű, szám, kötőjel, és
+      // régiónál perjel (`google-vertex/europe`). Ami ennél több, elírás.
+      if (ertek === undefined || !/^[a-z0-9][a-z0-9-]*(\/[a-z0-9-]+)?$/.test(ertek)) {
+        throw new KapcsoloHiba('A --szolgaltato után OpenRouter-szolgáltató kell, pl. anthropic.');
+      }
+      szolgaltatok.push(ertek);
     } else if (darab === '--gondolkodas') {
       gondolkodas = gondolkodasErtelmez(argv[++i]);
     } else if (darab.startsWith('--')) {
@@ -289,7 +320,14 @@ export function argumentumok(argv: readonly string[]): Kapcsolok {
     throw new KapcsoloHiba('Melyik fájlt mérjem?');
   }
 
-  return { utvonal, ismetles, modell, json, gondolkodas };
+  return {
+    utvonal,
+    ismetles,
+    modell,
+    json,
+    gondolkodas,
+    szolgaltatok: szolgaltatok.length === 0 ? null : szolgaltatok,
+  };
 }
 
 /**

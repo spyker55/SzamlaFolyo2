@@ -33,6 +33,12 @@ export type KiolvasasKeres = {
   hivoUrl?: string;
   /** A gondolkodás korlátozása – **csak mérésre**, lásd `Gondolkodas`. */
   gondolkodas?: Gondolkodas | null;
+  /**
+   * A configban álló szolgáltatói névsor helyett – **csak mérésre**, lásd
+   * `szolgaltatoiKikotes()`. A `kiolvas` Edge Function nem adja át (őr:
+   * `openrouter.test.ts`).
+   */
+  szolgaltatok?: readonly string[] | null;
 };
 
 /**
@@ -59,6 +65,8 @@ export type KiolvasasValasz = {
   modell: string;
   /** Amit a szolgáltató **ténylegesen** futtatott — nem feltétlenül ugyanaz. */
   futtatottModell: string | null;
+  /** Az OpenRouter `provider` mezője: **ki** szolgálta ki (pl. „Google"). */
+  szolgaltato: string | null;
   promptVerzio: string;
   bemenetToken: number | null;
   kimenetToken: number | null;
@@ -89,6 +97,7 @@ export type SzetszedesValasz = {
   nyers: Record<string, unknown>;
   modell: string;
   futtatottModell: string | null;
+  szolgaltato: string | null;
   promptVerzio: string;
   bemenetToken: number | null;
   kimenetToken: number | null;
@@ -116,6 +125,8 @@ export type ValaszNyom = {
   /** Az OpenRouter generációazonosítója (`gen-…`) — ezzel kereshető a naplójukban. */
   generacioId: string | null;
   futtatottModell: string | null;
+  /** Az OpenRouter `provider` mezője: **ki** szolgálta ki (pl. „Google"). */
+  szolgaltato: string | null;
   /** A `finish_reason`; ha a szolgáltató sajátja is megvan, az utána áll. */
   leallasOka: string | null;
   bemenetToken: number | null;
@@ -246,6 +257,7 @@ export async function kiolvas(keres: KiolvasasKeres): Promise<KiolvasasValasz> {
     apiKulcs: keres.apiKulcs,
     hivoUrl: keres.hivoUrl,
     gondolkodas: keres.gondolkodas ?? null,
+    szolgaltatok: keres.szolgaltatok ?? null,
   });
 
   return { ...eredmeny, modell, promptVerzio: VERZIO };
@@ -341,6 +353,8 @@ type HivasKeres = {
   idokorlatMp?: number | undefined;
   /** Csak mérésre; `null` esetén a kérésben nincs `reasoning` mező. */
   gondolkodas?: Gondolkodas | null;
+  /** Csak mérésre; `null` esetén a configban álló névsor. */
+  szolgaltatok?: readonly string[] | null;
 };
 
 /**
@@ -385,15 +399,35 @@ type HivasKeres = {
  * van. Ha nem marad választható szolgáltató, a kérés hibával áll meg — a
  * dokumentum a Beérkezőben marad, és újrapróbálható. Ez a helyes irány: a
  * csendben átengedett adatot már nem lehet visszakérni.
+ *
+ * # A mérési névsor (2026-10-08)
+ *
+ * Egy másik gyártó modelljét (a Claude Haiku 5.5-öt) csak úgy lehet
+ * összemérni a mostanival, ha a kérés **más szolgáltatóhoz** mehet. Ezért a
+ * névsor — és **csak a névsor** — felülírható egy paraméterrel, amit
+ * egyedül a `kiolvasas:proba --szolgaltato` tölt ki, a tulajdonos gépén. A
+ * másik három kikötés ilyenkor is ugyanaz: nincs tartalék útvonal, nincs
+ * megőrzés, nincs tanítás.
+ *
+ * ⚠️ Az így kiszolgált fájl olyan címzetthez kerül, akit az Adatkezelési
+ * tájékoztató **nem nevez meg**. Ezért a mérés csak a saját próbaszámláinkon
+ * és a tulajdonos saját bizonylatain futhat, ügyfélén soha. Az Edge
+ * Function nem adja át a paramétert, és ezt teszt őrzi.
  */
-export function szolgaltatoiKikotes(): {
+export function szolgaltatoiKikotes(meresiNevsor: readonly string[] | null = null): {
   only: readonly string[];
   allow_fallbacks: false;
   zdr: true;
   data_collection: 'deny';
 } {
+  // Üres lista az OpenRouternél nem „senki", hanem „nincs szűrés" — az
+  // nem névsor, hanem a kapu kinyitása.
+  if (meresiNevsor !== null && meresiNevsor.length === 0) {
+    throw new KiolvasasHiba('A mérési szolgáltatói névsor nem lehet üres.');
+  }
+
   return {
-    only: szamlafolyo.modell.szolgaltatok,
+    only: meresiNevsor ?? szamlafolyo.modell.szolgaltatok,
     allow_fallbacks: false,
     zdr: true,
     data_collection: 'deny',
@@ -410,6 +444,7 @@ export function szolgaltatoiKikotes(): {
 async function hivas(keres: HivasKeres): Promise<{
   nyers: Record<string, unknown>;
   futtatottModell: string | null;
+  szolgaltato: string | null;
   bemenetToken: number | null;
   kimenetToken: number | null;
   gondolkodasToken: number | null;
@@ -421,7 +456,7 @@ async function hivas(keres: HivasKeres): Promise<{
     // A bizonylat idegen cégek adatait viszi magával, ezért négy kikötés
     // megy vele — és a négy **külön dolgot** mond ki. Lásd a
     // `szolgaltatoiKikotes()` fejlécét.
-    provider: szolgaltatoiKikotes(),
+    provider: szolgaltatoiKikotes(keres.szolgaltatok ?? null),
 
     messages: keres.uzenetek,
     tools: [
@@ -505,6 +540,7 @@ async function hivas(keres: HivasKeres): Promise<{
   return {
     nyers,
     futtatottModell: nyom.futtatottModell,
+    szolgaltato: nyom.szolgaltato,
     bemenetToken: nyom.bemenetToken,
     kimenetToken: nyom.kimenetToken,
     gondolkodasToken: nyom.gondolkodasToken,
@@ -522,6 +558,7 @@ export function valaszNyom(valasz: Record<string, unknown>): ValaszNyom {
   return {
     generacioId: typeof valasz['id'] === 'string' ? valasz['id'] : null,
     futtatottModell: typeof valasz['model'] === 'string' ? valasz['model'] : null,
+    szolgaltato: typeof valasz['provider'] === 'string' ? valasz['provider'] : null,
     leallasOka: okok.length > 0 ? [...new Set(okok)].join(' / ') : null,
     ...hasznalatOlvas(valasz),
     nyers: valasz,

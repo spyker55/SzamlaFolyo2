@@ -18,6 +18,7 @@ function modellFutas(nyers: Record<string, unknown>): Futas {
   return {
     olvaso: 'google/gemini-3.8-flash',
     futtatottModell: 'google/gemini-3.8-flash-002',
+    szolgaltato: 'Google',
     promptVerzio: 'v6-2026-09-04',
     bemenetToken: 3457,
     kimenetToken: 1194,
