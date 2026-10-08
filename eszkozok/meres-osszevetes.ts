@@ -35,6 +35,9 @@ type Futas = {
   gondolkodasToken: number | null;
   koltseg: number | null;
   idoMs: number;
+  /** 2026-10-08 előtti mérésben nincs. */
+  valaszHossz?: number | null;
+  idegenKulcsok?: string[];
   eredmeny: {
     mezok: Record<string, string | null>;
     nehezenOlvashato?: boolean;
@@ -57,6 +60,17 @@ export type MeresJson = {
   futasok: Futas[];
   bukottFutasok?: Bukott[];
 };
+
+/**
+ * A saját, kitalált próbaszámláink, amikre a helyes érték ismert.
+ *
+ * A háromszámlás köteg is ide tartozik: a prompt több bizonylatnál azt kéri,
+ * hogy a modell állítsa be a `tobb_irat_gyanu`-t, és **az elsőnek** az adatait
+ * adja vissza (`prompt.ts`), az első pedig ugyanaz a számla, mint az
+ * `egy-szamla-rendes.pdf`. 2026-10-08-ig ezt az összevető „valódi számlának"
+ * vette, és elrejtette az értékeket, holott itt nincs mit rejteni.
+ */
+export const PROBAFAJLOK: ReadonlySet<string> = new Set(['egy-szamla-rendes.pdf', 'harom-szamla-rendes.pdf']);
 
 /** A mezők, amikre a próbaszámlán a helyes érték ismert, és a sorrendjük. */
 const ELLENORZOTT: [string, string][] = [
@@ -178,6 +192,21 @@ export function elteresJellege(mezo: string, ertekek: (string | null)[]): string
   return reszek.join(', ');
 }
 
+/**
+ * Egy mező leggyakoribb értéke a sikeres futásokban; üres mező `null`.
+ * `undefined`, ha nincs sikeres futás.
+ */
+function leggyakoribb(m: MeresJson, mezo: string): string | null | undefined {
+  if (m.futasok.length === 0) return undefined;
+  const db = new Map<string | null, number>();
+  for (const f of m.futasok) {
+    const v = f.eredmeny.mezok[mezo] ?? null;
+    const k = v === null || v.trim() === '' ? null : v;
+    db.set(k, (db.get(k) ?? 0) + 1);
+  }
+  return [...db].sort((a, b) => b[1] - a[1])[0]![0];
+}
+
 function median(szamok: number[]): number | null {
   if (szamok.length === 0) return null;
   const r = [...szamok].sort((a, b) => a - b);
@@ -251,6 +280,15 @@ export function osszevet(
   );
   sorok.push(sor('gondolkodás (med, min–max)', meresek.map((x) => tartomany(x.m.futasok.map((f) => f.gondolkodasToken)))));
   sorok.push(sor('kimenet (med, min–max)', meresek.map((x) => tartomany(x.m.futasok.map((f) => f.kimenetToken)))));
+  sorok.push(
+    sor('válasz karakter (med, min–max)', meresek.map((x) => tartomany(x.m.futasok.map((f) => f.valaszHossz ?? null)))),
+  );
+  sorok.push(
+    sor(
+      'sémán kívüli kulcs',
+      meresek.map((x) => [...new Set(x.m.futasok.flatMap((f) => f.idegenKulcsok ?? []))].join(', ') || '–'),
+    ),
+  );
   sorok.push(sor('idő ms (med, min–max)', meresek.map((x) => tartomany(x.m.futasok.map((f) => f.idoMs)))));
   sorok.push(
     sor(
@@ -337,6 +375,28 @@ export function osszevet(
       }
     }
     if (jelleg.length > 0) sorok.push('', 'AZ ELTÉRÉSEK JELLEGE (megoszlás; érték nélkül)', ...jelleg);
+
+    // Két modell összemérésénél a fő kérdés: **ugyanazt** olvasták-e ki. A
+    // „1 különböző érték" mindkét oszlopban ezt nem mondja meg – lehet, hogy
+    // mindkettő magabiztosan mást. Igen/nem, érték nélkül.
+    if (meresek.length > 1) {
+      sorok.push('', sor('EGYEZIK AZ 1. OSZLOPPAL', []));
+      sorok.push('  (mezőnként a leggyakoribb érték; ✓ ugyanaz, ✗ más)');
+      for (const [mezo, cimke] of ELLENORZOTT) {
+        const alap = leggyakoribb(meresek[0]!.m, mezo);
+        sorok.push(
+          sor(
+            `  ${cimke}`,
+            meresek.map((x, i) => {
+              if (i === 0) return '–';
+              const ez = leggyakoribb(x.m, mezo);
+              if (ez === undefined || alap === undefined) return '–';
+              return egyezik(ez, alap) ? '✓' : '✗';
+            }),
+          ),
+        );
+      }
+    }
   }
 
   // A validátorok: ezek élesben is lefutnak, és a bukott mezőt pirossal az
@@ -408,7 +468,7 @@ function fo(): number {
     m: meresBeolvas(readFileSync(f, 'utf8')),
   }));
 
-  const mindProba = meresek.every((x) => x.m.fajl.nev === 'egy-szamla-rendes.pdf');
+  const mindProba = meresek.every((x) => PROBAFAJLOK.has(x.m.fajl.nev));
   console.log(osszevet(meresek, mindProba ? probaszamlaElvart() : null));
   return 0;
 }

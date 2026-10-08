@@ -10,6 +10,7 @@ import {
   KiolvasasHiba,
 } from '../shared/uzleti/openrouter.ts';
 import { xmlbolKiolvas } from '../shared/uzleti/xml/beolvasas.ts';
+import { toolSema } from '../shared/uzleti/sema.ts';
 import {
   felderit,
   igenyelModellt,
@@ -185,6 +186,8 @@ export async function egyFutas(
         gondolkodasToken: null,
         koltseg: null,
         idoMs: Date.now() - kezdet,
+        valaszHossz: null,
+        idegenKulcsok: [],
         eredmeny: lancon(eredmeny.nyers, felderites),
       };
     }
@@ -226,6 +229,8 @@ export async function egyFutas(
       gondolkodasToken: valasz.gondolkodasToken,
       koltseg: valasz.koltseg,
       idoMs: Date.now() - kezdet,
+      valaszHossz: JSON.stringify(valasz.nyers).length,
+      idegenKulcsok: idegenKulcsok(valasz.nyers),
       eredmeny: lancon(valasz.nyers, felderites),
     };
   } catch (hiba) {
@@ -243,6 +248,15 @@ export async function egyFutas(
     }
     throw hiba;
   }
+}
+
+/**
+ * A modell válaszának azon felső szintű kulcsai, amik **nincsenek** a
+ * sémában. Csak a nevük – az értékük valódi számlánál valódi adat volna.
+ */
+export function idegenKulcsok(nyers: Record<string, unknown>): string[] {
+  const ismert = new Set(Object.keys(toolSema()['properties'] as Record<string, unknown>));
+  return Object.keys(nyers).filter((k) => !ismert.has(k)).sort();
 }
 
 /**

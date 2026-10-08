@@ -6964,3 +6964,37 @@ Google (Vertex) a modellt. Ha igen, a címzett-kérdés egyszerűbb.
 kikényszerített függvényhívásnál **nem gondolkodik**. A Gemini ugyanott
 ~743 tokent gondolkodik. Olcsóbb, de a nehéz számlákon ez pontosságba
 kerülhet. Ezért kell a kép alapú és a háromszámlás próbafájl is a mérésbe.
+
+### Első eredmények (2026-10-08, a tulajdonos gépén)
+
+- **A Haiku 5.5-öt a Google (Vertex) is kiszolgálja**, a mai névsoron belül.
+  A `--szolgaltato` nélküli futás jelentésében `kiszolgálta: Google` áll.
+- **A `--szolgaltato anthropic` 10/10 futásban 404-et adott**, 30–280 ms
+  alatt, modellhívás és költség nélkül. Az Anthropic saját végpontja a négy
+  kikötéssel nem szolgálható ki. Nem is kell.
+- **Háromszámlás köteg (`harom-szamla-rendes.pdf`), 3–3 futás:**
+
+| | Gemini 3.8 Flash | Haiku 5.5 |
+|---|---|---|
+| siker | 3/3 | 3/3 |
+| gondolkodás (med) | 485 | 0 |
+| kimenet (med, min–max) | 904 (871–940) | 2317 (759–2329) |
+| idő (med) | 7,7 s | 6,9 s |
+| költség / futás | 0,0067 $ | 0,0020 $ (~3,4× olcsóbb) |
+| több irat zászló | 3/3 | 3/3 |
+| mezőnként eltérő érték | mind 1 | mind 1 |
+
+**Két hiányosság a mérőeszközben, javítva:**
+- **A háromszámlás köteget az összevető „valódi számlának” vette**, és
+  elrejtette az értékeket. Pedig a helyes válasz ismert: a prompt szerint az
+  első számla, ugyanaz, mint az `egy-szamla-rendes.pdf`. Mostantól
+  (`PROBAFAJLOK`) ehhez mér. Ismeretlen fájlnál új sor mutatja, hogy a
+  modellek ugyanazt olvasták-e ki (✓/✗, érték nélkül).
+- **A Haiku gondolkodás nélkül is ~2300 kimeneti tokent írt**, a Gemini
+  válasza gondolkodás nélkül ~420. Ez a Haiku költségének a fele, és nem volt
+  mivel megnézni, mire megy el. Ezért a futás mostantól menti:
+  - a válasz hosszát karakterben;
+  - a sémán kívüli kulcsok **nevét** (az értéküket nem).
+
+  A tisztítás ezeket a kulcsokat eldobja, tehát a kiolvasást nem rontják,
+  csak a költséget növelik.

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { argumentumok, egyFutas, KapcsoloHiba, lancon, merj, ProbaHiba } from './meres.ts';
+import { argumentumok, egyFutas, idegenKulcsok, KapcsoloHiba, lancon, merj, ProbaHiba } from './meres.ts';
 import { jelentes, jsonAlak } from './jelentes.ts';
 import { readFileSync, readdirSync } from 'node:fs';
 import { VERZIO } from '../shared/uzleti/prompt.ts';
@@ -402,5 +402,19 @@ describe('a gondolkodás mérése', () => {
         expect(readFileSync(`${MAPPA}${fn.name}/${f}`, 'utf8'), `${fn.name}/${f}`).not.toMatch(/\bgondolkodas\b|\breasoning:\s*\{/);
       }
     }
+  });
+});
+
+describe('sémán kívüli kulcsok', () => {
+  test('csak a sémában nem szereplő felső szintű kulcsok neve, ábécérendben', () => {
+    expect(
+      idegenKulcsok({ supplier_name: 'X', confidence: {}, tetelek: [1, 2], megjegyzes: 'titok' }),
+    ).toEqual(['megjegyzes', 'tetelek']);
+  });
+
+  test('a séma minden kulcsa ismert', () => {
+    expect(
+      idegenKulcsok({ doc_type: 'szamla', afa_bontas: [], tobb_irat_gyanu: false, nehezen_olvashato: false, confidence: {} }),
+    ).toEqual([]);
   });
 });

@@ -25,6 +25,8 @@ function modellFutas(nyers: Record<string, unknown>): Futas {
     gondolkodasToken: 891,
     koltseg: 0.006703,
     idoMs: 9012,
+    valaszHossz: 812,
+    idegenKulcsok: [],
     eredmeny: lancon(nyers, KEP),
   };
 }
@@ -149,6 +151,14 @@ describe('jelentés', () => {
   test('megmondja, melyik modell felelt valójában, és melyik prompt ment ki', () => {
     expect(szoveg).toContain('google/gemini-3.8-flash-002');
     expect(szoveg).toContain('v6-2026-09-04');
+  });
+
+  test('a válasz hossza látszik; a sémán kívüli kulcsnak csak a neve', () => {
+    expect(szoveg).toContain('812 karakter');
+    expect(szoveg).not.toContain('sémán kívüli kulcs');
+
+    const idegen = jelentes({ ...meres, futasok: [{ ...modellFutas(ALAP), idegenKulcsok: ['tetelek'] }] });
+    expect(idegen).toMatch(/⚠️ sémán kívüli kulcs:\s+tetelek/);
   });
 
   test('a költség dollárban áll — a forint átszámítás volna, nem mérés', () => {

@@ -103,6 +103,30 @@ describe('a mérések összevetése', () => {
   });
 });
 
+describe('két modell: ugyanazt olvasták-e ki', () => {
+  const valodi = (nev: string, szallito: string): MeresJson => ({
+    fajl: { nev: 'szamla.pdf' },
+    beallitas: { modell: nev, gondolkodas: 'alap' },
+    futasok: [futas(0, { supplier_name: szallito }), futas(0, { supplier_name: szallito })],
+  });
+
+  it('mezőnként igen/nem, érték nélkül', () => {
+    const t = osszevet(
+      [
+        { nev: 'gemini', m: valodi('g', 'Titkos Partner Kft.') },
+        { nev: 'haiku', m: valodi('h', 'Másik Titkos Bt.') },
+      ],
+      null,
+    );
+
+    expect(t).toContain('EGYEZIK AZ 1. OSZLOPPAL');
+    expect(t).toMatch(/ {2}Szállító\s+–\s+✗/);
+    expect(t).toMatch(/ {2}Bizonylatszám\s+–\s+✓/);
+    expect(t).not.toContain('Titkos');
+  });
+
+});
+
 describe('az eltérés jellege', () => {
   it('egyezésnél nincs mit mondani', () => {
     expect(elteresJellege('net_amount', ['100', '100'])).toBeNull();
@@ -163,5 +187,26 @@ describe('az összevető Node-dal indul', () => {
     expect(f.stdout).toContain('meres-alap');
     expect(f.stdout).toContain('effort: low');
     expect(f.stdout).toContain('MEZŐK – helyes / sikeres');
+  });
+
+  /**
+   * 2026-10-08: a háromszámlás köteg mérését az összevető „valódi számlának"
+   * vette, és csak azt írta ki, hány különböző érték jött – holott a helyes
+   * válasz ismert (az első számla, lásd `PROBAFAJLOK`).
+   */
+  it('a háromszámlás kötegnél is a helyes értékhez mér', () => {
+    const mappa = mkdtempSync(join(tmpdir(), 'osszevetes-'));
+    const harom = { ...LOW, fajl: { nev: 'harom-szamla-rendes.pdf' } };
+    writeFileSync(join(mappa, 'gemini-harom.json'), JSON.stringify(harom));
+    writeFileSync(join(mappa, 'haiku-harom.json'), JSON.stringify(harom));
+
+    const f = spawnSync(
+      process.execPath,
+      ['eszkozok/meres-osszevetes.ts', join(mappa, 'gemini-harom.json'), join(mappa, 'haiku-harom.json')],
+      { encoding: 'utf8', timeout: 30_000 },
+    );
+
+    expect(f.stdout).toContain('MEZŐK – helyes / sikeres');
+    expect(f.stdout).not.toContain('valódi számla');
   });
 });

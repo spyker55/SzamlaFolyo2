@@ -30,6 +30,14 @@ export type Futas = {
   gondolkodasToken: number | null;
   koltseg: number | null;
   idoMs: number;
+  /**
+   * A függvényhívás argumentumainak hossza karakterben, és a sémán kívüli
+   * kulcsok **neve** (érték nélkül). XML-ágon `null` és `[]`. A 2026-10-08-i
+   * Haiku-mérés hozta: gondolkodás nélkül ~2300 kimeneti token jött a
+   * Gemini ~420-ával szemben, és nem volt mivel megnézni, mire ment el.
+   */
+  valaszHossz: number | null;
+  idegenKulcsok: string[];
   eredmeny: LancEredmeny;
 };
 
@@ -250,6 +258,15 @@ function olvasoSorok(f: Futas): string[] {
   }
 
   sorok.push(par('költség', koltsegSzo(f.koltseg)));
+
+  if (f.valaszHossz !== null) {
+    sorok.push(par('válasz hossza', `${f.valaszHossz} karakter`));
+  }
+  if (f.idegenKulcsok.length > 0) {
+    // A tisztítás ezeket eldobja, tehát az eredményt nem rontják – csak
+    // fizetünk értük.
+    sorok.push(par('⚠️ sémán kívüli kulcs', f.idegenKulcsok.join(', ')));
+  }
 
   return sorok;
 }
