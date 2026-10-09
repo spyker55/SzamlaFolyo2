@@ -19,13 +19,19 @@
  * - a fordulatok a jóváhagyott nyitólapot, a Könyvelőknek oldalt és a
  *   `marketing/hirdetes/szovegek.ts` szövegét követik.
  *
+ * 2026-10-09 óta a nyitólap átírása szerint is: „Excel (XLSX)" a puszta
+ * „XLSX" helyett, a bemutatkozásban a tulajdonos háttere és az EU-s tárolás
+ * (a `TAPASZTALAT` a hirdetéscsomagból, amit az ottani őr a nyitólappal
+ * vet össze), a jóváhagyás pedig előnyként áll elöl („nálad marad"), a
+ * pontos „alapbeállítás szerint" alakkal.
+ *
  * A könyvelőknek szóló üzenetek **magázók**, mert ismeretlen irodának
  * szólnak. A Facebook-bejegyzések **tegezők**, ahogy a csoportokban szokás és
  * ahogy a weboldal is beszél.
  */
 import { szamlafolyo } from '@config/szamlafolyo.ts';
 import { szolgaltato } from '@/oldalak/jogi/adatok.ts';
-import { ft } from '../hirdetes/szovegek.ts';
+import { ft, TAPASZTALAT } from '../hirdetes/szovegek.ts';
 
 const { proba } = szamlafolyo;
 const { kicsi, kozepes, nagy } = szamlafolyo.csomagok;
@@ -86,7 +92,7 @@ export const KONYVELO: KonyveloCsomag = {
 
   linkedinElsoUzenet: [
     'Köszönöm, hogy visszaigazolt, [Név]!',
-    'Röviden arról, amin dolgozom: a SzámlaFolyó az ügyfelektől érkező bizonylatok adatait olvassa ki, a külföldi számlákét, nyugtákét és fotózott blokkokét is. Megjelöli, amit érdemes átnézni, a jóváhagyott tételeket pedig ügyfelenként exportálja az RLB Kettős, a Novitax NTAX vagy a Kulcs-Könyvelés számára.',
+    `Röviden arról, amin dolgozom: a SzámlaFolyót ${TAPASZTALAT} fejlesztem. Az ügyfelektől érkező bizonylatok adatait olvassa ki, a külföldi számlákét, nyugtákét és fotózott blokkokét is. Megjelöli, amit érdemes átnézni, a jóváhagyott tételeket pedig ügyfelenként exportálja az RLB Kettős, a Novitax NTAX vagy a Kulcs-Könyvelés számára.`,
     'Egy rövid, feliratos bemutatóvideó itt látható: https://szamlafolyo.hu/konyveloknek#bemutato',
     'Leginkább az érdekelne, hogy egy irodában mi hiányozna belőle. Ha lenne 10 perce, képernyőmegosztással szívesen megmutatom, vagy ki is próbálhatja: ' +
       `${probaMondat}.`,
@@ -98,14 +104,15 @@ export const KONYVELO: KonyveloCsomag = {
     szoveg: [
       'Tisztelt [Név]!',
       '[Személyes mondat]',
-      `${ALAIRO} vagyok, a SzámlaFolyó fejlesztője. Ez egy online eszköz, amely az ügyfelektől érkező bizonylatok adatait olvassa ki: a külföldi számlákét, a nyugtákét, a fotózott blokkokét és a támogatott e-számla XML-ekét is.`,
+      `${ALAIRO} vagyok, a SzámlaFolyó fejlesztője és üzemeltetője; ${TAPASZTALAT} építem. Ez egy online eszköz, amely az ügyfelektől érkező bizonylatok adatait olvassa ki: a külföldi számlákét, a nyugtákét, a fotózott blokkokét és a támogatott e-számla XML-ekét is.`,
       [
         'Az Önök irodájában így nézne ki:',
         '• az ügyfél e-mailben továbbítja a bizonylatot a munkaterület saját beküldési címére, vagy Önök töltik fel;',
         '• a rendszer kiolvassa az adatokat, és számítással ellenőrzi az adószám ellenőrző számjegyét, valamint a nettó, az áfa és a bruttó összefüggését;',
-        '• alapbeállítás szerint minden bizonylatot egy munkatárs hagy jóvá;',
-        '• a jóváhagyott tételek ügyfelenként exportálhatók az RLB Kettős, a Novitax NTAX és a Kulcs-Könyvelés számára, vagy XLSX, CSV és JSON formátumban.',
+        '• a jóváhagyás az irodánál marad: alapbeállítás szerint minden bizonylatot egy munkatárs hagy jóvá;',
+        '• a jóváhagyott tételek ügyfelenként exportálhatók az RLB Kettős, a Novitax NTAX és a Kulcs-Könyvelés számára, vagy Excel (XLSX), CSV és JSON formátumban.',
       ].join('\n'),
+      'Az adatbázist és a bizonylatfájlokat Frankfurtban, az Európai Unióban tároljuk. A feldolgozásban részt vevő szolgáltatókat az adatkezelési tájékoztató sorolja fel: https://szamlafolyo.hu/adatkezeles',
       'A NAV-ból átvett számlaadatokat nem váltja ki: azok mellett a többi bizonylat feldolgozását segíti.',
       'Egy rövid, feliratos bemutató és egy költségkalkulátor itt található: https://szamlafolyo.hu/konyveloknek',
       `Ha érdekli, 10 percben szívesen megmutatom online, vagy ki is próbálhatják: ${probaMondat}. Az is sokat segítene, ha megírná, mi hiányzik belőle egy irodai munkafolyamathoz.`,
@@ -129,6 +136,7 @@ export const KONYVELO: KonyveloCsomag = {
       pontok: [
         'Milyen bizonylatok jönnek az ügyfelektől, és hogyan: e-mailben, papíron, fotón?',
         'Melyik könyvelőprogramot használják? A 4. lépésben azt mutasd.',
+        `Egy mondat magadról: ${TAPASZTALAT} fejleszted, az adat Frankfurtban (EU) van. Ha rákérdez: a kiolvasás Unión kívüli feldolgozással jár, ezt az adatkezelési tájékoztató írja le.`,
       ],
     },
     {
@@ -154,7 +162,7 @@ export const KONYVELO: KonyveloCsomag = {
       cim: 'Ügyfelenkénti export',
       pontok: [
         'Szűrés az ügyfél adószáma szerint; a belföldi és a közösségi alakot összerendeli.',
-        'Az ő programjának exportja (RLB Kettős, Novitax NTAX vagy Kulcs-Könyvelés), vagy XLSX, CSV, JSON. Az eredeti fájlok ZIP-ben.',
+        'Az ő programjának exportja (RLB Kettős, Novitax NTAX vagy Kulcs-Könyvelés), vagy Excel (XLSX), CSV, JSON. Az eredeti fájlok ZIP-ben.',
       ],
     },
     {
@@ -219,7 +227,7 @@ export const FACEBOOK: readonly FacebookBejegyzes[] = [
         '• Legyen külön postafiók vagy címke a bejövő számláknak, és a szállítóknak ezt add meg számlázási címként.',
         '• A levelezőben egy szűrővel a PDF-mellékletes számlákat automatikusan felcímkézheted, így nem vesznek el a többi levél között.',
       ].join('\n'),
-      `${NYILT_KOZLES} Ott a munkaterületed saját beküldési e-mail-címet kaphat: ha oda továbbítod a számlát, a melléklet a Beérkezőbe kerül, a rendszer kiolvassa az adatokat, te pedig átnézed és jóváhagyod. A beküldés alapból ki van kapcsolva, és a cím bármikor lecserélhető. https://szamlafolyo.hu`,
+      `${NYILT_KOZLES} Ott a munkaterületed saját beküldési e-mail-címet kaphat: ha oda továbbítod a számlát, a melléklet a Beérkezőbe kerül, a rendszer kiolvassa az adatokat, te jóváhagyod, és a könyvelődnek Excel-táblázatot (XLSX) küldhetsz. A beküldés alapból ki van kapcsolva, és a cím bármikor lecserélhető. https://szamlafolyo.hu`,
       'Nálad hogyan jut el a számla a könyvelőhöz?',
     ].join('\n\n'),
   },
@@ -229,7 +237,7 @@ export const FACEBOOK: readonly FacebookBejegyzes[] = [
     szoveg: [
       'Kérdés könyvelőknek: mennyi idő megy el azokra a bizonylatokra, amelyek nincsenek benne a NAV-os adatokban?',
       'Külföldi számlák, nyugták, fotózott blokkok. A NAV-ból átvett számlaadatok sok kézi munkát megtakarítanak, ezeket viszont továbbra is valakinek rögzítenie kell.',
-      `${NYILT_KOZLES} Pont erre készült: kiolvassa a beküldött bizonylatok adatait, megjelöli, amit érdemes átnézni, a jóváhagyott tételeket pedig ügyfelenként exportálja az RLB Kettős, a Novitax NTAX és a Kulcs-Könyvelés számára, vagy XLSX, CSV és JSON formátumban. Az eredeti fájlok ZIP-ben is letölthetők.`,
+      `${NYILT_KOZLES} Pont erre készült: kiolvassa a beküldött bizonylatok adatait, megjelöli, amit érdemes átnézni, a jóváhagyott tételeket pedig ügyfelenként exportálja az RLB Kettős, a Novitax NTAX és a Kulcs-Könyvelés számára, vagy Excel (XLSX), CSV és JSON formátumban. Az eredeti fájlok ZIP-ben is letölthetők.`,
       'A NAV-adatokat nem váltja ki, azok mellett a többi bizonylatra való. A könyvelőknek szóló oldalon van egy rövid, feliratos bemutató és egy költségkalkulátor: https://szamlafolyo.hu/konyveloknek',
       'Őszintén érdekelne: nálatok mi hiányozna belőle?',
     ].join('\n\n'),
@@ -246,7 +254,7 @@ export const FACEBOOK: readonly FacebookBejegyzes[] = [
         '• Az áfabontás sorai kiadják-e a végösszeget.',
       ].join('\n'),
       'Amit viszont számítással nem lehet ellenőrizni: a neveket, címeket és más szöveges adatokat. Ezeket érdemes az eredetivel összevetni.',
-      `${NYILT_KOZLES} Ezeket az ellenőrzéseket elvégzi, és megjelöli, ahol eltérést talál. Alapbeállítás szerint minden bizonylat a te jóváhagyásodra vár, és csak a jóváhagyott tétel kerül exportba. https://szamlafolyo.hu`,
+      `${NYILT_KOZLES} Ezeket az ellenőrzéseket elvégzi, és megjelöli, ahol eltérést talál. A jóváhagyás nálad marad: alapbeállítás szerint minden bizonylat a te jóváhagyásodra vár, és csak a jóváhagyott tétel kerül exportba. https://szamlafolyo.hu`,
       'Te mit nézel meg elsőként egy beérkezett számlán?',
     ].join('\n\n'),
   },

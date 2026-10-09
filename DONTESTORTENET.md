@@ -7422,3 +7422,31 @@ kártyafej „A SzámlaFolyó mögött”.
 - **Új figyelmeztetés:** a `nyitolap.mp4`-gyel ne indíts hirdetést. A
   nyitókártyáján a „könyvelésre kész” áll, és az a lapon nincs. A videó maga
   marad, ez a tulajdonos döntése.
+
+### A megkereső szövegek is (2026-10-09, `marketing/megkereses/`)
+
+A tulajdonos kérésére a könyvelőknek szóló levelek és a Facebook-bejegyzések
+is az új nyitólapot követik:
+- **„Excel (XLSX)”** áll a puszta „XLSX” helyett: az e-mailben, a
+  bemutatóban és a 3. Facebook-bejegyzésben.
+- **Bemutatkozás a tulajdonos hátterével:**
+  - a LinkedIn első üzenetében és az e-mailben „10 év rendszergazdai és
+    IT-biztonsági tapasztalattal”;
+  - a bemutató első percében egy mondat magadról, az EU-s tárolással.
+  
+  A `TAPASZTALAT` a hirdetéscsomagból jön, amit az ottani őr a nyitólappal
+  vet össze.
+- **Az e-mailben új bekezdés:** a tárolás Frankfurtban van, a szolgáltatókat
+  az adatkezelési tájékoztató sorolja fel (linkkel).
+- **A bemutató vázlatában kész válasz arra, ha rákérdeznek:** a kiolvasás
+  Unión kívüli feldolgozással jár.
+- **A jóváhagyás előnyként áll elöl** („az irodánál marad”, „nálad marad”), a
+  pontos „alapbeállítás szerint” alakkal együtt.
+- **A 2. Facebook-bejegyzés** (vállalkozóknak) megkapta a kézzelfogható
+  hasznot: „a könyvelődnek Excel-táblázatot (XLSX) küldhetsz”.
+
+**Őr:** a `TILTOTT` lista új mintája, a `/(?<!\()XLSX/`, mindkét csomagra
+érvényes: a puszta „XLSX” csak zárójelben, az Excel mellett állhat.
+Szándékos rontás (puszta „XLSX” a 3. bejegyzésben): piros lett. A
+`megkereses/SZOVEGEK.md` újragyártva. A hirdetésképek az újragyártás után
+bájtra azonosak maradtak.

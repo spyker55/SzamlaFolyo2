@@ -515,5 +515,8 @@ export const TILTOTT: readonly { minta: RegExp; miert: string }[] = [
   // 2026-10-09-ig a `2-jovahagyas` képén és címsorában állt. A gépi jóváhagyás
   // létező, bekapcsolható funkció – a mondat csak „alapbeállítás szerint" igaz
   // (ugyanaz a szabály, mint a nyitólapon: `jogiSzovegek.test.ts`, 9. pont).
+  // 2026-10-09: a nyitólap óta „Excel (XLSX)", a puszta formátumnév egy
+  // vállalkozónak semmit nem mond. Zárójelben (Excel mellett) maradhat.
+  { minta: /(?<!\()XLSX/, miert: 'Puszta „XLSX" helyett „Excel (XLSX)", ahogy a nyitólapon.' },
   { minta: /minden bizonylatot\s+te hagy/i, miert: 'A gépi jóváhagyás bekapcsolható: csak „alapbeállítás szerint" igaz.' },
 ];

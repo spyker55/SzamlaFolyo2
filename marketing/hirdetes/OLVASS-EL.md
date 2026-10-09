@@ -239,6 +239,7 @@ A `szovegek.ts` `TILTOTT` listája, és az őr mindegyiket keresi. Ha hirdetést
 | Ne írd | Miért | Ami helyette igaz |
 |---|---|---|
 | „teljesen automatikus”, „nem kell hozzányúlnod” | Alapból minden bizonylat emberi jóváhagyásra vár | „A jóváhagyás nálad marad, a rendszer megjelöli, amit érdemes átnézni” |
+| puszta „XLSX” | Egy vállalkozónak nem mond semmit; a nyitólap 2026-10-09 óta így írja | „Excel (XLSX)”, „Excel-táblázat a könyvelődnek” |
 | „Minden bizonylatot te hagysz jóvá” | A gépi jóváhagyás bekapcsolható, a mondat csak alapbeállítás szerint igaz | „A gép kiolvas. Te jóváhagyod.” |
 | „hibátlan”, „100%”, „garantált” | A nevekre nincs számítással ellenőrzés | „Amit ki lehet számolni, azt kiszámoljuk” |
 | „magyar szerveren” | Az adat Frankfurtban (EU) van | „Adattárolás az EU-ban” |
