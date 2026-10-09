@@ -16,7 +16,9 @@ import {
   TILTOTT,
 } from './szovegek.ts';
 import { GOOGLE_MERETEK, META_MERETEK } from './meretek.ts';
-import { BEERKEZO_SOROK, MEZOK, VALIDATOR_UZENET } from './minta.ts';
+import { BEERKEZO_SOROK, BIZALMI_PONTOK, MEZOK, VALIDATOR_UZENET } from './minta.ts';
+import { TAPASZTALAT, TULAJDONOS } from './szovegek.ts';
+import { szolgaltato } from '../../src/oldalak/jogi/adatok.ts';
 import { ervenyes } from '@uzleti/adoszam.ts';
 
 /**
@@ -183,6 +185,16 @@ describe('a képek csak létező felületet mutatnak', () => {
   it('a validátor mondata szó szerint az alkalmazásé', () => {
     const validatorok = readFileSync(`${ITT}../../shared/uzleti/validatorok.ts`, 'utf8');
     expect(validatorok).toContain(`'${VALIDATOR_UZENET}'`);
+  });
+
+  it('a bizalmi üzenet azt mondja, amit a nyitólap „Ki csinálja?" szakasza', () => {
+    // A hirdetés ne ígérjen többet a céloldalnál: minden pont, a név és a
+    // tapasztalat ma is ott áll a nyitólapon.
+    const nyitolap = readFileSync(`${ITT}../../src/oldalak/Nyitolap.tsx`, 'utf8');
+    expect(BIZALMI_PONTOK.length).toBeGreaterThan(0);
+    for (const p of BIZALMI_PONTOK) expect(nyitolap, `${p.szoveg} – a nyitólapon nincs: „${p.nyitolapon}"`).toContain(p.nyitolapon);
+    expect(nyitolap).toContain(`'${TAPASZTALAT}'`);
+    expect(szolgaltato.nev.startsWith(`${TULAJDONOS} `)).toBe(true);
   });
 
   it('a bizonylatlista sorai a nyitólap mintájával egyeznek', () => {

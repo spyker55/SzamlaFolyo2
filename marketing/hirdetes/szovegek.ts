@@ -14,13 +14,23 @@
  * - a képek (`keszit.ts`), a szöveges áttekintés (`SZOVEGEK.md`) és a Google
  *   Ads Editor CSV-k **ebből** készülnek, így nem csúszhatnak el egymástól.
  *
- * A megfogalmazás a 2026-09-25-i nyitólap és Könyvelőknek oldal jóváhagyott
- * szövegét követi: „rendezett adatok", „ellenőrzésre előkészít", „a
- * jóváhagyás nálad marad", „áfa" kisbetűvel. A „könyvelésre kész" és a
- * „percek alatt" szándékosan hiányzik: az előbbit az ÁSZF 3. pontja 2026-09-25
- * óta nem mondja, az utóbbit nem mértük.
+ * A megfogalmazás a 2026-10-09-i nyitólapot és a Könyvelőknek oldalt követi:
+ * „Ne gépeld be a számlákat", „Excel-táblázat a könyvelődnek", „ügyfelenkénti
+ * importfájl", „a jóváhagyás nálad marad", „Adattárolás az EU-ban", „áfa"
+ * kisbetűvel. A „könyvelésre kész" és a „percek alatt" szándékosan hiányzik:
+ * az előbbit az ÁSZF 3. pontja 2026-09-25 óta nem mondja, az utóbbit nem
+ * mértük.
+ *
+ * # A nyitólap szerkezete a hirdetésben is (2026-10-09)
+ *
+ * Elöl a haszon és a bizalom, a fenntartás („alapbeállítás szerint", „nem
+ * szűr ki minden hibát") a hosszú szöveg végére kerül – ott is ott van, csak
+ * nem a lelkesedés helyén. A címsor és a kép nem ígér feltétel nélküli emberi
+ * jóváhagyást („Minden bizonylatot te hagysz jóvá" 2026-10-09-ig a képen
+ * állt): a gépi jóváhagyás létező, bekapcsolható funkció.
  */
 import { szamlafolyo } from '@config/szamlafolyo.ts';
+import { szolgaltato } from '../../src/oldalak/jogi/adatok.ts';
 
 /** Forintösszeg sima szóközös ezres tagolással („4 900 Ft"). */
 export function ft(osszeg: number): string {
@@ -30,6 +40,14 @@ export function ft(osszeg: number): string {
 const { proba } = szamlafolyo;
 const { kicsi, kozepes, nagy } = szamlafolyo.csomagok;
 const alapar = ft(kicsi.arHavi);
+
+/**
+ * A nyitólap „Ki csinálja?" szakaszának két adata, szó szerint. A név az
+ * Impresszumból jön (jogi forma nélkül), a tapasztalat a tulajdonos saját
+ * közlése – a `hirdetes.test.ts` méri, hogy a nyitólap ma is ugyanezt mondja.
+ */
+export const TULAJDONOS = szolgaltato.nev.replace(/ egyéni vállalkozó$/, '');
+export const TAPASZTALAT = '10 év rendszergazdai és IT-biztonsági tapasztalattal';
 
 /** A céloldal. A horgonyokat az `App.tsx` `horgonyraUgrik()`-ja görgeti oda. */
 export const WEBOLDAL = 'https://szamlafolyo.hu';
@@ -59,7 +77,7 @@ export const KORLAT = {
  * Meta (Facebook, Instagram)
  * ====================================================================== */
 
-export type Vizual = 'beerkezo' | 'kartya' | 'programok' | 'email' | 'xml' | 'szamok';
+export type Vizual = 'beerkezo' | 'kartya' | 'programok' | 'email' | 'xml' | 'szamok' | 'bizalom';
 
 export type MetaUzenet = {
   /** Fájlnév-előtag és hirdetésazonosító. */
@@ -85,25 +103,26 @@ export type MetaUzenet = {
 
 export const META: readonly MetaUzenet[] = [
   {
-    id: '1-rendezett',
-    kinek: 'Széles: vállalkozók és könyvelők együtt – ez a fő üzenet tesztje',
+    id: '1-gepeles',
+    kinek: 'Széles: vállalkozók és könyvelők együtt – a nyitólap fő üzenete',
     celoldal: '/',
     gomb: 'További információ',
     kep: {
       jelveny: 'Vállalkozóknak és könyvelőknek',
-      cim: ['Számlákból', 'rendezett adatok,', 'kevesebb kézi munkával.'],
-      kiemelt: 1,
-      alcim: 'Feltöltöd vagy e-mailben továbbítod, a SzámlaFolyó kiolvassa, te átnézed és jóváhagyod.',
+      cim: ['Ne gépeld be', 'a számlákat.', 'Töltsd fel őket.'],
+      kiemelt: 2,
+      alcim: 'Fotó, PDF vagy e-számla: a SzámlaFolyó kiolvassa, megjelöli, amit érdemes megnézned, te jóváhagyod, és viszed tovább.',
       vizual: 'beerkezo',
     },
-    cimsorok: ['Számlákból rendezett adatok', 'Kevesebb kézi adatrögzítés', 'Feltöltöd, átnézed, exportálod'],
+    cimsorok: ['Ne gépeld be a számlákat', 'Töltsd fel, és viszed tovább', 'Excel-táblázat a könyvelődnek'],
     leirasok: [`${proba.napok} nap ingyenes próba`, 'Bankkártya nélkül'],
     elsodlegesRovid:
-      'Töltsd fel a számlákat, vagy továbbítsd őket e-mailben. A SzámlaFolyó kiolvassa az adatokat, te átnézed és jóváhagyod.',
+      'Ne gépeld be a számlákat. Töltsd fel vagy továbbítsd őket e-mailben: a SzámlaFolyó kiolvassa, te jóváhagyod.',
     elsodlegesHosszu: [
       'A számlák adatait valakinek be kell gépelnie. Vagy mégsem?',
-      'Töltsd fel a számlákat és nyugtákat, vagy továbbítsd őket e-mailben. A SzámlaFolyó kiolvassa az adatokat, és megjelöli, ahol ellenőrzésre van szükség. Te átnézed, jóváhagyod, majd letöltöd őket a könyveléshez XLSX, CSV vagy JSON formátumban.',
-      'Vállalkozóként egyszerűbben készítheted elő a bizonylatokat a könyvelődnek. Könyvelőként kevesebb időt tölthetsz az adatok kézi rögzítésével.',
+      'Fotó, PDF vagy e-számla: töltsd fel, vagy továbbítsd e-mailben. A SzámlaFolyó kiolvassa az adatokat, és megjelöli, amit érdemes megnézned. Te jóváhagyod, és viszed tovább:',
+      '• Vállalkozóként: Excel-táblázat (XLSX) a könyvelődnek.\n• Könyvelőként: ügyfelenkénti importfájl – RLB Kettős, Novitax NTAX vagy Kulcs-Könyvelés.',
+      `Adattárolás az EU-ban. A SzámlaFolyót ${TULAJDONOS} fejleszti, ${TAPASZTALAT}.`,
       `${proba.napok} napos ingyenes próba, ${proba.dokumentumok} dokumentum, bankkártya nélkül. → szamlafolyo.hu`,
     ].join('\n\n'),
   },
@@ -114,20 +133,20 @@ export const META: readonly MetaUzenet[] = [
     gomb: 'További információ',
     kep: {
       jelveny: 'A jóváhagyás nálad marad',
-      cim: ['Minden bizonylatot', 'te hagysz jóvá.'],
+      cim: ['A gép kiolvas.', 'Te jóváhagyod.'],
       kiemelt: 1,
-      alcim: 'A rendszer megjelöli a bizonytalan adatokat. Alapbeállítás szerint csak az általad jóváhagyott tétel kerül exportba.',
+      alcim: 'A rendszer megjelöli a bizonytalan adatokat és az eltéréseket, így rögtön látod, mire érdemes figyelned.',
       vizual: 'kartya',
     },
-    cimsorok: ['Minden bizonylatot te hagysz jóvá', 'A gép kiolvas, te döntesz', 'Megjelöljük, amit érdemes átnézni'],
+    cimsorok: ['A gép kiolvas, te jóváhagyod', 'A jóváhagyás nálad marad', 'Megjelöljük, amit érdemes átnézni'],
     leirasok: ['A jóváhagyás nálad marad', `${proba.napok} nap ingyenes próba`],
     elsodlegesRovid:
-      'A SzámlaFolyó megjelöli a bizonytalan adatokat és az eltéréseket. Alapbeállítás szerint minden bizonylatot te hagysz jóvá.',
+      'A SzámlaFolyó kiolvassa a számlákat, és megjelöli a bizonytalan adatokat és az eltéréseket. A jóváhagyás nálad marad.',
     elsodlegesHosszu: [
       '„És mi van, ha rosszul olvassa ki?"',
-      'Jogos kérdés, ezért a SzámlaFolyóban alapbeállítás szerint minden bizonylat a te jóváhagyásodra vár. Csak az általad jóváhagyott tételek kerülhetnek az exportba.',
-      'A rendszer addig megjelöli a bizonytalan adatokat és az észlelt eltéréseket, a kézzel írt bizonylatokat pedig külön jelzi, így látod, hol érdemes alaposabban átnézned.',
-      'Az automatikus jóváhagyás külön bekapcsolható, de alapból ki van kapcsolva.',
+      'Jogos kérdés. A SzámlaFolyó ezért megjelöli a bizonytalan adatokat és az észlelt eltéréseket, a kézzel írt bizonylatokat pedig külön jelzi, így rögtön látod, hol érdemes alaposabban átnézned.',
+      'Ha kell, javítasz, aztán jóváhagyod. Az exportba a jóváhagyott bizonylatok kerülnek.',
+      'Jó tudni: alapbeállítás szerint minden bizonylat a te jóváhagyásodra vár. Az automatikus jóváhagyás külön bekapcsolható, de alapból ki van kapcsolva.',
       `${proba.napok} napos ingyenes próba, bankkártya nélkül. → szamlafolyo.hu`,
     ].join('\n\n'),
   },
@@ -151,7 +170,7 @@ export const META: readonly MetaUzenet[] = [
       'A kiolvasás csak az első lépés.',
       'A SzámlaFolyó a kiolvasott adatokat külön szabályok alapján is ellenőrzi:',
       '• a magyar adószám ellenőrző számjegyét számítással vizsgálja,\n• összeveti a nettó, az áfa- és a bruttó összegeket,\n• ellenőrzi az áfabontás sorait: ha nem adják ki a végösszeget, figyelmeztet.',
-      'Az ellenőrzések segítik az átnézést, de nem szűrnek ki minden hibát: a neveket és más szöveges adatokat érdemes összevetni az eredetivel.',
+      'Jó tudni: az ellenőrzések segítik az átnézést, de nem szűrnek ki minden hibát. A neveket és más szöveges adatokat érdemes összevetni az eredetivel.',
       `Próbáld ki a saját bizonylataiddal: ${proba.napok} nap, ${proba.dokumentumok} dokumentum, bankkártya nélkül. → szamlafolyo.hu`,
     ].join('\n\n'),
   },
@@ -164,7 +183,7 @@ export const META: readonly MetaUzenet[] = [
       jelveny: 'Könyvelőirodáknak',
       cim: ['Ügyfelenkénti export', 'RLB, Novitax és Kulcs', 'számára.'],
       kiemelt: 1,
-      alcim: 'RLB Kettős, Novitax NTAX és Kulcs-Könyvelés importfájl, vagy XLSX, CSV és JSON.',
+      alcim: 'RLB Kettős, Novitax NTAX és Kulcs-Könyvelés importfájl, vagy Excel (XLSX), CSV és JSON.',
       vizual: 'programok',
     },
     cimsorok: ['Ügyfelenkénti export könyvelőknek', 'Export RLB, Novitax és Kulcs számára', 'Kevesebb kézi rögzítés az irodában'],
@@ -174,8 +193,9 @@ export const META: readonly MetaUzenet[] = [
     elsodlegesHosszu: [
       'A NAV-ból átvett számlaadatok sok munkát megtakarítanak. A külföldi számlák, nyugták és fotózott bizonylatok feldolgozása viszont továbbra is feladat.',
       'A SzámlaFolyó kiolvassa a beküldött bizonylatok adatait, megjelöli az ellenőrzést igénylő mezőket, és ügyfelenként exportálhatóvá teszi a jóváhagyott tételeket.',
-      'Export az RLB Kettős, a Novitax NTAX és a Kulcs-Könyvelés számára, valamint XLSX, CSV és JSON formátumban. Az eredeti bizonylatokat ZIP-ben is letöltheted.',
+      'Export az RLB Kettős, a Novitax NTAX és a Kulcs-Könyvelés számára, valamint Excel (XLSX), CSV és JSON formátumban. Az eredeti bizonylatokat ZIP-ben is letöltheted.',
       'Az iroda közös munkaterületén dolgozhattok, az ügyfelek pedig e-mailben is beküldhetik a bizonylataikat, ha engedélyezed.',
+      `Adattárolás az EU-ban. A SzámlaFolyót ${TULAJDONOS} fejleszti, ${TAPASZTALAT}.`,
       `${proba.napok} nap, ${proba.dokumentumok} dokumentum, ${proba.felhasznalok} felhasználó, bankkártya nélkül. → szamlafolyo.hu/konyveloknek`,
     ].join('\n\n'),
   },
@@ -243,8 +263,31 @@ export const META: readonly MetaUzenet[] = [
     elsodlegesHosszu: [
       `A SzámlaFolyót a saját bizonylataiddal próbálhatod ki: ${proba.napok} napig, ${proba.dokumentumok} dokumentumig, legfeljebb ${proba.felhasznalok} felhasználóval, bankkártya megadása nélkül. A próba alatt minden funkció elérhető.`,
       `Utána havi ${alapar}-tól: ${kicsi.nev} ${kicsi.dokumentumok}, ${kozepes.nev} ${kozepes.dokumentumok}, ${nagy.nev} ${nagy.dokumentumok} dokumentum havonta. A feltüntetett árak a fizetendő végösszegek: a szolgáltató alanyi adómentes, az árakra nem kerül további áfa.`,
-      'Az adatokat XLSX, CSV vagy JSON formátumban viszed tovább, az eredeti bizonylatokat ZIP-ben.',
+      'Az adatokat Excel-táblázatként (XLSX), CSV-ben, JSON-ban vagy importfájlként a könyvelőprogramba (RLB Kettős, Novitax NTAX, Kulcs-Könyvelés) viszed tovább, az eredeti bizonylatokat ZIP-ben.',
       '→ szamlafolyo.hu',
+    ].join('\n\n'),
+  },
+  {
+    id: '8-bizalom',
+    kinek: 'Mindkét közönség: aki ismeretlen szolgáltatónak nem adna bizonylatot',
+    celoldal: '/',
+    gomb: 'További információ',
+    kep: {
+      jelveny: 'Ki csinálja?',
+      cim: ['Tudod,', 'kinek', 'adod oda a számláidat.'],
+      kiemelt: 1,
+      alcim: `A SzámlaFolyót ${TULAJDONOS} fejleszti és üzemelteti, ${TAPASZTALAT}.`,
+      vizual: 'bizalom',
+    },
+    cimsorok: ['Tudod, kinek adod a számláidat', 'Adattárolás az EU-ban', 'Név szerint vállalt szolgáltatás'],
+    leirasok: ['Adattárolás az EU-ban', `${proba.napok} nap ingyenes próba`],
+    elsodlegesRovid: `Pénzügyi bizonylatot csak olyanra érdemes bízni, akit ismersz. A SzámlaFolyót ${TULAJDONOS} fejleszti.`,
+    elsodlegesHosszu: [
+      'Pénzügyi bizonylatot csak olyan szolgáltatásra érdemes bízni, amelyről tudod, ki üzemelteti, és hogyan bánik az adatokkal.',
+      `A SzámlaFolyót ${TULAJDONOS} fejleszti és üzemelteti, ${TAPASZTALAT}.`,
+      '• Az adatbázist és a bizonylatfájlokat Frankfurtban, az Európai Unióban tároljuk.\n• Minden cég adatai adatbázisszinten el vannak különítve.\n• A feltöltött bizonylatokat mesterséges intelligencia tanítására nem használjuk.\n• Bankkártyaadatot nem látunk: a fizetést a Stripe kezeli.',
+      'Jó tudni: a kiolvasás Unión kívüli adatfeldolgozással jár. A részleteket az adatkezelési tájékoztató írja le.',
+      `${proba.napok} napos ingyenes próba, bankkártya nélkül. → szamlafolyo.hu`,
     ].join('\n\n'),
   },
 ];
@@ -277,13 +320,13 @@ export const GOOGLE_KERESES: readonly GoogleHirdetescsoport[] = [
     cimsorok: [
       'SzámlaFolyó számlafeldolgozás',
       'Számlák kiolvasása online',
-      'Kevesebb kézi adatrögzítés',
+      'Ne gépeld be a számlákat',
       'Számlák, nyugták egy helyen',
       'Továbbítsd a számlát e-mailben',
-      'Te hagyod jóvá a bizonylatot',
+      'A jóváhagyás nálad marad',
       'Adószám és áfa ellenőrzése',
       'E-számla XML közvetlen átvétel',
-      'Export XLSX, CSV, JSON',
+      'Excel-táblázat a könyvelődnek',
       `${proba.napok} nap ingyenes próba`,
       'Bankkártya nélkül kipróbálható',
       `Havi ${alapar}-tól`,
@@ -294,7 +337,7 @@ export const GOOGLE_KERESES: readonly GoogleHirdetescsoport[] = [
     leirasok: [
       'Töltsd fel vagy továbbítsd a számlát: kiolvassuk az adatait, te átnézed és jóváhagyod.',
       'Jelezzük az adószám hibáját és az összegek eltérését. A jóváhagyás nálad marad.',
-      'Számlák, nyugták, külföldi bizonylatok és e-számla XML egy folyamatban, egy exportban.',
+      'Excel-táblázat a könyvelődnek, vagy importfájl RLB, Novitax és Kulcs számára.',
       `${proba.napok} nap ingyenes próba, ${proba.dokumentumok} dokumentum, bankkártya nélkül. Havi ${alapar}-tól.`,
     ],
     kulcsszavak: [
@@ -337,7 +380,7 @@ export const GOOGLE_KERESES: readonly GoogleHirdetescsoport[] = [
     ],
     leirasok: [
       'Kiolvassuk a bizonylatokat, jelezzük az eltéréseket, és ügyfelenként exportálhatsz.',
-      'Export RLB Kettős, Novitax NTAX és Kulcs-Könyvelés számára, valamint XLSX, CSV, JSON.',
+      'Export RLB Kettős, Novitax NTAX és Kulcs-Könyvelés számára, valamint Excel, CSV, JSON.',
       'Külföldi számlák, nyugták, fotózott blokkok: a NAV-adatok mellett ezeket is kezeli.',
       `${proba.napok} nap, ${proba.dokumentumok} dokumentum, ${proba.felhasznalok} felhasználó, bankkártya nélkül. Számold ki az irodád díját.`,
     ],
@@ -412,7 +455,7 @@ export const GOOGLE_RESZLETEK = {
     'E-számla XML átvétel',
     'Adószám-ellenőrzés',
     'Ügyfelenkénti export',
-    'XLSX, CSV, JSON export',
+    'Excel, CSV, JSON export',
   ],
 } as const;
 
@@ -424,29 +467,29 @@ export const GOOGLE_PMAX = {
   cegnev: 'SzámlaFolyó',
   celoldal: `${WEBOLDAL}/`,
   cimsorok: [
-    'Számlákból rendezett adatok',
-    'Kevesebb kézi adatrögzítés',
-    'Te hagyod jóvá a bizonylatot',
+    'Ne gépeld be a számlákat',
+    'Excel-táblázat a könyvelődnek',
+    'A jóváhagyás nálad marad',
     `${proba.napok} nap ingyenes próba`,
     'Export RLB, Novitax, Kulcs',
   ],
   hosszuCimsorok: [
-    'Számlákból rendezett adatok, kevesebb kézi munkával',
-    'Feltöltöd vagy e-mailben továbbítod, a SzámlaFolyó kiolvassa, te jóváhagyod',
+    'Ne gépeld be a számlákat. Töltsd fel őket, és viszed tovább.',
+    'Fotó, PDF vagy e-számla: a SzámlaFolyó kiolvassa, te jóváhagyod',
     'Ügyfelenkénti export RLB Kettős, Novitax NTAX és Kulcs-Könyvelés számára',
   ],
   /** Az első a „rövid leírás" (legfeljebb 60 karakter). */
   leirasok: [
     `Számlák, nyugták, e-számla XML egy helyen. ${proba.napok} nap ingyen.`,
-    'Kiolvassuk a számlák adatait, jelezzük az eltéréseket, és te hagyod jóvá őket.',
-    'Adószám-ellenőrzés, nettó, áfa és bruttó összevetése, export XLSX, CSV, JSON formátumban.',
+    'Kiolvassuk a számlák adatait, jelezzük az eltéréseket, a jóváhagyás nálad marad.',
+    'Excel-táblázat a könyvelődnek, vagy importfájl RLB, Novitax és Kulcs számára.',
     `${proba.napok} nap, ${proba.dokumentumok} dokumentum, bankkártya nélkül. Utána havi ${alapar}-tól.`,
   ],
   gomb: 'Regisztráció',
 } as const;
 
 /** A Google-képekhez választott üzenetek (a Meta-üzenetek azonosítói). */
-export const GOOGLE_KEP_UZENETEK: readonly string[] = ['1-rendezett', '2-jovahagyas', '4-konyvelo', '6-eszamla', '7-proba'];
+export const GOOGLE_KEP_UZENETEK: readonly string[] = ['1-gepeles', '2-jovahagyas', '4-konyvelo', '6-eszamla', '7-proba', '8-bizalom'];
 
 /* =========================================================================
  * Tiltott ígéretek
@@ -469,4 +512,8 @@ export const TILTOTT: readonly { minta: RegExp; miert: string }[] = [
   // alak (pl. „ingyenes e-számla") azt sugallná, hogy valami ingyen van.
   { minta: /(?<!napo?s? )ingyen(?!es prób)/i, miert: '„Ingyen" csak a próbára mondható.' },
   { minta: /—/, miert: 'A felületen nagykötőjel (–) áll, nem hosszú gondolatjel.' },
+  // 2026-10-09-ig a `2-jovahagyas` képén és címsorában állt. A gépi jóváhagyás
+  // létező, bekapcsolható funkció – a mondat csak „alapbeállítás szerint" igaz
+  // (ugyanaz a szabály, mint a nyitólapon: `jogiSzovegek.test.ts`, 9. pont).
+  { minta: /minden bizonylatot\s+te hagy/i, miert: 'A gépi jóváhagyás bekapcsolható: csak „alapbeállítás szerint" igaz.' },
 ];

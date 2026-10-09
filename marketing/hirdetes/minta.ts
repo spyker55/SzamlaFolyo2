@@ -51,10 +51,22 @@ export const EXPORT_SOROK: readonly { nev: string; mit: string }[] = [
   { nev: 'RLB Kettős', mit: 'importfájl' },
   { nev: 'Novitax NTAX', mit: 'importfájl' },
   { nev: 'Kulcs-Könyvelés', mit: 'importfájl' },
-  { nev: 'XLSX · CSV · JSON', mit: 'táblázat és adat' },
+  { nev: 'Excel (XLSX) · CSV · JSON', mit: 'táblázat és adat' },
 ];
 
 export const MINTA_UGYFEL = 'Ügyfél: Hegyvidék Nyomda Zrt.';
+
+/**
+ * A bizalmi kártya pontjai – a nyitólap „Ki csinálja?" szakaszából, rövidebb
+ * alakban. Mindegyik a működésből jön, és a `hirdetes.test.ts` méri, hogy a
+ * nyitólap ma is kimondja (a `nyitolapon` a kulcsszó, amit ott keres).
+ */
+export const BIZALMI_PONTOK: readonly { szoveg: string; nyitolapon: string }[] = [
+  { szoveg: 'Adattárolás az EU-ban (Frankfurt)', nyitolapon: 'Frankfurtban, az Európai Unióban tároljuk' },
+  { szoveg: 'Cégenként elkülönített adatok', nyitolapon: 'adatbázisszinten el vannak különítve' },
+  { szoveg: 'Nem tanítunk MI-t a bizonylataiddal', nyitolapon: 'tanítására sem sajátra, sem harmadik félére nem használjuk' },
+  { szoveg: 'Kártyaadatot nem látunk (Stripe)', nyitolapon: 'Bankkártyaadatot nem látunk' },
+];
 
 export const XML_FORRAS = {
   rovid: CIMKEK['xml/ubl'] ?? 'UBL e-számla',

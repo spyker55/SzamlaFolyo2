@@ -7365,3 +7365,60 @@ Ha a videó egyszer más okból újra készül, ezt a kártyát is írjuk át.
   ezt választotta: **„Tudod, kinek adod oda a számláidat."** A `Szekcio`
   átmenetileg opcionális `cim` mezője így megint kötelező, a cím nélküli ág
   kikerült. Az őr a renderelt `h2`-t nézi.
+
+## 📣 Hirdetéscsomag a 2026-10-09-i nyitólaphoz igazítva
+
+A futó Meta-kampány ma este leáll. Jövő héten két külön kampány indul, egy a
+könyvelőknek és egy a vállalkozóknak. Addigra a hirdetésnek ugyanazt kell
+mondania, mint a céloldalnak: a Meta az állítást a lappal veti össze.
+
+**Szöveg** (`marketing/hirdetes/szovegek.ts`):
+- **`1-rendezett` → `1-gepeles`:** „Ne gépeld be a számlákat. Töltsd fel
+  őket.” A hosszú szövegben a két közönség haszna (Excel-táblázat a
+  könyvelőnek, ügyfelenkénti importfájl) és a bizalmi sor (EU-s tárolás, név,
+  10 év).
+- **`2-jovahagyas`:** a képen és a címsorban addig „Minden bizonylatot te
+  hagysz jóvá” állt, **feltétel nélkül**. Ugyanez a mondat a nyitólapon a
+  9. pont óta tilos, a hirdetésben viszont senki nem fogta meg. Most: „A gép
+  kiolvas. Te jóváhagyod.”, az „alapbeállítás szerint” pedig a hosszú szöveg
+  végére került, „Jó tudni:” kezdettel. A mondat felkerült a `TILTOTT`
+  listára, így a megkeresési szövegekre is érvényes.
+- **`3-ellenorzes`:** a fenntartás változatlanul a végén áll, „Jó tudni:”
+  kezdettel.
+- **Új `8-bizalom`:** „Tudod, **kinek** adod oda a számláidat.” Új vizuál
+  (`bizalom`), a nyitólap „Ki csinálja?” kártyájának mása:
+  - monogram, név, „fejlesztő és üzemeltető”;
+  - négy pont: EU-s tárolás, cégenkénti elkülönítés, nincs MI-tanítás, nincs
+    kártyaadat;
+  - a hosszú szöveg végén „Jó tudni:”: a kiolvasás Unión kívüli
+    feldolgozással jár.
+- **Mindenhol „Excel (XLSX)”** a puszta „XLSX” helyett: Meta, Google-keresés,
+  bővítmények, Performance Max.
+
+**Képek:** 52 PNG újragyártva (`keszit.ts`):
+- Meta: 8 üzenet × 4 formátum;
+- Google: 6 üzenet × 3 formátum és 2 logó.
+
+Az `1-rendezett` képei a gyártáskor törlődtek, ahogy a gyártó előírja. Átnézve:
+`1-gepeles` 4:5 és 9:16, `2-jovahagyas` 1:1, `4-konyvelo` 1:1, valamint
+`8-bizalom` 4:5, 1.91:1 és Google 1:1. Az első `8-bizalom` változatban a
+kiemelés rossz helyre esett („oda a számláidat”), és a „Ki csinálja?” kétszer
+szerepelt (jelvény és kártyafej). Javítva: a kiemelés a „kinek” szón van, a
+kártyafej „A SzámlaFolyó mögött”.
+
+**Őr** (`hirdetes.test.ts`):
+- Új tiltott minta: `/minden bizonylatot\s+te hagy/i`.
+- Új teszt: a `BIZALMI_PONTOK` mindegyike, a `TAPASZTALAT` és a név is ott
+  áll a nyitólapon, a név pedig egyezik az Impresszuméval.
+- Három szándékos rontás, mindegyik piros lett:
+  - a régi címsor vissza;
+  - nem létező bizalmi pont („ISO 27001”);
+  - más tapasztalat.
+
+**Kézikönyv** (`OLVASS-EL.md`):
+- nyolc üzenet, az új darabszámok;
+- a kampányszerkezet a jövő heti két kampányra;
+- a tiltólista helyettesítő mondatai az új nyitólapról.
+- **Új figyelmeztetés:** a `nyitolap.mp4`-gyel ne indíts hirdetést. A
+  nyitókártyáján a „könyvelésre kész” áll, és az a lapon nincs. A videó maga
+  marad, ez a tulajdonos döntése.

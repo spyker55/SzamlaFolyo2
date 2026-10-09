@@ -1,14 +1,16 @@
 # SzámlaFolyó – hirdetéscsomag (Meta + Google)
 
 Feltölthető anyag a Meta (Facebook, Instagram) és a Google Ads felületére: képek,
-szövegek, címsorok, leírások, kulcsszavak és bővítmények. A szövegek a 2026-09-25-i
-nyitólap és Könyvelőknek oldal jóváhagyott szövegét követik.
+szövegek, címsorok, leírások, kulcsszavak és bővítmények. A szövegek a 2026-10-09-i
+nyitólapot és a Könyvelőknek oldalt követik: elöl a kézzelfogható haszon és a
+bizalom, a fenntartás („alapbeállítás szerint”, „nem szűr ki minden hibát”) a hosszú
+szöveg végén, „Jó tudni:” kezdettel.
 
 | Mi | Hol |
 |---|---|
 | Minden hirdetésszöveg, karakterszámmal | [`SZOVEGEK.md`](SZOVEGEK.md) |
-| Meta-képek: 7 üzenet × 4 formátum | `kep/meta/` (28 PNG) |
-| Google-képek: 5 üzenet × 3 formátum + 2 logó | `kep/google/` (17 PNG) |
+| Meta-képek: 8 üzenet × 4 formátum | `kep/meta/` (32 PNG) |
+| Google-képek: 6 üzenet × 3 formátum + 2 logó | `kep/google/` (20 PNG) |
 | Google Ads Editor import: hirdetések | `google/kereses-hirdetesek.csv` |
 | Google Ads Editor import: kulcsszavak és kizárók | `google/kulcsszavak.csv` |
 | Videó (meglévő bemutatók) | `public/bemutato/nyitolap.mp4`, `public/bemutato/konyveloknek.mp4` |
@@ -30,6 +32,8 @@ A `hirdetes.test.ts` (az `npm test` része) feltöltés előtt méri:
 - **könyvelőprogram-export:** csak kimért programot hirdetünk;
 - **képek:** csak létező felületet mutatnak (a hibaüzenet, az állapotcímkék és a
   bizonylatlista az alkalmazásé);
+- **bizalmi üzenet:** a név, a tapasztalat és a pontok ma is ott állnak a nyitólap
+  „Ki csinálja?” szakaszában;
 - **gyártott fájlok:** naprakészek. Ha a szöveg változik, de az újragyártás
   elmarad, a teszt piros.
 
@@ -81,7 +85,7 @@ tájékoztató szerint ezt az adatot kizárólag összesítve használjuk.
 
 ### 3. Az első hirdetésből érkezők lesznek az első idegen felhasználók
 
-Élesben ma egyetlen cég van, a tulajdonosé. Az első napokban érdemes figyelni, hol
+Élesben ma csak néhány cég van. Az első napokban érdemes figyelni, hol
 akadnak el a látogatók: a regisztrációnál, a megerősítő levélnél vagy a
 cégalapításnál.
 
@@ -103,17 +107,18 @@ rövidítsd le úgy, mintha minden fiók azonnal kapna címet.
 | `_9x16` | 1080 × 1920 | Stories, Reels | Felül 270, alul 360 képpont üres: ott a Meta felülete takar |
 | `_1.91x1` | 1200 × 628 | Link, Audience Network | Alcím nélkül, a Meta a szöveget úgyis kiírja |
 
-### Hét üzenet
+### Nyolc üzenet
 
 | Azonosító | Az üzenet | Kinek | Céloldal | Gomb |
 |---|---|---|---|---|
-| `1-rendezett` | Számlákból rendezett adatok, kevesebb kézi munkával | széles teszt | `/` | További információ |
-| `2-jovahagyas` | Minden bizonylatot te hagysz jóvá | aki nem bízza a gépre | `/` | További információ |
+| `1-gepeles` | Ne gépeld be a számlákat. Töltsd fel őket. | széles, a nyitólap fő üzenete | `/` | További információ |
+| `2-jovahagyas` | A gép kiolvas. Te jóváhagyod. | aki nem bízza a gépre | `/` | További információ |
 | `3-ellenorzes` | Nettó + áfa = bruttó? Ezt kiszámoljuk | akit a pontosság érdekel | `/` | További információ |
 | `4-konyvelo` | Ügyfelenkénti export RLB, Novitax és Kulcs számára | könyvelőirodák | `/konyveloknek` | További információ |
 | `5-email` | E-mailben kaptad a számlát? Továbbítsd | vállalkozók | `/` | További információ |
 | `6-eszamla` | Az e-számla adatait közvetlenül átvesszük | e-számlát kapók | `/` | További információ |
 | `7-proba` | 14 nap, 50 dokumentum, bankkártya nélkül | az ajánlat, újracélzásra is | `/` | Regisztráció |
+| `8-bizalom` | Tudod, kinek adod oda a számláidat. | mindkét közönség: aki ismeretlennek nem adna bizonylatot | `/` | További információ |
 
 Minden üzenethez 3 címsor, 2 leírás, egy rövid és egy hosszú fő szöveg tartozik:
 [`SZOVEGEK.md`](SZOVEGEK.md). A rövid fő szöveg a „Továbbiak” előtti 125 karakterben
@@ -123,7 +128,11 @@ Minden üzenethez 3 címsor, 2 leírás, egy rövid és egy hosszú fő szöveg 
 
 A két meglévő bemutató, mindkettő 1920 × 1080 (16:9). A hosszukat és a méretüket az MP4-fejlécből mértem:
 
-- **`nyitolap.mp4`:** 44 mp, 1,3 MB. Az `1-rendezett` mellé.
+- **`nyitolap.mp4`:** 44 mp, 1,3 MB. Az `1-gepeles` mellé. ⚠️ A nyitókártyáján
+  „Bizonylatból könyvelésre kész adat” áll, ami a tiltólistán van. A tulajdonos
+  2026-10-09-én úgy döntött, hogy a videó marad, de hirdetésben **ne ezzel
+  indíts**: a Meta a céloldallal veti össze az állítást, és ez a mondat a lapon
+  nincs.
 - **`konyveloknek.mp4`:** 70 mp, 2,3 MB. A `4-konyvelo` mellé. Feliratokkal vezet végig, hang nélkül is követhető.
 
 A Feedben 16:9-ben is futnak. **Álló (9:16) változatuk nincs**, ezért Stories és
@@ -136,17 +145,19 @@ Ezeket nem mértem, lefutott kampány nincs mögöttük.
 - **Ország:** Magyarország. **Nyelv:** magyar. **Kor:** 25–64.
 - **Kampánycél:** Forgalom → *céloldal-megtekintések* (lásd fent, 1. pont).
 - **Elhelyezés:** Advantage+ (automatikus). A négy formátum mindent lefed.
-- **Szerkezet:** egy kampány, három hirdetéskészlet:
-  - (a) könyvelők és könyvelőirodák: `4-konyvelo`, `2-jovahagyas`, `3-ellenorzes`;
-  - (b) kisvállalkozás-tulajdonosok: `1-rendezett`, `5-email`, `6-eszamla`;
-  - (c) széles célzás, érdeklődés nélkül: `1-rendezett`, `2-jovahagyas`, `7-proba`.
+- **Szerkezet** (a 2026-10-09-i terv szerint két külön kampány):
+  - **Könyvelők és könyvelőirodák:** `4-konyvelo`, `2-jovahagyas`,
+    `3-ellenorzes`, `8-bizalom`. A `4-konyvelo` a `/konyveloknek` lapra visz,
+    a többi a nyitólapra;
+  - **Vállalkozók:** `1-gepeles`, `5-email`, `6-eszamla`, `8-bizalom`;
+  - **Újracélzás**, ha lesz rá közönség: `7-proba`.
 - **Keret:** készletenként napi 2 000–3 000 Ft, legalább 4–5 napig érdemi
   beavatkozás nélkül (tanulási szakasz).
 - **Érdeklődési körök** (a hirdetéskezelő keresőjébe írva): Könyvelés
   (Accounting), Könyvvitel (Bookkeeping), Kisvállalkozás (Small business),
   Vállalkozás (Entrepreneurship), Számviteli szoftver (Accounting software).
-- **Az első kérdés, amire a kampány választ ad:** a „bizalom/ellenőrzés” (`2`, `3`)
-  vagy a „kevesebb kézi munka” (`1`, `5`) üzenet hozza a kattintást.
+- **Az első kérdés, amire a kampány választ ad:** a „bizalom/ellenőrzés” (`2`, `3`,
+  `8`) vagy a „kevesebb kézi munka” (`1`, `5`) üzenet hozza a kattintást.
 
 ---
 
@@ -186,7 +197,7 @@ kiegészítő részletek „Szolgáltatások” fejléccel. A webhelylinkek horg
 
 ### Performance Max – még ne
 
-Az eszközcsoport kész: 5 címsor, 3 hosszú címsor, 4 leírás, 15 kép és 2 logó. A
+Az eszközcsoport kész: 5 címsor, 3 hosszú címsor, 4 leírás, 18 kép és 2 logó. A
 Performance Max azonban konverziós célra épül, mérés nélkül vakon költ. **Akkor
 indítsd, ha a konverziómérés rendezve van** (1. pont). Addig a keresési kampány a
 jobb pénz.
@@ -227,13 +238,14 @@ A `szovegek.ts` `TILTOTT` listája, és az őr mindegyiket keresi. Ha hirdetést
 
 | Ne írd | Miért | Ami helyette igaz |
 |---|---|---|
-| „teljesen automatikus”, „nem kell hozzányúlnod” | Alapból minden bizonylat emberi jóváhagyásra vár | „Te hagyod jóvá, a rendszer megjelöli, amit érdemes átnézni” |
+| „teljesen automatikus”, „nem kell hozzányúlnod” | Alapból minden bizonylat emberi jóváhagyásra vár | „A jóváhagyás nálad marad, a rendszer megjelöli, amit érdemes átnézni” |
+| „Minden bizonylatot te hagysz jóvá” | A gépi jóváhagyás bekapcsolható, a mondat csak alapbeállítás szerint igaz | „A gép kiolvas. Te jóváhagyod.” |
 | „hibátlan”, „100%”, „garantált” | A nevekre nincs számítással ellenőrzés | „Amit ki lehet számolni, azt kiszámoljuk” |
 | „magyar szerveren” | Az adat Frankfurtban (EU) van | „Adattárolás az EU-ban” |
 | „könyvel helyetted”, „elkészíti a bevallást” | A termék adatot ad át, nem könyvel | „Könyveléshez előkészített adat” |
 | „NAV-adatszolgáltatás” | Ilyen funkció nincs | Ne szerepeljen |
-| „könyvelésre kész” | Az ÁSZF 3. pontja szerint ellenőrzésre előkészített adat | „Rendezett adatok”, „ellenőrzésre előkészít” |
-| „percek alatt”, „másodpercek alatt” | Nem mértük, a fájltól függ | „Kevesebb kézi munkával” |
+| „könyvelésre kész” | Az ÁSZF 3. pontja szerint ellenőrzésre előkészített adat | „Excel-táblázat a könyvelődnek”, „ügyfelenkénti importfájl” |
+| „percek alatt”, „másodpercek alatt” | Nem mértük, a fájltól függ | „Ne gépeld be a számlákat” |
 | „ingyenes” a próbán kívül | 14 nap / 50 dokumentum után fizetős; az e-számla is a keretből megy | „14 nap ingyenes próba” |
 
 ---

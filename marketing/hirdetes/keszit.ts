@@ -23,8 +23,8 @@ import { chromium } from 'playwright';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { keresesHirdetesekCsv, kulcsszavakCsv, szovegMd } from './kimenet.ts';
 import { GOOGLE_LOGOK, GOOGLE_MERETEK, META_MERETEK, type Meret } from './meretek.ts';
-import { BEERKEZO_SOROK, EMAIL, EXPORT_SOROK, MEZOK, MINTA_BEKULDESI_CIM, MINTA_UGYFEL, VALIDATOR_UZENET, XML_FORRAS } from './minta.ts';
-import { GOOGLE_KEP_UZENETEK, META, type MetaUzenet } from './szovegek.ts';
+import { BEERKEZO_SOROK, BIZALMI_PONTOK, EMAIL, EXPORT_SOROK, MEZOK, MINTA_BEKULDESI_CIM, MINTA_UGYFEL, VALIDATOR_UZENET, XML_FORRAS } from './minta.ts';
+import { GOOGLE_KEP_UZENETEK, META, TULAJDONOS, type MetaUzenet } from './szovegek.ts';
 import { szamlafolyo } from '@config/szamlafolyo.ts';
 
 const ITT = new URL('.', import.meta.url).pathname;
@@ -130,6 +130,25 @@ function xml(): string {
   );
 }
 
+/*
+ * A nyitólap „Ki csinálja?" kártyája: monogram, név, szerep és a bizalmi
+ * pontok. Fotó nincs – ugyanazért, amiért a nyitólapon sincs.
+ */
+function bizalom(): string {
+  // A magyar monogram a kettős betűt egészben veszi („NyK"), mint a nyitólapon.
+  const monogram = TULAJDONOS.split(' ')
+    .map((resz) => /^(Dzs|Cs|Dz|Gy|Ly|Ny|Sz|Ty|Zs|.)/u.exec(resz)?.[1] ?? '')
+    .join('');
+  const pont = (p: (typeof BIZALMI_PONTOK)[number]) =>
+    `<div class="bizalmi-sor"><i class="ikon">${PIPA}</i><span>${esc(p.szoveg)}</span></div>`;
+  return keret(
+    'A SzámlaFolyó mögött',
+    `<div class="szemely"><span class="monogram">${esc(monogram)}</span>
+       <span class="lista-szoveg"><b>${esc(TULAJDONOS)}</b><span>fejlesztő és üzemeltető</span></span></div>
+     ${BIZALMI_PONTOK.map(pont).join('')}`,
+  );
+}
+
 /* A három szám a `config/szamlafolyo.ts` `proba` blokkjából. */
 function szamok(): string {
   const { napok, dokumentumok, felhasznalok } = szamlafolyo.proba;
@@ -151,6 +170,8 @@ function vizual(u: MetaUzenet, suru: boolean): string {
       return xml();
     case 'szamok':
       return szamok();
+    case 'bizalom':
+      return bizalom();
   }
 }
 
@@ -241,6 +262,10 @@ function stilus(m: Meret, fekvo: boolean): string {
   .formatumok{display:flex;flex-wrap:wrap;gap:${1 * e}px}
   .formatumok span{border:1px solid ${SZIN.keret};background:${SZIN.papir};border-radius:999px;padding:${0.7 * e * k}px ${1.6 * e * k}px;font-size:${2 * e * k}px;font-weight:700;color:${SZIN.terrakotta}}
 
+  .szemely{display:flex;align-items:center;gap:${2 * e * k}px;padding-bottom:${1.6 * e * k}px;border-bottom:1px solid rgba(140,156,134,.18)}
+  .monogram{flex:none;display:flex;align-items:center;justify-content:center;width:${7.4 * e * k}px;height:${7.4 * e * k}px;border-radius:${1.6 * e * k}px;background:rgba(198,108,71,.10);color:${SZIN.terrakotta};font-weight:800;font-size:${3 * e * k}px}
+  .bizalmi-sor{display:flex;align-items:center;gap:${1.4 * e * k}px;font-size:${2.4 * e * k}px;font-weight:600;color:${SZIN.tintaLagy}}
+  .bizalmi-sor .ikon{flex:none;color:${SZIN.zsalya}}
   .szamok{display:flex;gap:${2 * e}px;${fekvo ? 'flex-direction:column' : ''}}
   .szamblokk{flex:1;background:#fff;border:1px solid ${SZIN.keret};border-radius:${1.6 * e}px;padding:${2.6 * e * k}px;text-align:center;box-shadow:0 ${1.2 * e}px ${3 * e}px rgba(58,54,52,.08)}
   .szamblokk b{display:block;font-size:${6.4 * e * k}px;font-weight:800;color:${SZIN.terrakotta};letter-spacing:-.03em;line-height:1}
