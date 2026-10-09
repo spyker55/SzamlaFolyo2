@@ -7229,6 +7229,24 @@ PDF-ben), a `document_extractions` szerint:
 Ugyanez a lánc aznap reggel a Geminivel ~0,020 $ volt, élesben tehát kb. 8×
 olcsóbb. `model_version` mindhárom soron `anthropic/claude-haiku-5.5`.
 
+### Első nyugta élesben (2026-10-09 04:14 UTC)
+
+A váltás előtt nyugtán nem mértünk, ezt most pótoltuk. A tulajdonos egy
+fotózott nyugtát töltött fel. Szerinte „gyorsan és szépen beolvasta”. A
+`documents` és a `document_extractions` metaadatai szerint (értéket nem
+olvastunk ki):
+- **típus:** `nyugta`, első kísérletre, hiba nélkül, jóváhagyva;
+- **időzítés:** a feltöltéstől 6 s, ebből a modellhívás 4,6 s;
+- **tokenek:** 9 998 bemeneti (a fotó), 458 kimeneti, gondolkodás nincs;
+- **költség:** 0,001229 $.
+
+Előző reggel a Gemini egy számlakiolvasása 0,0071–0,0088 $ volt.
+`nehezen_olvashato` és `tobb_irat_gyanu` hamis.
+
+A nyugta nem annál a cégnél futott, amelyiknek elfogyott a kerete. Ott a
+várakozó bizonylat továbbra is `feltoltve`, és a fordulóig (2026-10-21)
+ott is marad, ahogy kell.
+
 ## 🪧 Elfogyott keret: a Beérkező sávja a teendőt mondja, nem a maradékot (2026-10-08)
 
 **Mérve, élesben (a tulajdonos képernyője):** az 50/50-re fogyott Start
