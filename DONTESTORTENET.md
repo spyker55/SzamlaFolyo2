@@ -7351,7 +7351,15 @@ Hat szándékos rontás, mindegyik piros lett:
 - „az adatod az EU-ban marad";
 - „Minden bizonylatot te hagysz jóvá".
 
-**Nyitott, nem ebben a körben:** a nyitólapi videó nyitókártyáján „Bizonylatból
-könyvelésre kész adat" áll (`scripts/bemutato-video/felvetel.mjs`, 319. sor).
-Ez a tiltólista „könyvelésre kész" fordulata (ÁSZF 3. pont). A javítás a videó
-újrafelvétele.
+**A videó marad (a tulajdonos döntése, 2026-10-09):** a nyitólapi videó
+nyitókártyáján „Bizonylatból könyvelésre kész adat" áll
+(`scripts/bemutato-video/felvetel.mjs`, 319. sor). Ez a tiltólista „könyvelésre
+kész" fordulata (ÁSZF 3. pont). A tulajdonos tudja, és nem kér újrafelvételt.
+Ha a videó egyszer más okból újra készül, ezt a kártyát is írjuk át.
+
+**Utólagos szöveg (a tulajdonos kérésére):**
+- a „Ki csinálja?" zárómondata „Ha kérdésed van, írj nekem:" (addig:
+  „nekem írsz:");
+- az „Egy ember áll mögötte, név szerint." cím kikerült. A `Szekcio` `cim`
+  mezője ezért opcionális lett: cím nélkül a felcím maga a `h2`, ugyanazzal a
+  kinézettel, így a szakasznak a képernyőolvasó számára is van címe.
