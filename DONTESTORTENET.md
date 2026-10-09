@@ -7360,6 +7360,8 @@ Ha a videó egyszer más okból újra készül, ezt a kártyát is írjuk át.
 **Utólagos szöveg (a tulajdonos kérésére):**
 - a „Ki csinálja?" zárómondata „Ha kérdésed van, írj nekem:" (addig:
   „nekem írsz:");
-- az „Egy ember áll mögötte, név szerint." cím kikerült. A `Szekcio` `cim`
-  mezője ezért opcionális lett: cím nélkül a felcím maga a `h2`, ugyanazzal a
-  kinézettel, így a szakasznak a képernyőolvasó számára is van címe.
+- az „Egy ember áll mögötte, név szerint." cím kikerült. Cím nélkül viszont a
+  szakasz élesben kilógott a többi közül, ezért négy javaslatból a tulajdonos
+  ezt választotta: **„Tudod, kinek adod oda a számláidat."** A `Szekcio`
+  átmenetileg opcionális `cim` mezője így megint kötelező, a cím nélküli ág
+  kikerült. Az őr a renderelt `h2`-t nézi.

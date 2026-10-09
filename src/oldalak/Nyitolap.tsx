@@ -1025,6 +1025,7 @@ function KiCsinalja() {
     <Szekcio
       id="ki-csinalja"
       felcim="Ki csinálja?"
+      cim="Tudod, kinek adod oda a számláidat."
       alcim="Pénzügyi bizonylatot csak olyan szolgáltatásra érdemes bízni, amelyről tudod, ki üzemelteti, és hogyan bánik az adatokkal."
     >
       <div className="mx-auto grid max-w-5xl gap-10 rounded-3xl border border-zsalya/20 bg-white p-8 shadow-sm md:grid-cols-[auto_1fr] md:p-10">
@@ -1439,12 +1440,7 @@ export function Szekcio({
   id: string;
   /** A terv apró, terrakotta nagybetűs felcíme a szakaszcím fölött. */
   felcim: string;
-  /**
-   * A nagy szakaszcím. Ha nincs (a „Ki csinálja?", a tulajdonos kérésére),
-   * a felcím maga lesz a `h2` – ugyanazzal a kinézettel –, hogy a szakasznak
-   * a képernyőolvasó számára is legyen címe.
-   */
-  cim?: string;
+  cim: string;
   alcim: string;
   /** A világosabb, törtfehér háttér — ettől kap ritmust a lap. */
   halvany?: boolean;
@@ -1457,14 +1453,8 @@ export function Szekcio({
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto mb-16 max-w-3xl text-center">
-          {cim === undefined ? (
-            <h2 className="mb-3 text-sm font-bold tracking-widest text-blue-600 uppercase">{felcim}</h2>
-          ) : (
-            <>
-              <p className="mb-3 text-sm font-bold tracking-widest text-blue-600 uppercase">{felcim}</p>
-              <h2 className="mb-4 text-3xl font-extrabold text-slate-800 md:text-4xl">{cim}</h2>
-            </>
-          )}
+          <p className="mb-3 text-sm font-bold tracking-widest text-blue-600 uppercase">{felcim}</p>
+          <h2 className="mb-4 text-3xl font-extrabold text-slate-800 md:text-4xl">{cim}</h2>
           <p className="text-lg leading-relaxed text-slate-500">{alcim}</p>
         </div>
         {children}

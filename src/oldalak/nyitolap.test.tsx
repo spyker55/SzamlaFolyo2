@@ -81,10 +81,11 @@ describe('a nyitólap: haszon, bizalom, fenntartások (2026-10-09)', () => {
     expect(szakasz('ki-csinalja', 'arak')).toContain(tulajdonos);
   });
 
-  it('2. a „Ki csinálja?" címe maga a felcím, nagy cím nélkül (a tulajdonos kérésére)', () => {
+  it('2. a „Ki csinálja?" címe a tulajdonos által választott mondat', () => {
+    // 2026-10-09: „Egy ember áll mögötte, név szerint." → kivéve → ez.
     const ki = html.slice(html.indexOf('id="ki-csinalja"'), html.indexOf('id="arak"'));
-    expect(ki).toMatch(/<h2[^>]*>Ki csinálja\?<\/h2>/);
-    expect(ki.match(/<h2/g)?.length, 'A „Ki csinálja?" szakaszba visszakerült egy nagy cím.').toBe(1);
+    expect(ki).toMatch(/<h2[^>]*>Tudod, kinek adod oda a számláidat\.<\/h2>/);
+    expect(ki).not.toContain('Egy ember áll mögötte');
   });
 
   it('2. a név az Impresszuméval egyezik, a jogi forma nélkül', () => {
