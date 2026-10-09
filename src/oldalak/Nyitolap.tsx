@@ -10,6 +10,8 @@ import { hatar } from '@uzleti/kredit.ts';
 import { formaz } from '@uzleti/osszeg.ts';
 import { tetejereUszik } from '../lib/gorgetes.ts';
 import { allapotCimke } from '@uzleti/enumok.ts';
+import { KIMERVE, PROGRAM_NEVEK, PROGRAMOK } from '@uzleti/export/konyvelo/beallitas.ts';
+import { szolgaltato } from './jogi/adatok.ts';
 
 /**
  * A nyitólap.
@@ -47,18 +49,29 @@ import { allapotCimke } from '@uzleti/enumok.ts';
  *
  * # A szövegek
  *
- * 2026-09-25 óta a lap minden szövege a tulajdonos átírt szövegfájljából jön
+ * 2026-09-25 óta a lap szövege a tulajdonos átírt szövegfájljából jön
  * (szakaszról szakaszra, a DONTESTORTENET „📝 Nyitólap: új szövegek” pontja).
- * Két szabály változatlanul él benne, és ezeket egy újraírás se vigye el:
+ * 2026-10-09-én három változás a tulajdonos kérésére:
  *
- * - **A jóváhagyás mindig „alapbeállítás szerint” a tiéd**, soha nem
- *   feltétel nélkül: a gépi jóváhagyás létező, bekapcsolható funkció
- *   (`20260915000100_auto_jovahagyas_alapbol_ki.sql`). Őr:
- *   `jogiSzovegek.test.ts`, 9. pont.
+ * 1. **Kézzelfogható haszon:** „Excel-táblázat a könyvelődnek", „importfájl a
+ *    könyvelőprogramba" – a programnevek a `KIMERVE`-ből.
+ * 2. **Bizalmi elem:** a hero alján az EU-s tárolás és a név, lent a „Ki
+ *    csinálja?" szakasz.
+ * 3. **A fenntartások lejjebb:** a felső szakaszok a működést írják le, a
+ *    határok a lap alján, a „Jó tudni" szakaszban állnak.
+ *
+ * Két szabály változatlanul él, és ezeket egy újraírás se vigye el:
+ *
+ * - **A jóváhagyás „alapbeállítás szerint” a tiéd**, soha nem feltétel
+ *   nélkül: a gépi jóváhagyás létező, bekapcsolható funkció
+ *   (`20260915000100_auto_jovahagyas_alapbol_ki.sql`). A pontos mondat a
+ *   „Jó tudni" és az Előnyök negyedik kártyája. Feljebb a lap a munkamenetet
+ *   írja le („te átnézed, jóváhagyod"), de **„minden bizonylatot te hagysz
+ *   jóvá"** alakot nem használ. Őr: `jogiSzovegek.test.ts`, 9. pont.
  * - **A feltöltés áll elöl, az e-mailes beküldés másodikként**: a beküldés
  *   alapból kikapcsolva érkezik, a cégnek egyszer be kell kapcsolnia.
  *
- * A kiemelt szó (most: „rendezett adatok”) a terrakotta színátmenetet kapja,
+ * A kiemelt szó (most: „Töltsd fel őket.”) a terrakotta színátmenetet kapja,
  * nem a mustárt: `#dfb671` a `#f6ede4` vásznon ~1,6:1, a WCAG nagy betűre is
  * 3:1-et kér. A mustár ott marad, ahol dísz.
  *
@@ -102,11 +115,38 @@ export function Nyitolap() {
         <Folyamat />
         <EgyFolyamatban />
         <Elonyok />
+        <KiCsinalja />
         <Arak />
+        <JoTudni />
       </main>
       <Lablec />
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// A lap közös adatai
+// ---------------------------------------------------------------------------
+
+/**
+ * A kimért könyvelőprogramok, a felületen használt nevükkel. Ugyanaz a szabály,
+ * mint a Könyvelőknek oldalon: csak az kerül ide, amit valódi példány már
+ * beolvasott (`KIMERVE`).
+ */
+const KONYVELOPROGRAMOK: readonly string[] = PROGRAMOK.filter((p) => KIMERVE[p]).map((p) => PROGRAM_NEVEK[p]);
+
+/**
+ * A szolgáltató neve az Impresszumból, a jogi forma nélkül. Egy forrás: ha a
+ * név egyszer változik, a „Ki csinálja?" sem mondhat mást, mint az Impresszum.
+ */
+const TULAJDONOS = szolgaltato.nev.replace(/ egyéni vállalkozó$/, '');
+
+/** A tulajdonos saját közlése (2026-10-09). */
+const TAPASZTALAT = '10 év rendszergazdai és IT-biztonsági tapasztalattal';
+
+/** „A, B és C" – a magyar felsorolás, a kötőszó a hívóé (`és`, `vagy`). */
+function felsorol(elemek: readonly string[], koto: 'és' | 'vagy'): string {
+  return elemek.length < 2 ? (elemek[0] ?? '') : `${elemek.slice(0, -1).join(', ')} ${koto} ${elemek.at(-1)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -293,7 +333,7 @@ export function FejlecGombok() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-28">
+    <section className="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-28">
       {/*
         A két elmosott folt a terv háttere. Dísz, nem jelzés — ezért a két
         kísérőszínt kapja, és `aria-hidden` marad. `pointer-events-none`, hogy
@@ -322,26 +362,45 @@ function Hero() {
             </p>
 
             <h1 className="mb-6 text-4xl leading-tight font-extrabold text-slate-800 sm:text-5xl lg:text-6xl">
-              Számlákból{' '}
+              Ne gépeld be a számlákat.{' '}
               <span className="bg-linear-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">
-                rendezett adatok
+                Töltsd fel őket.
               </span>
-              , kevesebb kézi munkával.
             </h1>
 
-            <p className="mb-4 text-lg leading-relaxed text-slate-500 sm:text-xl">
+            <p className="mb-5 text-lg leading-relaxed text-slate-500 sm:text-xl">
               <strong className="font-bold text-slate-800">
-                Töltsd fel a számlákat és nyugtákat, vagy továbbítsd őket e-mailben.
+                Fotó, PDF vagy e-számla – feltöltve vagy e-mailben továbbítva.
               </strong>{' '}
-              A SzámlaFolyó kiolvassa az adatokat, és megjelöli, ahol ellenőrzésre van szükség. Te
-              átnézed, jóváhagyod, majd letöltöd őket a könyveléshez.
-            </p>
-            <p className="mb-8 text-lg leading-relaxed text-slate-500 sm:text-xl">
-              Vállalkozóként egyszerűbben készítheted elő a bizonylatokat a könyvelődnek.
-              Könyvelőként kevesebb időt tölthetsz az adatok kézi rögzítésével.
+              A SzámlaFolyó kiolvassa az adatokat, és megjelöli, amit érdemes megnézned. Te
+              jóváhagyod, és viszed tovább:
             </p>
 
+            {/*
+              A haszon kézzelfogható alakban, a két közönségnek külön. Az
+              „XLSX, CSV, JSON" egy vállalkozónak nem mond semmit; az, hogy
+              Excel-táblázatot küld a könyvelőnek, igen. A programnevek a
+              `KIMERVE`-ből jönnek, tehát kimérés nélküli program ide sem kerül.
+            */}
+            <ul className="mb-8 space-y-2 text-base leading-relaxed text-slate-600 sm:text-lg">
+              <li className="flex items-start gap-3">
+                <IkonPipa className="mt-1 h-5 w-5 flex-none text-blue-600 sm:mt-1.5" />
+                <span>
+                  <strong className="text-slate-800">Vállalkozóként:</strong> Excel-táblázat (XLSX) a
+                  könyvelődnek.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <IkonPipa className="mt-1 h-5 w-5 flex-none text-blue-600 sm:mt-1.5" />
+                <span>
+                  <strong className="text-slate-800">Könyvelőként:</strong> ügyfelenkénti importfájl –{' '}
+                  {felsorol(KONYVELOPROGRAMOK, 'vagy')}.
+                </span>
+              </li>
+            </ul>
+
             <HeroGombok />
+            <BizalmiSor />
           </div>
 
           {/*
@@ -402,6 +461,35 @@ function HeroGombok() {
         Megnézem, hogyan működik
       </a>
     </div>
+  );
+}
+
+/**
+ * A bizalmi sor a hero alján, az első képernyőn (2026-10-09, a tulajdonos
+ * kérésére): egy ismeretlen márkának senki nem ad oda pénzügyi bizonylatot,
+ * ha nem látja, hol lesz az adat, és ki áll mögötte.
+ *
+ * ⚠️ **„Adattárolás", nem „az adat az EU-ban marad".** A tárolás Frankfurtban
+ * van, a kiolvasás viszont Unión kívüli feldolgozással jár – ezt a lap alján
+ * a „Jó tudni" szakasz mondja ki. Az őr (`jogiSzovegek.test.ts`) mindkét felét
+ * nézi.
+ */
+function BizalmiSor() {
+  return (
+    <ul className="mt-6 flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-x-8">
+      <li className="flex items-center gap-2">
+        <IkonLakat className="h-5 w-5 flex-none text-zsalya" />
+        <span>
+          <strong className="text-slate-800">Adattárolás az EU-ban</strong> (Frankfurt)
+        </span>
+      </li>
+      <li className="flex items-center gap-2">
+        <IkonEmber className="h-5 w-5 flex-none text-zsalya" />
+        <a href="#ki-csinalja" className="underline-offset-2 transition-colors hover:text-blue-600 hover:underline">
+          <strong className="text-slate-800">{TULAJDONOS}</strong> fejleszti – {TAPASZTALAT}
+        </a>
+      </li>
+    </ul>
   );
 }
 
@@ -600,19 +688,35 @@ function HeroVideo() {
 // Formátumsáv
 // ---------------------------------------------------------------------------
 
-/** A terv keskeny sávja a hero alatt. Mindhárom formátum valóban létezik. */
+/**
+ * A terv keskeny sávja a hero alatt: **hova** viheted az adatot.
+ *
+ * 2026-10-09-ig itt csak „.XLSX .CSV { JSON }" állt. Igaz volt, de egy
+ * vállalkozónak nem mondott semmit, a könyvelőprogramok pedig csak a
+ * Könyvelőknek oldalon szerepeltek. Most elöl a programnevek (a `KIMERVE`
+ * szerint), utánuk az általános formátumok, az Excel néven.
+ */
 function FormatumSav() {
+  const celok = [
+    ...KONYVELOPROGRAMOK.map((nev) => ({ nev, program: true })),
+    { nev: 'Excel (XLSX)', program: false },
+    { nev: 'CSV', program: false },
+    { nev: 'JSON', program: false },
+  ];
+
   return (
     <section className="border-y border-zsalya/20 bg-vaszon py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="mb-6 text-center text-sm font-bold tracking-widest text-slate-500 uppercase">
-          Az adatokkal a saját rendszeredben dolgozhatsz tovább
+          Ide viheted tovább az adatokat
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-8 text-slate-700 opacity-70 md:gap-16">
-          <span className="font-mono text-xl font-bold">.XLSX</span>
-          <span className="font-mono text-xl font-bold">.CSV</span>
-          <span className="font-mono text-xl font-bold">{'{ JSON }'}</span>
-        </div>
+        <ul className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-slate-700 md:gap-x-12">
+          {celok.map((c) => (
+            <li key={c.nev} className={c.program ? 'text-xl font-extrabold' : 'font-mono text-lg font-bold opacity-70'}>
+              {c.nev}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -639,13 +743,12 @@ function Folyamat() {
     {
       cim: 'Ellenőrizd és hagyd jóvá',
       szoveg:
-        'A rendszer megjelöli a bizonytalan adatokat és az észlelt eltéréseket, így látod, mire érdemes külön figyelned. Alapbeállítás szerint minden bizonylat a te jóváhagyásodra vár.',
+        'A rendszer megjelöli a bizonytalan adatokat és az észlelt eltéréseket, így rögtön látod, mire érdemes figyelned. Ha kell, javítasz, aztán egy kattintással jóváhagyod.',
       ikon: <IkonPajzs className="h-8 w-8" />,
     },
     {
-      cim: 'Töltsd le az adatokat',
-      szoveg:
-        'A jóváhagyott bizonylatok adatait XLSX, CSV vagy JSON formátumban exportálhatod a további feldolgozáshoz.',
+      cim: 'Vidd tovább',
+      szoveg: `Excel-táblázat a könyvelődnek, importfájl a könyvelőprogramba (${KONYVELOPROGRAMOK.join(', ')}), vagy CSV és JSON a saját rendszeredhez.`,
       ikon: <IkonLetoltes className="h-8 w-8" />,
     },
   ];
@@ -655,7 +758,7 @@ function Folyamat() {
       id="folyamat"
       felcim="Hogyan működik?"
       cim="Feltöltéstől az exportig, négy lépésben."
-      alcim="A SzámlaFolyó kiolvassa a bizonylatok adatait, és segít az ellenőrzésben. Alapbeállítás szerint minden bizonylatot te hagysz jóvá az export előtt."
+      alcim="Fotó, PDF vagy e-számla: a SzámlaFolyó kiolvassa, ellenőrzi és előkészíti. Neked csak át kell nézned."
       halvany
     >
       <ol className="relative grid gap-8 md:grid-cols-4">
@@ -710,7 +813,7 @@ function EgyFolyamatban() {
     {
       cim: 'Letölthető adatok és eredeti bizonylatok',
       bekezdesek: [
-        'Az adatokat XLSX, CSV vagy JSON formátumban viheted tovább. Az eredeti bizonylatfájlokat ZIP-csomagban is letöltheted.',
+        `Az adatokat Excel-táblázatként (XLSX), CSV vagy JSON formátumban, illetve importfájlként a könyvelőprogramba (${KONYVELOPROGRAMOK.join(', ')}) viheted tovább. Az eredeti bizonylatfájlokat ZIP-csomagban is letöltheted.`,
       ],
     },
   ];
@@ -878,15 +981,93 @@ function Elonyok() {
       </div>
 
       {/*
-        Ez a mondat nem apróbetűs mentegetőzés, hanem a termék igaz határa: a
-        nevekre nincs számtani ellenőrzés. Ezért áll a kártyák alatt, nem
-        elrejtve.
+        A határ („nem szűr ki minden hibát") 2026-10-09 óta a lap alján, a
+        „Jó tudni" szakaszban áll – ott is a lapon, nem elrejtve, csak nem a
+        lelkesedés helyén.
       */}
-      <p className="mx-auto mt-10 max-w-3xl text-center text-sm leading-relaxed text-slate-500">
-        Az automatikus ellenőrzések segítik az átnézést, de nem szűrnek ki minden hibát. A neveket
-        és más szöveges adatokat akkor is érdemes összevetned az eredetivel, ha a rendszer nem
-        jelzett problémát.
-      </p>
+    </Szekcio>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ki csinálja?
+// ---------------------------------------------------------------------------
+
+/**
+ * A bizalmi blokk (2026-10-09, a tulajdonos kérésére): ki áll a termék mögött,
+ * és mit tesz az adatokért.
+ *
+ * Minden pont **a működésből** jön, nem ígéret:
+ * - a tárolás helye: Frankfurt (lásd a lábléc megjegyzését);
+ * - a cégek elkülönítése: sorszintű jogosultság az adatbázisban (RLS);
+ * - a tanítás tilalma: az Adatkezelési tájékoztató 3. pontja szó szerint;
+ * - a fájltörlés: `szamlafolyo.megorzes.maxNap`, ugyanaz, amit az Adatkezelés
+ *   mond;
+ * - a kártyaadat: a fizetést a Stripe oldala kezeli, mi nem látjuk.
+ *
+ * Fotó nincs, szándékosan: kitalált arcot nem teszünk ki, igazi képet pedig
+ * csak a tulajdonos adhat.
+ */
+function KiCsinalja() {
+  const pontok = [
+    'Az adatbázist és a bizonylatfájlokat Frankfurtban, az Európai Unióban tároljuk.',
+    'Minden cég adatai adatbázisszinten el vannak különítve: más cég felhasználója nem látja a tiédet.',
+    'A feltöltött bizonylatokat mesterséges intelligencia tanítására sem sajátra, sem harmadik félére nem használjuk.',
+    `Az eredeti fájlokat az export után alapból töröljük; ha szeretnéd, legfeljebb ${szamlafolyo.megorzes.maxNap} napig megtarthatod őket.`,
+    'Bankkártyaadatot nem látunk: a fizetést a Stripe kezeli.',
+  ];
+  // A magyar monogram a kettős betűt egészben veszi („NyK", nem „NK").
+  const monogram = TULAJDONOS.split(' ')
+    .map((resz) => /^(Dzs|Cs|Dz|Gy|Ly|Ny|Sz|Ty|Zs|.)/u.exec(resz)?.[1] ?? '')
+    .join('');
+
+  return (
+    <Szekcio
+      id="ki-csinalja"
+      felcim="Ki csinálja?"
+      cim="Egy ember áll mögötte, név szerint."
+      alcim="Pénzügyi bizonylatot csak olyan szolgáltatásra érdemes bízni, amelyről tudod, ki üzemelteti, és hogyan bánik az adatokkal."
+    >
+      <div className="mx-auto grid max-w-5xl gap-10 rounded-3xl border border-zsalya/20 bg-white p-8 shadow-sm md:grid-cols-[auto_1fr] md:p-10">
+        <div className="flex flex-col items-start gap-4 md:w-56">
+          <span
+            aria-hidden="true"
+            className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-500/10 text-2xl font-extrabold text-blue-700"
+          >
+            {monogram}
+          </span>
+          <div>
+            <p className="text-lg font-extrabold text-slate-800">{TULAJDONOS}</p>
+            <p className="text-sm text-slate-500">a SzámlaFolyó fejlesztője és üzemeltetője</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-6 text-lg leading-relaxed text-slate-600">
+            A SzámlaFolyót {TAPASZTALAT} fejlesztem és üzemeltetem. Ezért nálam az első kérdés
+            mindig az, hol van az adat, ki fér hozzá, és mi történik vele.
+          </p>
+          <ul className="mb-6 space-y-3">
+            {pontok.map((p) => (
+              <li key={p} className="flex items-start gap-3 text-sm leading-relaxed text-slate-600">
+                <IkonPipa className="mt-0.5 h-5 w-5 flex-none text-zsalya" />
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm leading-relaxed text-slate-500">
+            Ha kérdésed van, nekem írsz:{' '}
+            <a href={`mailto:${kapcsolatEmail}`} className="font-medium text-blue-700 underline">
+              {kapcsolatEmail}
+            </a>
+            . A szolgáltató adatai az{' '}
+            <Link to="/impresszum" className="underline transition-colors hover:text-blue-600">
+              Impresszumban
+            </Link>{' '}
+            állnak.
+          </p>
+        </div>
+      </div>
     </Szekcio>
   );
 }
@@ -923,7 +1104,8 @@ function Arak() {
     'Támogatott XML-formátumú e-számlák adatainak közvetlen kiolvasása',
     'Bizonytalan adatok és észlelt eltérések jelölése',
     'A bizonylatok ellenőrzése és jóváhagyása',
-    'Adatexport XLSX, CSV és JSON formátumban',
+    'Adatexport Excel (XLSX), CSV és JSON formátumban',
+    `Importfájl a könyvelőprogramba: ${felsorol(KONYVELOPROGRAMOK, 'és')}`,
   ];
   const h = hatar();
 
@@ -1093,6 +1275,67 @@ function Arak() {
         </div>
       </div>
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Jó tudni
+// ---------------------------------------------------------------------------
+
+/**
+ * A termék igaz határai, egy helyen, a lap alján (2026-10-09, a tulajdonos
+ * kérésére). Addig a felső szakaszokban álltak („alapbeállítás szerint", „nem
+ * szűr ki minden hibát"), és a lelkesedés helyét foglalták. A mondatok
+ * **nem lettek puhábbak**, csak lejjebb kerültek – a lapról nem tűntek el, és
+ * az őr (`jogiSzovegek.test.ts`) mindegyiket a lapon keresi.
+ */
+function JoTudni() {
+  const kerdesek: { kerdes: string; valasz: ReactNode }[] = [
+    {
+      kerdes: 'Ki hagyja jóvá a bizonylatokat?',
+      valasz:
+        'Alapbeállítás szerint te: az exportba csak az általad jóváhagyott bizonylatok kerülnek. Az automatikus jóváhagyás külön bekapcsolható, és a rendszer jelzi az így jóváhagyott tételeket.',
+    },
+    {
+      kerdes: 'Minden hibát kiszűr?',
+      valasz:
+        'Nem. Az automatikus ellenőrzések segítik az átnézést, de nem szűrnek ki minden hibát. A neveket és más szöveges adatokat akkor is érdemes összevetned az eredetivel, ha a rendszer nem jelzett problémát.',
+    },
+    {
+      kerdes: 'Hol kezelik az adataimat?',
+      valasz: (
+        <>
+          Az adatbázist és a bizonylatfájlokat frankfurti kiszolgálón tároljuk. A mesterséges
+          intelligenciával végzett kiolvasásnál viszont a bizonylat tartalma az OpenRouter
+          közvetítésével a Google szolgáltatásához kerül, ez Unión kívüli adatfeldolgozással jár; az
+          e-mailes beküldéshez használt szolgáltatónál szintén történik Unión kívüli tárolás. A
+          közreműködőket az{' '}
+          <Link to="/adatkezeles" className="underline transition-colors hover:text-blue-600">
+            adatkezelési tájékoztató
+          </Link>{' '}
+          sorolja fel.
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <Szekcio
+      id="jo-tudni"
+      felcim="Jó tudni"
+      cim="Mielőtt elkezded."
+      alcim="Néhány dolog, amit érdemes tudnod a SzámlaFolyó működéséről."
+      halvany
+    >
+      <dl className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3">
+        {kerdesek.map((k) => (
+          <div key={k.kerdes}>
+            <dt className="mb-2 text-base font-bold text-slate-800">{k.kerdes}</dt>
+            <dd className="text-sm leading-relaxed text-slate-500">{k.valasz}</dd>
+          </div>
+        ))}
+      </dl>
+    </Szekcio>
   );
 }
 
@@ -1290,6 +1533,17 @@ const IkonKartya = ({ className = 'h-6 w-6' }: { className?: string }) => (
     className={className}
     d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
   />
+);
+
+const IkonLakat = ({ className = 'h-6 w-6' }: { className?: string }) => (
+  <Ikon
+    className={className}
+    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+  />
+);
+
+const IkonEmber = ({ className = 'h-6 w-6' }: { className?: string }) => (
+  <Ikon className={className} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
 );
 
 export const IkonRacs = ({ className = 'h-6 w-6' }: { className?: string }) => (

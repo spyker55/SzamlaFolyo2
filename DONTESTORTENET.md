@@ -7270,3 +7270,88 @@ A Beállítások ugyanezt a függvényt használja, ott is ez jelenik meg. A
 
 **Őr:** két új teszt a `keret.test.ts`-ben (elfogyott keret; plafon). A régi
 viselkedésre mindkettő, a forduló nélküli mondatra az első piros lett.
+
+## 🏠 Nyitólap: kézzelfogható haszon, bizalmi elem, fenntartások lejjebb (2026-10-09)
+
+A tulajdonos három észrevétele a nyitólapra, ebben a sorrendben. A tiltólista
+és a pontosság maradt, csak a sorrend és a hangsúly változott.
+
+**1. A haszon konkrét lett.** A „Számlákból rendezett adatok" és az „.XLSX
+.CSV { JSON }" egy vállalkozónak nem mondott semmit, a könyvelőprogramok
+pedig csak a Könyvelőknek oldalon álltak.
+- **Cím:** „Ne gépeld be a számlákat. Töltsd fel őket."
+- **Két pont a két közönségnek:**
+  - „Vállalkozóként: Excel-táblázat (XLSX) a könyvelődnek.";
+  - „Könyvelőként: ügyfelenkénti importfájl – RLB Kettős, Novitax NTAX
+    vagy Kulcs-Könyvelés."
+- **Formátumsáv:** „Ide viheted tovább az adatokat". Elöl a programok, utánuk
+  „Excel (XLSX)", „CSV" és „JSON".
+- A folyamat 4. lépése, a bizonylatfajták és az árak közös listája is
+  megnevezi a programokat.
+- **Egy forrás:** a programnevek a `KIMERVE`-ből és a `PROGRAM_NEVEK`-ből
+  jönnek. Kimérés nélküli program tehát a nyitólapra sem kerülhet.
+
+**2. Bizalmi elem.**
+- **A hero alján, az első képernyőn:** „Adattárolás az EU-ban (Frankfurt)" és
+  „Nyeste Krisztián fejleszti – 10 év rendszergazdai és IT-biztonsági
+  tapasztalattal". A név link a „Ki csinálja?" szakaszra.
+- **Új szakasz: „Ki csinálja?"** (`#ki-csinalja`, az Előnyök és az Árak
+  között). Benne monogram, a név, egy bekezdés és öt pont. Mindegyik a
+  működésből jön:
+  - a tárolás Frankfurtban van;
+  - a cégek adatbázisszinten elkülönülnek (RLS);
+  - a bizonylatokat nem használjuk mesterséges intelligencia tanítására (az
+    Adatkezelés 3. pontjának mondata);
+  - az eredeti fájlokat az export után alapból töröljük, és legfeljebb
+    `megorzes.maxNap` napig lehet megtartani őket;
+  - bankkártyaadatot nem látunk, a fizetést a Stripe kezeli.
+- **A név forrása** az Impresszum `szolgaltato.nev` mezője, a jogi forma
+  nélkül. Fotó szándékosan nincs: igazi képet csak a tulajdonos adhat.
+- **A „10 év"** a tulajdonos saját közlése. Ha pontosítani kell, a
+  `TAPASZTALAT` állandót kell átírni.
+- **Mérve** (Playwright, fejlesztői szerver): 1440×900-on a bizalmi sor alja
+  893 px, tehát az első képernyőn van, a fejlesztés-alatt sávval együtt.
+  Ehhez a hero szövege rövidebb lett, a felső margó pedig `lg:pt-24`-ről
+  `lg:pt-16`-ra csökkent. Az első változatnál a sor alja 1032 px volt, és a
+  gombok is lecsúsztak. Vízszintes görgetés 375, 1280 és 1440 px-en sincs.
+  1280×720-on a sor nem fér az első képernyőre, ott a gombok sem.
+
+**3. A fenntartások lejjebb kerültek, de a lapon maradtak.**
+- **Új „Jó tudni" szakasz** a lap alján, az Árak után (`#jo-tudni`), három
+  kérdéssel:
+  - **Ki hagyja jóvá?** Alapbeállítás szerint te, az automatikus jóváhagyás
+    külön kapcsolható.
+  - **Minden hibát kiszűr?** Nem. A mondat szó szerint az, ami addig az
+    Előnyök alatt állt.
+  - **Hol kezelik az adataimat?** A tárolás Frankfurtban van. A kiolvasás
+    Unión kívüli feldolgozással jár, és az e-mailes beküldés szolgáltatója
+    is Unión kívül tárol. Ez ugyanaz a mondat, mint a Könyvelőknek oldalon.
+- **Kikerült a felső szakaszokból:**
+  - a folyamat alcíméből és 3. lépéséből az „Alapbeállítás szerint…";
+  - az Előnyök alól a „nem szűrnek ki minden hibát".
+- **Az Előnyök 4. kártyája** („A jóváhagyás nálad marad") változatlan. Az
+  már a részletek közé tartozik.
+
+**Őr:** új `src/oldalak/nyitolap.test.tsx`, 9 teszt. A **renderelt** lapon
+mér (`renderToStaticMarkup` + `MemoryRouter`), szakaszokra vágva, a
+horgonyoknál:
+- a heróban ott az Excel és minden kimért program;
+- nem kimért program a lapon nincs;
+- a heróban ott az EU-s tárolás és a név, és a név egyezik az Impresszuméval;
+- „az EU-ban marad" típusú mondat nincs a lapon;
+- az Előnyök előtt nincs „alapbeállítás" és „nem szűr";
+- a „Jó tudni" mind a négy mondatot tartalmazza;
+- „minden bizonylatot te hagysz jóvá" sehol nincs.
+
+Hat szándékos rontás, mindegyik piros lett:
+- fenntartás vissza a 3. lépésbe;
+- bizalmi sor ki;
+- a `KIMERVE` megkerülése egy ki nem mért programmal;
+- a „Jó tudni" ki;
+- „az adatod az EU-ban marad";
+- „Minden bizonylatot te hagysz jóvá".
+
+**Nyitott, nem ebben a körben:** a nyitólapi videó nyitókártyáján „Bizonylatból
+könyvelésre kész adat" áll (`scripts/bemutato-video/felvetel.mjs`, 319. sor).
+Ez a tiltólista „könyvelésre kész" fordulata (ÁSZF 3. pont). A javítás a videó
+újrafelvétele.
