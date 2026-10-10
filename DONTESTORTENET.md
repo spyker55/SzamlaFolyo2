@@ -6368,6 +6368,57 @@ végpontja a `google/gemini-3.8-flash`-nek. **Határidő magunknak: 2026-10-20.*
 Ha addig nincs érdemi válasz, az 5. pont a mostani állapotot mondja ki, új
 jogi változatban.
 
+**Az ügyfélszolgálat válasza (2026-10-10)**, a 2026. augusztus 26-i DPA
+alapján:
+1. **Sensitive Data (2.6.).** A DPA csak akkor kötelezi őket, ha a
+   szerződés vagy egy közösen elfogadott módosítás kifejezetten kiterjed
+   rá. Addig az Ügyfél köteles korlátozni a hozzáférésüket. Az 1. melléklet
+   sem sorol fel Sensitive Datát. A módosítás tárgyalt szerződésmódosítás,
+   ügyfélszolgálati jegyből nem vállalható.
+2. **Szerepek.** 2.1.: Customer = Controller, OpenRouter = Processor.
+   13.2.: SCC 2. modul. A 3. modulra váltás szintén szerződésmódosítás.
+3. **Csak EU-s feldolgozás.**
+   - **Szerződéses garancia:** az A függelék csak akkor él, ha az Ügyfél az
+     Order Formban vagy más írásos megállapodásban EU-only feldolgozást
+     választott. Ilyenkor az EU API-n küldött adatot csak az EU/EGT-ben
+     dolgozzák fel, és csak EU-s modellszolgáltatóhoz irányítják.
+   - **Technikailag** a Business és az Enterprise csomag
+     `eu.openrouter.ai`-ja ad régión belüli útvonalat. Kiesés esetén ez
+     hibát ad, nem esik vissza Unión kívüli végpontra. A Vertex `global`
+     sosem jogosult.
+4. **Mindhárom pont a sales@openrouter.ai-hoz tartozik.** Írni a
+   fiókhoz tartozó e-mail-címről kell: a jegy címe nincs fiókhoz kötve.
+
+**Olvasat.** Az értékesítés 2026-10-06-án már megmondta, hogy egyedi
+szerződés csak havi 15 000 USD feletti forgalomtól jár. A mi forgalmunkon
+tehát a 2.6. szerinti rés **nem zárható az OpenRouteren belül**.
+- A Business csomag csak technikai EU-s útvonalat ad, szerződéses
+  garanciát nem.
+- A rés szerződéses, nem az adat helyén múlik: a számla adószámot és
+  pénzügyi adatot tartalmaz, a DPA szerint ezt korlátoznunk kellene.
+- Az 5. pont „kezdeményezzük” mondata ma igaz. Ha viszont a sales-levél nem
+  megy el, idővel valótlanná válik.
+
+**A tulajdonos elé kerülő három út:**
+1. **Utolsó kör a salesnél.** Levél a fiókhoz tartozó címről, a három ponttal.
+   Ha ez is nemet mond, az 5. pontot új jogi verzióban le kell írni úgy,
+   ahogy van.
+2. **Közvetlen Google-szerződés** (Vertex AI, EU-s régió). A Google Cloud
+   adatfeldolgozási kiegészítése (CDPA) a webes keresés szerint nem zárja ki
+   külön a pénzügyi adatot. A Vertex a kérés régiójában dolgoz fel, és
+   Frankfurt (`europe-west3`) szerepel a Gemini Flash-modellek régiói
+   között.
+   - **Nem mért, élesítés előtt ellenőrizni kell:**
+     - pontosan melyik modell–régió párra igaz ez;
+     - a CDPA termékspecifikus feltételei;
+     - a Haiku `eu` multirégióban.
+   - **Ára:**
+     - Google Cloud számlázási fiók;
+     - szolgáltatásfiók-kulcs Supabase-titokként;
+     - a `kiolvas` hívásának átírása;
+     - új jogi verzió és 15 napos értesítés, mert közreműködő változik.
+3. **Marad, ahogy van**, tudatosan vállalt kockázattal.
+
 ## 📣 Új hirdetéscsomag: Meta + Google (2026-09-25)
 
 A régi `marketing/meta/` csomag törölve. A szövegei a 2026-09-22-i
